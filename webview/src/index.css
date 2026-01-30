@@ -1,0 +1,164 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ide-bg: #ffffff;
+  --ide-fg: #1f2937;
+  --ide-border: #e5e7eb;
+  --ide-accent: #3b82f6;
+  --ide-error: #ef4444;
+  --ide-warning: #f59e0b;
+  --ide-success: #10b981;
+  --ide-font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --ide-font-code: 'JetBrains Mono', Consolas, Monaco, monospace;
+}
+
+.dark {
+  --ide-bg: #1a1a1a;
+  --ide-fg: #e4e4e7;
+  --ide-border: #333333;
+  --ide-accent: #60a5fa;
+  --ide-error: #f87171;
+  --ide-warning: #fbbf24;
+  --ide-success: #34d399;
+  --ide-bg-secondary: #252525;
+  --ide-text-secondary: #71717a;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--ide-font-ui);
+  background-color: var(--ide-bg);
+  color: var(--ide-fg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* React Diff View Customization */
+.diff-viewer {
+  --diff-bg: #1a1a1a;
+  --diff-gutter-bg: #252525;
+  --diff-gutter-text: #71717a;
+  --diff-add-bg: rgba(34, 197, 94, 0.12);
+  --diff-add-text: #4ade80;
+  --diff-delete-bg: rgba(239, 68, 68, 0.12);
+  --diff-delete-text: #f87171;
+  --diff-normal-text: #e4e4e7;
+}
+
+.diff-viewer .diff {
+  background: var(--diff-bg);
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.diff-viewer .diff-gutter {
+  background: var(--diff-gutter-bg);
+  color: var(--diff-gutter-text);
+  user-select: none;
+  min-width: 3rem;
+  text-align: right;
+  padding: 0 0.5rem;
+}
+
+.diff-viewer .diff-line {
+  padding: 0 0.75rem;
+  line-height: 1.5;
+}
+
+.diff-viewer .diff-line-normal {
+  background: transparent;
+  color: var(--diff-normal-text);
+}
+
+.diff-viewer .diff-line-add {
+  background: var(--diff-add-bg);
+  color: var(--diff-add-text);
+}
+
+.diff-viewer .diff-line-delete {
+  background: var(--diff-delete-bg);
+  color: var(--diff-delete-text);
+}
+
+.diff-viewer .diff-gutter-add {
+  background: var(--diff-add-bg);
+  color: var(--diff-add-text);
+}
+
+.diff-viewer .diff-gutter-delete {
+  background: var(--diff-delete-bg);
+  color: var(--diff-delete-text);
+}
+
+.diff-viewer .diff-code {
+  white-space: pre;
+  font-family: var(--ide-font-code);
+  font-size: 0.875rem;
+}
+
+/* ============================================
+   Slash Command Panel Variables
+   ============================================ */
+:root {
+  /* Panel container */
+  --panel-bg: #252526;
+  --panel-width: 300px;
+  --panel-radius: 6px;
+  --panel-shadow: 0 4px 12px rgba(0,0,0,0.3);
+
+  /* Section */
+  --section-header-color: #6e7681;
+  --section-header-size: 11px;
+  --divider-color: #3c3c3c;
+
+  /* Item */
+  --item-text-color: rgba(255, 255, 255, 0.8);
+  --secondary-text-color: rgba(255, 255, 255, 0.5);
+  --item-size: 13px;
+  --item-height: 28px;
+  --item-padding-left: 16px;
+  --hover-bg: rgba(255, 255, 255, 0.1);
+  --selected-bg: #ffffff;
+  --selected-border-color: transparent;
+
+  /* Accent */
+  --accent-blue: #0078d4;
+
+  /* Toggle Switch */
+  --toggle-width: 36px;
+  --toggle-height: 20px;
+  --toggle-border-radius: 10px;
+  --toggle-on-bg: #0078d4;
+  --toggle-off-bg: #3c3c3c;
+  --toggle-knob-size: 16px;
+  --toggle-knob-color: #ffffff;
+
+  /* Scrollbar (Slash Commands section) */
+  --scrollbar-width: 6px;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: #4a4a4a;
+  --scrollbar-thumb-hover: #5a5a5a;
+}
+
+/* Custom scrollbar for slash command panel */
+.slash-command-panel ::-webkit-scrollbar {
+  width: var(--scrollbar-width);
+}
+
+.slash-command-panel ::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+.slash-command-panel ::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+
+.slash-command-panel ::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}

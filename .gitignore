@@ -1,0 +1,46 @@
+# IDE & Editor
+.idea/
+.vscode/
+.fleet/
+*.iws
+*.ipr
+*.iml
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IntelliJ
+out/
+.intellijPlatform/
+.kotlin/
+
+# Node.js / WebView
+webview/node_modules/
+webview/dist/
+.vite/
+
+# WebView build output
+src/main/resources/webview/
+
+# Claude Code / OMC
+.claude/
+.omc/
+.taskmaster/
+
+# OS
+.DS_Store
+
+# direnv
+.envrc
+.direnv/
+
+# Environment (secrets)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*

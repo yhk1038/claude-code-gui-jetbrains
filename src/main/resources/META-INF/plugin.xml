@@ -1,0 +1,67 @@
+<idea-plugin>
+    <id>com.github.yhk1038.claude-code-gui</id>
+    <name>Claude Code GUI</name>
+    <vendor email="yhk1038@github.com" url="https://github.com/yhk1038">yhk1038</vendor>
+
+    <description><![CDATA[
+    Claude Code GUI for JetBrains IDEs.
+
+    Provides Cursor-like UX for Claude Code agent interaction directly within your IDE.
+
+    Features:
+    <ul>
+        <li>Chat with Claude Code agent</li>
+        <li>Streaming responses with Markdown rendering</li>
+        <li>File context attachment</li>
+        <li>Diff cards with Apply/Reject actions</li>
+        <li>Permission management for file operations</li>
+    </ul>
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Sidebar button that opens Editor Tab -->
+        <toolWindow
+            id="Claude Code"
+            anchor="right"
+            icon="/icons/claudeCode.svg"
+            factoryClass="com.github.yhk1038.claudecodegui.toolwindow.ClaudeCodeToolWindowFactory"/>
+
+        <!-- Editor Tab -->
+        <fileEditorProvider
+            implementation="com.github.yhk1038.claudecodegui.editor.ClaudeCodeEditorProvider"/>
+
+        <!-- Project service for session management -->
+        <projectService
+            serviceImplementation="com.github.yhk1038.claudecodegui.services.ClaudeSessionService"/>
+
+        <!-- Application service for CLI management -->
+        <applicationService
+            serviceImplementation="com.github.yhk1038.claudecodegui.services.ClaudeCliService"/>
+
+        <!-- Settings/Preferences -->
+        <applicationConfigurable
+            parentId="tools"
+            instance="com.github.yhk1038.claudecodegui.settings.ClaudeCodeSettingsConfigurable"
+            id="com.github.yhk1038.claudecodegui.settings"
+            displayName="Claude Code"/>
+
+        <!-- Persistent state for settings -->
+        <applicationService
+            serviceImplementation="com.github.yhk1038.claudecodegui.settings.ClaudeCodeSettings"/>
+    </extensions>
+
+    <actions>
+        <!-- Action to open Claude Code panel -->
+        <action
+            id="ClaudeCode.Open"
+            class="com.github.yhk1038.claudecodegui.actions.OpenClaudeCodeAction"
+            text="Open Claude Code"
+            description="Open Claude Code chat panel"
+            icon="AllIcons.Actions.Execute">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift C"/>
+        </action>
+    </actions>
+</idea-plugin>
