@@ -1,6 +1,7 @@
 import { Type, Transform } from 'class-transformer';
 import { AnyContentBlockDto } from './ContentBlockDto';
 import { transformContentBlocks } from '../../mappers/contentBlockTransformer';
+import { ContentBlockDeltaMessageDto } from '../stream/StreamEventDto';
 
 /**
  * User message payload containing role and content
@@ -29,7 +30,8 @@ export class UserMessageDto {
  */
 export class AssistantMessageDto {
   type: 'assistant' = 'assistant';
-  message_id!: string;
+  sessionId!: string;
+  messageId!: string;
 
   @Transform(({ value }) => transformContentBlocks(value))
   content!: AnyContentBlockDto[];
@@ -50,8 +52,9 @@ export class SystemMessageDto {
  */
 export class ResultMessageDto {
   type: 'result' = 'result';
+  sessionId!: string;
   status!: 'success' | 'error';
-  message_id?: string;
+  messageId?: string;
 
   @Type(() => UsageDto)
   usage?: UsageDto;
@@ -81,4 +84,12 @@ export type AnyMessageDto =
   | UserMessageDto
   | AssistantMessageDto
   | SystemMessageDto
+  | ResultMessageDto;
+
+/**
+ * CLI 스트림에서 수신되는 메시지 타입 (세션 활성 중)
+ */
+export type SessionStreamMessageDto =
+  | ContentBlockDeltaMessageDto
+  | AssistantMessageDto
   | ResultMessageDto;

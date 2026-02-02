@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useRef, ReactNode } from 'react';
 import { SessionMeta, SessionState, Message } from '../types';
 import { useBridgeContext } from './BridgeContext';
+import { useApi } from './ApiContext';
 
 declare global {
   interface Window {
@@ -37,13 +38,14 @@ interface SessionProviderProps {
 }
 
 export function SessionProvider({ children, onSessionChange, onMessagesLoaded }: SessionProviderProps) {
-  const { send, subscribe, isConnected } = useBridgeContext();
+  const { subscribe, isConnected } = useBridgeContext();
+  const api = useApi();
 
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<SessionMeta[]>([]);
   const [sessionState, setSessionState] = useState<SessionState>('idle');
   const [isLoading, setIsLoading] = useState(false);
-  const [workingDirectory, setWorkingDirectory] = useState<string>(
+  const [workingDirectory, setWorkingDirectoryState] = useState<string>(
     window.workingDirectory || '/Users/yonghyun/Projects/yhk1038/claude-code-gui-jetbrains'
   );
 
@@ -52,11 +54,22 @@ export function SessionProvider({ children, onSessionChange, onMessagesLoaded }:
   const onMessagesLoadedRef = useRef(onMessagesLoaded);
   onMessagesLoadedRef.current = onMessagesLoaded;
 
+  // Update API workingDir when it changes
+  const setWorkingDirectory = useCallback((dir: string) => {
+    setWorkingDirectoryState(dir);
+    api.setWorkingDir(dir);
+  }, [api]);
+
+  // Initialize API workingDir on mount
+  React.useEffect(() => {
+    api.setWorkingDir(workingDirectory);
+  }, [api, workingDirectory]);
+
   const generateSessionId = useCallback(() => {
     return `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }, []);
 
-  // loadSessions - 명시적으로 호출해야 함
+  // loadSessions - using new API
   const loadSessions = useCallback(async () => {
     if (!isConnected) {
       console.log('[SessionContext] Not connected, cannot load sessions');
@@ -66,36 +79,26 @@ export function SessionProvider({ children, onSessionChange, onMessagesLoaded }:
     try {
       setIsLoading(true);
       console.log('[SessionContext] Loading sessions from:', workingDirectory);
-      const response = await send('GET_SESSIONS', { workingDir: workingDirectory });
 
-      if (response?.sessions && Array.isArray(response.sessions)) {
-        const loadedSessions = response.sessions.map((s: any) => ({
-          id: s.sessionId,
-          title: s.firstPrompt?.substring(0, 50) || 'No title',
-          createdAt: s.created,
-          updatedAt: s.modified,
-          messageCount: s.messageCount || 0,
-        }));
-        setSessions(loadedSessions);
-        console.log('[SessionContext] Loaded CLI sessions:', loadedSessions);
-      }
+      const sessionDtos = await api.sessions.index();
+
+      const loadedSessions: SessionMeta[] = sessionDtos.map((dto) => ({
+        id: dto.id,
+        title: dto.title,
+        createdAt: dto.createdAt,
+        updatedAt: dto.updatedAt,
+        messageCount: dto.messageCount,
+      }));
+
+      setSessions(loadedSessions);
+      console.log('[SessionContext] Loaded CLI sessions:', loadedSessions);
     } catch (error) {
       console.error('[SessionContext] Failed to load sessions:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [isConnected, send, workingDirectory]);
+  }, [isConnected, api.sessions, workingDirectory]);
 
-  // Subscribe to session loaded response
-  React.useEffect(() => {
-    return subscribe('SESSION_LOADED', (message) => {
-      if (message.payload?.messages) {
-        const messages = message.payload?.messages as any[];
-        console.log('[SessionContext] Session loaded with messages:', messages?.length || 0);
-        onMessagesLoadedRef.current?.(message.payload.messages as any);
-      }
-    });
-  }, [subscribe]);
 
   // Listen for state changes from Kotlin
   React.useEffect(() => {
@@ -118,10 +121,10 @@ export function SessionProvider({ children, onSessionChange, onMessagesLoaded }:
     setSessionState('idle');
     messagesRef.current = [];
 
-    send('NEW_SESSION', {}).catch(error => {
+    api.sessions.create().catch(error => {
       console.error('[SessionContext] Failed to clear CLI session:', error);
     });
-  }, [send]);
+  }, [api.sessions]);
 
   const createSessionWithMessage = useCallback((firstMessage: string) => {
     const newId = generateSessionId();
@@ -139,7 +142,7 @@ export function SessionProvider({ children, onSessionChange, onMessagesLoaded }:
     setSessions(prev => [newSession, ...prev]);
     setCurrentSessionId(newId);
 
-    send('SESSION_CHANGE', { sessionId: newId }).catch(error => {
+    api.sessions.activate(newId).catch(error => {
       console.error('[SessionContext] Failed to change session:', error);
     });
 
@@ -147,7 +150,7 @@ export function SessionProvider({ children, onSessionChange, onMessagesLoaded }:
 
     onSessionChange?.(newId);
     return { sessionId: newId, title };
-  }, [generateSessionId, onSessionChange, send]);
+  }, [generateSessionId, onSessionChange, api.sessions]);
 
   const switchSession = useCallback(async (sessionId: string) => {
     console.log('[SessionContext] switchSession called with:', sessionId);
@@ -158,8 +161,9 @@ export function SessionProvider({ children, onSessionChange, onMessagesLoaded }:
       messagesRef.current = [];
 
       try {
-        await send('LOAD_SESSION', { sessionId, workingDir: workingDirectory });
-        console.log('[SessionContext] LOAD_SESSION sent successfully');
+        const { messages } = await api.sessions.show(sessionId);
+        console.log('[SessionContext] Session loaded with messages:', messages.length);
+        onMessagesLoadedRef.current?.(messages as any);
       } catch (error) {
         console.error('[SessionContext] Failed to load session:', error);
       }
@@ -168,11 +172,11 @@ export function SessionProvider({ children, onSessionChange, onMessagesLoaded }:
     } else {
       console.warn('[SessionContext] Session not found in list:', sessionId);
     }
-  }, [sessions, onSessionChange, send, workingDirectory]);
+  }, [sessions, onSessionChange, api.sessions]);
 
   const deleteSession = useCallback(async (sessionId: string) => {
     try {
-      await send('DELETE_SESSION', { sessionId });
+      await api.sessions.destroy(sessionId);
       setSessions(prev => prev.filter(s => s.id !== sessionId));
       if (currentSessionId === sessionId) {
         setCurrentSessionId(null);
@@ -182,7 +186,7 @@ export function SessionProvider({ children, onSessionChange, onMessagesLoaded }:
     } catch (error) {
       console.error('[SessionContext] Failed to delete session:', error);
     }
-  }, [currentSessionId, send]);
+  }, [currentSessionId, api.sessions]);
 
   const renameSession = useCallback((sessionId: string, title: string) => {
     // Update local state only - CLI sessions are read-only

@@ -19,6 +19,7 @@ export {
   UsageDto,
   ErrorDetailDto,
   type AnyMessageDto,
+  type SessionStreamMessageDto,
 } from './message/MessageDto';
 
 // Session DTOs
@@ -30,7 +31,7 @@ export {
 
 // Stream DTOs
 export {
-  StreamEventDto,
+  ContentBlockDeltaMessageDto,
   TextDeltaDto,
   ToolUseDeltaDto,
   ContentBlockStartDto,

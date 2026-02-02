@@ -1,7 +1,16 @@
+import { plainToInstance } from 'class-transformer';
 import { BridgeClient } from '../bridge/BridgeClient';
-import { SessionMetaDto } from '../../dto';
+import {
+  SessionMetaDto,
+  SessionStreamMessageDto,
+  AssistantMessageDto,
+  ResultMessageDto,
+} from '../../dto';
+import { ContentBlockDeltaMessageDto } from '../../dto/stream/StreamEventDto';
 import { transformMessages } from '../../mappers/messageTransformer';
+import { transformContentBlocks } from '../../mappers/contentBlockTransformer';
 import { AnyMessageDto } from '../../dto/message/MessageDto';
+import type { ApiConfig } from '../ClaudeCodeApi';
 
 interface GetSessionsResponse {
   sessions: Array<{
@@ -22,15 +31,24 @@ interface LoadSessionResponse {
 
 /**
  * Sessions API module
- * Handles session CRUD operations
+ * RESTful CRUD operations for sessions
+ *
+ * Session is the parent resource of messages (1:N relationship)
  */
 export class SessionsApi {
-  constructor(private bridge: BridgeClient) {}
+  private _unsubscribeCurrent: (() => void) | null = null;
+
+  constructor(
+    private bridge: BridgeClient,
+    private getConfig: () => ApiConfig
+  ) {}
 
   /**
-   * Get list of all sessions
+   * List all sessions
+   * GET /sessions
    */
-  async getList(workingDir?: string): Promise<SessionMetaDto[]> {
+  async index(): Promise<SessionMetaDto[]> {
+    const { workingDir } = this.getConfig();
     const response = await this.bridge.request<GetSessionsResponse>(
       'GET_SESSIONS',
       { workingDir }
@@ -55,21 +73,21 @@ export class SessionsApi {
   }
 
   /**
-   * Load a specific session by ID
-   * Returns messages via SESSION_LOADED event subscription
+   * Get a single session with its messages
+   * GET /sessions/:id
+   *
+   * @param sessionId - Session ID to load
+   * @param onMessage - Optional callback for streaming messages during session
    */
-  async load(sessionId: string, workingDir?: string): Promise<void> {
-    await this.bridge.request('LOAD_SESSION', { sessionId, workingDir });
-    // Messages will be delivered via SESSION_LOADED event
-  }
-
-  /**
-   * Load session and wait for messages
-   */
-  async loadWithMessages(
+  async show(
     sessionId: string,
-    workingDir?: string
+    onMessage?: (message: SessionStreamMessageDto) => void
   ): Promise<{ sessionId: string; messages: AnyMessageDto[] }> {
+    // 이전 세션 구독 해제
+    this._unsubscribeCurrent?.();
+
+    const { workingDir } = this.getConfig();
+
     // Set up listener before sending request
     const messagesPromise = this.bridge.waitFor<LoadSessionResponse>(
       'SESSION_LOADED',
@@ -82,6 +100,11 @@ export class SessionsApi {
     // Wait for messages
     const response = await messagesPromise;
 
+    // 새 세션 구독 설정 (onMessage가 제공된 경우)
+    if (onMessage) {
+      this._unsubscribeCurrent = this.subscribeToSession(sessionId, onMessage);
+    }
+
     return {
       sessionId: response.sessionId,
       messages: transformMessages(response.messages),
@@ -89,7 +112,63 @@ export class SessionsApi {
   }
 
   /**
+   * Subscribe to session-specific messages
+   * @private
+   */
+  private subscribeToSession(
+    sessionId: string,
+    onMessage: (message: SessionStreamMessageDto) => void
+  ): () => void {
+    const unsubscribers: (() => void)[] = [];
+
+    // Content block delta 구독
+    unsubscribers.push(
+      this.bridge.subscribe('STREAM_EVENT', (msg) => {
+        const payload = msg.payload as any;
+        if (payload.sessionId && payload.sessionId !== sessionId) return;
+
+        const dto = plainToInstance(ContentBlockDeltaMessageDto, {
+          ...payload,
+          sessionId,
+        });
+        onMessage(dto);
+      })
+    );
+
+    // Assistant message 구독
+    unsubscribers.push(
+      this.bridge.subscribe('ASSISTANT_MESSAGE', (msg) => {
+        const payload = msg.payload as any;
+        if (payload.sessionId && payload.sessionId !== sessionId) return;
+
+        const dto = new AssistantMessageDto();
+        dto.sessionId = sessionId;
+        dto.messageId = payload.messageId;
+        dto.content = transformContentBlocks(payload.content);
+        onMessage(dto);
+      })
+    );
+
+    // Result message 구독
+    unsubscribers.push(
+      this.bridge.subscribe('RESULT_MESSAGE', (msg) => {
+        const payload = msg.payload as any;
+        if (payload.sessionId && payload.sessionId !== sessionId) return;
+
+        const dto = plainToInstance(ResultMessageDto, {
+          ...payload,
+          sessionId,
+        });
+        onMessage(dto);
+      })
+    );
+
+    return () => unsubscribers.forEach((unsub) => unsub());
+  }
+
+  /**
    * Create a new session
+   * POST /sessions
    */
   async create(): Promise<void> {
     await this.bridge.request('NEW_SESSION', {});
@@ -97,15 +176,17 @@ export class SessionsApi {
 
   /**
    * Delete a session
+   * DELETE /sessions/:id
    */
-  async delete(sessionId: string): Promise<void> {
+  async destroy(sessionId: string): Promise<void> {
     await this.bridge.request('DELETE_SESSION', { sessionId });
   }
 
   /**
-   * Change current session
+   * Activate (switch to) a session
+   * POST /sessions/:id/activate
    */
-  async switchTo(sessionId: string): Promise<void> {
+  async activate(sessionId: string): Promise<void> {
     await this.bridge.request('SESSION_CHANGE', { sessionId });
   }
 

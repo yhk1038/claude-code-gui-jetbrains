@@ -22,10 +22,11 @@ export class ToolUseDeltaDto {
 export type AnyDeltaDto = TextDeltaDto | ToolUseDeltaDto;
 
 /**
- * Stream event from Claude CLI JSONL
+ * Content block delta message from Claude CLI JSONL
  */
-export class StreamEventDto {
-  type: 'stream_event' = 'stream_event';
+export class ContentBlockDeltaMessageDto {
+  type: 'content_block_delta' = 'content_block_delta';
+  sessionId!: string;
   event!: string;
   index?: number;
 

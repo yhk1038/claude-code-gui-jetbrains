@@ -4,6 +4,13 @@ import { MessagesApi } from './modules/MessagesApi';
 import { ToolsApi } from './modules/ToolsApi';
 
 /**
+ * API configuration options
+ */
+export interface ApiConfig {
+  workingDir?: string;
+}
+
+/**
  * Main API class for Claude Code WebView
  * Provides typed, RESTful-style access to all backend operations
  *
@@ -11,31 +18,73 @@ import { ToolsApi } from './modules/ToolsApi';
  * ```typescript
  * import { api } from './api/ClaudeCodeApi';
  *
- * // Session operations
- * const sessions = await api.sessions.getList();
- * await api.sessions.load(sessionId);
+ * // Configure working directory
+ * api.setWorkingDir('/path/to/project');
  *
- * // Message operations
- * await api.messages.send('Hello');
- * api.messages.onStreamEvent((event) => console.log(event));
+ * // Session operations (parent resource)
+ * const sessions = await api.sessions.index();
+ *
+ * // Load session with message subscription
+ * const { messages } = await api.sessions.show(sessionId, (message) => {
+ *   // Handle streaming messages
+ *   switch (message.type) {
+ *     case 'content_block_delta':
+ *       // Update UI with delta
+ *       break;
+ *     case 'assistant':
+ *       // Complete assistant message
+ *       break;
+ *     case 'result':
+ *       // Stream complete
+ *       break;
+ *   }
+ * });
+ *
+ * // Send message (subscriptions managed by show())
+ * await api.messages.create(sessionId, 'Hello');
  *
  * // Tool operations
  * await api.tools.approve(toolUseId);
- * await api.tools.applyDiff(toolUseId);
  * ```
  */
 export class ClaudeCodeApi {
   private bridge: BridgeClient;
+  private config: ApiConfig;
 
   readonly sessions: SessionsApi;
   readonly messages: MessagesApi;
   readonly tools: ToolsApi;
 
-  constructor(bridge?: BridgeClient) {
-    this.bridge = bridge || getBridgeClient();
-    this.sessions = new SessionsApi(this.bridge);
+  constructor(configOrBridge?: ApiConfig | BridgeClient, bridge?: BridgeClient) {
+    // Handle both constructor signatures for backwards compatibility
+    if (configOrBridge instanceof BridgeClient) {
+      this.bridge = configOrBridge;
+      this.config = {};
+    } else {
+      this.config = configOrBridge || {};
+      this.bridge = bridge || getBridgeClient();
+    }
+
+    // Create config getter for modules that need it
+    const getConfig = () => this.config;
+
+    this.sessions = new SessionsApi(this.bridge, getConfig);
     this.messages = new MessagesApi(this.bridge);
     this.tools = new ToolsApi(this.bridge);
+  }
+
+  /**
+   * Set the working directory for all API operations
+   */
+  setWorkingDir(dir: string): void {
+    this.config.workingDir = dir;
+  }
+
+  /**
+   * Get the current working directory
+   */
+  get workingDir(): string | undefined {
+    return this.config.workingDir;
   }
 
   /**
