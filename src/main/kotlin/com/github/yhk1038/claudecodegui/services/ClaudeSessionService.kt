@@ -6,12 +6,16 @@ import com.intellij.openapi.project.Project
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -54,8 +58,8 @@ data class CliSessionIndex(
 )
 
 /**
- * Service for managing Claude Code sessions with persistent storage
- * Sessions are stored in {projectRoot}/.claude/sessions/{sessionId}.json
+ * Service for managing Claude Code sessions (read-only from CLI)
+ * Sessions are read from ~/.claude/projects/{normalizedPath}/sessions-index.json
  */
 @Service(Service.Level.PROJECT)
 class ClaudeSessionService(private val project: Project) {
@@ -67,16 +71,7 @@ class ClaudeSessionService(private val project: Project) {
         prettyPrint = true
     }
 
-    private val sessionsDir: File
-        get() {
-            val projectBasePath = project.basePath ?: throw IllegalStateException("Project base path is null")
-            val dir = File(projectBasePath, ".claude/sessions")
-            if (!dir.exists()) {
-                dir.mkdirs()
-                logger.info("Created sessions directory: ${dir.absolutePath}")
-            }
-            return dir
-        }
+    // Local sessions directory removed - using CLI sessions only
 
     /**
      * Claude CLI sessions directory: ~/.claude/projects/{normalized-path}
@@ -96,33 +91,10 @@ class ClaudeSessionService(private val project: Project) {
     }
 
     /**
-     * Get session by ID - checks both local and CLI storage
+     * Get session by ID - CLI sessions only
      */
     fun getSession(id: String): SessionData? {
-        // Try local session first
-        val localSession = getLocalSession(id)
-        if (localSession != null) {
-            return localSession
-        }
-
-        // Try CLI session
         return getCliSession(id)
-    }
-
-    private fun getLocalSession(id: String): SessionData? {
-        return try {
-            val file = File(sessionsDir, "$id.json")
-            if (!file.exists()) {
-                return null
-            }
-            val content = file.readText()
-            val session = json.decodeFromString<SessionData>(content)
-            logger.debug("Loaded local session: $id")
-            session
-        } catch (e: Exception) {
-            logger.error("Failed to load local session: $id", e)
-            null
-        }
     }
 
     private fun getCliSession(id: String): SessionData? {
@@ -149,40 +121,59 @@ class ClaudeSessionService(private val project: Project) {
                     when (type) {
                         "user" -> {
                             val messageObj = entry["message"]?.jsonObject
-                            val content = messageObj?.get("content")?.jsonPrimitive?.content
-                            if (content != null) {
-                                if (firstUserMessage == null) {
-                                    firstUserMessage = content
+                            val contentElement = messageObj?.get("content")
+
+                            // 원본 content 구조를 그대로 보존
+                            // WebView에서 DTO로 파싱하여 타입별 처리
+                            if (contentElement != null) {
+                                // firstUserMessage 추출 (타이틀용)
+                                val textForTitle = when (contentElement) {
+                                    is JsonArray -> contentElement.mapNotNull { block ->
+                                        val blockObj = block.jsonObject
+                                        if (blockObj["type"]?.jsonPrimitive?.contentOrNull == "text") {
+                                            blockObj["text"]?.jsonPrimitive?.contentOrNull
+                                        } else null
+                                    }.joinToString("\n").takeIf { it.isNotEmpty() }
+                                    is JsonPrimitive -> contentElement.contentOrNull
+                                    else -> null
+                                }
+
+                                if (firstUserMessage == null && !textForTitle.isNullOrEmpty()) {
+                                    firstUserMessage = textForTitle
                                     firstTimestamp = timestamp
                                 }
                                 lastTimestamp = timestamp
 
+                                // 원본 구조 그대로 전달
                                 messages.add(buildJsonObject {
-                                    put("role", "user")
-                                    put("content", content)
+                                    put("type", "user")
+                                    put("content", contentElement)
                                     put("timestamp", timestamp ?: "")
                                 })
                             }
                         }
                         "assistant" -> {
                             val messageObj = entry["message"]?.jsonObject
-                            val contentArray = messageObj?.get("content")?.jsonArray
-                            val textContent = contentArray?.mapNotNull { block ->
-                                val blockObj = block.jsonObject
-                                if (blockObj["type"]?.jsonPrimitive?.content == "text") {
-                                    blockObj["text"]?.jsonPrimitive?.content
-                                } else null
-                            }?.joinToString("\n") ?: ""
+                            val contentElement = messageObj?.get("content")
+                            val messageId = entry["message_id"]?.jsonPrimitive?.contentOrNull
 
-                            if (textContent.isNotEmpty()) {
+                            // 원본 content 배열을 그대로 보존 (tool_use 포함)
+                            if (contentElement != null) {
                                 lastTimestamp = timestamp
 
                                 messages.add(buildJsonObject {
-                                    put("role", "assistant")
-                                    put("content", textContent)
+                                    put("type", "assistant")
+                                    if (messageId != null) {
+                                        put("message_id", messageId)
+                                    }
+                                    put("content", contentElement)
                                     put("timestamp", timestamp ?: "")
                                 })
                             }
+                        }
+                        "result" -> {
+                            // result 메시지도 보존
+                            messages.add(entry)
                         }
                     }
                 } catch (e: Exception) {
@@ -212,47 +203,13 @@ class ClaudeSessionService(private val project: Project) {
     }
 
     /**
-     * Get all sessions from both local and CLI storage
+     * Get all sessions - CLI sessions only
      */
     fun getAllSessions(): List<SessionData> {
         logger.info("getAllSessions() called, project: ${project.basePath}")
-        val localSessions = getLocalSessions()
-        logger.info("Loaded ${localSessions.size} local sessions")
         val cliSessions = getCliSessions()
         logger.info("Loaded ${cliSessions.size} CLI sessions")
-
-        // Merge and sort by updatedAt descending
-        // CLI sessions take precedence for duplicate IDs
-        val sessionMap = mutableMapOf<String, SessionData>()
-
-        localSessions.forEach { sessionMap[it.id] = it }
-        cliSessions.forEach { sessionMap[it.id] = it }
-
-        val result = sessionMap.values.sortedByDescending { it.updatedAt }
-        logger.info("Returning ${result.size} total sessions")
-        return result
-    }
-
-    /**
-     * Get sessions from local project storage
-     */
-    private fun getLocalSessions(): List<SessionData> {
-        return try {
-            val files = sessionsDir.listFiles { file -> file.extension == "json" } ?: emptyArray()
-
-            files.mapNotNull { file ->
-                try {
-                    val content = file.readText()
-                    json.decodeFromString<SessionData>(content)
-                } catch (e: Exception) {
-                    logger.error("Failed to load session from ${file.name}", e)
-                    null
-                }
-            }
-        } catch (e: Exception) {
-            logger.error("Failed to load local sessions", e)
-            emptyList()
-        }
+        return cliSessions.sortedByDescending { it.updatedAt }
     }
 
     /**
@@ -294,47 +251,33 @@ class ClaudeSessionService(private val project: Project) {
         }
     }
 
-    /**
-     * Save session to disk
-     */
-    fun saveSession(session: SessionData): Result<Unit> {
-        return try {
-            val file = File(sessionsDir, "${session.id}.json")
-            val content = json.encodeToString(session)
-            file.writeText(content)
-            logger.info("Saved session: ${session.id} to ${file.absolutePath}")
-            Result.success(Unit)
-        } catch (e: Exception) {
-            logger.error("Failed to save session: ${session.id}", e)
-            Result.failure(e)
-        }
-    }
+    // saveSession removed - CLI sessions are read-only
 
     /**
-     * Delete session file
+     * Delete session file - CLI sessions
      */
     fun deleteSession(id: String): Result<Unit> {
         return try {
-            val file = File(sessionsDir, "$id.json")
+            val file = File(cliSessionsDir, "$id.jsonl")
             if (file.exists()) {
                 file.delete()
-                logger.info("Deleted session: $id")
+                logger.info("Deleted CLI session: $id")
                 Result.success(Unit)
             } else {
-                logger.warn("Session file not found for deletion: $id")
+                logger.warn("CLI session file not found for deletion: $id")
                 Result.failure(IllegalArgumentException("Session not found: $id"))
             }
         } catch (e: Exception) {
-            logger.error("Failed to delete session: $id", e)
+            logger.error("Failed to delete CLI session: $id", e)
             Result.failure(e)
         }
     }
 
     /**
-     * Check if session exists
+     * Check if CLI session exists
      */
     fun sessionExists(id: String): Boolean {
-        val file = File(sessionsDir, "$id.json")
+        val file = File(cliSessionsDir, "$id.jsonl")
         return file.exists()
     }
 }

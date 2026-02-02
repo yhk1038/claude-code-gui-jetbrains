@@ -1,5 +1,5 @@
 import { useCallback, useState, useRef, useEffect } from 'react';
-import { Message, Context } from '../types';
+import { Message, Context, getTextContent } from '../types';
 import { useBridge } from './useBridge';
 
 interface UseChatOptions {
@@ -183,7 +183,7 @@ export function useChat(options: UseChatOptions = {}): UseChatReturn {
       // Remove messages from the failed one onwards
       setMessages(prev => prev.slice(0, messageIndex));
       // Resend
-      sendMessage(userMessage.content, userMessage.context);
+      sendMessage(getTextContent(userMessage), userMessage.context);
     }
   }, [messages, sendMessage]);
 

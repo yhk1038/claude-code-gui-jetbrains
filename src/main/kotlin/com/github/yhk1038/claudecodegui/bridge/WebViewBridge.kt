@@ -79,7 +79,7 @@ class WebViewBridge(
                 "GET_SESSIONS" -> handleGetSessions(payload)
                 "LOAD_SESSION" -> handleLoadSession(payload)
                 "LOAD_SESSIONS" -> handleLoadSessions()
-                "SAVE_SESSION" -> handleSaveSession(payload)
+                // "SAVE_SESSION" removed - CLI sessions are read-only
                 "DELETE_SESSION" -> handleDeleteSession(payload)
                 else -> {
                     logger.warn("Unknown message type: $type")
@@ -383,44 +383,7 @@ class WebViewBridge(
         return handleGetSessions(buildJsonObject {})
     }
 
-    /**
-     * Handle SAVE_SESSION - Save session to disk
-     */
-    private suspend fun handleSaveSession(payload: JsonObject): JsonObject {
-        val sessionId = payload["sessionId"]?.jsonPrimitive?.content
-        val title = payload["title"]?.jsonPrimitive?.content
-        val createdAt = payload["createdAt"]?.jsonPrimitive?.content
-        val updatedAt = payload["updatedAt"]?.jsonPrimitive?.content
-        val messages = payload["messages"]?.jsonArray
-
-        if (sessionId == null || title == null || createdAt == null || updatedAt == null || messages == null) {
-            return buildJsonObject {
-                put("status", "error")
-                put("error", "Missing required fields")
-            }
-        }
-
-        val sessionData = SessionData(
-            id = sessionId,
-            title = title,
-            createdAt = createdAt,
-            updatedAt = updatedAt,
-            messages = messages.toList()
-        )
-
-        val result = sessionService.saveSession(sessionData)
-
-        return if (result.isSuccess) {
-            buildJsonObject {
-                put("status", "ok")
-            }
-        } else {
-            buildJsonObject {
-                put("status", "error")
-                put("error", result.exceptionOrNull()?.message ?: "Failed to save session")
-            }
-        }
-    }
+    // handleSaveSession removed - CLI sessions are read-only
 
     /**
      * Handle DELETE_SESSION - Delete session file

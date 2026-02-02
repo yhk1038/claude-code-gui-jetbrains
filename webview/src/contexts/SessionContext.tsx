@@ -108,28 +108,10 @@ export function SessionProvider({ children, onSessionChange, onMessagesLoaded }:
     return unsubscribe;
   }, [subscribe]);
 
+  // Auto-save disabled - CLI sessions are read-only
   const scheduleAutoSave = useCallback(() => {
-    if (!currentSessionId) return;
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = setTimeout(() => {
-      const currentSession = sessions.find(s => s.id === currentSessionId);
-      if (!currentSession) return;
-
-      send('SAVE_SESSION', {
-        sessionId: currentSessionId,
-        title: currentSession.title,
-        createdAt: currentSession.createdAt,
-        updatedAt: new Date().toISOString(),
-        messages: messagesRef.current,
-      }).catch(error => {
-        console.error('[SessionContext] Auto-save failed:', error);
-      });
-    }, 2000);
-  }, [currentSessionId, sessions, send]);
+    // No-op: Local session saving removed, CLI sessions are managed externally
+  }, []);
 
   const resetToNewSession = useCallback(() => {
     setCurrentSessionId(null);
@@ -161,15 +143,7 @@ export function SessionProvider({ children, onSessionChange, onMessagesLoaded }:
       console.error('[SessionContext] Failed to change session:', error);
     });
 
-    send('SAVE_SESSION', {
-      sessionId: newId,
-      title,
-      createdAt: now,
-      updatedAt: now,
-      messages: [],
-    }).catch(error => {
-      console.error('[SessionContext] Failed to save new session:', error);
-    });
+    // Local session saving removed - CLI sessions are managed externally
 
     onSessionChange?.(newId);
     return { sessionId: newId, title };
@@ -211,25 +185,14 @@ export function SessionProvider({ children, onSessionChange, onMessagesLoaded }:
   }, [currentSessionId, send]);
 
   const renameSession = useCallback((sessionId: string, title: string) => {
+    // Update local state only - CLI sessions are read-only
     setSessions(prev => prev.map(s =>
       s.id === sessionId
         ? { ...s, title, updatedAt: new Date().toISOString() }
         : s
     ));
-
-    const session = sessions.find(s => s.id === sessionId);
-    if (session) {
-      send('SAVE_SESSION', {
-        sessionId,
-        title,
-        createdAt: session.createdAt,
-        updatedAt: new Date().toISOString(),
-        messages: messagesRef.current,
-      }).catch(error => {
-        console.error('[SessionContext] Failed to save renamed session:', error);
-      });
-    }
-  }, [sessions, send]);
+    // Note: CLI session titles cannot be modified from the plugin
+  }, []);
 
   const saveMessages = useCallback((messages: Message[]) => {
     if (!currentSessionId) return;

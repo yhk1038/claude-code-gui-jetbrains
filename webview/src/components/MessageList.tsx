@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { Message } from '../types';
+import { Message, getTextContent } from '../types';
 import { StreamingMessage } from './StreamingMessage';
 
 interface MessageListProps {
@@ -39,7 +39,8 @@ export const MessageList: React.FC<MessageListProps> = ({
     let currentGroup: MessageGroup | null = null;
 
     messages.forEach((message) => {
-      const date = formatDate(message.timestamp);
+      const timestampNum = typeof message.timestamp === 'string' ? new Date(message.timestamp).getTime() : message.timestamp;
+      const date = formatDate(timestampNum);
 
       if (!currentGroup || currentGroup.date !== date) {
         currentGroup = { date, messages: [] };
@@ -148,19 +149,19 @@ export const MessageList: React.FC<MessageListProps> = ({
             <span className="role-text">{capitalizeFirst(message.role)}</span>
           </div>
           <div className="message-timestamp">
-            {formatTime(message.timestamp)}
+            {formatTime(typeof message.timestamp === 'string' ? new Date(message.timestamp).getTime() : message.timestamp)}
           </div>
         </div>
 
         <div className="message-content">
           {isAssistant ? (
             <StreamingMessage
-              content={message.content}
+              content={typeof message.content === 'string' ? message.content : getTextContent(message)}
               isStreaming={isStreaming}
             />
           ) : (
             <div className="user-content">
-              {message.content}
+              {getTextContent(message)}
             </div>
           )}
 
@@ -193,7 +194,7 @@ export const MessageList: React.FC<MessageListProps> = ({
             <>
               <button
                 className="action-btn copy-btn"
-                onClick={() => handleCopy(message.content)}
+                onClick={() => handleCopy(getTextContent(message))}
                 title="Copy"
               >
                 📋

@@ -1,4 +1,4 @@
-import { SessionMeta, Message } from '../types';
+import { SessionMeta, Message, getTextContent } from '../types';
 import { SessionItem } from './SessionItem';
 
 interface SessionListProps {
@@ -24,7 +24,8 @@ export function SessionList({
   const getLastMessage = (sessionId: string): string | undefined => {
     if (sessionId !== currentSessionId) return undefined;
     const userMessages = messages.filter(m => m.role === 'user');
-    return userMessages.length > 0 ? userMessages[userMessages.length - 1].content : undefined;
+    if (userMessages.length === 0) return undefined;
+    return getTextContent(userMessages[userMessages.length - 1]);
   };
 
   return (

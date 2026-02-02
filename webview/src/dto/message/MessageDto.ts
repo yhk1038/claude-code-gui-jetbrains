@@ -1,0 +1,84 @@
+import { Type, Transform } from 'class-transformer';
+import { AnyContentBlockDto } from './ContentBlockDto';
+import { transformContentBlocks } from '../../mappers/contentBlockTransformer';
+
+/**
+ * User message payload containing role and content
+ */
+export class UserMessagePayloadDto {
+  role: 'user' = 'user';
+
+  @Transform(({ value }) => transformContentBlocks(value))
+  content!: string | AnyContentBlockDto[];
+}
+
+/**
+ * User message from Claude CLI JSONL
+ */
+export class UserMessageDto {
+  type: 'user' = 'user';
+
+  @Type(() => UserMessagePayloadDto)
+  message!: UserMessagePayloadDto;
+
+  timestamp!: string;
+}
+
+/**
+ * Assistant message from Claude CLI JSONL
+ */
+export class AssistantMessageDto {
+  type: 'assistant' = 'assistant';
+  message_id!: string;
+
+  @Transform(({ value }) => transformContentBlocks(value))
+  content!: AnyContentBlockDto[];
+}
+
+/**
+ * System message from Claude CLI JSONL (session initialization)
+ */
+export class SystemMessageDto {
+  type: 'system' = 'system';
+  session_id!: string;
+  timestamp!: string;
+  content!: string;
+}
+
+/**
+ * Result message from Claude CLI JSONL (completion)
+ */
+export class ResultMessageDto {
+  type: 'result' = 'result';
+  status!: 'success' | 'error';
+  message_id?: string;
+
+  @Type(() => UsageDto)
+  usage?: UsageDto;
+
+  @Type(() => ErrorDetailDto)
+  error?: ErrorDetailDto;
+}
+
+/**
+ * Token usage information
+ */
+export class UsageDto {
+  input_tokens!: number;
+  output_tokens!: number;
+}
+
+/**
+ * Error detail information
+ */
+export class ErrorDetailDto {
+  code!: string;
+  message!: string;
+  details?: Record<string, unknown>;
+}
+
+export type AnyMessageDto =
+  | UserMessageDto
+  | AssistantMessageDto
+  | SystemMessageDto
+  | ResultMessageDto;

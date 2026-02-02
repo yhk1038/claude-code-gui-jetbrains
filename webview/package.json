@@ -14,7 +14,9 @@
     "react-dom": "^18.3.1",
     "streamdown": "^2.1.0",
     "react-diff-view": "^3.2.1",
-    "unidiff": "^1.0.4"
+    "unidiff": "^1.0.4",
+    "class-transformer": "^0.5.1",
+    "reflect-metadata": "^0.2.2"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",

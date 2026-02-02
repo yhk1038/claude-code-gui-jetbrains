@@ -100,14 +100,14 @@ export function ChatPanel() {
       {/* Messages Area */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto"
+        className="flex-1 overflow-y-auto pb-16"
       >
         {isEmpty ? (
           <div className="h-full flex items-center justify-center">
             <p className="text-zinc-500 text-sm">메시지를 입력하세요</p>
           </div>
         ) : (
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto text-xs">
             {messages.map((message) => (
               <div key={message.id}>
                 <MessageBubble message={message} onRetry={retry} />

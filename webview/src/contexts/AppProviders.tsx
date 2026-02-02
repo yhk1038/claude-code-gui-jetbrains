@@ -1,8 +1,10 @@
 import { ReactNode, useEffect } from 'react';
 import { BridgeProvider, useBridgeContext } from './BridgeContext';
+import { ApiProvider, useApiContext } from './ApiContext';
 import { SessionProvider, useSessionContext } from './SessionContext';
 import { ChatProvider, useChatContext } from './ChatContext';
 import { ThemeProvider } from './ThemeContext';
+import { getTextContent, isContentBlockArray } from '../types';
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -12,7 +14,8 @@ interface AppProvidersProps {
  * SessionLoader - loadSessions를 bridge 연결 시점에 호출
  */
 function SessionLoader({ children }: { children: ReactNode }) {
-  const { isConnected, subscribe } = useBridgeContext();
+  const { isConnected } = useApiContext();
+  const { subscribe } = useBridgeContext();
   const { loadSessions } = useSessionContext();
   const { chat } = useChatContext();
 
@@ -24,14 +27,34 @@ function SessionLoader({ children }: { children: ReactNode }) {
   }, [isConnected, loadSessions]);
 
   // Subscribe to SESSION_LOADED to load messages into chat
+  // Now handles both legacy string content and new ContentBlock array
   useEffect(() => {
     return subscribe('SESSION_LOADED', (message) => {
       if (message.payload?.messages) {
-        const messages = message.payload.messages as Array<{
-          role: 'user' | 'assistant';
-          content: string;
+        const rawMessages = message.payload.messages as Array<{
+          type?: string;
+          role?: 'user' | 'assistant';
+          content: string | unknown[];
           timestamp: string;
         }>;
+
+        // Transform messages to support both formats
+        const messages = rawMessages.map((msg) => {
+          const role = msg.role || (msg.type === 'assistant' ? 'assistant' : 'user');
+          // Extract text content if it's a ContentBlock array
+          const content = isContentBlockArray(msg.content)
+            ? getTextContent({ content: msg.content } as any)
+            : (msg.content as string);
+
+          return {
+            role: role as 'user' | 'assistant',
+            content,
+            timestamp: msg.timestamp,
+            // Preserve original content for advanced rendering
+            originalContent: msg.content,
+          };
+        });
+
         console.log('[AppProviders] Session loaded, injecting messages:', messages.length);
         chat.loadMessages(messages);
       }
@@ -46,21 +69,24 @@ function SessionLoader({ children }: { children: ReactNode }) {
  *
  * Hierarchy:
  * 1. BridgeProvider - Kotlin IPC bridge (foundation)
- * 2. SessionProvider - Session management (depends on Bridge)
- * 3. ChatProvider - Chat state + Diffs + Tools (depends on Bridge + Session)
- * 4. ThemeProvider - Theme management (independent)
- * 5. SessionLoader - Auto-load sessions when bridge connects
+ * 2. ApiProvider - ClaudeCodeApi initialization (depends on Bridge)
+ * 3. SessionProvider - Session management (depends on Bridge)
+ * 4. ChatProvider - Chat state + Diffs + Tools (depends on Bridge + Session)
+ * 5. ThemeProvider - Theme management (independent)
+ * 6. SessionLoader - Auto-load sessions when bridge connects
  */
 export function AppProviders({ children }: AppProvidersProps) {
   return (
     <BridgeProvider>
-      <SessionProvider>
-        <ChatProvider>
-          <ThemeProvider>
-            <SessionLoader>{children}</SessionLoader>
-          </ThemeProvider>
-        </ChatProvider>
-      </SessionProvider>
+      <ApiProvider>
+        <SessionProvider>
+          <ChatProvider>
+            <ThemeProvider>
+              <SessionLoader>{children}</SessionLoader>
+            </ThemeProvider>
+          </ChatProvider>
+        </SessionProvider>
+      </ApiProvider>
     </BridgeProvider>
   );
 }
