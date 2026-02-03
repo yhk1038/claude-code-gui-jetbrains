@@ -213,6 +213,62 @@ class ClaudeSessionService(private val project: Project) {
     }
 
     /**
+     * Extract first user message text from session jsonl file
+     * Finds the last "text" type content block from the first user message
+     */
+    private fun extractFirstUserPrompt(entry: CliSessionEntry): String {
+        return try {
+            val jsonlFile = if (entry.fullPath != null) {
+                File(entry.fullPath)
+            } else {
+                File(cliSessionsDir, "${entry.sessionId}.jsonl")
+            }
+
+            if (!jsonlFile.exists()) {
+                return entry.firstPrompt ?: "No title"
+            }
+
+            jsonlFile.useLines { lines ->
+                for (line in lines) {
+                    if (line.isBlank()) continue
+
+                    try {
+                        val jsonEntry = json.parseToJsonElement(line).jsonObject
+                        val type = jsonEntry["type"]?.jsonPrimitive?.contentOrNull
+
+                        if (type == "user") {
+                            val messageObj = jsonEntry["message"]?.jsonObject
+                            val contentElement = messageObj?.get("content")
+
+                            if (contentElement is JsonArray) {
+                                // Find the LAST text block
+                                val lastTextBlock = contentElement.lastOrNull { block ->
+                                    block.jsonObject["type"]?.jsonPrimitive?.contentOrNull == "text"
+                                }
+                                val text = lastTextBlock?.jsonObject?.get("text")?.jsonPrimitive?.contentOrNull
+                                if (!text.isNullOrBlank()) {
+                                    return@useLines text
+                                }
+                            } else if (contentElement is JsonPrimitive) {
+                                val text = contentElement.contentOrNull
+                                if (!text.isNullOrBlank()) {
+                                    return@useLines text
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        // Skip malformed lines
+                    }
+                }
+                entry.firstPrompt ?: "No title"
+            }
+        } catch (e: Exception) {
+            logger.warn("Failed to extract first prompt from session: ${entry.sessionId}", e)
+            entry.firstPrompt ?: "No title"
+        }
+    }
+
+    /**
      * Get sessions from Claude CLI storage
      * Reads from ~/.claude/projects/{normalized-path}/sessions-index.json
      */
@@ -236,7 +292,7 @@ class ClaudeSessionService(private val project: Project) {
                 .map { entry ->
                     SessionData(
                         id = entry.sessionId,
-                        title = entry.firstPrompt ?: "No title",
+                        title = extractFirstUserPrompt(entry),
                         createdAt = entry.created,
                         updatedAt = entry.modified,
                         messages = emptyList(),  // CLI messages are in .jsonl, not loaded here

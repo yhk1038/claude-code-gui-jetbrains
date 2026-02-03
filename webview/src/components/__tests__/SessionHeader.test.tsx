@@ -1,12 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { SessionHeader, Session } from '../SessionHeader';
+import { SessionHeader } from '../SessionHeader';
+import { SessionMetaDto } from '../../dto';
 
-const mockSessions: Session[] = [
-  { id: 'session-1', title: 'First Chat', updatedAt: '2026-02-02T10:00:00Z' },
-  { id: 'session-2', title: 'Second Chat', updatedAt: '2026-02-01T15:30:00Z' },
-  { id: 'session-3', title: 'API Discussion', updatedAt: '2026-01-30T09:00:00Z' },
+const mockSessions: SessionMetaDto[] = [
+  { id: 'session-1', title: 'First Chat', updatedAt: new Date('2026-02-02T10:00:00Z'), createdAt: new Date('2026-02-02T09:00:00Z'), messageCount: 3 },
+  { id: 'session-2', title: 'Second Chat', updatedAt: new Date('2026-02-01T15:30:00Z'), createdAt: new Date('2026-02-01T14:00:00Z'), messageCount: 2 },
+  { id: 'session-3', title: 'API Discussion', updatedAt: new Date('2026-01-30T09:00:00Z'), createdAt: new Date('2026-01-30T08:00:00Z'), messageCount: 5 },
 ];
 
 const defaultProps = {

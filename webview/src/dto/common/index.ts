@@ -1,3 +1,21 @@
+import { plainToInstance, ClassConstructor, ClassTransformOptions } from 'class-transformer';
+
+const defaultTransformOptions: ClassTransformOptions = {
+  excludeExtraneousValues: false,
+  enableImplicitConversion: true,
+};
+
+/**
+ * plainToInstance 래퍼 - 기본 옵션 적용
+ */
+export function toInstance<T, V>(
+  cls: ClassConstructor<T>,
+  plain: V,
+  options?: ClassTransformOptions
+): T {
+  return plainToInstance(cls, plain, { ...defaultTransformOptions, ...options });
+}
+
 /**
  * Tool use status
  */

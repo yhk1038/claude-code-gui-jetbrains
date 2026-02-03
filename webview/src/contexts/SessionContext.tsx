@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useRef, ReactNode } from 'react';
-import { SessionMeta, SessionState, Message } from '../types';
+import { SessionState, Message } from '../types';
+import { SessionMetaDto } from '../dto';
 import { useBridgeContext } from './BridgeContext';
 import { useApi } from './ApiContext';
 
@@ -12,7 +13,7 @@ declare global {
 interface SessionContextValue {
   // State
   currentSessionId: string | null;
-  sessions: SessionMeta[];
+  sessions: SessionMetaDto[];
   sessionState: SessionState;
   isLoading: boolean;
   workingDirectory: string;
@@ -42,7 +43,7 @@ export function SessionProvider({ children, onSessionChange, onMessagesLoaded }:
   const api = useApi();
 
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
-  const [sessions, setSessions] = useState<SessionMeta[]>([]);
+  const [sessions, setSessions] = useState<SessionMetaDto[]>([]);
   const [sessionState, setSessionState] = useState<SessionState>('idle');
   const [isLoading, setIsLoading] = useState(false);
   const [workingDirectory, setWorkingDirectoryState] = useState<string>(
@@ -80,18 +81,9 @@ export function SessionProvider({ children, onSessionChange, onMessagesLoaded }:
       setIsLoading(true);
       console.log('[SessionContext] Loading sessions from:', workingDirectory);
 
-      const sessionDtos = await api.sessions.index();
-
-      const loadedSessions: SessionMeta[] = sessionDtos.map((dto) => ({
-        id: dto.id,
-        title: dto.title,
-        createdAt: dto.createdAt,
-        updatedAt: dto.updatedAt,
-        messageCount: dto.messageCount,
-      }));
-
-      setSessions(loadedSessions);
-      console.log('[SessionContext] Loaded CLI sessions:', loadedSessions);
+      const sessions = await api.sessions.index();
+      setSessions(sessions);
+      console.log('[SessionContext] Loaded CLI sessions:', sessions);
     } catch (error) {
       console.error('[SessionContext] Failed to load sessions:', error);
     } finally {
@@ -128,10 +120,10 @@ export function SessionProvider({ children, onSessionChange, onMessagesLoaded }:
 
   const createSessionWithMessage = useCallback((firstMessage: string) => {
     const newId = generateSessionId();
-    const now = new Date().toISOString();
+    const now = new Date();
     const title = firstMessage.substring(0, 50).trim() || 'New Chat';
 
-    const newSession: SessionMeta = {
+    const newSession: SessionMetaDto = {
       id: newId,
       title,
       createdAt: now,
@@ -192,7 +184,7 @@ export function SessionProvider({ children, onSessionChange, onMessagesLoaded }:
     // Update local state only - CLI sessions are read-only
     setSessions(prev => prev.map(s =>
       s.id === sessionId
-        ? { ...s, title, updatedAt: new Date().toISOString() }
+        ? { ...s, title, updatedAt: new Date() }
         : s
     ));
     // Note: CLI session titles cannot be modified from the plugin
@@ -205,7 +197,7 @@ export function SessionProvider({ children, onSessionChange, onMessagesLoaded }:
 
     setSessions(prev => prev.map(s =>
       s.id === currentSessionId
-        ? { ...s, messageCount: messages.length, updatedAt: new Date().toISOString() }
+        ? { ...s, messageCount: messages.length, updatedAt: new Date() }
         : s
     ));
 

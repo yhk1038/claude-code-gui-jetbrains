@@ -13,7 +13,7 @@ import { AnyMessageDto } from '../../dto/message/MessageDto';
 import type { ApiConfig } from '../ClaudeCodeApi';
 
 interface GetSessionsResponse {
-  sessions: Array<{
+  sessions: {
     sessionId: string;
     firstPrompt?: string;
     created: string;
@@ -21,7 +21,7 @@ interface GetSessionsResponse {
     messageCount?: number;
     projectPath?: string;
     gitBranch?: string;
-  }>;
+  }[];
 }
 
 interface LoadSessionResponse {
@@ -58,18 +58,7 @@ export class SessionsApi {
       return [];
     }
 
-    // Map CLI session format to SessionMetaDto
-    return response.sessions.map((s) => {
-      const dto = new SessionMetaDto();
-      dto.id = s.sessionId;
-      dto.title = s.firstPrompt?.substring(0, 50) || 'No title';
-      dto.createdAt = s.created;
-      dto.updatedAt = s.modified;
-      dto.messageCount = s.messageCount || 0;
-      dto.projectPath = s.projectPath;
-      dto.gitBranch = s.gitBranch;
-      return dto;
-    });
+    return plainToInstance(SessionMetaDto, response.sessions);
   }
 
   /**

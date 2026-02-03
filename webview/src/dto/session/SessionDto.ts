@@ -1,29 +1,30 @@
-import { Type, Transform } from 'class-transformer';
+import { Type } from 'class-transformer';
 import { AnyMessageDto } from '../message/MessageDto';
 import { transformMessages } from '../../mappers/messageTransformer';
+import { toTitle } from '../../mappers/sessionTransformer';
+import { To, ToDate, Rename } from '../decorators';
 
 /**
  * Session metadata DTO
  */
 export class SessionMetaDto {
-  id!: string;
-  title!: string;
-  createdAt!: string;
-  updatedAt!: string;
-  messageCount!: number;
+  @Rename('sessionId') id: string;
+  @To('firstPrompt', toTitle) title: string;
+  @ToDate('created') createdAt: Date;
+  @ToDate('modified') updatedAt: Date;
+
+  messageCount: number;
   projectPath?: string;
   gitBranch?: string;
+  firstPrompt?: string;
 }
 
 /**
  * Full session DTO with metadata and messages
  */
 export class SessionDto {
-  @Type(() => SessionMetaDto)
-  meta!: SessionMetaDto;
-
-  @Transform(({ value }) => transformMessages(value))
-  messages!: AnyMessageDto[];
+  @Type(() => SessionMetaDto) meta: SessionMetaDto;
+  @To(transformMessages) messages: AnyMessageDto[];
 }
 
 /**
@@ -31,5 +32,5 @@ export class SessionDto {
  */
 export class SessionListResponseDto {
   @Type(() => SessionMetaDto)
-  sessions!: SessionMetaDto[];
+  sessions: SessionMetaDto[];
 }

@@ -41,6 +41,7 @@ export {
 
 // Common types
 export {
+  toInstance,
   type ToolUseStatus,
   type FileOperation,
   type PermissionType,

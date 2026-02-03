@@ -1,21 +1,16 @@
+import { api } from '@/api';
+import { SessionMetaDto } from '@/dto';
 import { useState, useRef, useEffect, useMemo } from 'react';
 
-export interface Session {
-  id: string;
-  title: string;
-  updatedAt?: string;
-}
-
 interface SessionHeaderProps {
-  sessions: Session[];
+  sessions: SessionMetaDto[];
   currentSessionId: string | null;
   sessionTitle: string;
   onSelectSession: (sessionId: string) => void;
   onCreateSession: () => void;
 }
 
-function getRelativeTime(dateString: string): string {
-  const date = new Date(dateString);
+function getRelativeTime(date: Date): string {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
@@ -115,7 +110,11 @@ export function SessionHeader({
             {/* Session list */}
             {filteredSessions.length > 0 && (
               <div className="max-h-80 overflow-y-auto p-1.5 pt-0 flex flex-col gap-0.5">
-                <div className="px-2 py-1.5 text-[11px] text-zinc-500">
+                <div className="px-2 py-1.5 text-[11px] text-zinc-500" onClick={() => {
+                  api.sessions.index().then((sessions) => {
+                    console.log('sessions', sessions);
+                  });
+                }}>
                   Today
                 </div>
                 {filteredSessions.map((session) => (

@@ -45,15 +45,15 @@ const mockSessionDtos: SessionMetaDto[] = [
   {
     id: 'session-1',
     title: 'Chat 1',
-    createdAt: '2026-02-02T10:00:00Z',
-    updatedAt: '2026-02-02T11:00:00Z',
+    createdAt: new Date('2026-02-02T10:00:00Z'),
+    updatedAt: new Date('2026-02-02T11:00:00Z'),
     messageCount: 5,
   },
   {
     id: 'session-2',
     title: 'Chat 2',
-    createdAt: '2026-02-01T09:00:00Z',
-    updatedAt: '2026-02-01T10:00:00Z',
+    createdAt: new Date('2026-02-01T09:00:00Z'),
+    updatedAt: new Date('2026-02-01T10:00:00Z'),
     messageCount: 3,
   },
 ];
@@ -135,7 +135,7 @@ describe('SessionContext', () => {
     });
 
     expect(mockSessionsIndex).not.toHaveBeenCalled();
-    expect(capturedCtx?.sessions).toHaveLength(0);
+    expect(capturedCtx!.sessions).toHaveLength(0);
   });
 
   it('switchSession - 성공 시 currentSessionId 업데이트 및 메시지 로드', async () => {
@@ -190,7 +190,7 @@ describe('SessionContext', () => {
     });
 
     expect(mockSessionsShow).not.toHaveBeenCalled();
-    expect(capturedCtx?.currentSessionId).toBeNull();
+    expect(capturedCtx!.currentSessionId).toBeNull();
     expect(onSessionChange).not.toHaveBeenCalled();
   });
 

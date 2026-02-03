@@ -2,8 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SessionsApi } from '../SessionsApi';
 import type { BridgeClient } from '../../bridge/BridgeClient';
 import type { ApiConfig } from '../../ClaudeCodeApi';
-import { SessionMetaDto, AssistantMessageDto, ResultMessageDto } from '../../../dto';
-import { ContentBlockDeltaMessageDto } from '../../../dto/stream/StreamEventDto';
+import { SessionMetaDto } from '../../../dto';
 
 const createMockBridge = () => ({
   request: vi.fn(),
@@ -286,12 +285,12 @@ describe('SessionsApi', () => {
 
     it('should transform messages in callback', () => {
       const callback = vi.fn();
-      let subscribedCallback: ((message: any) => void) | undefined;
+      let subscribedCallback: ((message: unknown) => void) | undefined;
 
-      mockBridge.subscribe.mockImplementation((event, cb) => {
-        subscribedCallback = cb;
+      mockBridge.subscribe.mockImplementation(((_event: any, cb: any) => {
+        subscribedCallback = cb as (message: unknown) => void;
         return vi.fn();
-      });
+      }) as any);
 
       api.onSessionLoaded(callback);
 
