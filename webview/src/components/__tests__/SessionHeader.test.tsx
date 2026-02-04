@@ -4,10 +4,15 @@ import userEvent from '@testing-library/user-event';
 import { SessionHeader } from '../SessionHeader';
 import { SessionMetaDto } from '../../dto';
 
+// 테스트 시점 기준 상대 날짜 생성 헬퍼
+const now = new Date();
+const daysAgo = (days: number) => new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+const hoursAgo = (hours: number) => new Date(now.getTime() - hours * 60 * 60 * 1000);
+
 const mockSessions: SessionMetaDto[] = [
-  { id: 'session-1', title: 'First Chat', updatedAt: new Date('2026-02-02T10:00:00Z'), createdAt: new Date('2026-02-02T09:00:00Z'), messageCount: 3 },
-  { id: 'session-2', title: 'Second Chat', updatedAt: new Date('2026-02-01T15:30:00Z'), createdAt: new Date('2026-02-01T14:00:00Z'), messageCount: 2 },
-  { id: 'session-3', title: 'API Discussion', updatedAt: new Date('2026-01-30T09:00:00Z'), createdAt: new Date('2026-01-30T08:00:00Z'), messageCount: 5 },
+  { id: 'session-1', title: 'First Chat', updatedAt: hoursAgo(2), createdAt: hoursAgo(3), messageCount: 3 },           // Today
+  { id: 'session-2', title: 'Second Chat', updatedAt: daysAgo(1), createdAt: daysAgo(1), messageCount: 2 },            // Yesterday
+  { id: 'session-3', title: 'API Discussion', updatedAt: daysAgo(5), createdAt: daysAgo(5), messageCount: 5 },         // Past week
 ];
 
 const defaultProps = {
@@ -291,5 +296,49 @@ describe('SessionHeader', () => {
 
     // 검색어 초기화 확인
     expect(screen.getByPlaceholderText('Search sessions...')).toHaveValue('');
+  });
+});
+
+describe('SessionHeader - 날짜별 그룹화', () => {
+  it('세션이 올바른 그룹 라벨 아래에 표시됨', async () => {
+    const user = userEvent.setup();
+    render(<SessionHeader {...defaultProps} />);
+
+    await user.click(screen.getByRole('button', { name: /First Chat/i }));
+
+    // 그룹 라벨 확인
+    expect(screen.getByText('Today')).toBeInTheDocument();
+    expect(screen.getByText('Yesterday')).toBeInTheDocument();
+    expect(screen.getByText('Past week')).toBeInTheDocument();
+
+    // 비어있는 그룹은 표시되지 않음
+    expect(screen.queryByText('Past month')).not.toBeInTheDocument();
+    expect(screen.queryByText('Past year')).not.toBeInTheDocument();
+  });
+
+  it('검색 필터링 후에도 그룹화가 적용됨', async () => {
+    const user = userEvent.setup();
+    render(<SessionHeader {...defaultProps} />);
+
+    await user.click(screen.getByRole('button', { name: /First Chat/i }));
+    await user.type(screen.getByPlaceholderText('Search sessions...'), 'API');
+
+    // 필터링된 세션의 그룹만 표시
+    expect(screen.getByText('Past week')).toBeInTheDocument();
+    expect(screen.queryByText('Today')).not.toBeInTheDocument();
+  });
+
+  it('updatedAt이 없는 세션은 Past year 그룹에 배치', async () => {
+    const user = userEvent.setup();
+    const sessionsWithUndefined = [
+      ...mockSessions,
+      { id: 'session-4', title: 'Old Session', updatedAt: undefined as unknown as Date, createdAt: daysAgo(400), messageCount: 1 },
+    ];
+    render(<SessionHeader {...defaultProps} sessions={sessionsWithUndefined} />);
+
+    await user.click(screen.getByRole('button', { name: /First Chat/i }));
+
+    expect(screen.getByText('Past year')).toBeInTheDocument();
+    expect(screen.getByText('Old Session')).toBeInTheDocument();
   });
 });
