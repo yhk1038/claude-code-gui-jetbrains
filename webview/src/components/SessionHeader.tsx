@@ -185,7 +185,7 @@ export function SessionHeader({
 
         {/* Dropdown menu */}
         {isOpen && (
-          <div className="absolute left-0 top-full mt-1 w-72 bg-zinc-900 border border-zinc-700 rounded-md shadow-xl overflow-hidden z-50">
+          <div className="absolute left-0 top-full mt-1 w-[23rem] bg-zinc-900 border border-zinc-700 rounded-md shadow-xl overflow-hidden z-50">
             {/* Search input */}
             <div className="p-1.5">
               <input
