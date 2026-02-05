@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { SessionHeader } from '../SessionHeader';
+import { SessionHeader } from '../SessionHeader/index';
 import { SessionMetaDto } from '../../dto';
 
 // 테스트 시점 기준 상대 날짜 생성 헬퍼
