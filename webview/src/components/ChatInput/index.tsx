@@ -1,9 +1,14 @@
-import React, { useCallback, useRef, useEffect, KeyboardEvent, useState } from 'react';
-import { AttachedContext } from '../hooks/useContext';
-import { ContextChip } from './ContextChip';
-import { SlashCommandPanel } from './SlashCommandPanel';
-import { useSlashCommandPanel } from '../hooks/useSlashCommandPanel';
-import { PanelItem } from '../types/slashCommandPanel';
+import { useCallback, useRef, useEffect, KeyboardEvent, useState } from 'react';
+import { AttachedContext } from '../../hooks/useContext';
+import { ContextChip } from '../ContextChip';
+import { SlashCommandPanel } from '../SlashCommandPanel';
+import { useSlashCommandPanel } from '../../hooks/useSlashCommandPanel';
+import { PanelItem } from '../../types/slashCommandPanel';
+import { InputMode, INPUT_MODES, ActiveFile } from '../../types/chatInput';
+import { useInputMode } from './hooks/useInputMode';
+import { InputModeTag } from './InputModeTag';
+import { FileTag } from './FileTag';
+import { ActionButtons } from './ActionButtons';
 
 type SessionState = 'idle' | 'streaming' | 'waiting_permission' | 'has_diff' | 'error';
 
@@ -26,11 +31,15 @@ interface ChatInputProps {
   onClear?: () => void;
   onCompact?: () => void;
   sessionState?: SessionState;
-  // New props for slash command panel
   currentModel?: string;
   thinkingEnabled?: boolean;
   onToggleThinking?: (enabled: boolean) => void;
   version?: string;
+  // 새로운 props
+  inputMode?: InputMode;
+  onInputModeChange?: (mode: InputMode) => void;
+  activeFiles?: ActiveFile[];
+  onFileToggle?: (path: string) => void;
 }
 
 export function ChatInput({
@@ -39,7 +48,7 @@ export function ChatInput({
   onSubmit,
   isStreaming = false,
   isStopped = false,
-  placeholder = "Queue another message...",
+  placeholder = '⌘ Esc to focus or unfocus Claude',
   disabled = false,
   attachedContexts = [],
   onRemoveContext,
@@ -51,11 +60,15 @@ export function ChatInput({
   onHelp,
   onClear,
   onCompact,
-  sessionState = 'idle',
+  sessionState: _sessionState = 'idle',
   currentModel,
   thinkingEnabled,
   onToggleThinking,
   version,
+  inputMode: externalInputMode,
+  onInputModeChange,
+  activeFiles = [],
+  onFileToggle,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [history, setHistory] = useState<string[]>([]);
@@ -65,8 +78,26 @@ export function ChatInput({
   const [, setAutocompleteQuery] = useState('');
   const [, setAtSymbolPosition] = useState<number | null>(null);
   const [showSlashCommands, setShowSlashCommands] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
-  // New slash command panel hook
+  // 내부 모드 상태 (외부에서 제어 가능)
+  const { mode: internalMode, cycleMode: internalCycleMode } = useInputMode('ask_before_edit');
+  const mode = externalInputMode ?? internalMode;
+
+  const cycleMode = useCallback(() => {
+    if (onInputModeChange) {
+      const currentIndex = ['plan', 'ask_before_edit', 'auto_edit', 'bypass'].indexOf(mode);
+      const nextIndex = (currentIndex + 1) % 4;
+      const nextMode = ['plan', 'ask_before_edit', 'auto_edit', 'bypass'][nextIndex] as InputMode;
+      onInputModeChange(nextMode);
+    } else {
+      internalCycleMode();
+    }
+  }, [mode, onInputModeChange, internalCycleMode]);
+
+  const modeConfig = INPUT_MODES[mode];
+
+  // Slash command panel hook
   const {
     filteredSections,
     selectedSectionIndex,
@@ -108,6 +139,13 @@ export function ChatInput({
   }, []);
 
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
+    // Shift+Tab: 모드 전환
+    if (e.shiftKey && e.key === 'Tab') {
+      e.preventDefault();
+      cycleMode();
+      return;
+    }
+
     // Slash command panel navigation
     if (showSlashCommands) {
       if (e.key === 'ArrowUp') {
@@ -177,7 +215,7 @@ export function ChatInput({
         onChange(history[newIndex]);
       }
     }
-  }, [disabled, isStreaming, value, onSubmit, history, historyIndex, unsavedDraft, onChange, showSlashCommands, moveSelection, executeSelectedItem, resetSelection]);
+  }, [disabled, isStreaming, value, onSubmit, history, historyIndex, unsavedDraft, onChange, showSlashCommands, moveSelection, executeSelectedItem, resetSelection, cycleMode]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
@@ -224,11 +262,21 @@ export function ChatInput({
     resetSelection();
   }, [onChange, resetSelection]);
 
+  const handleSlashButtonClick = useCallback(() => {
+    if (!showSlashCommands) {
+      onChange('/');
+      setShowSlashCommands(true);
+      setFilterQuery('');
+      resetSelection();
+      textareaRef.current?.focus();
+    }
+  }, [showSlashCommands, onChange, setFilterQuery, resetSelection]);
+
   return (
-    <div className="border-t border-zinc-800 bg-zinc-950">
+    <div className="px-3 pb-3 pt-2">
       {/* Context chips */}
       {attachedContexts.length > 0 && (
-        <div className="border-b border-zinc-800 px-3 py-2">
+        <div className="mb-2">
           <div className="flex flex-wrap gap-2">
             {attachedContexts.map(context => (
               <ContextChip
@@ -241,20 +289,29 @@ export function ChatInput({
         </div>
       )}
 
-      <div className="relative">
+      {/* 메인 인풋 컨테이너 */}
+      <div
+        className={`
+          relative rounded-lg border bg-zinc-900/80
+          transition-colors duration-150
+          ${isFocused && mode !== 'plan' ? modeConfig.borderColor : 'border-zinc-700'}
+        `}
+      >
         {/* Slash command panel */}
         {showSlashCommands && (
-          <SlashCommandPanel
-            sections={filteredSections}
-            selectedSectionIndex={selectedSectionIndex}
-            selectedItemIndex={selectedItemIndex}
-            onItemClick={selectItem}
-            onItemExecute={handlePanelItemExecute}
-            onClose={() => {
-              setShowSlashCommands(false);
-              resetSelection();
-            }}
-          />
+          <div className="absolute bottom-full left-0 mb-2 w-full z-20">
+            <SlashCommandPanel
+              sections={filteredSections}
+              selectedSectionIndex={selectedSectionIndex}
+              selectedItemIndex={selectedItemIndex}
+              onItemClick={selectItem}
+              onItemExecute={handlePanelItemExecute}
+              onClose={() => {
+                setShowSlashCommands(false);
+                resetSelection();
+              }}
+            />
+          </div>
         )}
 
         {/* File autocomplete popup */}
@@ -276,98 +333,53 @@ export function ChatInput({
           </div>
         )}
 
-        <div className="flex items-center">
-          {/* 좌측: 상태 표시 */}
-          <div className="flex items-center gap-2 px-3 py-3 text-xs border-r border-zinc-800 whitespace-nowrap">
-            {sessionState === 'streaming' && (
-              <>
-                <span className="text-blue-500">●</span>
-                <span className="text-blue-400">Generating</span>
-              </>
-            )}
-            {sessionState === 'waiting_permission' && (
-              <>
-                <span className="text-amber-500">⚠</span>
-                <span className="text-amber-400">Waiting</span>
-              </>
-            )}
-            {sessionState === 'has_diff' && (
-              <>
-                <span className="text-green-500">✓</span>
-                <span className="text-green-400">Has diff</span>
-              </>
-            )}
-            {sessionState === 'error' && (
-              <>
-                <span className="text-red-500">✕</span>
-                <span className="text-red-400">Error</span>
-              </>
-            )}
-            {sessionState === 'idle' && (
-              <>
-                <span className="text-zinc-500">○</span>
-                <span className="text-zinc-500">Idle</span>
-              </>
-            )}
-          </div>
-
-          {/* 중앙: 입력창 */}
+        {/* Textarea 영역 */}
+        <div className="pt-2.5 pb-1.5">
           <textarea
             ref={textareaRef}
             value={value}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             placeholder={placeholder}
             disabled={disabled || isStreaming}
             rows={1}
-            className="flex-1 resize-none bg-transparent px-3 py-3 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none disabled:opacity-50"
-            style={{ minHeight: '44px', maxHeight: '200px' }}
+            className="w-full px-3 resize-none bg-transparent text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none disabled:opacity-50"
+            style={{ minHeight: '20px', maxHeight: '200px' }}
           />
+        </div>
 
-          {/* 우측: 파일 첨부 + 전송 버튼 */}
-          <div className="flex items-center px-2 gap-1">
-            <button
-              className="flex items-center justify-center w-8 h-8 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 rounded transition-colors"
-              aria-label="Attach file"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
-              </svg>
-            </button>
+        {/* 구분선 */}
+        <div className="border-t border-zinc-700/50" />
 
-            {isStreaming && onStop ? (
-              <button
-                onClick={onStop}
-                className="flex items-center justify-center w-8 h-8 text-red-500 hover:text-red-400 hover:bg-zinc-800 rounded transition-colors"
-                aria-label="Stop generating"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
-                  <rect x="5" y="5" width="6" height="6" rx="0.5" />
-                </svg>
-              </button>
-            ) : isStopped && onContinue ? (
-              <button
-                onClick={onContinue}
-                className="flex items-center justify-center w-8 h-8 text-blue-500 hover:text-blue-400 hover:bg-zinc-800 rounded transition-colors"
-                aria-label="Continue generating"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 3l8 5-8 5V3z" />
-                </svg>
-              </button>
-            ) : (
-              <button
-                onClick={onSubmit}
-                disabled={disabled || isStreaming || !value.trim()}
-                className="flex items-center justify-center w-8 h-8 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 rounded transition-colors disabled:text-zinc-700 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                aria-label="Send message"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M2 8l12-6-6 12-1-6-5-0z" />
-                </svg>
-              </button>
-            )}
+        {/* 하단 바: 모드 태그 + 파일 태그 + 액션 버튼 */}
+        <div className="flex items-center justify-between pl-3 pr-1 py-1">
+          {/* 좌측: 모드 태그 + 파일 태그들 */}
+          <div className="flex items-center gap-4">
+            <InputModeTag mode={mode} onClick={cycleMode} />
+
+            {activeFiles.map((file) => (
+              <FileTag
+                key={file.path}
+                file={file}
+                onClick={onFileToggle}
+              />
+            ))}
           </div>
+
+          {/* 우측: 액션 버튼들 */}
+          <ActionButtons
+            mode={mode}
+            isStreaming={isStreaming}
+            isStopped={isStopped}
+            disabled={disabled}
+            hasValue={!!value.trim()}
+            onSlashCommand={handleSlashButtonClick}
+            onSubmit={onSubmit}
+            onStop={onStop}
+            onContinue={onContinue}
+          />
         </div>
       </div>
     </div>
