@@ -354,7 +354,7 @@ export function ChatInput({
         <div className="border-t border-zinc-700/50" />
 
         {/* 하단 바: 모드 태그 + 파일 태그 + 액션 버튼 */}
-        <div className="flex items-center justify-between pl-3 pr-1 py-1">
+        <div className="flex items-center justify-between pl-2 pr-1 py-1">
           {/* 좌측: 모드 태그 + 파일 태그들 */}
           <div className="flex items-center gap-4">
             <InputModeTag mode={mode} onClick={cycleMode} />

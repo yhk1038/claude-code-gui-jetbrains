@@ -12,13 +12,15 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "streamdown": "^2.1.0",
-    "react-diff-view": "^3.2.1",
-    "unidiff": "^1.0.4",
+    "@heroicons/react": "^2.2.0",
+    "@vscode/codicons": "^0.0.44",
     "class-transformer": "^0.5.1",
-    "reflect-metadata": "^0.2.2"
+    "react": "^18.3.1",
+    "react-diff-view": "^3.2.1",
+    "react-dom": "^18.3.1",
+    "reflect-metadata": "^0.2.2",
+    "streamdown": "^2.1.0",
+    "unidiff": "^1.0.4"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",

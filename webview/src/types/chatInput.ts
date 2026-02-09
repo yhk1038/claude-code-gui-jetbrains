@@ -10,7 +10,7 @@ export type InputMode =
 
 export interface InputModeConfig {
   id: InputMode;
-  icon: string;           // 아이콘 문자 ("II", "»", "/", "▶▶")
+  icon: string;           // codicon 아이콘 이름 (예: 'tasklist', 'zap')
   label: string;          // 표시 라벨
   description: string;    // 툴팁 설명
   borderColor: string;    // Tailwind 테두리 색상 클래스
@@ -22,7 +22,7 @@ export interface InputModeConfig {
 export const INPUT_MODES: Record<InputMode, InputModeConfig> = {
   plan: {
     id: 'plan',
-    icon: 'II',
+    icon: 'tasklist',
     label: 'Plan mode',
     description: 'Claude will explore the code and present a plan before editing. Click, or press Shift+Tab, to switch modes.',
     borderColor: 'border-zinc-700',
@@ -32,7 +32,7 @@ export const INPUT_MODES: Record<InputMode, InputModeConfig> = {
   },
   bypass: {
     id: 'bypass',
-    icon: '»',
+    icon: 'zap',
     label: 'Bypass permissions',
     description: 'Claude Code will not ask for your approval before running potentially dangerous commands.',
     borderColor: 'border-red-500/70',
@@ -42,7 +42,7 @@ export const INPUT_MODES: Record<InputMode, InputModeConfig> = {
   },
   ask_before_edit: {
     id: 'ask_before_edit',
-    icon: '/',
+    icon: 'comment-discussion',
     label: 'Ask before edits',
     description: 'Claude will ask before each edit. Click, or press Shift+Tab, to switch modes.',
     borderColor: 'border-amber-500/70',
@@ -52,7 +52,7 @@ export const INPUT_MODES: Record<InputMode, InputModeConfig> = {
   },
   auto_edit: {
     id: 'auto_edit',
-    icon: '▶▶',
+    icon: 'robot',
     label: 'Edit automatically',
     description: 'Claude will edit your selected text or the whole file. Click, or press Shift+Tab, to switch modes.',
     borderColor: 'border-green-500/70',
