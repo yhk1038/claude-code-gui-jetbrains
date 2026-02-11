@@ -12,7 +12,11 @@ class ClaudeCodeSettings : PersistentStateComponent<ClaudeCodeSettings.State> {
     data class State(
         var cliPath: String? = null,
         var permissionMode: String = "ALWAYS_ASK",
-        var autoApplyLowRisk: Boolean = false
+        var autoApplyLowRisk: Boolean = false,
+        var theme: String = "system",
+        var fontSize: Int = 13,
+        var debugMode: Boolean = false,
+        var logLevel: String = "info"
     )
 
     private var state = State()

@@ -9,7 +9,7 @@ interface UseThemeReturn {
 }
 
 export function useTheme(): UseThemeReturn {
-  const [theme, setThemeState] = useState<ThemeMode>('light');
+  const [theme, setThemeState] = useState<ThemeMode>(ThemeMode.LIGHT);
 
   // Sync with IDE theme via CSS variables
   useEffect(() => {
@@ -20,7 +20,7 @@ export function useTheme(): UseThemeReturn {
                        .getPropertyValue('--ide-bg')
                        .trim()
                        .match(/^#[0-3]/); // Dark colors start with 0-3
-      setThemeState(isDark ? 'dark' : 'light');
+      setThemeState(isDark ? ThemeMode.DARK : ThemeMode.LIGHT);
     };
 
     detectTheme();
@@ -37,7 +37,7 @@ export function useTheme(): UseThemeReturn {
 
   const setTheme = useCallback((newTheme: ThemeMode) => {
     setThemeState(newTheme);
-    if (newTheme === 'dark') {
+    if (newTheme === ThemeMode.DARK) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
@@ -45,10 +45,10 @@ export function useTheme(): UseThemeReturn {
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+    setTheme(theme === ThemeMode.DARK ? ThemeMode.LIGHT : ThemeMode.DARK);
   }, [theme, setTheme]);
 
-  const isDark = theme === 'dark';
+  const isDark = theme === ThemeMode.DARK;
 
   return {
     theme,

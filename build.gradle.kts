@@ -1,6 +1,6 @@
 plugins {
     id("org.jetbrains.kotlin.jvm") version "2.1.0"
-    id("org.jetbrains.intellij.platform") version "2.2.1"
+    id("org.jetbrains.intellij.platform") version "2.10.4"
     id("org.jetbrains.kotlin.plugin.serialization") version "2.1.0"
 }
 
@@ -16,10 +16,9 @@ repositories {
 
 dependencies {
     intellijPlatform {
-        val platformType = providers.gradleProperty("platformType").getOrElse("IC")
-        val platformVersion = providers.gradleProperty("platformVersion").getOrElse("2024.3")
+        val platformVersion = providers.gradleProperty("platformVersion").getOrElse("2025.3.2")
 
-        create(platformType, platformVersion)
+        intellijIdea(platformVersion)
     }
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
@@ -41,25 +40,15 @@ intellijPlatform {
             url = "https://github.com/yhk1038"
         }
         ideaVersion {
-            sinceBuild = "243"
-            untilBuild = "252.*"
+            sinceBuild = "253"
+            untilBuild = "253.*"
         }
     }
 }
 
 tasks {
     wrapper {
-        gradleVersion = "8.11.1"
-    }
-
-    // Disable instrumentation for IDEs without Java compiler (WS, PS, PY, RD, RM)
-    named("instrumentCode") {
-        val platformType = providers.gradleProperty("platformType").getOrElse("IC")
-        enabled = platformType !in listOf("WS", "PS", "PY", "RD", "RM")
-    }
-    named("instrumentTestCode") {
-        val platformType = providers.gradleProperty("platformType").getOrElse("IC")
-        enabled = platformType !in listOf("WS", "PS", "PY", "RD", "RM")
+        gradleVersion = "8.13"
     }
 
     // Enable dev mode for runIde (uses Vite dev server)

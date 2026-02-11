@@ -28,9 +28,13 @@
   --ide-text-secondary: #71717a;
 }
 
-body {
+html, body, #root {
+  height: 100%;
   margin: 0;
   padding: 0;
+}
+
+body {
   font-family: var(--ide-font-ui);
   background-color: var(--ide-bg);
   color: var(--ide-fg);

@@ -13,8 +13,6 @@ export * from '../dto';
 
 import type { AnyContentBlockDto } from '../dto';
 
-export type ThemeMode = 'light' | 'dark';
-
 /**
  * Message interface - supports both legacy string content and new ContentBlock array
  */
@@ -142,3 +140,6 @@ export function getToolUses(message: Message): Array<{ id: string; name: string;
       input: block.input,
     }));
 }
+
+// Settings types
+export * from './settings';

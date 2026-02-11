@@ -13,3 +13,4 @@ export { SessionList } from './SessionList';
 export { SessionItem } from './SessionItem';
 export { SessionHeader } from './SessionHeader';
 export { ContextChip } from './ContextChip';
+export { Settings } from './Settings';
