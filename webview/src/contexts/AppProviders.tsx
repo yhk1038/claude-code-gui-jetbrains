@@ -5,6 +5,9 @@ import { SessionProvider, useSessionContext } from './SessionContext';
 import { ChatProvider, useChatContext } from './ChatContext';
 import { ThemeProvider } from './ThemeContext';
 import { getTextContent, isContentBlockArray } from '../types';
+import { Router } from '../router';
+import { SettingsProvider } from './SettingsContext';
+import { ChatInputFocusProvider } from './ChatInputFocusContext';
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -78,15 +81,21 @@ function SessionLoader({ children }: { children: ReactNode }) {
 export function AppProviders({ children }: AppProvidersProps) {
   return (
     <BridgeProvider>
-      <ApiProvider>
-        <SessionProvider>
-          <ChatProvider>
-            <ThemeProvider>
-              <SessionLoader>{children}</SessionLoader>
-            </ThemeProvider>
-          </ChatProvider>
-        </SessionProvider>
-      </ApiProvider>
+      <Router>
+        <ApiProvider>
+          <SessionProvider>
+            <ChatProvider>
+              <SettingsProvider>
+                <ThemeProvider>
+                  <ChatInputFocusProvider>
+                    <SessionLoader>{children}</SessionLoader>
+                  </ChatInputFocusProvider>
+                </ThemeProvider>
+              </SettingsProvider>
+            </ChatProvider>
+          </SessionProvider>
+        </ApiProvider>
+      </Router>
     </BridgeProvider>
   );
 }

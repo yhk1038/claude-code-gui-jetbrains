@@ -10,6 +10,7 @@ import { InputModeTag } from './InputModeTag';
 import { FileTag } from './FileTag';
 import { ActionButtons } from './ActionButtons';
 import { getAdapter } from '@/adapters';
+import { useChatInputFocus } from '../../contexts/ChatInputFocusContext';
 
 type SessionState = 'idle' | 'streaming' | 'waiting_permission' | 'has_diff' | 'error';
 
@@ -74,6 +75,7 @@ export function ChatInput({
   sessionId,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { registerRef, focus: focusInput } = useChatInputFocus();
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
   const [unsavedDraft, setUnsavedDraft] = useState<string>('');
@@ -131,6 +133,12 @@ export function ChatInput({
     ],
   });
 
+  // Register textarea ref with context
+  useEffect(() => {
+    registerRef(textareaRef.current);
+    return () => registerRef(null);
+  }, [registerRef]);
+
   // Auto-resize textarea
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -141,10 +149,12 @@ export function ChatInput({
     textarea.style.height = `${newHeight}px`;
   }, [value]);
 
-  // Focus on mount and on session change
+  // Focus on session change or when input becomes enabled
   useEffect(() => {
-    textareaRef.current?.focus();
-  }, [sessionId]);
+    if (!disabled) {
+      focusInput();
+    }
+  }, [sessionId, disabled, focusInput]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
     // Shift+Tab: 모드 전환
