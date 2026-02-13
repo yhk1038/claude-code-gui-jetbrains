@@ -1,3 +1,5 @@
+import type { InputMode } from './chatInput';
+
 /**
  * 설정 키 정의 - Kotlin ClaudeCodeSettings.State와 동기화
  */
@@ -16,6 +18,9 @@ export enum SettingKey {
   // Advanced
   DEBUG_MODE = 'debugMode',
   LOG_LEVEL = 'logLevel',
+
+  // Input
+  INITIAL_INPUT_MODE = 'initialInputMode',
 }
 
 /**
@@ -57,6 +62,7 @@ export interface SettingsState {
   [SettingKey.FONT_SIZE]: number;
   [SettingKey.DEBUG_MODE]: boolean;
   [SettingKey.LOG_LEVEL]: LogLevel;
+  [SettingKey.INITIAL_INPUT_MODE]: InputMode;
 }
 
 /**
@@ -70,4 +76,5 @@ export const DEFAULT_SETTINGS: SettingsState = {
   [SettingKey.FONT_SIZE]: 13,
   [SettingKey.DEBUG_MODE]: false,
   [SettingKey.LOG_LEVEL]: LogLevel.INFO,
+  [SettingKey.INITIAL_INPUT_MODE]: 'ask_before_edit',
 };

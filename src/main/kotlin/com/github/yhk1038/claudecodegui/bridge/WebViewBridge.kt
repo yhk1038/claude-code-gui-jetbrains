@@ -466,6 +466,7 @@ class WebViewBridge(
                 put("fontSize", state.fontSize)
                 put("debugMode", state.debugMode)
                 put("logLevel", state.logLevel)
+                put("initialInputMode", state.initialInputMode)
             }
         }
     }
@@ -484,12 +485,56 @@ class WebViewBridge(
         try {
             when (key) {
                 "cliPath" -> state.cliPath = payload["value"]?.jsonPrimitive?.contentOrNull
-                "permissionMode" -> state.permissionMode = payload["value"]!!.jsonPrimitive.content
-                "autoApplyLowRisk" -> state.autoApplyLowRisk = payload["value"]!!.jsonPrimitive.boolean
-                "theme" -> state.theme = payload["value"]!!.jsonPrimitive.content
-                "fontSize" -> state.fontSize = payload["value"]!!.jsonPrimitive.int
-                "debugMode" -> state.debugMode = payload["value"]!!.jsonPrimitive.boolean
-                "logLevel" -> state.logLevel = payload["value"]!!.jsonPrimitive.content
+                "permissionMode" -> {
+                    val value = payload["value"]?.jsonPrimitive?.contentOrNull
+                        ?: return errorResponse("Missing value for permissionMode")
+                    if (value !in listOf("ALWAYS_ASK", "AUTO_APPROVE_SAFE", "AUTO_APPROVE_ALL")) {
+                        return errorResponse("Invalid permissionMode: $value")
+                    }
+                    state.permissionMode = value
+                }
+                "autoApplyLowRisk" -> {
+                    val value = payload["value"]?.jsonPrimitive?.booleanOrNull
+                        ?: return errorResponse("Missing or invalid value for autoApplyLowRisk")
+                    state.autoApplyLowRisk = value
+                }
+                "theme" -> {
+                    val value = payload["value"]?.jsonPrimitive?.contentOrNull
+                        ?: return errorResponse("Missing value for theme")
+                    if (value !in listOf("system", "light", "dark")) {
+                        return errorResponse("Invalid theme: $value")
+                    }
+                    state.theme = value
+                }
+                "fontSize" -> {
+                    val value = payload["value"]?.jsonPrimitive?.intOrNull
+                        ?: return errorResponse("Missing or invalid value for fontSize")
+                    if (value !in 8..32) {
+                        return errorResponse("fontSize out of range (8-32): $value")
+                    }
+                    state.fontSize = value
+                }
+                "debugMode" -> {
+                    val value = payload["value"]?.jsonPrimitive?.booleanOrNull
+                        ?: return errorResponse("Missing or invalid value for debugMode")
+                    state.debugMode = value
+                }
+                "logLevel" -> {
+                    val value = payload["value"]?.jsonPrimitive?.contentOrNull
+                        ?: return errorResponse("Missing value for logLevel")
+                    if (value !in listOf("debug", "info", "warn", "error")) {
+                        return errorResponse("Invalid logLevel: $value")
+                    }
+                    state.logLevel = value
+                }
+                "initialInputMode" -> {
+                    val value = payload["value"]?.jsonPrimitive?.contentOrNull
+                        ?: return errorResponse("Missing value for initialInputMode")
+                    if (value !in listOf("plan", "bypass", "ask_before_edit", "auto_edit")) {
+                        return errorResponse("Invalid initialInputMode: $value")
+                    }
+                    state.initialInputMode = value
+                }
                 else -> return buildJsonObject {
                     put("status", "error")
                     put("error", "Unknown setting key: $key")
@@ -506,6 +551,11 @@ class WebViewBridge(
         return buildJsonObject {
             put("status", "ok")
         }
+    }
+
+    private fun errorResponse(message: String): JsonObject = buildJsonObject {
+        put("status", "error")
+        put("error", message)
     }
 
     /**

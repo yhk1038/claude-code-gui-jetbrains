@@ -16,7 +16,8 @@ class ClaudeCodeSettings : PersistentStateComponent<ClaudeCodeSettings.State> {
         var theme: String = "system",
         var fontSize: Int = 13,
         var debugMode: Boolean = false,
-        var logLevel: String = "info"
+        var logLevel: String = "info",
+        var initialInputMode: String = "ask_before_edit"
     )
 
     private var state = State()

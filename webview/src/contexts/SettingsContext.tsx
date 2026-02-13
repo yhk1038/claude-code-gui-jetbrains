@@ -1,11 +1,11 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import { SettingKey, SettingsState, DEFAULT_SETTINGS } from '@/types/settings';
+import { SettingsState, DEFAULT_SETTINGS } from '@/types/settings';
 import { useBridge } from '@/hooks/useBridge';
 
 interface SettingsContextValue {
   settings: SettingsState;
   isLoading: boolean;
-  updateSetting: <K extends SettingKey>(key: K, value: SettingsState[K]) => Promise<void>;
+  updateSetting: <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => Promise<void>;
   refreshSettings: () => Promise<void>;
 }
 
@@ -22,22 +22,29 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const { isConnected, send } = useBridge();
 
-  // 설정 로드
-  const loadSettings = useCallback(async () => {
-    try {
-      // Kotlin 브릿지 시도
-      if (isConnected) {
+  // Bridge에서 설정 로드
+  const loadFromBridge = useCallback(async (): Promise<boolean> => {
+    const maxRetries = 3;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
         const response = await send('GET_SETTINGS', {});
         if (response?.settings) {
           setSettings(response.settings as SettingsState);
-          return;
+          return true;
+        }
+      } catch (error) {
+        if (attempt < maxRetries - 1) {
+          await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
+        } else {
+          console.warn('Failed to load settings from bridge after retries');
         }
       }
-    } catch (error) {
-      console.warn('Failed to load settings from bridge, using localStorage fallback');
     }
+    return false;
+  }, [send]);
 
-    // Fallback: localStorage
+  // localStorage에서 설정 로드
+  const loadFromLocalStorage = useCallback(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
@@ -47,42 +54,68 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     } catch (error) {
       console.warn('Failed to load settings from localStorage');
     }
-  }, [isConnected, send]);
+  }, []);
 
-  // 초기 로드
+  // 초기: localStorage에서 즉시 로드 (flash 방지)
   useEffect(() => {
-    loadSettings().finally(() => setIsLoading(false));
-  }, [loadSettings]);
+    loadFromLocalStorage();
+    setIsLoading(false);
+  }, [loadFromLocalStorage]);
+
+  // Bridge 연결 시: Kotlin 설정으로 덮어씀
+  useEffect(() => {
+    if (isConnected) {
+      setIsLoading(true);
+      loadFromBridge().finally(() => setIsLoading(false));
+    }
+  }, [isConnected, loadFromBridge]);
 
   // 개별 설정 업데이트
-  const updateSetting = useCallback(async <K extends SettingKey>(key: K, value: SettingsState[K]) => {
+  const updateSetting = useCallback(async <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => {
+    const previousSettings = settings;
     const newSettings = { ...settings, [key]: value };
-    setSettings(newSettings);
+    setSettings(newSettings); // optimistic update
 
     try {
-      // Kotlin 브릿지 시도
       if (isConnected) {
-        await send('SAVE_SETTINGS', { key, value });
+        const response = await send('SAVE_SETTINGS', { key, value });
+        if (response?.status === 'error') {
+          throw new Error(response.error || 'Save failed');
+        }
+        // Bridge 성공 시 localStorage에도 동기화 (다음 로드 시 빠른 복원용)
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
+        } catch { /* ignore localStorage error */ }
         return;
       }
     } catch (error) {
-      console.warn('Failed to save setting to bridge, using localStorage fallback');
+      console.warn('Failed to save setting via bridge, falling back to localStorage:', error);
+      // Bridge 실패 시 localStorage에라도 저장 (optimistic update 유지)
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
+      } catch { /* ignore */ }
+      return;
     }
 
-    // Fallback: localStorage
+    // Bridge 미연결: localStorage fallback
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
     } catch (error) {
       console.warn('Failed to save settings to localStorage');
+      setSettings(previousSettings);
     }
   }, [settings, isConnected, send]);
 
   // 설정 새로고침
   const refreshSettings = useCallback(async () => {
     setIsLoading(true);
-    await loadSettings();
+    if (isConnected) {
+      await loadFromBridge();
+    } else {
+      loadFromLocalStorage();
+    }
     setIsLoading(false);
-  }, [loadSettings]);
+  }, [isConnected, loadFromBridge, loadFromLocalStorage]);
 
   return (
     <SettingsContext.Provider value={{ settings, isLoading, updateSetting, refreshSettings }}>

@@ -10,6 +10,8 @@ import { useSlashCommandPanelConfig } from './hooks/useSlashCommandPanelConfig';
 import { useInputHistory } from './hooks/useInputHistory';
 import { useSlashCommandInteraction } from './hooks/useSlashCommandInteraction';
 import { useTextareaAutoResize } from './hooks/useTextareaAutoResize';
+import { useSettings } from '@/contexts/SettingsContext';
+import { SettingKey } from '@/types/settings';
 
 type SessionState = 'idle' | 'streaming' | 'waiting_permission' | 'has_diff' | 'error';
 
@@ -69,9 +71,12 @@ export function ChatInput({
   const { textareaRef } = useChatInputFocus();
   const inputHistory = useInputHistory();
   const [isFocused, setIsFocused] = useState(false);
+  const { settings } = useSettings();
 
   // 내부 모드 상태 (외부에서 제어 가능)
-  const { mode: internalMode, cycleMode: internalCycleMode } = useInputMode('ask_before_edit');
+  const { mode: internalMode, cycleMode: internalCycleMode } = useInputMode(
+    settings[SettingKey.INITIAL_INPUT_MODE]
+  );
   const mode = externalInputMode ?? internalMode;
 
   const cycleMode = useCallback(() => {
