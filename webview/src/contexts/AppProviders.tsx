@@ -2,7 +2,7 @@ import { ReactNode, useEffect } from 'react';
 import { BridgeProvider, useBridgeContext } from './BridgeContext';
 import { ApiProvider, useApiContext } from './ApiContext';
 import { SessionProvider, useSessionContext } from './SessionContext';
-import { ChatProvider, useChatContext } from './ChatContext';
+import { ChatStreamProvider, useChatStreamContext } from './ChatStreamContext';
 import { ThemeProvider } from './ThemeContext';
 import { getTextContent, isContentBlockArray } from '../types';
 import { Router } from '../router';
@@ -20,7 +20,7 @@ function SessionLoader({ children }: { children: ReactNode }) {
   const { isConnected } = useApiContext();
   const { subscribe } = useBridgeContext();
   const { loadSessions } = useSessionContext();
-  const { chat } = useChatContext();
+  const { loadMessages } = useChatStreamContext();
 
   useEffect(() => {
     if (isConnected) {
@@ -59,10 +59,10 @@ function SessionLoader({ children }: { children: ReactNode }) {
         });
 
         console.log('[AppProviders] Session loaded, injecting messages:', messages.length);
-        chat.loadMessages(messages);
+        loadMessages(messages);
       }
     });
-  }, [subscribe, chat]);
+  }, [subscribe, loadMessages]);
 
   return <>{children}</>;
 }
@@ -74,7 +74,7 @@ function SessionLoader({ children }: { children: ReactNode }) {
  * 1. BridgeProvider - Kotlin IPC bridge (foundation)
  * 2. ApiProvider - ClaudeCodeApi initialization (depends on Bridge)
  * 3. SessionProvider - Session management (depends on Bridge)
- * 4. ChatProvider - Chat state + Diffs + Tools (depends on Bridge + Session)
+ * 4. ChatStreamProvider - Chat state + Streaming + Diffs + Tools (depends on Bridge + Session)
  * 5. ThemeProvider - Theme management (independent)
  * 6. SessionLoader - Auto-load sessions when bridge connects
  */
@@ -84,7 +84,7 @@ export function AppProviders({ children }: AppProvidersProps) {
       <Router>
         <ApiProvider>
           <SessionProvider>
-            <ChatProvider>
+            <ChatStreamProvider>
               <SettingsProvider>
                 <ThemeProvider>
                   <ChatInputFocusProvider>
@@ -92,7 +92,7 @@ export function AppProviders({ children }: AppProvidersProps) {
                   </ChatInputFocusProvider>
                 </ThemeProvider>
               </SettingsProvider>
-            </ChatProvider>
+            </ChatStreamProvider>
           </SessionProvider>
         </ApiProvider>
       </Router>

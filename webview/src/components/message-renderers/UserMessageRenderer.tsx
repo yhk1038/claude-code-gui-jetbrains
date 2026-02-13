@@ -13,7 +13,6 @@ interface UserMessageRendererProps {
 export const UserMessageRenderer: React.FC<UserMessageRendererProps> = ({ message }) => {
   const { copied, copy } = useCopyToClipboard();
   const parsedContent = parseUserContent(getTextContent(message));
-  console.log('message', message);
 
   const handleCopy = () => {
     copy(parsedContent.text);

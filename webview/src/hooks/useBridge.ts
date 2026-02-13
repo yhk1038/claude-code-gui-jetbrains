@@ -55,6 +55,7 @@ export function useBridge(): UseBridgeReturn {
     // Dispatch to subscribers
     const handlers = handlersRef.current.get(message.type);
     if (handlers) {
+      console.debug('[useBridge] dispatch:', message.type, '→', handlers.size, 'handlers');
       handlers.forEach(handler => {
         try {
           handler(message);
@@ -266,6 +267,7 @@ export function useBridge(): UseBridgeReturn {
 
   // Subscribe to messages of a specific type
   const subscribe = useCallback((type: string, handler: MessageHandler) => {
+    console.debug('[useBridge] subscribe:', type);
     if (!handlersRef.current.has(type)) {
       handlersRef.current.set(type, new Set());
     }

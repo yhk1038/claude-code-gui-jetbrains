@@ -60,9 +60,13 @@ class ProcessManager(
 
             val commandLine = GeneralCommandLine().apply {
                 exePath = cliPath
-                addParameter("code")
+                addParameter("-p")
                 addParameter("--output-format")
                 addParameter("stream-json")
+                addParameter("--input-format")
+                addParameter("stream-json")
+                addParameter("--verbose")
+                addParameter("--include-partial-messages")
 
                 // Set working directory to project base path
                 setWorkDirectory(project.basePath)

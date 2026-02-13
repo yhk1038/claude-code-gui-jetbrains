@@ -1,19 +1,13 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useDocumentTitle } from '../hooks';
-import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
-import { ToolCard } from './ToolCard';
 import { SessionHeader } from './SessionHeader';
-import { ProjectSelector } from './ProjectSelector';
+import { ChatMessageArea } from './ChatMessageArea';
 import { useSessionContext } from '../contexts/SessionContext';
-import { useChatContext } from '../contexts/ChatContext';
+import { useChatStreamContext } from '../contexts/ChatStreamContext';
 
 export function ChatPanel() {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
-
-  // Use ChatContext instead of direct useChat() to share state with AppProviders
-  const { chat, tools, stop, continue: continueGeneration } = useChatContext();
+  // Use ChatStreamContext for unified state management
   const {
     messages,
     isStreaming,
@@ -22,7 +16,11 @@ export function ChatPanel() {
     setInput,
     handleSubmit,
     retry,
-  } = chat;
+    stop,
+    continue: continueGeneration,
+    streamingMessageId,
+    tools,
+  } = useChatStreamContext();
 
   const {
     currentSessionId,
@@ -32,7 +30,6 @@ export function ChatPanel() {
     setWorkingDirectory,
     openNewTab,
     openSettings,
-    createSessionWithMessage,
     switchSession,
     saveMessages,
   } = useSessionContext();
@@ -42,11 +39,6 @@ export function ChatPanel() {
     approveToolUse,
     denyToolUse,
   } = tools;
-
-  // Auto-scroll to bottom on new messages
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
 
   // Auto-save messages when they change (debounced in useSession)
   const lastMessage = messages[messages.length - 1];
@@ -60,8 +52,6 @@ export function ChatPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSessionId, messages.length, lastMessageId, lastMessageContent, isStreaming]);
 
-  const isEmpty = messages.length === 0;
-
   const handleOpenNewTab = useCallback(() => {
     openNewTab();
   }, [openNewTab]);
@@ -70,17 +60,11 @@ export function ChatPanel() {
     setWorkingDirectory(path);
   }, [setWorkingDirectory]);
 
-  // Handle submit with automatic session creation on first message
+  // Handle submit - session creation is handled by ChatStreamContext.sendMessage
   const handleSubmitWithSession = useCallback((e?: React.FormEvent) => {
     e?.preventDefault();
-
-    // Create session on first message if in temporary state
-    if (!currentSessionId && input.trim()) {
-      createSessionWithMessage(input.trim());
-    }
-
     handleSubmit(e);
-  }, [currentSessionId, input, createSessionWithMessage, handleSubmit]);
+  }, [handleSubmit]);
 
   const currentSession = sessions.find(s => s.id === currentSessionId);
 
@@ -105,44 +89,16 @@ export function ChatPanel() {
       </div>
 
       {/* Messages Area */}
-      <div
-        ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto pb-16"
-      >
-        {!workingDirectory ? (
-          // JetBrains에서는 kotlinBridge가 workingDirectory를 주입하므로 ProjectSelector 불필요
-          window.kotlinBridge ? (
-            <div className="h-full flex items-center justify-center">
-              <p className="text-zinc-500 text-sm">워킹 디렉토리를 불러오는 중...</p>
-            </div>
-          ) : (
-            <ProjectSelector onSelectProject={handleSelectProject} />
-          )
-        ) : isEmpty ? (
-          <div className="h-full flex items-center justify-center">
-            <p className="text-zinc-500 text-sm">메시지를 입력하세요</p>
-          </div>
-        ) : (
-          <div className="max-w-4xl mx-auto text-xs">
-            {messages.map((message) => (
-              <div key={message.id}>
-                <MessageBubble message={message} onRetry={retry} />
-
-                {/* Show tool cards for this message */}
-                {message.toolUses?.map((toolUse) => (
-                  <div key={toolUse.id} className="px-6">
-                    <ToolCard
-                      toolUse={toolUse}
-                      onApprove={approveToolUse}
-                      onDeny={denyToolUse}
-                    />
-                  </div>
-                ))}
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
+      <div className="flex-1 overflow-y-auto pb-16">
+        <ChatMessageArea
+          messages={messages}
+          streamingMessageId={streamingMessageId}
+          workingDirectory={workingDirectory}
+          onSelectProject={handleSelectProject}
+          onRetry={retry}
+          approveToolUse={approveToolUse}
+          denyToolUse={denyToolUse}
+        />
       </div>
 
       {/* Pending Permissions Banner */}

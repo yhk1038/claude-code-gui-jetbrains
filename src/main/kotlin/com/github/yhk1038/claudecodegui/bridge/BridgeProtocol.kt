@@ -18,16 +18,34 @@ data class StreamMessage(
 // System message (session initialization)
 @Serializable
 data class SystemMessage(
-    val session_id: String,
-    val timestamp: String,
-    val content: String
+    val type: String? = null,
+    val subtype: String? = null,
+    val session_id: String? = null,
+    val cwd: String? = null,
+    val tools: List<String>? = null,
+    val model: String? = null,
+    val timestamp: String? = null,
+    val content: String? = null
 )
 
 // Assistant message with content blocks
 @Serializable
 data class AssistantMessage(
-    val message_id: String,
-    val content: List<JsonElement>
+    val type: String? = null,
+    val message: ApiMessage? = null,
+    val session_id: String? = null,
+    val message_id: String? = null,
+    val content: List<JsonElement>? = null
+)
+
+// API message nested inside AssistantMessage
+@Serializable
+data class ApiMessage(
+    val id: String? = null,
+    val role: String? = null,
+    val content: List<JsonElement>? = null,
+    val model: String? = null,
+    val stop_reason: String? = null
 )
 
 // Content block types (parsed from JsonElement)
@@ -48,7 +66,9 @@ data class ToolUseBlock(
 // Stream event for content deltas
 @Serializable
 data class StreamEvent(
-    val event: String,
+    val type: String? = null,
+    val event: JsonElement? = null,
+    val session_id: String? = null,
     val index: Int? = null,
     val delta: JsonElement? = null
 )
@@ -79,9 +99,16 @@ data class ToolResult(
 // Result message (final)
 @Serializable
 data class ResultMessage(
-    val status: String,
+    val type: String? = null,
+    val subtype: String? = null,
+    val is_error: Boolean? = null,
+    val result: String? = null,
+    val session_id: String? = null,
+    val duration_ms: Long? = null,
+    val total_cost_usd: Double? = null,
+    val status: String? = null,
     val message_id: String? = null,
-    val usage: Usage? = null,
+    val usage: JsonElement? = null,
     val error: ErrorDetail? = null
 )
 
@@ -93,8 +120,8 @@ data class Usage(
 
 @Serializable
 data class ErrorDetail(
-    val code: String,
-    val message: String,
+    val code: String? = null,
+    val message: String? = null,
     val details: JsonObject? = null
 )
 

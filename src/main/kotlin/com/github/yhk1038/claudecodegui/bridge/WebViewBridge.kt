@@ -11,6 +11,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collect
 import kotlinx.serialization.json.*
 import java.util.UUID
 
@@ -43,6 +44,12 @@ class WebViewBridge(
     private var messageSubscription: Job? = null
     private var errorSubscription: Job? = null
 
+    // Local CLI process management (per-tab isolation)
+    private var processManager: ProcessManager? = null
+    private var streamParser: StreamParser? = null
+    private var parserJob: Job? = null
+    private var isServiceRunning = false
+
     init {
         setupCliListeners()
     }
@@ -51,17 +58,125 @@ class WebViewBridge(
      * Set up listeners for CLI service messages
      */
     private fun setupCliListeners() {
-        // Subscribe to parsed messages from CLI
-        messageSubscription = cliService.subscribeToMessages { message ->
+        // No longer subscribing to shared cliService.messageFlow
+        // Message subscriptions are set up in startCliProcess() when parser is created
+        logger.info("WebViewBridge initialized (per-tab process isolation)")
+    }
+
+    /**
+     * Start a per-tab CLI process
+     */
+    private suspend fun startCliProcess(): Result<Unit> {
+        if (isServiceRunning) {
+            logger.info("CLI process already running for this tab")
+            return Result.success(Unit)
+        }
+
+        val detectedPath = cliService.detectCliPath()
+        if (detectedPath == null) {
+            val error = ClaudeCliService.ServiceError.CliNotFound(
+                listOf("/usr/local/bin/claude", "/opt/homebrew/bin/claude", "~/.claude/bin/claude", "which claude (PATH)")
+            )
+            handleCliError(error)
+            return Result.failure(Exception("Claude CLI not found"))
+        }
+
+        if (!cliService.validateVersion(detectedPath)) {
+            val error = ClaudeCliService.ServiceError.InvalidVersion("unknown", "1.0.0")
+            handleCliError(error)
+            return Result.failure(Exception("Invalid CLI version"))
+        }
+
+        logger.info("Starting per-tab CLI process: $detectedPath")
+
+        val manager = ProcessManager(project, detectedPath, scope)
+        processManager = manager
+
+        val parser = StreamParser(scope)
+        streamParser = parser
+
+        parserJob = manager.connectToParser(parser, scope)
+
+        // Subscribe to parsed messages locally
+        messageSubscription = parser.subscribe { message ->
             handleCliMessage(message)
         }
 
-        // Subscribe to CLI service errors
-        errorSubscription = cliService.subscribeToErrors { error ->
-            handleCliError(error)
+        // Subscribe to parse errors locally
+        errorSubscription = scope.launch {
+            parser.errorFlow.collect { parseError ->
+                handleCliError(ClaudeCliService.ServiceError.ParseError(parseError.line, parseError.error))
+            }
         }
 
-        logger.info("WebViewBridge listeners initialized")
+        // Monitor process state
+        scope.launch {
+            manager.stateFlow.collect { state ->
+                when (state) {
+                    is ProcessManager.ProcessState.Running -> {
+                        isServiceRunning = true
+                        logger.info("Per-tab CLI process is running")
+                    }
+                    is ProcessManager.ProcessState.Stopped -> {
+                        isServiceRunning = false
+                        logger.info("Per-tab CLI process stopped")
+                    }
+                    is ProcessManager.ProcessState.Failed -> {
+                        isServiceRunning = false
+                        handleCliError(ClaudeCliService.ServiceError.ProcessFailed(state.reason, state.exitCode))
+                    }
+                    else -> {}
+                }
+            }
+        }
+
+        manager.start()
+        isServiceRunning = true
+
+        logger.info("Per-tab CLI process started successfully")
+        return Result.success(Unit)
+    }
+
+    /**
+     * Stop the per-tab CLI process
+     */
+    private suspend fun stopCliProcess() {
+        parserJob?.cancel()
+        parserJob = null
+
+        processManager?.stop()
+        processManager = null
+
+        streamParser?.reset()
+        streamParser = null
+
+        isServiceRunning = false
+        logger.info("Per-tab CLI process stopped")
+    }
+
+    /**
+     * Send message to the per-tab CLI process
+     */
+    private suspend fun sendCliMessage(message: String) {
+        if (!isServiceRunning) {
+            throw IllegalStateException("Per-tab CLI process not running")
+        }
+
+        val escapedContent = buildString {
+            for (ch in message) {
+                when (ch) {
+                    '"' -> append("\\\"")
+                    '\\' -> append("\\\\")
+                    '\n' -> append("\\n")
+                    '\r' -> append("\\r")
+                    '\t' -> append("\\t")
+                    else -> append(ch)
+                }
+            }
+        }
+        val jsonMessage = """{"type":"user","message":{"role":"user","content":"$escapedContent"}}"""
+        processManager?.sendInput(jsonMessage)
+        logger.info("Sent message to per-tab CLI: ${jsonMessage.take(200)}...")
     }
 
     /**
@@ -118,14 +233,19 @@ class WebViewBridge(
             }
         }
 
-        if (!cliService.isServiceRunning()) {
-            return buildJsonObject {
-                put("status", "error")
-                put("error", "Service not running")
+        // Lazy-start: start per-tab CLI process if not running
+        if (!isServiceRunning) {
+            logger.info("Per-tab CLI process not running, starting automatically...")
+            val startResult = startCliProcess()
+            if (startResult.isFailure) {
+                return buildJsonObject {
+                    put("status", "error")
+                    put("error", "Failed to start CLI process: ${startResult.exceptionOrNull()?.message}")
+                }
             }
         }
 
-        cliService.sendMessage(message)
+        sendCliMessage(message)
 
         return buildJsonObject {
             put("status", "ok")
@@ -178,7 +298,7 @@ class WebViewBridge(
 
         // Serialize and send to CLI
         val resultJson = json.encodeToString(ToolResult.serializer(), toolResult)
-        cliService.sendMessage(resultJson)
+        sendCliMessage(resultJson)
 
         // Clear pending state
         pendingToolUses.remove(toolUseId)
@@ -292,14 +412,14 @@ class WebViewBridge(
      * Handle START_SESSION - Start CLI service
      */
     private suspend fun handleStartSession(payload: JsonObject): JsonObject {
-        if (cliService.isServiceRunning()) {
+        if (isServiceRunning) {
             return buildJsonObject {
                 put("status", "ok")
                 put("message", "Service already running")
             }
         }
 
-        val result = cliService.start()
+        val result = startCliProcess()
         return if (result.isSuccess) {
             buildJsonObject {
                 put("status", "ok")
@@ -316,7 +436,7 @@ class WebViewBridge(
      * Handle STOP_SESSION - Stop CLI service
      */
     private suspend fun handleStopSession(): JsonObject {
-        cliService.stop()
+        stopCliProcess()
         currentSessionId = null
         pendingToolUses.clear()
         isWaitingPermission = false
@@ -576,13 +696,14 @@ class WebViewBridge(
      */
     private fun handleSystemMessage(data: SystemMessage) {
         currentSessionId = data.session_id
-        logger.info("Session initialized: ${data.session_id}")
+        logger.info("System message: subtype=${data.subtype}, session=${data.session_id}")
 
         panel.sendToWebView("STREAM_EVENT", mapOf(
             "eventType" to "system",
+            "subtype" to data.subtype,
             "sessionId" to data.session_id,
-            "timestamp" to data.timestamp,
-            "content" to data.content
+            "cwd" to data.cwd,
+            "model" to data.model
         ))
     }
 
@@ -590,12 +711,15 @@ class WebViewBridge(
      * Handle assistant message
      */
     private fun handleAssistantMessage(data: AssistantMessage) {
-        logger.debug("Assistant message: ${data.message_id}")
+        val messageId = data.message?.id ?: data.message_id
+        val contentElements = data.message?.content ?: data.content ?: emptyList()
+
+        logger.debug("Assistant message: $messageId")
 
         // Parse content blocks
         val contentBlocks = mutableListOf<Map<String, Any?>>()
 
-        for (element in data.content) {
+        for (element in contentElements) {
             try {
                 val obj = element.jsonObject
                 val type = obj["type"]?.jsonPrimitive?.content
@@ -648,7 +772,7 @@ class WebViewBridge(
         }
 
         panel.sendToWebView("ASSISTANT_MESSAGE", mapOf(
-            "messageId" to data.message_id,
+            "messageId" to messageId,
             "content" to contentBlocks
         ))
     }
@@ -657,60 +781,76 @@ class WebViewBridge(
      * Handle stream event (text/tool use deltas)
      */
     private fun handleStreamEvent(data: StreamEvent) {
-        logger.debug("Stream event: ${data.event}")
-
-        val deltaData = mutableMapOf<String, Any?>(
-            "event" to data.event
-        )
-
-        if (data.index != null) {
-            deltaData["index"] = data.index
+        val eventObj = data.event
+        if (eventObj == null) {
+            logger.warn("Stream event with null event field")
+            return
         }
 
-        if (data.delta != null) {
-            try {
-                val deltaObj = data.delta.jsonObject
-                val deltaType = deltaObj["type"]?.jsonPrimitive?.content
+        try {
+            val eventJsonObj = eventObj.jsonObject
+            val eventType = eventJsonObj["type"]?.jsonPrimitive?.content
 
-                when (deltaType) {
-                    "text_delta" -> {
-                        val textDelta = json.decodeFromJsonElement(TextDelta.serializer(), data.delta)
-                        deltaData["delta"] = mapOf(
-                            "type" to "text_delta",
-                            "text" to textDelta.text
-                        )
-                    }
-                    "tool_use_delta" -> {
-                        val toolDelta = json.decodeFromJsonElement(ToolUseDelta.serializer(), data.delta)
-                        deltaData["delta"] = mapOf(
-                            "type" to "tool_use_delta",
-                            "id" to toolDelta.id,
-                            "name" to toolDelta.name,
-                            "input" to toolDelta.input
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                logger.error("Failed to parse delta", e)
+            logger.debug("Stream event: $eventType")
+
+            // Extract index and delta from inside the event object
+            val index = eventJsonObj["index"]?.jsonPrimitive?.intOrNull
+            val delta = eventJsonObj["delta"]
+
+            val deltaData = mutableMapOf<String, Any?>(
+                "event" to eventType
+            )
+
+            if (index != null) {
+                deltaData["index"] = index
             }
-        }
 
-        panel.sendToWebView("STREAM_EVENT", deltaData)
+            if (delta != null) {
+                try {
+                    val deltaObj = delta.jsonObject
+                    val deltaType = deltaObj["type"]?.jsonPrimitive?.content
+
+                    when (deltaType) {
+                        "text_delta" -> {
+                            val textDelta = json.decodeFromJsonElement(TextDelta.serializer(), delta)
+                            deltaData["delta"] = mapOf(
+                                "type" to "text_delta",
+                                "text" to textDelta.text
+                            )
+                        }
+                        "tool_use_delta" -> {
+                            deltaData["delta"] = mapOf(
+                                "type" to "tool_use_delta",
+                                "id" to deltaObj["id"]?.jsonPrimitive?.contentOrNull,
+                                "name" to deltaObj["name"]?.jsonPrimitive?.contentOrNull,
+                                "input" to deltaObj["input"]
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    logger.error("Failed to parse stream event delta", e)
+                }
+            }
+
+            panel.sendToWebView("STREAM_EVENT", deltaData)
+
+        } catch (e: Exception) {
+            logger.error("Failed to parse stream event", e)
+        }
     }
 
     /**
      * Handle result message (completion)
      */
     private fun handleResultMessage(data: ResultMessage) {
-        logger.info("Result message: status=${data.status}")
+        val status = data.subtype ?: data.status ?: "unknown"
+        logger.info("Result message: status=$status, isError=${data.is_error}")
 
         panel.sendToWebView("RESULT_MESSAGE", mapOf(
-            "status" to data.status,
-            "messageId" to data.message_id,
-            "usage" to data.usage?.let { mapOf(
-                "inputTokens" to it.input_tokens,
-                "outputTokens" to it.output_tokens
-            ) },
+            "status" to status,
+            "isError" to data.is_error,
+            "result" to data.result,
+            "sessionId" to data.session_id,
             "error" to data.error?.let { mapOf(
                 "code" to it.code,
                 "message" to it.message,
@@ -782,6 +922,12 @@ class WebViewBridge(
         messageSubscription?.cancel()
         errorSubscription?.cancel()
         pendingToolUses.clear()
+
+        // Cleanup per-tab CLI process
+        scope.launch {
+            stopCliProcess()
+        }
+
         logger.info("WebViewBridge disposed")
     }
 }
