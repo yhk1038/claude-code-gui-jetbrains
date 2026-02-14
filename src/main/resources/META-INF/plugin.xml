@@ -50,6 +50,10 @@
         <!-- Persistent state for settings -->
         <applicationService
             serviceImplementation="com.github.yhk1038.claudecodegui.settings.ClaudeCodeSettings"/>
+
+        <!-- WebView resource server -->
+        <httpRequestHandler
+            implementation="com.github.yhk1038.claudecodegui.toolwindow.WebViewRequestHandler"/>
     </extensions>
 
     <actions>

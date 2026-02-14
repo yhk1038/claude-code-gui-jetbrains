@@ -232,28 +232,34 @@ class ClaudeCodePanel(
     }
 
     private fun loadWebView() {
-        // Check if running in development mode (Vite dev server)
         val devMode = System.getProperty("claude.dev.mode", "false").toBoolean() ||
                       System.getenv("CLAUDE_DEV_MODE") == "true"
 
-        if (devMode) {
+        if (devMode && isViteDevServerRunning()) {
             logger.info("Loading WebView from Vite dev server")
             browser.loadURL("http://localhost:5173")
             return
         }
 
-        // Use IntelliJ's built-in server to serve resources (avoids CORS issues)
+        if (devMode) {
+            logger.info("Dev mode enabled but Vite dev server not running, using bundled resources")
+        }
+
+        // Use IntelliJ's built-in server with custom request handler to serve resources
         val builtInServerPort = org.jetbrains.ide.BuiltInServerManager.getInstance().port
-        val webviewDir = extractWebViewResources()
-        if (webviewDir != null) {
-            // Serve via built-in server using file path
-            val url = "http://localhost:$builtInServerPort/file${webviewDir.absolutePath}/index.html"
-            logger.info("Loading WebView via built-in server: $url")
-            browser.loadURL(url)
-        } else {
-            // Fallback to Vite dev server
-            logger.info("Failed to extract resources, falling back to Vite dev server")
-            browser.loadURL("http://localhost:5173")
+        val url = "http://localhost:$builtInServerPort${WebViewRequestHandler.PREFIX}/index.html"
+        logger.info("Loading WebView via custom HTTP handler: $url")
+        browser.loadURL(url)
+    }
+
+    private fun isViteDevServerRunning(): Boolean {
+        return try {
+            val socket = java.net.Socket()
+            socket.connect(java.net.InetSocketAddress("localhost", 5173), 500)
+            socket.close()
+            true
+        } catch (e: Exception) {
+            false
         }
     }
 
@@ -267,28 +273,37 @@ class ClaudeCodePanel(
             }
             tempDir.mkdirs()
 
-            // List of resources to extract
-            val resources = listOf(
-                "index.html",
-                "favicon.svg",
-                "assets/index.js",
-                "assets/index.css",
-                "assets/code-block-37QAKDTI.js"
-            )
+            // Extract all resources from /webview/ directory
+            // This approach works for both IDE runtime and packaged JAR
+            val webviewUrl = javaClass.getResource("/webview/")
+            if (webviewUrl != null && webviewUrl.protocol == "jar") {
+                // Running from JAR - extract all entries starting with /webview/
+                extractFromJar(tempDir)
+            } else {
+                // IDE runtime or file system - try to extract known resources
+                val resources = listOf(
+                    "index.html",
+                    "favicon.svg",
+                    "assets/codicon.ttf",
+                    "assets/index.js",
+                    "assets/index.css",
+                    "assets/code-block-37QAKDTI.js"
+                )
 
-            for (resource in resources) {
-                val inputStream = javaClass.getResourceAsStream("/webview/$resource")
-                if (inputStream != null) {
-                    val targetFile = java.io.File(tempDir, resource)
-                    targetFile.parentFile?.mkdirs()
-                    inputStream.use { input ->
-                        targetFile.outputStream().use { output ->
-                            input.copyTo(output)
+                for (resource in resources) {
+                    val inputStream = javaClass.getResourceAsStream("/webview/$resource")
+                    if (inputStream != null) {
+                        val targetFile = java.io.File(tempDir, resource)
+                        targetFile.parentFile?.mkdirs()
+                        inputStream.use { input ->
+                            targetFile.outputStream().use { output ->
+                                input.copyTo(output)
+                            }
                         }
+                        logger.debug("Extracted: $resource")
+                    } else {
+                        logger.warn("Resource not found: /webview/$resource")
                     }
-                    logger.debug("Extracted: $resource")
-                } else {
-                    logger.warn("Resource not found: /webview/$resource")
                 }
             }
 
@@ -297,6 +312,30 @@ class ClaudeCodePanel(
         } catch (e: Exception) {
             logger.error("Failed to extract WebView resources", e)
             null
+        }
+    }
+
+    private fun extractFromJar(targetDir: java.io.File) {
+        val jarPath = javaClass.protectionDomain.codeSource.location.toURI().path
+        val jarFile = java.util.jar.JarFile(jarPath)
+
+        jarFile.use { jar ->
+            val entries = jar.entries()
+            while (entries.hasMoreElements()) {
+                val entry = entries.nextElement()
+                if (entry.name.startsWith("webview/") && !entry.isDirectory) {
+                    val relativePath = entry.name.removePrefix("webview/")
+                    val targetFile = java.io.File(targetDir, relativePath)
+                    targetFile.parentFile?.mkdirs()
+
+                    jar.getInputStream(entry).use { input ->
+                        targetFile.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                    logger.debug("Extracted from JAR: ${entry.name}")
+                }
+            }
         }
     }
 

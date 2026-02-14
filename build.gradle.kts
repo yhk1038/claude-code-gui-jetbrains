@@ -51,10 +51,11 @@ tasks {
         gradleVersion = "8.13"
     }
 
-    // Enable dev mode for runIde (uses Vite dev server)
+    // Enable dev mode for runIde (uses Vite dev server if available)
+    // Can be disabled via: CLAUDE_DEV_MODE=false ./gradlew runIde
     named<org.jetbrains.intellij.platform.gradle.tasks.RunIdeTask>("runIde") {
         jvmArgumentProviders += CommandLineArgumentProvider {
-            listOf("-Dclaude.dev.mode=true")
+            listOf("-Dclaude.dev.mode=${System.getenv("CLAUDE_DEV_MODE") ?: "true"}")
         }
     }
 }
