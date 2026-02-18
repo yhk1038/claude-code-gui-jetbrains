@@ -19,7 +19,7 @@
 .dark {
   --ide-bg: #1a1a1a;
   --ide-fg: #e4e4e7;
-  --ide-border: #333333;
+  --ide-border: #e4e4e7;
   --ide-accent: #60a5fa;
   --ide-error: #f87171;
   --ide-warning: #fbbf24;
