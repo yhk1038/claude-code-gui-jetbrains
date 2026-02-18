@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef, ReactNode } from 'react';
-import { SessionState, Message } from '../types';
+import { SessionState, LoadedMessageDto } from '../types';
 import { SessionMetaDto } from '../dto';
 import { useBridgeContext } from './BridgeContext';
 import { useApi } from './ApiContext';
@@ -29,7 +29,7 @@ interface SessionContextValue {
   deleteSession: (sessionId: string) => Promise<void>;
   renameSession: (sessionId: string, title: string) => void;
   setSessionState: (state: SessionState) => void;
-  saveMessages: (messages: Message[]) => void;
+  saveMessages: (messages: LoadedMessageDto[]) => void;
   setWorkingDirectory: (dir: string | null) => void;
 }
 
@@ -38,10 +38,9 @@ const SessionContext = createContext<SessionContextValue | null>(null);
 interface SessionProviderProps {
   children: ReactNode;
   onSessionChange?: (sessionId: string) => void;
-  onMessagesLoaded?: (messages: Array<{ role: 'user' | 'assistant'; content: string; timestamp: string }>) => void;
 }
 
-export function SessionProvider({ children, onSessionChange, onMessagesLoaded }: SessionProviderProps) {
+export function SessionProvider({ children, onSessionChange }: SessionProviderProps) {
   const { subscribe, isConnected } = useBridgeContext();
   const api = useApi();
 
@@ -56,10 +55,8 @@ export function SessionProvider({ children, onSessionChange, onMessagesLoaded }:
     return window.workingDirectory || params.get('workingDir') || null;
   });
 
-  const messagesRef = useRef<Message[]>([]);
+  const messagesRef = useRef<LoadedMessageDto[]>([]);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const onMessagesLoadedRef = useRef(onMessagesLoaded);
-  onMessagesLoadedRef.current = onMessagesLoaded;
 
   // Update API workingDir when it changes
   const setWorkingDirectory = useCallback((dir: string | null) => {
@@ -223,9 +220,9 @@ export function SessionProvider({ children, onSessionChange, onMessagesLoaded }:
       messagesRef.current = [];
 
       try {
-        const { messages } = await api.sessions.show(sessionId);
-        console.log('[SessionContext] Session loaded with messages:', messages.length);
-        onMessagesLoadedRef.current?.(messages as any);
+        // Triggers SESSION_LOADED event → AppProviders.SessionLoader handles message injection
+        await api.sessions.load(sessionId);
+        console.log('[SessionContext] Session load requested:', sessionId);
       } catch (error) {
         console.error('[SessionContext] Failed to load session:', error);
       }
@@ -260,7 +257,7 @@ export function SessionProvider({ children, onSessionChange, onMessagesLoaded }:
     // Note: CLI session titles cannot be modified from the plugin
   }, []);
 
-  const saveMessages = useCallback((messages: Message[]) => {
+  const saveMessages = useCallback((messages: LoadedMessageDto[]) => {
     if (!currentSessionId) return;
 
     messagesRef.current = messages;

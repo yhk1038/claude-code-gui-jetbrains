@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useChatStream, type LoadedMessage } from '../useChatStream';
-import type { Message } from '../../types';
+import type { LoadedMessageDto } from '../../types';
 
 // Mock requestAnimationFrame and cancelAnimationFrame
 const rafCallbacks: ((time: number) => void)[] = [];
@@ -582,7 +582,7 @@ describe('useChatStream', () => {
         type: 'assistant' as const,
         message: { role: 'assistant' as const, content: 'Test message' },
         timestamp: new Date().toISOString(),
-      } as Message;
+      } as LoadedMessageDto;
 
       act(() => {
         result.current.appendMessage(newMessage);
@@ -601,7 +601,7 @@ describe('useChatStream', () => {
         type: 'assistant' as const,
         message: { role: 'assistant' as const, content: 'Original' },
         timestamp: new Date().toISOString(),
-      } as Message;
+      } as LoadedMessageDto;
 
       act(() => {
         result.current.appendMessage(message);
@@ -623,14 +623,14 @@ describe('useChatStream', () => {
         type: 'user' as const,
         message: { role: 'user' as const, content: 'First' },
         timestamp: new Date().toISOString(),
-      } as Message;
+      } as LoadedMessageDto;
 
       const message2 = {
         uuid: 'msg-2',
         type: 'assistant' as const,
         message: { role: 'assistant' as const, content: 'Second' },
         timestamp: new Date().toISOString(),
-      } as Message;
+      } as LoadedMessageDto;
 
       act(() => {
         result.current.appendMessage(message1);

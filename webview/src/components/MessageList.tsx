@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { Message, getTextContent, getToolUses } from '../types';
+import { LoadedMessageDto, getTextContent, getToolUses } from '../types';
 import { StreamingMessage } from './StreamingMessage';
 
 interface MessageListProps {
-  messages: Message[];
+  messages: LoadedMessageDto[];
   streamingMessageId: string | null;
   className?: string;
   onRetry?: (messageId: string) => void;
@@ -12,7 +12,7 @@ interface MessageListProps {
 
 interface MessageGroup {
   date: string;
-  messages: Message[];
+  messages: LoadedMessageDto[];
 }
 
 // const VIRTUAL_SCROLL_THRESHOLD = 50; // Start virtual scrolling after 50 messages
@@ -127,7 +127,7 @@ export const MessageList: React.FC<MessageListProps> = ({
   }, [onCopy]);
 
   // Render a single message
-  const renderMessage = useCallback((message: Message) => {
+  const renderMessage = useCallback((message: LoadedMessageDto) => {
     const isStreaming = message.uuid === streamingMessageId;
     const isAssistant = message.type === 'assistant';
     const isUser = message.type === 'user';

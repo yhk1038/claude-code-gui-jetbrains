@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ChatMessageArea } from '../ChatMessageArea';
-import type { Message, ToolUse } from '../../types';
+import type { LoadedMessageDto, ToolUse } from '../../types';
 
 // Mock child components
 vi.mock('../MessageBubble', () => ({
-  MessageBubble: ({ message }: { message: Message }) => (
+  MessageBubble: ({ message }: { message: LoadedMessageDto }) => (
     <div data-testid={`message-bubble-${message.uuid}`}>
       {message.type}: {typeof message.message?.content === 'string' ? message.message.content : 'complex content'}
     </div>
@@ -91,7 +91,7 @@ describe('ChatMessageArea', () => {
   });
 
   it('renders user message correctly', () => {
-    const userMessage: Message = {
+    const userMessage: LoadedMessageDto = {
       uuid: 'msg1',
       type: 'user',
       message: { role: 'user', content: 'Hello, assistant!' },
@@ -115,7 +115,7 @@ describe('ChatMessageArea', () => {
   });
 
   it('renders assistant message correctly', () => {
-    const assistantMessage: Message = {
+    const assistantMessage: LoadedMessageDto = {
       uuid: 'msg2',
       type: 'assistant',
       message: { role: 'assistant', content: 'Hello, user!' },
@@ -139,7 +139,7 @@ describe('ChatMessageArea', () => {
   });
 
   it('renders ToolCard for messages with toolUses in content blocks', () => {
-    const messageWithTool: Message = {
+    const messageWithTool: LoadedMessageDto = {
       uuid: 'msg3',
       type: 'assistant',
       message: {
@@ -171,7 +171,7 @@ describe('ChatMessageArea', () => {
 
   it('renders multiple messages correctly', () => {
     const now = new Date().toISOString();
-    const messages: Message[] = [
+    const messages: LoadedMessageDto[] = [
       {
         uuid: 'msg1',
         type: 'user',
@@ -213,7 +213,7 @@ describe('ChatMessageArea', () => {
   });
 
   it('renders multiple tool uses for a single message', () => {
-    const messageWithTools: Message = {
+    const messageWithTools: LoadedMessageDto = {
       uuid: 'msg4',
       type: 'assistant',
       message: {

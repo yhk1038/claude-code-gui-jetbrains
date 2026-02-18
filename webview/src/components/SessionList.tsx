@@ -1,10 +1,10 @@
-import { SessionMeta, Message, getTextContent } from '../types';
+import { SessionMeta, LoadedMessageDto, getTextContent } from '../types';
 import { SessionItem } from './SessionItem';
 
 interface SessionListProps {
   sessions: SessionMeta[];
   currentSessionId: string | null;
-  messages: Message[];
+  messages: LoadedMessageDto[];
   onSelectSession: (sessionId: string) => void;
   onCreateSession: () => void;
   onRenameSession: (sessionId: string, title: string) => void;

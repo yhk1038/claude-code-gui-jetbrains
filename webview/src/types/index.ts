@@ -73,8 +73,6 @@ export class LoadedMessageDto {
   images?: MessageImage[];
 }
 
-/** Backward-compatible alias — use LoadedMessageDto directly in new code */
-export type Message = LoadedMessageDto;
 
 // ============================================
 // Supporting types
@@ -155,7 +153,7 @@ export function isStringContent(content: unknown): content is string {
 /**
  * Extract text content from Message (handles both LoadedMessageDto structure)
  */
-export function getTextContent(message: Message): string {
+export function getTextContent(message: LoadedMessageDto): string {
   const content = message.message?.content;
   if (content === undefined || content === null) return '';
 
@@ -177,7 +175,7 @@ export function getTextContent(message: Message): string {
  * Extract tool uses from Message content blocks.
  * Returns ToolUse[] with status based on message streaming state.
  */
-export function getToolUses(message: Message): ToolUse[] {
+export function getToolUses(message: LoadedMessageDto): ToolUse[] {
   const content = message.message?.content;
   if (!isContentBlockArray(content)) {
     return [];

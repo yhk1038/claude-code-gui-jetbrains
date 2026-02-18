@@ -1,5 +1,5 @@
 import React from 'react';
-import { Message, getTextContent } from '../../types';
+import { LoadedMessageDto, getTextContent } from '../../types';
 import { useCopyToClipboard } from './hooks/useCopyToClipboard';
 import { ContextPills } from './components/ContextPills';
 import { ImageAttachments } from './components/ImageAttachments';
@@ -7,7 +7,7 @@ import { MessageActions } from './components/MessageActions';
 import { parseUserContent } from './utils/parseUserContent';
 
 interface UserMessageRendererProps {
-  message: Message;
+  message: LoadedMessageDto;
 }
 
 export const UserMessageRenderer: React.FC<UserMessageRendererProps> = ({ message }) => {

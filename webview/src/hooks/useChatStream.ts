@@ -1,5 +1,5 @@
 import { useCallback, useState, useRef, useEffect } from 'react';
-import { Message, Context, getTextContent, LoadedMessageDto } from '../types';
+import { Context, getTextContent, LoadedMessageDto } from '../types';
 import { toInstance } from '../dto/common';
 
 /** Re-export for backwards compatibility */
@@ -23,7 +23,7 @@ export interface UseChatStreamOptions {
 }
 
 export interface UseChatStreamReturn {
-  messages: Message[];
+  messages: LoadedMessageDto[];
   isStreaming: boolean;
   isStopped: boolean;
   streamingMessageId: string | null;
@@ -33,8 +33,8 @@ export interface UseChatStreamReturn {
   addUserMessage: (content: string, context?: Context[]) => void;
   clearMessages: () => void;
   loadMessages: (msgs: LoadedMessageDto[]) => void;
-  appendMessage: (message: Message) => void;
-  updateMessage: (id: string, updates: Partial<Message>) => void;
+  appendMessage: (message: LoadedMessageDto) => void;
+  updateMessage: (id: string, updates: Partial<LoadedMessageDto>) => void;
 
   // 재시도
   retry: (messageId: string) => void;
@@ -221,7 +221,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
     if (messageIndex === -1) return;
 
     // Find the last user message before this message
-    let userMessage: Message | null = null;
+    let userMessage: LoadedMessageDto | null = null;
     for (let i = messageIndex; i >= 0; i--) {
       if (messages[i].type === 'user') {
         userMessage = messages[i];

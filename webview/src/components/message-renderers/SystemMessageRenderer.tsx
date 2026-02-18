@@ -1,8 +1,8 @@
 import React from 'react';
-import { Message, getTextContent } from '../../types';
+import { LoadedMessageDto, getTextContent } from '../../types';
 
 interface SystemMessageRendererProps {
-  message: Message;
+  message: LoadedMessageDto;
 }
 
 export const SystemMessageRenderer: React.FC<SystemMessageRendererProps> = ({ message }) => {
