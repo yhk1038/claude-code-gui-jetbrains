@@ -3,7 +3,7 @@
  *
  * Vite dev server에서 WebSocket을 통해 Claude CLI와 통신
  */
-import { spawn, ChildProcess } from 'child_process';
+import { spawn, exec, ChildProcess } from 'child_process';
 import { createRequire } from 'module';
 import type { ViteDevServer } from 'vite';
 import type { WebSocket, WebSocketServer } from 'ws';
@@ -695,6 +695,30 @@ export function devBridgePlugin() {
                     messages: loadedMessages
                   });
                 }
+                sendToClient(ws, 'ACK', { requestId: message.requestId });
+                break;
+
+              case 'OPEN_FILE':
+                const openFilePath = message.payload?.filePath as string;
+                if (openFilePath) {
+                  console.log('[dev-bridge] Opening file:', openFilePath);
+                  try {
+                    // macOS: use 'open' command which opens in default app
+                    // For code files, this typically opens in the user's default code editor
+                    exec(`open "${openFilePath}"`, (error: Error | null) => {
+                      if (error) {
+                        console.error('[dev-bridge] Failed to open file:', error.message);
+                      }
+                    });
+                  } catch (error) {
+                    console.error('[dev-bridge] Failed to open file:', error);
+                  }
+                }
+                sendToClient(ws, 'ACK', { requestId: message.requestId });
+                break;
+
+              case 'OPEN_SETTINGS':
+                console.log('[dev-bridge] OPEN_SETTINGS requested (browser handles via window.open)');
                 sendToClient(ws, 'ACK', { requestId: message.requestId });
                 break;
 

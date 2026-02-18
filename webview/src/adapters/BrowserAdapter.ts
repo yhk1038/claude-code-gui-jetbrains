@@ -1,4 +1,5 @@
-import type { IdeAdapter } from './IdeAdapter';
+import { IdeAdapterType, type IdeAdapter } from './IdeAdapter';
+import { getBridge } from '../api/bridge/Bridge';
 
 /**
  * Browser Adapter
@@ -7,7 +8,7 @@ import type { IdeAdapter } from './IdeAdapter';
  * Opens new browser tabs using window.open().
  */
 export class BrowserAdapter implements IdeAdapter {
-  readonly type = 'browser' as const;
+  readonly type = IdeAdapterType.BROWSER;
 
   isReady(): boolean {
     return true; // Browser is always ready
@@ -34,5 +35,14 @@ export class BrowserAdapter implements IdeAdapter {
     }
 
     console.log('[BrowserAdapter] Opened settings in new browser tab');
+  }
+
+  async openFile(filePath: string): Promise<void> {
+    try {
+      await getBridge().request('OPEN_FILE', { filePath });
+      console.log('[BrowserAdapter] Sent OPEN_FILE request:', filePath);
+    } catch (error) {
+      console.error('[BrowserAdapter] Failed to open file:', filePath, error);
+    }
   }
 }

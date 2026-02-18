@@ -10,6 +10,8 @@ import com.github.yhk1038.claudecodegui.toolwindow.ClaudeCodePanel
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.vfs.LocalFileSystem
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.serialization.json.*
@@ -202,6 +204,7 @@ class WebViewBridge(
                 "DELETE_SESSION" -> handleDeleteSession(payload)
                 "NEW_SESSION" -> handleNewSession()
                 "OPEN_SETTINGS" -> handleOpenSettings()
+                "OPEN_FILE" -> handleOpenFile(payload)
                 "GET_SETTINGS" -> handleGetSettings()
                 "SAVE_SETTINGS" -> handleSaveSettings(payload)
                 else -> {
@@ -564,6 +567,30 @@ class WebViewBridge(
             val settingsSessionId = "settings-${UUID.randomUUID()}"
             OpenClaudeCodeAction.openSession(project, settingsSessionId, "#/settings/general")
             logger.info("Opened settings in new tab: $settingsSessionId")
+        }
+
+        return buildJsonObject {
+            put("status", "ok")
+        }
+    }
+
+    /**
+     * Handle OPEN_FILE - Open a file in the IDE editor
+     */
+    private fun handleOpenFile(payload: JsonObject): JsonObject {
+        val filePath = payload["filePath"]?.jsonPrimitive?.content
+        if (filePath == null) {
+            return errorResponse("Missing filePath")
+        }
+
+        ApplicationManager.getApplication().invokeLater {
+            val virtualFile = LocalFileSystem.getInstance().findFileByPath(filePath)
+            if (virtualFile != null) {
+                FileEditorManager.getInstance(project).openFile(virtualFile, true)
+                logger.info("Opened file in editor: $filePath")
+            } else {
+                logger.warn("File not found: $filePath")
+            }
         }
 
         return buildJsonObject {

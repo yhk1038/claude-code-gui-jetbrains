@@ -1,3 +1,8 @@
+export enum IdeAdapterType {
+  JETBRAINS = 'jetbrains',
+  BROWSER = 'browser',
+}
+
 /**
  * IDE Adapter Interface
  *
@@ -8,7 +13,7 @@ export interface IdeAdapter {
   /**
    * The type of environment this adapter handles
    */
-  readonly type: 'jetbrains' | 'browser';
+  readonly type: IdeAdapterType;
 
   /**
    * Open a new tab/window
@@ -23,6 +28,13 @@ export interface IdeAdapter {
    * - In Browser: Opens a new browser tab with settings hash
    */
   openSettings(): Promise<void>;
+
+  /**
+   * Open a file in the IDE editor
+   * - In JetBrains: Opens the file in the IDE editor via Kotlin bridge
+   * - In Browser: Logs the file path (cannot open local files)
+   */
+  openFile(filePath: string): Promise<void>;
 
   /**
    * Check if the adapter is ready to use

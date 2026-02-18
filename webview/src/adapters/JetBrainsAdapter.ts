@@ -1,17 +1,23 @@
-import type { IdeAdapter } from './IdeAdapter';
-import { getBridge } from '../api/bridge/Bridge';
+import { IdeAdapterType, type IdeAdapter } from './IdeAdapter';
 
 /**
  * JetBrains IDE Adapter
  *
- * Uses the Bridge singleton to communicate with the JetBrains IDE.
+ * Communicates directly with the JetBrains IDE via window.kotlinBridge.
  * Opens new editor tabs within the IDE.
  */
 export class JetBrainsAdapter implements IdeAdapter {
-  readonly type = 'jetbrains' as const;
+  readonly type = IdeAdapterType.JETBRAINS;
+
+  private sendToKotlin(message: IPCMessage): void {
+    if (!window.kotlinBridge?.send) {
+      throw new Error('Kotlin bridge is not available');
+    }
+    window.kotlinBridge.send(message);
+  }
 
   isReady(): boolean {
-    return getBridge().isConnected;
+    return !!window.kotlinBridge?.send;
   }
 
   async openNewTab(): Promise<void> {
@@ -25,7 +31,7 @@ export class JetBrainsAdapter implements IdeAdapter {
       timestamp: Date.now(),
     };
 
-    getBridge().sendRaw(message);
+    this.sendToKotlin(message);
     console.log('[JetBrainsAdapter] Sent NEW_SESSION to open new editor tab');
   }
 
@@ -40,7 +46,22 @@ export class JetBrainsAdapter implements IdeAdapter {
       timestamp: Date.now(),
     };
 
-    getBridge().sendRaw(message);
+    this.sendToKotlin(message);
     console.log('[JetBrainsAdapter] Sent OPEN_SETTINGS to open settings in new tab');
+  }
+
+  async openFile(filePath: string): Promise<void> {
+    if (!this.isReady()) {
+      throw new Error('Bridge is not ready');
+    }
+
+    const message: IPCMessage = {
+      type: 'OPEN_FILE',
+      payload: { filePath },
+      timestamp: Date.now(),
+    };
+
+    this.sendToKotlin(message);
+    console.log('[JetBrainsAdapter] Sent OPEN_FILE:', filePath);
   }
 }

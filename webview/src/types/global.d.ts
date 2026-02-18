@@ -24,7 +24,7 @@ interface Window {
 interface IPCMessage {
   /**
    * Message type identifier
-   * WebView -> Kotlin: SEND_MESSAGE, SESSION_CHANGE, TOOL_RESPONSE, APPLY_DIFF, REJECT_DIFF, START_SESSION, STOP_SESSION, NEW_SESSION, OPEN_SETTINGS
+   * WebView -> Kotlin: SEND_MESSAGE, SESSION_CHANGE, TOOL_RESPONSE, APPLY_DIFF, REJECT_DIFF, START_SESSION, STOP_SESSION, NEW_SESSION, OPEN_SETTINGS, OPEN_FILE
    * Kotlin -> WebView: ACK, ERROR, STREAM_EVENT, ASSISTANT_MESSAGE, RESULT_MESSAGE, SERVICE_ERROR, THEME_CHANGE
    */
   type: string;
@@ -59,6 +59,7 @@ declare const MessageTypes: {
   readonly STOP_SESSION: 'STOP_SESSION';
   readonly NEW_SESSION: 'NEW_SESSION';
   readonly OPEN_SETTINGS: 'OPEN_SETTINGS';
+  readonly OPEN_FILE: 'OPEN_FILE';
 
   // Kotlin -> WebView
   readonly ACK: 'ACK';

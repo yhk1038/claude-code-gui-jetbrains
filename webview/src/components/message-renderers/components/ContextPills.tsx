@@ -1,8 +1,25 @@
 import React from 'react';
 import { Context } from '../../../types';
+import { getAdapter } from '../../../adapters';
 
 interface ContextPillsProps {
   context: Context[];
+}
+
+function getDisplayName(ctx: Context): string {
+  if (!ctx.path) return ctx.type;
+  const filename = ctx.path.split('/').pop() || ctx.path;
+  if (ctx.type === 'selection' && ctx.startLine != null && ctx.endLine != null) {
+    return `${filename}:${ctx.startLine}-${ctx.endLine}`;
+  }
+  return filename;
+}
+
+function handleOpenFile(filePath: string | undefined) {
+  if (!filePath) return;
+  getAdapter().openFile(filePath).catch((err) => {
+    console.error('[ContextPills] Failed to open file:', err);
+  });
 }
 
 export const ContextPills: React.FC<ContextPillsProps> = ({ context }) => {
@@ -15,13 +32,12 @@ export const ContextPills: React.FC<ContextPillsProps> = ({ context }) => {
       {context.map((ctx, idx) => (
         <div
           key={idx}
-          className="px-3 py-1.5 bg-zinc-800/50 border border-zinc-700/50 rounded-md text-xs text-zinc-400 font-mono flex items-center gap-2"
+          className="text-[10px] text-white/40 flex items-center gap-2 cursor-pointer hover:text-white/60 transition-colors"
+          title={ctx.path}
+          onClick={() => handleOpenFile(ctx.path)}
         >
-          <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M4 2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H4zm1 2h6v8H5V4z" />
-          </svg>
           <span className="truncate max-w-[200px]">
-            {ctx.path || ctx.type}
+            {getDisplayName(ctx)}
           </span>
         </div>
       ))}

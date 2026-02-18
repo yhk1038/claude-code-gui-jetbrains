@@ -1,23 +1,95 @@
+import { Context } from '../../../types';
+
 /**
- * 사용자 메시지에서 시스템 태그를 제거하고 정리된 텍스트를 반환
+ * 사용자 메시지에서 시스템 태그를 파싱하여 컨텍스트를 추출하고, 정리된 텍스트를 반환
  *
- * 제거 대상 태그:
- * - <ide_opened_file>...</ide_opened_file>
- * - <ide_selection>...</ide_selection>
+ * 추출 대상 태그:
+ * - <ide_opened_file>...</ide_opened_file> → Context { type: 'file' }
+ * - <ide_selection>...</ide_selection> → Context { type: 'selection' }
+ *
+ * 제거만 하는 태그:
  * - <system-reminder>...</system-reminder>
  */
 export function parseUserContent(content: string): {
   text: string;
+  contexts: Context[];
 } {
-  // 시스템 태그 정규식으로 제거 (여러 줄 지원)
-  const systemTagPattern = /<(ide_opened_file|ide_selection|system-reminder)>[\s\S]*?<\/\1>/g;
+  const contexts: Context[] = [];
 
-  let cleanText = content.replace(systemTagPattern, '');
+  // Step A: <ide_opened_file> 태그에서 파일 경로 추출
+  const openedFilePattern = /<ide_opened_file>([\s\S]*?)<\/ide_opened_file>/g;
+  let match;
+  while ((match = openedFilePattern.exec(content)) !== null) {
+    const ctx = parseOpenedFileTag(match[1]);
+    if (ctx) contexts.push(ctx);
+  }
+  let cleanText = content.replace(openedFilePattern, '');
 
-  // 중복 공백/줄바꿈 정리
+  // Step B: <ide_selection> 태그에서 선택 영역 추출
+  const selectionPattern = /<ide_selection>([\s\S]*?)<\/ide_selection>/g;
+  while ((match = selectionPattern.exec(content)) !== null) {
+    const ctx = parseSelectionTag(match[1]);
+    if (ctx) contexts.push(ctx);
+  }
+  cleanText = cleanText.replace(selectionPattern, '');
+
+  // Step C: <system-reminder> 태그 제거 (추출 없이)
+  const systemReminderPattern = /<system-reminder>[\s\S]*?<\/system-reminder>/g;
+  cleanText = cleanText.replace(systemReminderPattern, '');
+
+  // Step D: 중복 공백/줄바꿈 정리
   cleanText = cleanText
-    .replace(/\n{3,}/g, '\n\n')  // 3개 이상의 연속된 줄바꿈을 2개로
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
 
-  return { text: cleanText };
+  return { text: cleanText, contexts };
+}
+
+/**
+ * <ide_opened_file> 태그 내용에서 파일 경로를 추출
+ * 예: "The user opened the file /path/to/file.ts in the IDE. This may or may not be related to the current task."
+ */
+function parseOpenedFileTag(tagContent: string): Context | null {
+  const pathMatch = tagContent.match(/The user opened the file (.+?) in the IDE/);
+  if (!pathMatch) return null;
+
+  return {
+    type: 'file',
+    path: pathMatch[1].trim(),
+    content: tagContent.trim(),
+  };
+}
+
+/**
+ * <ide_selection> 태그 내용에서 선택 영역 정보를 추출
+ * 예: "The user selected the lines 42 to 51 from /path/to/file.ts:\n...code...\n\nThis may or may not be related to the current task."
+ */
+function parseSelectionTag(tagContent: string): Context | null {
+  // 줄 범위가 있는 형태
+  const rangeMatch = tagContent.match(
+    /The user selected the lines (\d+) to (\d+) from (.+?):\n([\s\S]*?)(?:\n\nThis may or may not|$)/
+  );
+  if (rangeMatch) {
+    return {
+      type: 'selection',
+      path: rangeMatch[3].trim(),
+      content: rangeMatch[4].trim(),
+      startLine: parseInt(rangeMatch[1], 10),
+      endLine: parseInt(rangeMatch[2], 10),
+    };
+  }
+
+  // 줄 범위 없이 파일 경로만 있는 형태
+  const simpleMatch = tagContent.match(
+    /The user selected (?:.*?) (?:in|from) (.+?)(?::\n([\s\S]*?))?(?:\n\nThis may or may not|$)/
+  );
+  if (simpleMatch) {
+    return {
+      type: 'selection',
+      path: simpleMatch[1].trim(),
+      content: (simpleMatch[2] || tagContent).trim(),
+    };
+  }
+
+  return null;
 }

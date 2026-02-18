@@ -18,6 +18,11 @@ export const UserMessageRenderer: React.FC<UserMessageRendererProps> = ({ messag
     copy(parsedContent.text);
   };
 
+  const allContexts = [
+    ...(parsedContent.contexts || []),
+    ...(message.context || []),
+  ];
+
   return (
     <div className="group py-2 px-4 pl-8">
       <div className="flex items-start gap-2">
@@ -28,7 +33,7 @@ export const UserMessageRenderer: React.FC<UserMessageRendererProps> = ({ messag
             </div>
           </div>
 
-          {message.context && <ContextPills context={message.context} />}
+          {allContexts.length > 0 && <ContextPills context={allContexts} />}
           {message.images && message.images.length > 0 && (
             <ImageAttachments images={message.images} />
           )}

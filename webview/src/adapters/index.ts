@@ -1,8 +1,8 @@
-import type { IdeAdapter } from './IdeAdapter';
+import { IdeAdapterType, type IdeAdapter } from './IdeAdapter';
 import { JetBrainsAdapter } from './JetBrainsAdapter';
 import { BrowserAdapter } from './BrowserAdapter';
 
-export type { IdeAdapter } from './IdeAdapter';
+export { IdeAdapterType, type IdeAdapter } from './IdeAdapter';
 export { JetBrainsAdapter } from './JetBrainsAdapter';
 export { BrowserAdapter } from './BrowserAdapter';
 
@@ -14,11 +14,11 @@ let adapterInstance: IdeAdapter | null = null;
 /**
  * Detect the current environment and return the appropriate adapter type
  */
-export function detectEnvironment(): 'jetbrains' | 'browser' {
+export function detectEnvironment(): IdeAdapterType {
   if (typeof window !== 'undefined' && window.kotlinBridge) {
-    return 'jetbrains';
+    return IdeAdapterType.JETBRAINS;
   }
-  return 'browser';
+  return IdeAdapterType.BROWSER;
 }
 
 /**
@@ -33,7 +33,7 @@ export function initializeAdapter(): IdeAdapter {
 
   const environment = detectEnvironment();
 
-  if (environment === 'jetbrains') {
+  if (environment === IdeAdapterType.JETBRAINS) {
     console.log('[IdeAdapter] Initializing JetBrains adapter');
     adapterInstance = new JetBrainsAdapter();
   } else {
@@ -41,7 +41,7 @@ export function initializeAdapter(): IdeAdapter {
     adapterInstance = new BrowserAdapter();
   }
 
-  return adapterInstance;
+  return adapterInstance!;
 }
 
 /**
@@ -72,7 +72,7 @@ export function onBridgeReady(): void {
   const currentType = adapterInstance?.type;
 
   // If we were using browser adapter but now have Kotlin bridge, switch
-  if (currentType === 'browser' && window.kotlinBridge) {
+  if (currentType === IdeAdapterType.BROWSER && window.kotlinBridge) {
     console.log('[IdeAdapter] Kotlin bridge detected, switching to JetBrains adapter');
     resetAdapter();
     initializeAdapter();
