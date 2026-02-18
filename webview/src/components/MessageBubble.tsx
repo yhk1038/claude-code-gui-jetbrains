@@ -1,4 +1,4 @@
-import {LoadedMessageDto} from '../types';
+import { LoadedMessageDto } from '../types';
 import {
   UserMessageRenderer,
   AssistantMessageRenderer,
