@@ -19,6 +19,16 @@ export const AssistantMessageRenderer: React.FC<AssistantMessageRendererProps> =
   const blocks = isContentBlockArray(content) ? content : [];
   const hasContent = blocks.length > 0 || typeof content === 'string';
 
+  // Skip rendering if message has no meaningful content (e.g. interrupted empty responses)
+  if (!message.isStreaming) {
+    const isEmpty = typeof content === 'string'
+      ? content.trim() === ''
+      : blocks.every(block =>
+          block.type === 'text' ? block.text.trim() === '' : false
+        );
+    if (isEmpty) return null;
+  }
+
   return (
     <div className="group py-2 px-4 pl-4">
       <div className="flex items-start gap-2">
