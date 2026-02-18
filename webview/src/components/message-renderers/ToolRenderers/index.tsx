@@ -4,6 +4,9 @@ import {LoadedMessageDto} from "@/types";
 import { BashRenderer } from "./BashRenderer";
 import {TodoWriteRenderer} from "./TodoWriteRenderer.tsx";
 import {TaskRenderer} from "./TaskRenderer.tsx";
+import {ReadRenderer} from "@/components/message-renderers/ToolRenderers/ReadRenderer.tsx";
+import {GrepRenderer} from "@/components/message-renderers/ToolRenderers/GrepRenderer.tsx";
+import {GlobRenderer} from "@/components/message-renderers/ToolRenderers/GlobRenderer.tsx";
 
 interface ToolRendererProps {
     toolUse: ToolUseBlockDto;
@@ -16,6 +19,9 @@ export function toolMapper() {
     registerTool(map, BashRenderer);
     registerTool(map, TodoWriteRenderer);
     registerTool(map, TaskRenderer);
+    registerTool(map, ReadRenderer);
+    registerTool(map, GrepRenderer);
+    registerTool(map, GlobRenderer);
 
     return map;
 }

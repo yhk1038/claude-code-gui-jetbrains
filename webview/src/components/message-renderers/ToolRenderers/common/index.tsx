@@ -17,11 +17,12 @@ export const ToolHeader = (props: {
     name: string;
     description?: string;
     inProgress?: boolean;
+    children?: ReactNode;
 }) => {
-    const {name, description = '', inProgress = false} = props;
+    const {name, description = '', inProgress = false, children} = props;
 
     return (
-        <div className="flex items-center gap-1.5 text-[13px] mb-2">
+        <div className="flex items-start gap-1.5 text-[13px] mb-2">
             <div className="text-white text-[13px] font-semibold">
                 <span className="">{name}</span>
                 {inProgress && (
@@ -29,7 +30,7 @@ export const ToolHeader = (props: {
                 )}
             </div>
 
-            <div className="text-white/60">{description}</div>
+            {children || <div className="text-white/60">{description}</div>}
         </div>
     )
 }
