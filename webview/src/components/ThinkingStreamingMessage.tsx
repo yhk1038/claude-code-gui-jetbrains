@@ -9,6 +9,31 @@ interface ThinkingStreamingMessageProps {
   className?: string;
 }
 
+/**
+ * Normalize bare relative URLs in markdown links so rehype-harden doesn't block them.
+ * e.g., [file.tsx](src/file.tsx) → [file.tsx](./src/file.tsx)
+ */
+function normalizeRelativeUrls(markdown: string): string {
+  // Match markdown links: [text](url)
+  // But NOT image links: ![text](url)
+  return markdown.replace(
+    /(?<!!)\[([^\]]*)\]\(([^)]+)\)/g,
+    (match, text, url) => {
+      // Skip if already has protocol, starts with /, ./, ../, or #
+      if (
+        /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(url) || // has protocol
+        url.startsWith('/') ||
+        url.startsWith('./') ||
+        url.startsWith('../') ||
+        url.startsWith('#')
+      ) {
+        return match;
+      }
+      return `[${text}](./${url})`;
+    }
+  );
+}
+
 export const ThinkingStreamingMessage: React.FC<ThinkingStreamingMessageProps> = ({
   content,
   isStreaming,
@@ -54,7 +79,7 @@ export const ThinkingStreamingMessage: React.FC<ThinkingStreamingMessageProps> =
                 table: true,
               }}
           >
-            {text}
+            {normalizeRelativeUrls(text)}
           </Streamdown>
         </div>
       </div>
