@@ -1,6 +1,6 @@
-import {LoadedMessageDto, ToolUseBlockDto} from "@/types";
-import {ToolHeader, ToolWrapper} from "./common";
 import {getAdapter} from "@/adapters";
+import {ToolUseBlockDto} from "@/types";
+import {RendererProps, ToolHeader, ToolWrapper} from "./common";
 
 class ReadToolUseDto extends ToolUseBlockDto {
     caller: { type: 'direct' };
@@ -9,12 +9,7 @@ class ReadToolUseDto extends ToolUseBlockDto {
     };
 }
 
-interface Props {
-    toolUse: ToolUseBlockDto;
-    toolResult?: LoadedMessageDto;
-}
-
-export function ReadRenderer(props: Props) {
+export function ReadRenderer(props: RendererProps) {
     const toolUse = props.toolUse as unknown as ReadToolUseDto;
     // const toolResult = props.toolResult as BashToolResultDto | undefined;
 

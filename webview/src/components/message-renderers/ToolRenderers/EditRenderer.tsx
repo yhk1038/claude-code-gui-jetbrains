@@ -1,6 +1,6 @@
-import {LoadedMessageDto, ToolUseBlockDto} from "@/types";
-import {ToolHeader, ToolWrapper} from "./common";
+import {ToolUseBlockDto} from "@/types";
 import {getAdapter} from "@/adapters";
+import {RendererProps, ToolHeader, ToolWrapper} from "./common";
 
 class EditToolUseDto extends ToolUseBlockDto {
     caller: { type: 'direct' };
@@ -9,11 +9,6 @@ class EditToolUseDto extends ToolUseBlockDto {
         old_string: string;
         new_string: string;
     };
-}
-
-interface Props {
-    toolUse: ToolUseBlockDto;
-    toolResult?: LoadedMessageDto;
 }
 
 function summarizeDiff(oldStr: string, newStr: string): string {
@@ -29,7 +24,7 @@ function summarizeDiff(oldStr: string, newStr: string): string {
     return parts.join(', ');
 }
 
-export function EditRenderer(props: Props) {
+export function EditRenderer(props: RendererProps) {
     const toolUse = props.toolUse as unknown as EditToolUseDto;
     const name = toolUse.name;
     const path = toolUse.input?.file_path ?? '';

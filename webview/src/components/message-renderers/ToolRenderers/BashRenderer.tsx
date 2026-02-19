@@ -1,5 +1,4 @@
-import {LoadedMessageDto, ToolUseBlockDto} from "@/types";
-import {Container, LabelValue, ToolHeader, ToolWrapper} from "./common";
+import {Container, LabelValue, RendererProps, ToolHeader, ToolWrapper} from "./common";
 
 interface BashToolUseDto {
     name: string;
@@ -16,12 +15,7 @@ interface BashToolResultDto {
     }
 }
 
-interface Props {
-    toolUse: ToolUseBlockDto;
-    toolResult?: LoadedMessageDto;
-}
-
-export function BashRenderer(props: Props) {
+export function BashRenderer(props: RendererProps) {
     const toolUse = props.toolUse as unknown as BashToolUseDto;
     const toolResult = props.toolResult as BashToolResultDto | undefined;
 

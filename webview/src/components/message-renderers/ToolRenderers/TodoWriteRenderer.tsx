@@ -1,6 +1,6 @@
-import {ToolHeader, ToolWrapper} from "@/components/message-renderers/ToolRenderers/common";
 import {ToolUseBlockDto} from "@/dto";
-import {LoadedMessageDto} from "@/types";
+import {ToolHeader, ToolWrapper} from "./common";
+import {RendererProps} from "./common";
 
 
 class TodoWriteToolUseDto extends ToolUseBlockDto {
@@ -14,12 +14,7 @@ class TodoWriteToolUseDto extends ToolUseBlockDto {
     };
 }
 
-interface Props {
-    toolUse: ToolUseBlockDto;
-    toolResult?: LoadedMessageDto;
-}
-
-export function TodoWriteRenderer(props: Props) {
+export function TodoWriteRenderer(props: RendererProps) {
     const toolUse = props.toolUse as unknown as TodoWriteToolUseDto;
     const todos = toolUse.input.todos;
     // const toolResult = props.toolResult as BashToolResultDto | undefined;

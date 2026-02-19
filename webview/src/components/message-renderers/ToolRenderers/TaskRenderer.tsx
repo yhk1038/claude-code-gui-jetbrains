@@ -1,5 +1,5 @@
-import {LoadedMessageDto, ToolUseBlockDto} from "@/types";
-import {Container, LabelValue, ToolHeader, ToolWrapper} from "./common";
+import {ToolUseBlockDto} from "@/types";
+import {Container, LabelValue, RendererProps, ToolHeader, ToolWrapper} from "./common";
 
 class TaskToolUseDto extends ToolUseBlockDto {
     caller: { type: 'direct' };
@@ -10,12 +10,7 @@ class TaskToolUseDto extends ToolUseBlockDto {
     };
 }
 
-interface Props {
-    toolUse: ToolUseBlockDto;
-    toolResult?: LoadedMessageDto;
-}
-
-export function TaskRenderer(props: Props) {
+export function TaskRenderer(props: RendererProps) {
     const toolUse = props.toolUse as unknown as TaskToolUseDto;
     // const toolResult = props.toolResult as BashToolResultDto | undefined;
 

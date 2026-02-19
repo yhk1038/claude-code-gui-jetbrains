@@ -1,6 +1,6 @@
-import {LoadedMessageDto, ToolUseBlockDto} from "@/types";
-import {ToolHeader, ToolWrapper} from "./common";
 import {useState} from "react";
+import {ToolUseBlockDto} from "@/types";
+import {RendererProps, ToolHeader, ToolWrapper} from "./common";
 
 class GrepToolUseDto extends ToolUseBlockDto {
     caller: { type: 'direct' };
@@ -16,12 +16,7 @@ class GrepToolResultDto {
     content: string;
 }
 
-interface Props {
-    toolUse: ToolUseBlockDto;
-    toolResult?: LoadedMessageDto;
-}
-
-export function GrepRenderer(props: Props) {
+export function GrepRenderer(props: RendererProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const toolUse = props.toolUse as unknown as GrepToolUseDto;
     const toolResult = props.toolResult?.message?.content[0] as GrepToolResultDto | undefined;
@@ -37,12 +32,13 @@ export function GrepRenderer(props: Props) {
                 <div className="text-white/80 text-[12px] line-clamp-2 break-all">"{pattern}" (in {path})</div>
             </ToolHeader>
 
-            {toolResult?.content && <div
-                onClick={() => setIsExpanded(!isExpanded)}
-                className={`text-white/50 text-[11px] cursor-pointer hover:underline whitespace-pre-wrap ${isExpanded ? '' : 'max-h-[20px] overflow-hidden'}`}>
+            {toolResult?.content && (
+                <div
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className={`text-white/50 text-[11px] -mt-1 cursor-pointer hover:underline whitespace-pre-wrap ${isExpanded ? '' : 'max-h-[20px] overflow-hidden'}`}>
                     {toolResult.content}
                 </div>
-            }
+            )}
         </ToolWrapper>
     )
 }

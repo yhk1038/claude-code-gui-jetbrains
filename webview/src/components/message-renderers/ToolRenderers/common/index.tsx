@@ -1,5 +1,7 @@
 import {ReactNode, useState} from "react";
 
+export * from './RendererProps';
+
 export const ToolWrapper = (props: {
     onClick?: () => any;
     children: ReactNode;
@@ -22,7 +24,7 @@ export const ToolHeader = (props: {
     const {name, description = '', inProgress = false, children} = props;
 
     return (
-        <div className="flex items-start gap-1.5 text-[13px] mb-1">
+        <div className="flex items-start gap-1.5 text-[13px] mb-3">
             <div className="text-white text-[13px] font-semibold">
                 <span className="">{name}</span>
                 {inProgress && (

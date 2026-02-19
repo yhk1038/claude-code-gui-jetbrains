@@ -1,8 +1,8 @@
 import React from 'react';
 import {LoadedMessageDto} from '../../types';
 import {ToolUseBlockDto} from '../../dto/message/ContentBlockDto';
-import {toolMapper} from "@/components/message-renderers/ToolRenderers";
-import {ToolHeader, ToolWrapper} from "@/components/message-renderers/ToolRenderers/common";
+import {toolMapper} from "./ToolRenderers";
+import {ToolHeader, ToolWrapper} from "./ToolRenderers/common";
 
 interface ToolRendererProps {
     toolUse: ToolUseBlockDto;
