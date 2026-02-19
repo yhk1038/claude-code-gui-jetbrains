@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React from 'react';
 import { LoadedMessageDto, getTextContent } from '../../types';
 import { useCopyToClipboard } from './hooks/useCopyToClipboard';
 import { ContextPills } from './components/ContextPills';
@@ -6,6 +6,7 @@ import { ImageAttachments } from './components/ImageAttachments';
 import { MessageActions } from './components/MessageActions';
 import { parseUserContent } from './utils/parseUserContent';
 import { InterruptedMessageRenderer } from './InterruptedMessageRenderer';
+import { MessageBox } from './components/MessageBox';
 
 interface UserMessageRendererProps {
   message: LoadedMessageDto;
@@ -16,7 +17,6 @@ const INTERRUPTED_FOR_TOOL_USE_TEXT = '[Request interrupted by user for tool use
 
 export const UserMessageRenderer: React.FC<UserMessageRendererProps> = ({ message }) => {
   const { copied, copy } = useCopyToClipboard();
-  const [isExpended, setIsExpended] = useState(false);
   const parsedContent = parseUserContent(getTextContent(message));
 
   const handleCopy = () => {
@@ -38,15 +38,42 @@ export const UserMessageRenderer: React.FC<UserMessageRendererProps> = ({ messag
     return <InterruptedMessageRenderer message={message} label="Tool interrupted" />;
   }
 
+  // Skip rendering for local-command-caveat without text or command name
+  if (parsedContent.hasLocalCommandCaveat && !parsedContent.text && !parsedContent.commandName) {
+    return null;
+  }
+
+  // Render command-name style messages
+  if (parsedContent.commandName) {
+    return (
+      <div className="group py-2 px-4">
+        <div className="flex items-start gap-2">
+          <div className="min-w-0">
+            <MessageBox collapsible={false}>
+              <div className="text-white/80 text-[13px] leading-relaxed whitespace-pre-wrap break-words">
+                <span className="text-white/50">{'/'}</span>{parsedContent.commandName}
+                {parsedContent.text && (
+                  <span className="text-white/50">{' '}{parsedContent.text}</span>
+                )}
+              </div>
+            </MessageBox>
+            {allContexts.length > 0 && <ContextPills context={allContexts} />}
+          </div>
+          <MessageActions copied={copied} onCopy={handleCopy} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="group py-2 px-4">
       <div className="flex items-start gap-2">
         <div className="min-w-0">
-          <div className={`bg-zinc-800/80 border border-white/25 rounded-lg px-[8px] py-[3.5px] ${isExpended ? '' : 'max-h-[280px] overflow-hidden'}`} onClick={() => setIsExpended(!isExpended)}>
+          <MessageBox>
             <div className="text-white/80 text-[13px] leading-relaxed whitespace-pre-wrap break-words">
               {parsedContent.text}
             </div>
-          </div>
+          </MessageBox>
 
           {allContexts.length > 0 && <ContextPills context={allContexts} />}
           {message.images && message.images.length > 0 && (

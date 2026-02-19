@@ -6,13 +6,20 @@ import { Context } from '../../../types';
  * 추출 대상 태그:
  * - <ide_opened_file>...</ide_opened_file> → Context { type: 'file' }
  * - <ide_selection>...</ide_selection> → Context { type: 'selection' }
+ * - <command-name>...</command-name> → commandName 필드로 추출
  *
  * 제거만 하는 태그:
  * - <system-reminder>...</system-reminder>
+ * - <local-command-caveat>...</local-command-caveat> → hasLocalCommandCaveat: true
+ * - <command-message>...</command-message>
+ * - <command-args>...</command-args>
+ * - <local-command-stdout> (태그만 제거, 내용 보존)
  */
 export function parseUserContent(content: string): {
   text: string;
   contexts: Context[];
+  commandName?: string;
+  hasLocalCommandCaveat?: boolean;
 } {
   const contexts: Context[] = [];
 
@@ -37,12 +44,34 @@ export function parseUserContent(content: string): {
   const systemReminderPattern = /<system-reminder>[\s\S]*?<\/system-reminder>/g;
   cleanText = cleanText.replace(systemReminderPattern, '');
 
-  // Step D: 중복 공백/줄바꿈 정리
+  // Step E: <command-name> 태그에서 명령어 이름 추출 (선행 / 제거)
+  let commandName: string | undefined;
+  const commandMatch = /<command-name>([\s\S]*?)<\/command-name>/.exec(content);
+  if (commandMatch) {
+    commandName = commandMatch[1].trim().replace(/^\/+/, '');
+  }
+  cleanText = cleanText.replace(/<command-name>[\s\S]*?<\/command-name>/g, '');
+
+  // Step F: <local-command-caveat> 태그 제거 및 플래그 설정
+  const hasLocalCommandCaveat = /<local-command-caveat>/.test(content);
+  cleanText = cleanText.replace(/<local-command-caveat>[\s\S]*?<\/local-command-caveat>/g, '');
+
+  // Step G: <command-message>, <command-args> 태그+내용 제거, <local-command-stdout> 태그만 제거(내용 보존)
+  cleanText = cleanText.replace(/<command-message>[\s\S]*?<\/command-message>/g, '');
+  cleanText = cleanText.replace(/<command-args>[\s\S]*?<\/command-args>/g, '');
+  cleanText = cleanText.replace(/<\/?local-command-stdout>/g, '');
+
+  // Step H: command가 감지되면 남은 텍스트에서 리터럴 /commandName 제거
+  if (commandName) {
+    cleanText = cleanText.replace(new RegExp(`^\\s*//?${commandName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*`, 'g'), '');
+  }
+
+  // Step I: 중복 공백/줄바꿈 정리
   cleanText = cleanText
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
-  return { text: cleanText, contexts };
+  return { text: cleanText, contexts, commandName, hasLocalCommandCaveat };
 }
 
 /**
