@@ -73,7 +73,7 @@ export const ToolHeader = (props: {
 
 export const Container = ({children}: { children?: ReactNode }) => {
     return (
-        <div className="bg-zinc-800/40 border border-white/15 rounded text-[12px] font-mono">
+        <div className="bg-zinc-800/40 border border-white/15 rounded text-[11px] font-mono">
             {children}
         </div>
     )

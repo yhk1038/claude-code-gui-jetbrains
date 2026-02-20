@@ -63,7 +63,7 @@ export function TaskRenderer(props: RendererProps) {
             <ToolWrapper message={props.message}>
                 {/* IMPORTANT: ToolHeader uses {children || <description>} pattern,
                 so we MUST include description inside children to preserve it */}
-                <ToolHeader name={name} inProgress={!props.toolResult && !hasSubAgentMessages}>
+                <ToolHeader name={name} inProgress={!props.toolResult && !hasSubAgentMessages} className="mb-2.5">
                     <div className="text-white/60">{description}</div>
                 </ToolHeader>
 

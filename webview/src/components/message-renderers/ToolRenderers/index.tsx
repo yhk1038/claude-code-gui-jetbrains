@@ -8,6 +8,8 @@ import {ReadRenderer} from "@/components/message-renderers/ToolRenderers/ReadRen
 import {GrepRenderer} from "@/components/message-renderers/ToolRenderers/GrepRenderer.tsx";
 import {GlobRenderer} from "@/components/message-renderers/ToolRenderers/GlobRenderer.tsx";
 import {EditRenderer} from "@/components/message-renderers/ToolRenderers/EditRenderer.tsx";
+import {AskUserQuestionRenderer} from "./AskUserQuestionRenderer.tsx";
+import {EnterPlanModeRenderer} from "./EnterPlanModeRenderer.tsx";
 
 interface ToolRendererProps {
     toolUse: ToolUseBlockDto;
@@ -25,6 +27,8 @@ export function toolMapper() {
     registerTool(map, GrepRenderer);
     registerTool(map, GlobRenderer);
     registerTool(map, EditRenderer);
+    registerTool(map, AskUserQuestionRenderer);
+    registerTool(map, EnterPlanModeRenderer);
 
     return map;
 }
