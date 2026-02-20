@@ -116,6 +116,27 @@ export function ChatInput({
     }
   }, [sessionId, disabled, textareaRef]);
 
+  // Focus textarea when window/document gains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      textareaRef.current?.focus();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        handleFocus();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [textareaRef]);
+
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
     // Shift+Tab: 모드 전환
     if (e.shiftKey && e.key === 'Tab') {

@@ -4,6 +4,7 @@ import { SessionHeader } from './SessionHeader';
 import { ChatMessageArea } from './ChatMessageArea';
 import { useSessionContext } from '../contexts/SessionContext';
 import { useChatStreamContext } from '../contexts/ChatStreamContext';
+import { useChatInputFocus } from '../contexts/ChatInputFocusContext';
 
 export function ChatPanel() {
   // Use ChatStreamContext for unified state management
@@ -35,6 +36,8 @@ export function ChatPanel() {
     denyToolUse,
   } = tools;
 
+  const { focus: focusInput } = useChatInputFocus();
+
   // Auto-save messages when they change (debounced in useSession)
   const lastMessage = messages[messages.length - 1];
   const lastMessageContent = lastMessage?.message?.content;
@@ -51,6 +54,15 @@ export function ChatPanel() {
     setWorkingDirectory(path);
   }, [setWorkingDirectory]);
 
+  // Click on non-interactive area → focus input
+  const handleContainerClick = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('button, a, input, textarea, select, [role="button"], [contenteditable]')) {
+      return;
+    }
+    focusInput();
+  }, [focusInput]);
+
   // Handle submit - session creation is handled by ChatStreamContext.sendMessage
   const handleSubmitWithSession = useCallback((e?: React.FormEvent) => {
     e?.preventDefault();
@@ -58,7 +70,7 @@ export function ChatPanel() {
   }, [handleSubmit]);
 
   return (
-    <div className="flex flex-col h-screen bg-zinc-950 text-zinc-100">
+    <div className="flex flex-col h-screen bg-zinc-950 text-zinc-100" onClick={handleContainerClick}>
       {/* Header - Minimal */}
       <div className="flex-shrink-0 border-b border-zinc-800">
         <SessionHeader />
