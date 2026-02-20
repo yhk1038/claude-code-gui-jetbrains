@@ -19,7 +19,7 @@ export function ReadRenderer(props: RendererProps) {
     // const output = toolResult?.message?.content[0].content ?? '' as string;
 
     return (
-        <ToolWrapper>
+        <ToolWrapper message={props.message} groupClassName="pb-2.5">
             <ToolHeader name={name}>
                 <div className="text-white/80 text-[12px] cursor-pointer hover:underline font-mono" onClick={() => getAdapter().openFile(path)}>{fileName}</div>
             </ToolHeader>

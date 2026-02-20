@@ -3,6 +3,8 @@ import {LoadedMessageDto, isContentBlockArray} from '../types';
 import { MessageBubble } from './MessageBubble';
 import { ProjectSelector } from './ProjectSelector';
 import { ToolUseBlockDto, ToolResultBlockDto } from '../dto/message/ContentBlockDto';
+import { transformContentBlocks } from '../mappers/contentBlockTransformer';
+import type { SubAgentMessage } from '../dto/message/ContentBlockDto';
 
 interface ChatMessageAreaProps {
   messages: LoadedMessageDto[];
@@ -12,6 +14,29 @@ interface ChatMessageAreaProps {
   onRetry: (messageId: string) => void;
   approveToolUse: (toolId: string) => void;
   denyToolUse: (toolId: string) => void;
+}
+
+/**
+ * Convert progress entries into SubAgentMessage array.
+ * Filters to only `agent_progress` type (excludes `hook_progress` and others).
+ * Both assistant (tool_use) and user (tool_result) roles are preserved;
+ * merging of tool_result into tool_use happens in TaskRenderer.
+ */
+function buildSubAgentMessages(progressEntries: LoadedMessageDto[]): SubAgentMessage[] {
+  return progressEntries
+    .filter(entry => entry.data?.type === 'agent_progress' && entry.data?.message)
+    .map(entry => {
+      const msgData = entry.data!.message.message;
+      const content = transformContentBlocks(msgData.content);
+      return {
+        content,
+        role: msgData.role as 'assistant' | 'user',
+        timestamp: entry.timestamp ?? '',
+      };
+    })
+    .sort((a, b) => {
+      return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+    });
 }
 
 export function ChatMessageArea({
@@ -35,6 +60,16 @@ export function ChatMessageArea({
 
   // Merge tool_result user messages into preceding assistant's tool_use blocks
   const mergedMessages = useMemo(() => {
+    // Phase 0: Collect progress entries grouped by parentToolUseID
+    const progressMap = new Map<string, LoadedMessageDto[]>();
+    for (const msg of messages) {
+      if (msg.type === 'progress' && msg.parentToolUseID) {
+        const list = progressMap.get(msg.parentToolUseID) || [];
+        list.push(msg);
+        progressMap.set(msg.parentToolUseID, list);
+      }
+    }
+
     // Build tool_use_id → ToolUseBlockDto lookup from all assistant messages
     const toolUseMap = new Map<string, ToolUseBlockDto>();
     for (const msg of messages) {
@@ -48,9 +83,18 @@ export function ChatMessageArea({
       }
     }
 
+    // Phase 1.5: Attach progress entries to Task tool_use blocks
+    for (const [parentId, progressEntries] of progressMap) {
+      const toolUseBlock = toolUseMap.get(parentId);
+      if (toolUseBlock && toolUseBlock.name === 'Task') {
+        toolUseBlock.subAgentMessages = buildSubAgentMessages(progressEntries);
+      }
+    }
+
     // Attach tool_result messages to matching tool_use blocks and filter them out
     const result: LoadedMessageDto[] = [];
     for (const msg of messages) {
+      if (msg.type === 'progress') continue; // Skip progress entries (rendered inside TaskRenderer)
       if (msg.type === 'user') {
         const content = msg.message?.content;
         if (isContentBlockArray(content)) {

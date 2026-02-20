@@ -25,8 +25,8 @@ export function TodoWriteRenderer(props: RendererProps) {
     // const output = toolResult?.message?.content[0].content ?? '' as string;
 
     return (
-        <ToolWrapper onClick={() => console.log(props.toolUse, todos)}>
-            <ToolHeader name="Update Todos"/>
+        <ToolWrapper message={props.message} onClick={() => console.log(props.toolUse, todos)}>
+            <ToolHeader name="Update Todos" className="mb-[12px]" />
 
             <div className="text-[12px] font-mono flex flex-col gap-[8px]">
                 {todos.map((todo, i) => {

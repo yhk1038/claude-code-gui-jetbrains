@@ -28,6 +28,8 @@ export class ToolUseBlockDto extends ContentBlockDto {
   input!: Record<string, unknown>;
   /** Runtime-only: merged tool_result message from subsequent user message */
   tool_result?: LoadedMessageDto;
+  /** Runtime-only: progress entries from sub-agent (for Task tool only) */
+  subAgentMessages?: SubAgentMessage[];
 }
 
 /**
@@ -57,6 +59,18 @@ export class ImageBlockDto extends ContentBlockDto {
 
   @Type(() => ImageSourceDto)
   source!: ImageSourceDto;
+}
+
+/**
+ * Sub-agent message extracted from progress entries (for Task tool rendering)
+ */
+export interface SubAgentMessage {
+  /** The content blocks from the sub-agent (tool_use or tool_result) */
+  content: AnyContentBlockDto[];
+  /** Role: assistant for tool_use, user for tool_result */
+  role: 'assistant' | 'user';
+  /** Timestamp for ordering (always present in real data) */
+  timestamp: string;
 }
 
 export type AnyContentBlockDto =

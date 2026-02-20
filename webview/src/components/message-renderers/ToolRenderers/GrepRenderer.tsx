@@ -27,7 +27,7 @@ export function GrepRenderer(props: RendererProps) {
     // const output = toolResult?.message?.content[0].content ?? '' as string;
 
     return (
-        <ToolWrapper>
+        <ToolWrapper message={props.message}>
             <ToolHeader name={name}>
                 <div className="text-white/80 text-[12px] line-clamp-2 break-all">"{pattern}" (in {path})</div>
             </ToolHeader>

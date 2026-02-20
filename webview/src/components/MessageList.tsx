@@ -158,6 +158,7 @@ export const MessageList: React.FC<MessageListProps> = ({
             <StreamingMessage
               content={getTextContent(message)}
               isStreaming={isStreaming}
+              message={message}
             />
           ) : (
             <div className="user-content">

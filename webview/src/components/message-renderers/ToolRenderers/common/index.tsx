@@ -1,8 +1,41 @@
 import {ReactNode, useState} from "react";
+import {ContextPills, StreamingIndicator} from "@/components/message-renderers";
+import type {LoadedMessageDto} from "@/types";
+import {cn} from "@/utils/cn.ts";
 
 export * from './RendererProps';
 
 export const ToolWrapper = (props: {
+    message?: LoadedMessageDto;
+    onClick?: () => any;
+    groupClassName?: string;
+    className?: string;
+    children: ReactNode;
+}) => {
+    const {message, groupClassName = '', className = '', onClick, children} = props;
+
+    return (
+        <div className={cn(`group pt-2 pb-4 pl-6 pr-3`, groupClassName)}>
+            <div className="flex items-start gap-3">
+                {/* Bullet indicator */}
+                <span className="text-zinc-500 mt-[3px] text-[9px]">●</span>
+
+                {message?.isStreaming && <StreamingIndicator />}
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                    <div className={cn(`mt-0.5`, className)} onClick={onClick}>
+                        {children}
+                    </div>
+                </div>
+
+                {message?.context && <ContextPills context={message.context} />}
+            </div>
+        </div>
+    )
+}
+
+export const ToolWrapper2 = (props: {
     onClick?: () => any;
     children: ReactNode;
 }) => {
@@ -19,12 +52,13 @@ export const ToolHeader = (props: {
     name: string;
     description?: string;
     inProgress?: boolean;
+    className?: string;
     children?: ReactNode;
 }) => {
-    const {name, description = '', inProgress = false, children} = props;
+    const {name, description = '', className = '', inProgress = false, children} = props;
 
     return (
-        <div className="flex items-start gap-1.5 text-[13px] mb-3">
+        <div className={cn(`flex items-start gap-1.5 text-[13px]`, className)}>
             <div className="text-white text-[13px] font-semibold">
                 <span className="">{name}</span>
                 {inProgress && (

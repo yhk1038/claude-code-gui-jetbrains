@@ -46,7 +46,7 @@ export class MessageDto {
  * which in turn triggers `@Transform` on `MessageDto.content`.
  */
 export class LoadedMessageDto {
-  type!: 'user' | 'assistant' | 'system' | 'result';
+  type!: 'user' | 'assistant' | 'system' | 'result' | 'progress';
   uuid?: string;
   timestamp?: string;
   parentUuid?: string | null;
@@ -62,6 +62,20 @@ export class LoadedMessageDto {
   subtype?: string;
   result?: unknown;
   toolUseResult?: unknown;
+
+  // progress-specific fields (agent_progress entries from JSONL)
+  parentToolUseID?: string;
+  data?: {
+    type: string;
+    agentId: string;
+    message: {
+      type: string;
+      message: {
+        role: string;
+        content: unknown;
+      };
+    };
+  };
 
   // metadata
   slug?: string;

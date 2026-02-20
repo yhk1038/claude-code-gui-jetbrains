@@ -31,7 +31,10 @@ export function GlobRenderer(props: RendererProps) {
     const name = toolUse.name;
     const pattern = toolUse.input?.pattern ?? '';
     const content = toolResult?.message?.content[0]?.content ?? '' as string;
-    const filenames = toolResult?.toolUseResult?.filenames || [];
+    // 구조화된 결과가 없으면 content에서 파일 경로를 파싱
+    const filenames = toolResult?.toolUseResult?.filenames
+        || (content ? content.split('\n').filter(line => line.trim()) : []);
+    const numFiles = filenames.length;
     const { workingDirectory } = useSessionContext();
 
     const stripCwd = (filepath: string) => {
@@ -42,36 +45,41 @@ export function GlobRenderer(props: RendererProps) {
     };
 
     return (
-        <ToolWrapper>
+        <ToolWrapper message={props.message}>
             <ToolHeader name={name}>
                 <div className="text-white/80 text-[11px] line-clamp-2 font-mono">
                     pattern: "{pattern}"
                 </div>
-
-                {filenames.length ? (
-                    <div
-                        className={`text-white/50 text-[11px] whitespace-pre-wrap`}>
-                        <div className="cursor-pointer hover:underline" onClick={() => setIsExpanded(!isExpanded)}>
-                            Found {filenames.length} files
-                        </div>
-
-                        <ul className={`${isExpanded ? '' : 'hidden'}`}>
-                            {filenames.map((filename) => (
-                                <li
-                                    key={filename}
-                                    className="cursor-pointer hover:underline truncate"
-                                    onClick={() => getAdapter().openFile(filename)}
-                                >{stripCwd(filename)}</li>
-                            ))}
-                        </ul>
-                    </div>
-                ) : (
-                    <div
-                        className={`text-white/50 text-[11px] whitespace-pre-wrap`}>
-                        {content}
-                    </div>
-                )}
             </ToolHeader>
+
+            {numFiles > 0 ? (
+                <>
+                    <div
+                        className="text-white/50 text-[12px] mt-0.5 cursor-pointer hover:text-white/70 select-none"
+                        onClick={() => setIsExpanded(!isExpanded)}
+                    >
+                        Found {numFiles} {numFiles === 1 ? 'file' : 'files'}
+                    </div>
+
+                    {isExpanded && (
+                        <div className="mt-1 ml-0.5 text-[12px] font-mono">
+                            {filenames.map((filename) => (
+                                <div
+                                    key={filename}
+                                    className="text-white/50 hover:text-white/80 cursor-pointer truncate leading-[20px]"
+                                    onClick={() => getAdapter().openFile(filename)}
+                                >
+                                    {stripCwd(filename)}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </>
+            ) : (
+                <div className="text-white/50 text-[11px] whitespace-pre-wrap">
+                    {content}
+                </div>
+            )}
         </ToolWrapper>
     )
 }

@@ -66,11 +66,11 @@ export const UserMessageRenderer: React.FC<UserMessageRendererProps> = ({ messag
   }
 
   return (
-    <div className="group py-2 px-4">
+    <div className="group pt-2 pb-4 px-4">
       <div className="flex items-start gap-2">
         <div className="min-w-0">
           <MessageBox>
-            <div className="text-white/80 text-[13px] leading-relaxed whitespace-pre-wrap break-words">
+            <div className="text-white/80 text-[13px] leading-[1.5] whitespace-pre-wrap break-words">
               {parsedContent.text}
             </div>
           </MessageBox>
@@ -81,7 +81,7 @@ export const UserMessageRenderer: React.FC<UserMessageRendererProps> = ({ messag
           )}
         </div>
 
-        <MessageActions copied={copied} onCopy={handleCopy} />
+        {/*<MessageActions copied={copied} onCopy={handleCopy} />*/}
       </div>
     </div>
   );

@@ -34,8 +34,8 @@ export function EditRenderer(props: RendererProps) {
     const summary = summarizeDiff(oldString, newString);
 
     return (
-        <ToolWrapper>
-            <ToolHeader name={name} inProgress={!props.toolResult}>
+        <ToolWrapper message={props.message}>
+            <ToolHeader name={name} className="mb-[2px]" inProgress={!props.toolResult}>
                 <div className="text-white/80 text-[11px] cursor-pointer hover:underline font-mono" onClick={() => getAdapter().openFile(path)}>{fileName}</div>
             </ToolHeader>
             <div className="text-white/50 text-[11px]">{summary}</div>

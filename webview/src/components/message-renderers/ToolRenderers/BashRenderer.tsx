@@ -25,8 +25,13 @@ export function BashRenderer(props: RendererProps) {
     const output = toolResult?.message?.content[0].content ?? '' as string;
 
     return (
-        <ToolWrapper>
-            <ToolHeader name={name} description={description} inProgress={!toolResult} />
+        <ToolWrapper message={props.message}>
+            <ToolHeader
+                name={name}
+                description={description}
+                inProgress={!toolResult}
+                className="mb-2.5"
+            />
 
             <Container>
                 <LabelValue

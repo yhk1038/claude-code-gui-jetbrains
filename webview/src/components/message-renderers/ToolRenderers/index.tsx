@@ -12,6 +12,7 @@ import {EditRenderer} from "@/components/message-renderers/ToolRenderers/EditRen
 interface ToolRendererProps {
     toolUse: ToolUseBlockDto;
     toolResult?: LoadedMessageDto;
+    message?: LoadedMessageDto;
 }
 
 export function toolMapper() {

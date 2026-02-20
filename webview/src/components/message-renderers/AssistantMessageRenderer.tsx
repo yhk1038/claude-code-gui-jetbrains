@@ -6,6 +6,7 @@ import { StreamingIndicator } from './components/StreamingIndicator';
 import { ContextPills } from './components/ContextPills';
 import { ToolRenderer } from './ToolRenderer';
 import {ThinkingStreamingMessage} from "@/components/ThinkingStreamingMessage.tsx";
+import {ToolWrapper} from "@/components/message-renderers/ToolRenderers/common";
 
 interface AssistantMessageRendererProps {
   message: LoadedMessageDto;
@@ -30,65 +31,63 @@ export const AssistantMessageRenderer: React.FC<AssistantMessageRendererProps> =
   }
 
   return (
-    <div className="group py-2 px-4 pl-4">
-      <div className="flex items-start gap-2">
-        {/* Bullet indicator */}
-        <span className="text-zinc-500 mt-[3px] text-[9px]">●</span>
+      <>
+        {/*{message.isStreaming && <StreamingIndicator />}*/}
 
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          {message.isStreaming && <StreamingIndicator />}
-
-          {hasContent ? (
+        {hasContent ? (
             <>
               {typeof content === 'string' ? (
-                <StreamingMessage
-                  content={content}
-                  isStreaming={message.isStreaming ?? false}
-                  className="text-zinc-200 text-[13px] leading-relaxed"
-                />
+                  <StreamingMessage
+                      content={content}
+                      isStreaming={message.isStreaming ?? false}
+                      className="text-zinc-200 text-[13px] leading-relaxed"
+                      message={message}
+                  />
               ) : (
-                blocks.map((block, index) => {
-                  if (block.type === 'text') {
-                    if (block.text.startsWith('{"type":"thinking"')) {
+                  blocks.map((block, index) => {
+                    if (block.type === 'text') {
+                      if (block.text.startsWith('{"type":"thinking"')) {
+                        return (
+                            <ThinkingStreamingMessage
+                                key={index}
+                                content={block.text}
+                                isStreaming={message.isStreaming ?? false}
+                                className="text-zinc-200 text-[13px] leading-relaxed"
+                                message={message}
+                            />
+                        );
+                      }
+
                       return (
-                          <ThinkingStreamingMessage
+                          <StreamingMessage
                               key={index}
                               content={block.text}
                               isStreaming={message.isStreaming ?? false}
                               className="text-zinc-200 text-[13px] leading-relaxed"
+                              message={message}
                           />
                       );
                     }
-
-                    return (
-                      <StreamingMessage
-                        key={index}
-                        content={block.text}
-                        isStreaming={message.isStreaming ?? false}
-                        className="text-zinc-200 text-[13px] leading-relaxed"
-                      />
-                    );
-                  }
-                  if (block.type === 'tool_use') {
-                    return (
-                      <ToolRenderer
-                        key={(block as ToolUseBlockDto).id}
-                        toolUse={block as ToolUseBlockDto}
-                      />
-                    );
-                  }
-                  return null;
-                })
+                    if (block.type === 'tool_use') {
+                      return (
+                          <ToolRenderer
+                              key={(block as ToolUseBlockDto).id}
+                              toolUse={block as ToolUseBlockDto}
+                              message={message}
+                          />
+                      );
+                    }
+                    return null;
+                  })
               )}
             </>
-          ) : (
-            <span className="text-zinc-600 italic">Thinking...</span>
-          )}
+        ) : (
+            <ToolWrapper message={message}>
+              <span className="text-zinc-600 italic">Thinking...</span>
+            </ToolWrapper>
+        )}
 
-          {message.context && <ContextPills context={message.context} />}
-        </div>
-      </div>
-    </div>
+        {/*{message.context && <ContextPills context={message.context} />}*/}
+      </>
   );
 };
