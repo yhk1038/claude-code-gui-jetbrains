@@ -1,36 +1,12 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { ChatInput } from './ChatInput';
 import { SessionHeader } from './SessionHeader';
 import { ChatMessageArea } from './ChatMessageArea';
 import { PendingPermissionsBanner } from './PendingPermissionsBanner';
-import { useSessionContext } from '../contexts/SessionContext';
-import { useChatStreamContext } from '../contexts/ChatStreamContext';
 import { useChatInputFocus } from '../contexts/ChatInputFocusContext';
 
 export function ChatPanel() {
-  const {
-    messages,
-    isStreaming,
-  } = useChatStreamContext();
-
-  const {
-    currentSessionId,
-    saveMessages,
-  } = useSessionContext();
-
   const { textareaRef, focus: focusInput } = useChatInputFocus();
-
-  // Auto-save messages when they change (debounced in useSession)
-  const lastMessage = messages[messages.length - 1];
-  const lastMessageContent = lastMessage?.message?.content;
-  const lastMessageId = lastMessage?.uuid;
-
-  useEffect(() => {
-    if (currentSessionId && messages.length > 0 && !isStreaming) {
-      saveMessages(messages);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSessionId, messages.length, lastMessageId, lastMessageContent, isStreaming]);
 
   // 빈 영역 클릭 시 textarea로 포커스 이동
   // mousedown 시점에 확인해야 포커스 이동 전 activeElement를 비교할 수 있음

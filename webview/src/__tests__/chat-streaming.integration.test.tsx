@@ -39,12 +39,10 @@ const mockSession = {
   resetToNewSession: vi.fn(),
   openNewTab: vi.fn(),
   openSettings: vi.fn(),
-  createSessionWithMessage: vi.fn().mockReturnValue({ sessionId: 'test-session', title: 'Test' }),
   switchSession: vi.fn(),
   deleteSession: vi.fn(),
   renameSession: vi.fn(),
   setSessionState: vi.fn(),
-  saveMessages: vi.fn(),
   setWorkingDirectory: vi.fn(),
 };
 
@@ -166,36 +164,6 @@ describe('채팅 스트리밍 통합 테스트', () => {
       context: [],
     });
     expect(screen.getByTestId('input')).toHaveValue('');
-  });
-
-  it('sendMessage: 세션이 없으면 createSessionWithMessage 호출', async () => {
-    mockSession.currentSessionId = null;
-
-    render(
-      <ChatStreamProvider>
-        <TestChatComponent />
-      </ChatStreamProvider>
-    );
-
-    const input = screen.getByTestId('input');
-    const submit = screen.getByTestId('submit');
-
-    await act(async () => {
-      fireEvent.change(input, { target: { value: 'New session' } });
-    });
-
-    await act(async () => {
-      fireEvent.click(submit);
-    });
-
-    await waitFor(() => {
-      expect(mockSession.createSessionWithMessage).toHaveBeenCalledWith('New session');
-    });
-
-    expect(mockBridge.send).toHaveBeenCalledWith('SEND_MESSAGE', {
-      content: 'New session',
-      context: [],
-    });
   });
 
   it('STREAM_EVENT 수신: assistant 메시지에 text가 축적된다', async () => {

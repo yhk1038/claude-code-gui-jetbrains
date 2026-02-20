@@ -54,11 +54,9 @@ beforeEach(() => {
     resetToNewSession: vi.fn(),
     openNewTab: vi.fn(),
     openSettings: vi.fn(),
-    createSessionWithMessage: vi.fn(),
     deleteSession: vi.fn(),
     renameSession: vi.fn(),
     setSessionState: vi.fn(),
-    saveMessages: vi.fn(),
     setWorkingDirectory: vi.fn(),
   };
 });

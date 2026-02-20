@@ -21,7 +21,6 @@ vi.mock('../BridgeContext', () => ({
 const mockSessionsIndex = vi.fn();
 const mockSessionsLoad = vi.fn();
 const mockSessionsDestroy = vi.fn();
-const mockSessionsActivate = vi.fn();
 const mockSessionsCreate = vi.fn();
 const mockSetWorkingDir = vi.fn();
 
@@ -30,7 +29,6 @@ const mockApi = {
     index: mockSessionsIndex,
     load: mockSessionsLoad,
     destroy: mockSessionsDestroy,
-    activate: mockSessionsActivate,
     create: mockSessionsCreate,
   },
   setWorkingDir: mockSetWorkingDir,
@@ -78,7 +76,6 @@ describe('SessionContext', () => {
     mockSessionsIndex.mockResolvedValue([]);
     mockSessionsLoad.mockResolvedValue(undefined);
     mockSessionsDestroy.mockResolvedValue(undefined);
-    mockSessionsActivate.mockResolvedValue(undefined);
     mockSessionsCreate.mockResolvedValue(undefined);
     (window as any).workingDirectory = '/test/workspace';
   });
@@ -134,11 +131,10 @@ describe('SessionContext', () => {
     mockSessionsIndex.mockResolvedValue(mockSessionDtos);
     mockSessionsLoad.mockResolvedValue(undefined);
 
-    const onSessionChange = vi.fn();
     let capturedCtx: ReturnType<typeof useSessionContext> | null = null;
 
     render(
-      <SessionProvider onSessionChange={onSessionChange}>
+      <SessionProvider>
         <TestConsumer onMount={(ctx) => { capturedCtx = ctx; }} />
       </SessionProvider>
     );
@@ -155,18 +151,16 @@ describe('SessionContext', () => {
     await waitFor(() => {
       expect(capturedCtx?.currentSessionId).toBe('session-1');
       expect(capturedCtx?.sessionState).toBe('idle');
-      expect(onSessionChange).toHaveBeenCalledWith('session-1');
     });
   });
 
   it('switchSession - 존재하지 않는 세션 ID로 호출 시 무시', async () => {
     mockSessionsIndex.mockResolvedValue(mockSessionDtos);
 
-    const onSessionChange = vi.fn();
     let capturedCtx: ReturnType<typeof useSessionContext> | null = null;
 
     render(
-      <SessionProvider onSessionChange={onSessionChange}>
+      <SessionProvider>
         <TestConsumer onMount={(ctx) => { capturedCtx = ctx; }} />
       </SessionProvider>
     );
@@ -181,7 +175,6 @@ describe('SessionContext', () => {
 
     expect(mockSessionsLoad).not.toHaveBeenCalled();
     expect(capturedCtx!.currentSessionId).toBeNull();
-    expect(onSessionChange).not.toHaveBeenCalled();
   });
 
   it('deleteSession - 성공 시 sessions에서 제거', async () => {

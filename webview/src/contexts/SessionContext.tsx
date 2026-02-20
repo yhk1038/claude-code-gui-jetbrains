@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useCallback, useRef, useMemo, ReactNode } from 'react';
-import { SessionState, LoadedMessageDto } from '../types';
+import { createContext, useContext, useState, useCallback, useEffect, useMemo, ReactNode } from 'react';
+import { SessionState } from '../types';
 import { SessionMetaDto } from '../dto';
 import { useBridgeContext } from './BridgeContext';
 import { useApi } from './ApiContext';
@@ -25,12 +25,10 @@ interface SessionContextValue {
   resetToNewSession: () => void;
   openNewTab: () => void;
   openSettings: () => void;
-  createSessionWithMessage: (firstMessage: string) => { sessionId: string; title: string };
   switchSession: (sessionId: string) => Promise<void>;
   deleteSession: (sessionId: string) => Promise<void>;
   renameSession: (sessionId: string, title: string) => void;
   setSessionState: (state: SessionState) => void;
-  saveMessages: (messages: LoadedMessageDto[]) => void;
   setWorkingDirectory: (dir: string | null) => void;
 }
 
@@ -38,10 +36,9 @@ const SessionContext = createContext<SessionContextValue | null>(null);
 
 interface SessionProviderProps {
   children: ReactNode;
-  onSessionChange?: (sessionId: string) => void;
 }
 
-export function SessionProvider({ children, onSessionChange }: SessionProviderProps) {
+export function SessionProvider({ children }: SessionProviderProps) {
   const { subscribe, isConnected } = useBridgeContext();
   const api = useApi();
 
@@ -55,9 +52,6 @@ export function SessionProvider({ children, onSessionChange }: SessionProviderPr
     const params = new URLSearchParams(window.location.search);
     return window.workingDirectory || params.get('workingDir') || null;
   });
-
-  const messagesRef = useRef<LoadedMessageDto[]>([]);
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Update API workingDir when it changes
   const setWorkingDirectory = useCallback((dir: string | null) => {
@@ -77,14 +71,14 @@ export function SessionProvider({ children, onSessionChange }: SessionProviderPr
   }, [api]);
 
   // Initialize API workingDir on mount
-  React.useEffect(() => {
+  useEffect(() => {
     if (workingDirectory) {
       api.setWorkingDir(workingDirectory);
     }
   }, [api, workingDirectory]);
 
   // JetBrains에서 kotlinBridgeReady 이벤트 후 workingDirectory 주입 감지
-  React.useEffect(() => {
+  useEffect(() => {
     const handleBridgeReady = () => {
       // Re-initialize IDE adapter when Kotlin bridge becomes available
       onBridgeReady();
@@ -106,9 +100,6 @@ export function SessionProvider({ children, onSessionChange }: SessionProviderPr
     return () => window.removeEventListener('kotlinBridgeReady', handleBridgeReady);
   }, [api, workingDirectory]);
 
-  const generateSessionId = useCallback(() => {
-    return `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  }, []);
 
   // loadSessions - using new API
   const loadSessions = useCallback(async () => {
@@ -145,7 +136,7 @@ export function SessionProvider({ children, onSessionChange }: SessionProviderPr
 
 
   // Listen for state changes from Kotlin
-  React.useEffect(() => {
+  useEffect(() => {
     const unsubscribe = subscribe('STATE_CHANGE', (message) => {
       const state = message.payload?.state as SessionState;
       if (state) {
@@ -155,15 +146,9 @@ export function SessionProvider({ children, onSessionChange }: SessionProviderPr
     return unsubscribe;
   }, [subscribe]);
 
-  // Auto-save disabled - CLI sessions are read-only
-  const scheduleAutoSave = useCallback(() => {
-    // No-op: Local session saving removed, CLI sessions are managed externally
-  }, []);
-
   const resetToNewSession = useCallback(() => {
     setCurrentSessionId(null);
     setSessionState('idle');
-    messagesRef.current = [];
 
     api.sessions.create().catch(error => {
       console.error('[SessionContext] Failed to clear CLI session:', error);
@@ -186,39 +171,12 @@ export function SessionProvider({ children, onSessionChange }: SessionProviderPr
     });
   }, []);
 
-  const createSessionWithMessage = useCallback((firstMessage: string) => {
-    const newId = generateSessionId();
-    const now = new Date();
-    const title = firstMessage.substring(0, 50).trim() || 'New Chat';
-
-    const newSession: SessionMetaDto = {
-      id: newId,
-      title,
-      createdAt: now,
-      updatedAt: now,
-      messageCount: 1,
-    };
-
-    setSessions(prev => [newSession, ...prev]);
-    setCurrentSessionId(newId);
-
-    api.sessions.activate(newId).catch(error => {
-      console.error('[SessionContext] Failed to change session:', error);
-    });
-
-    // Local session saving removed - CLI sessions are managed externally
-
-    onSessionChange?.(newId);
-    return { sessionId: newId, title };
-  }, [generateSessionId, onSessionChange, api.sessions]);
-
   const switchSession = useCallback(async (sessionId: string) => {
     console.log('[SessionContext] switchSession called with:', sessionId);
 
     if (sessions.some(s => s.id === sessionId)) {
       setCurrentSessionId(sessionId);
       setSessionState('idle');
-      messagesRef.current = [];
 
       try {
         // Triggers SESSION_LOADED event → AppProviders.SessionLoader handles message injection
@@ -227,12 +185,10 @@ export function SessionProvider({ children, onSessionChange }: SessionProviderPr
       } catch (error) {
         console.error('[SessionContext] Failed to load session:', error);
       }
-
-      onSessionChange?.(sessionId);
     } else {
       console.warn('[SessionContext] Session not found in list:', sessionId);
     }
-  }, [sessions, onSessionChange, api.sessions]);
+  }, [sessions, api.sessions]);
 
   const deleteSession = useCallback(async (sessionId: string) => {
     try {
@@ -241,7 +197,6 @@ export function SessionProvider({ children, onSessionChange }: SessionProviderPr
       if (currentSessionId === sessionId) {
         setCurrentSessionId(null);
         setSessionState('idle');
-        messagesRef.current = [];
       }
     } catch (error) {
       console.error('[SessionContext] Failed to delete session:', error);
@@ -256,29 +211,6 @@ export function SessionProvider({ children, onSessionChange }: SessionProviderPr
         : s
     ));
     // Note: CLI session titles cannot be modified from the plugin
-  }, []);
-
-  const saveMessages = useCallback((messages: LoadedMessageDto[]) => {
-    if (!currentSessionId) return;
-
-    messagesRef.current = messages;
-
-    setSessions(prev => prev.map(s =>
-      s.id === currentSessionId
-        ? { ...s, messageCount: messages.length, updatedAt: new Date() }
-        : s
-    ));
-
-    scheduleAutoSave();
-  }, [currentSessionId, scheduleAutoSave]);
-
-  // Cleanup
-  React.useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
   }, []);
 
   const currentSession = useMemo(() => {
@@ -296,12 +228,10 @@ export function SessionProvider({ children, onSessionChange }: SessionProviderPr
     resetToNewSession,
     openNewTab,
     openSettings,
-    createSessionWithMessage,
     switchSession,
     deleteSession,
     renameSession,
     setSessionState,
-    saveMessages,
     setWorkingDirectory,
   };
 

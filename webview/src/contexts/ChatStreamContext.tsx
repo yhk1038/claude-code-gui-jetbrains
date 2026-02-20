@@ -130,14 +130,8 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
       }).catch((error) => {
         console.error('[ChatStreamContext] Failed to send message to bridge:', error);
       });
-
-      // Create session if no current session exists
-      if (!session.currentSessionId) {
-        console.log('[ChatStreamContext] Creating new session with message');
-        session.createSessionWithMessage(content);
-      }
     },
-    [chatStream, bridge, session]
+    [chatStream, bridge]
   );
 
   // handleSubmit: convenience wrapper for form submission
