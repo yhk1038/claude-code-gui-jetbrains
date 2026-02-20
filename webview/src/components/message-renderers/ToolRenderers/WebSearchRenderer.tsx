@@ -1,28 +1,23 @@
 import {ToolUseBlockDto} from "@/dto";
 import {Container, LabelValue, RendererProps, ToolHeader, ToolWrapper} from "./common";
 
-class AskUserQuestionToolUseDto extends ToolUseBlockDto {
+class WebSearchToolUseDto extends ToolUseBlockDto {
     declare input: {
-        questions: Array<{
-            question: string;
-            header: string;
-            options: Array<{
-                label: string;
-                description: string;
-            }>;
-            multiSelect: boolean;
-        }>;
+        query: string;
     };
 }
 
-export function AskUserQuestionRenderer(props: RendererProps) {
-    const toolUse = props.toolUse as unknown as AskUserQuestionToolUseDto;
+export function WebSearchRenderer(props: RendererProps) {
+    const toolUse = props.toolUse as unknown as WebSearchToolUseDto;
+    const query = toolUse.input?.query ?? '';
     const toolResult = props.toolResult as { message?: { content: Array<{ content: string }> } } | undefined;
     const output = toolResult?.message?.content?.[0]?.content ?? '';
 
     return (
         <ToolWrapper message={props.message}>
-            <ToolHeader name={toolUse.name} inProgress={!props.toolResult} className="mb-2.5" />
+            <ToolHeader name="WebSearch" inProgress={!props.toolResult} className="mb-2.5">
+                <div className="text-white/60 truncate">{query}</div>
+            </ToolHeader>
 
             {props.toolResult && (
                 <Container>

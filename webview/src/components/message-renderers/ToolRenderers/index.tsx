@@ -10,6 +10,10 @@ import {GlobRenderer} from "@/components/message-renderers/ToolRenderers/GlobRen
 import {EditRenderer} from "@/components/message-renderers/ToolRenderers/EditRenderer.tsx";
 import {AskUserQuestionRenderer} from "./AskUserQuestionRenderer.tsx";
 import {EnterPlanModeRenderer} from "./EnterPlanModeRenderer.tsx";
+import {ExitPlanModeRenderer} from "./ExitPlanModeRenderer.tsx";
+import {WebFetchRenderer} from "./WebFetchRenderer.tsx";
+import {WebSearchRenderer} from "./WebSearchRenderer.tsx";
+import {WriteRenderer} from "./WriteRenderer.tsx";
 
 interface ToolRendererProps {
     toolUse: ToolUseBlockDto;
@@ -29,6 +33,10 @@ export function toolMapper() {
     registerTool(map, EditRenderer);
     registerTool(map, AskUserQuestionRenderer);
     registerTool(map, EnterPlanModeRenderer);
+    registerTool(map, ExitPlanModeRenderer);
+    registerTool(map, WebFetchRenderer);
+    registerTool(map, WebSearchRenderer);
+    registerTool(map, WriteRenderer);
 
     return map;
 }

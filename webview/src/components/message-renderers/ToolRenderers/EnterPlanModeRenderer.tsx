@@ -8,11 +8,13 @@ export function EnterPlanModeRenderer(props: RendererProps) {
         <ToolWrapper message={props.message}>
             <ToolHeader name="EnterPlanMode" inProgress={!props.toolResult} className="mb-2.5" />
 
-            <Container>
-                <LabelValue label="OUT" maxHeight="max-h-[60px]">
-                    {props.toolResult ? output : ''}
-                </LabelValue>
-            </Container>
+            {props.toolResult && (
+                <Container>
+                    <LabelValue label="OUT" maxHeight="max-h-[60px]">
+                        {output}
+                    </LabelValue>
+                </Container>
+            )}
         </ToolWrapper>
     );
 }
