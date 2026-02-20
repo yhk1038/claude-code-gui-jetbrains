@@ -4,17 +4,13 @@ import { DropdownToggle } from './DropdownToggle';
 import { DropdownMenu } from './DropdownMenu';
 import { useSessionContext } from '@/contexts/SessionContext';
 
-interface SessionDropdownProps {
-  sessionTitle: string;
-}
-
-export function SessionDropdown({
-  sessionTitle,
-}: SessionDropdownProps) {
-  const { sessions, currentSessionId, switchSession } = useSessionContext();
+export function SessionDropdown() {
+  const { sessions, currentSessionId, currentSession, switchSession } = useSessionContext();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const sessionTitle = currentSession?.title || 'Past Conversations';
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

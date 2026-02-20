@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useRef, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useMemo, ReactNode } from 'react';
 import { SessionState, LoadedMessageDto } from '../types';
 import { SessionMetaDto } from '../dto';
 import { useBridgeContext } from './BridgeContext';
@@ -14,6 +14,7 @@ declare global {
 interface SessionContextValue {
   // State
   currentSessionId: string | null;
+  currentSession: SessionMetaDto | null;
   sessions: SessionMetaDto[];
   sessionState: SessionState;
   isLoading: boolean;
@@ -280,8 +281,13 @@ export function SessionProvider({ children, onSessionChange }: SessionProviderPr
     };
   }, []);
 
+  const currentSession = useMemo(() => {
+    return sessions.find(s => s.id === currentSessionId) ?? null;
+  }, [sessions, currentSessionId]);
+
   const value: SessionContextValue = {
     currentSessionId,
+    currentSession,
     sessions,
     sessionState,
     isLoading,

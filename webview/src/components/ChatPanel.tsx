@@ -1,5 +1,4 @@
 import { useEffect, useCallback } from 'react';
-import { useDocumentTitle } from '../hooks';
 import { ChatInput } from './ChatInput';
 import { SessionHeader } from './SessionHeader';
 import { ChatMessageArea } from './ChatMessageArea';
@@ -24,12 +23,9 @@ export function ChatPanel() {
 
   const {
     currentSessionId,
-    sessions,
     sessionState,
     workingDirectory,
     setWorkingDirectory,
-    openNewTab,
-    openSettings,
     saveMessages,
   } = useSessionContext();
 
@@ -51,10 +47,6 @@ export function ChatPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSessionId, messages.length, lastMessageId, lastMessageContent, isStreaming]);
 
-  const handleOpenNewTab = useCallback(() => {
-    openNewTab();
-  }, [openNewTab]);
-
   const handleSelectProject = useCallback((path: string) => {
     setWorkingDirectory(path);
   }, [setWorkingDirectory]);
@@ -65,23 +57,11 @@ export function ChatPanel() {
     handleSubmit(e);
   }, [handleSubmit]);
 
-  const currentSession = sessions.find(s => s.id === currentSessionId);
-
-  // Session title: "Past Conversations" when in temporary state
-  const sessionTitle = currentSession?.title || 'Past Conversations';
-
-  // Update document title based on current session
-  useDocumentTitle(currentSession?.title || null);
-
   return (
     <div className="flex flex-col h-screen bg-zinc-950 text-zinc-100">
       {/* Header - Minimal */}
       <div className="flex-shrink-0 border-b border-zinc-800">
-        <SessionHeader
-          sessionTitle={sessionTitle}
-          onOpenNewTab={handleOpenNewTab}
-          onOpenSettings={openSettings}
-        />
+        <SessionHeader />
       </div>
 
       {/* Messages Area */}
