@@ -20,7 +20,7 @@ export const ImageAttachments: React.FC<ImageAttachmentsProps> = ({ images }) =>
       <div className="flex flex-wrap gap-2">
         {images.map((image, index) => (
           <div
-            key={index}
+            key={`img-${index}-${image.source.media_type}`}
             className="group relative cursor-pointer"
             onClick={() => setSelectedImage(getImageSrc(image))}
           >

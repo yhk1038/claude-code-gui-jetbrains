@@ -31,7 +31,7 @@ export const ContextPills: React.FC<ContextPillsProps> = ({ context }) => {
     <div className="flex flex-wrap gap-2">
       {context.map((ctx, idx) => (
         <div
-          key={idx}
+          key={ctx.path ? `${ctx.type}-${ctx.path}` : `ctx-${idx}`}
           className="text-[10px] text-white/40 flex items-center gap-2 cursor-pointer hover:text-white/60 transition-colors"
           title={ctx.path}
           onClick={() => handleOpenFile(ctx.path)}

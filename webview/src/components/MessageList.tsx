@@ -170,7 +170,7 @@ export const MessageList: React.FC<MessageListProps> = ({
             <div className="message-context">
               <div className="context-header">Context:</div>
               {message.context.map((ctx, idx) => (
-                <div key={idx} className="context-item">
+                <div key={ctx.path ? `${ctx.type}-${ctx.path}` : `ctx-${idx}`} className="context-item">
                   <span className="context-type">{ctx.type}</span>
                   {ctx.path && <span className="context-path">{ctx.path}</span>}
                 </div>
@@ -230,8 +230,8 @@ export const MessageList: React.FC<MessageListProps> = ({
         </div>
       ) : (
         <>
-          {messageGroups.map((group, groupIdx) => (
-            <div key={groupIdx} className="message-group">
+          {messageGroups.map((group) => (
+            <div key={group.date} className="message-group">
               <div className="date-divider">
                 <span className="date-text">{group.date}</span>
               </div>

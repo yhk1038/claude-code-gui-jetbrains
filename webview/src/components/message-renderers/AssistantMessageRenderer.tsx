@@ -47,7 +47,7 @@ export const AssistantMessageRenderer: React.FC<AssistantMessageRendererProps> =
                       if (block.text.startsWith('{"type":"thinking"')) {
                         return (
                             <ThinkingStreamingMessage
-                                key={index}
+                                key={`${message.uuid}-thinking-${index}`}
                                 content={block.text}
                                 isStreaming={message.isStreaming ?? false}
                                 className="text-zinc-200 text-[13px] leading-relaxed"
@@ -58,7 +58,7 @@ export const AssistantMessageRenderer: React.FC<AssistantMessageRendererProps> =
 
                       return (
                           <StreamingMessage
-                              key={index}
+                              key={`${message.uuid}-text-${index}`}
                               content={block.text}
                               isStreaming={message.isStreaming ?? false}
                               className="text-zinc-200 text-[13px] leading-relaxed"

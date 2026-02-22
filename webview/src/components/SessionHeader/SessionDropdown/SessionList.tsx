@@ -19,9 +19,9 @@ export function SessionList({ groupedSessions, currentSessionId, onSelectSession
             <div className="px-2 py-1.5 text-[11px] text-zinc-500">
               {GROUP_LABELS[groupKey]}
             </div>
-            {sessionsInGroup.map((session, i) => (
+            {sessionsInGroup.map((session) => (
               <SessionItem
-                key={i}
+                key={session.id}
                 session={session}
                 isSelected={session.id === currentSessionId}
                 onSelect={() => onSelectSession(session.id)}

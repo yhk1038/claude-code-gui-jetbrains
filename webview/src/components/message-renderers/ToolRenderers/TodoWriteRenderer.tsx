@@ -33,7 +33,7 @@ export function TodoWriteRenderer(props: RendererProps) {
                     const isChecked = todo.status === 'completed';
 
                     return (
-                        <div key={i}>
+                        <div key={`todo-${i}-${todo.content.slice(0, 20)}`}>
                             <div className={`flex items-start gap-2 ${isChecked ? 'opacity-40 line-through' : ''}`}>
                                 <div><input type="checkbox" defaultChecked={isChecked} disabled /></div>
                                 <div>{todo.content}</div>
