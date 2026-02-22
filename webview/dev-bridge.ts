@@ -735,6 +735,8 @@ function handleStreamEvent(targetSessionId: string, event: Record<string, unknow
             name: delta.name,
             input: delta.input,
           };
+        } else if (deltaType === 'thinking_delta') {
+          deltaData.delta = { type: 'thinking_delta', thinking: delta.thinking };
         } else {
           deltaData.delta = delta;
         }

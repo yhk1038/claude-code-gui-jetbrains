@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer';
 import type { LoadedMessageDto } from '../../types';
 
-export type ContentBlockType = 'text' | 'tool_use' | 'tool_result' | 'image';
+export type ContentBlockType = 'text' | 'tool_use' | 'tool_result' | 'image' | 'thinking';
 
 /**
  * Base class for all content blocks in Claude CLI messages
@@ -64,6 +64,15 @@ export class ImageBlockDto extends ContentBlockDto {
 }
 
 /**
+ * Thinking content block - represents the model's extended thinking
+ */
+export class ThinkingBlockDto extends ContentBlockDto {
+  override type: 'thinking' = 'thinking';
+  thinking!: string;
+  signature?: string;
+}
+
+/**
  * Sub-agent message extracted from progress entries (for Task tool rendering)
  */
 export interface SubAgentMessage {
@@ -79,4 +88,5 @@ export type AnyContentBlockDto =
   | TextBlockDto
   | ToolUseBlockDto
   | ToolResultBlockDto
-  | ImageBlockDto;
+  | ImageBlockDto
+  | ThinkingBlockDto;

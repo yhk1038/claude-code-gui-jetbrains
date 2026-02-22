@@ -63,6 +63,13 @@ data class ToolUseBlock(
     val input: JsonObject
 )
 
+@Serializable
+data class ThinkingBlock(
+    val type: String = "thinking",
+    val thinking: String,
+    val signature: String? = null
+)
+
 // Stream event for content deltas
 @Serializable
 data class StreamEvent(
@@ -86,6 +93,12 @@ data class ToolUseDelta(
     val id: String? = null,
     val name: String? = null,
     val input: JsonObject? = null
+)
+
+@Serializable
+data class ThinkingDelta(
+    val type: String = "thinking_delta",
+    val thinking: String
 )
 
 // Tool result (user -> assistant)

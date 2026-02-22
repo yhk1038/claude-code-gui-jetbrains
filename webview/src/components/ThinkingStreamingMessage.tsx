@@ -5,7 +5,7 @@ import './streaming.css';
 import {ToolWrapper} from "@/components/message-renderers/ToolRenderers/common";
 
 interface ThinkingStreamingMessageProps {
-    content: string;
+    thinking: string;
     isStreaming: boolean;
     className?: string;
     message?: import('../types').LoadedMessageDto;
@@ -37,14 +37,13 @@ function normalizeRelativeUrls(markdown: string): string {
 }
 
 export const ThinkingStreamingMessage: React.FC<ThinkingStreamingMessageProps> = ({
-    content,
+    thinking,
     isStreaming,
     className = '',
     message,
 }) => {
     const [shouldAnimate, setShouldAnimate] = useState(isStreaming);
     const [isExpended, setIsExpended] = useState(false);
-    const text = JSON.parse(content)['thinking'];
 
     // Handle streaming animation
     useEffect(() => {
@@ -58,11 +57,11 @@ export const ThinkingStreamingMessage: React.FC<ThinkingStreamingMessageProps> =
     }, [isStreaming]);
 
     // Determine if we should show incomplete indicator
-    const showIncompleteIndicator = isStreaming && !isMarkdownComplete(content) && isInsideCodeBlock(content);
+    const showIncompleteIndicator = isStreaming && !isMarkdownComplete(thinking) && isInsideCodeBlock(thinking);
 
     return (
         <ToolWrapper message={message} className="mt-0">
-            <div className={`text-white/40 streaming-message ${className}`} onClick={() => console.log(text)}>
+            <div className={`text-white/40 streaming-message ${className}`} onClick={() => console.log(thinking)}>
                 <div>
                     <div className="mb-0.5 cursor-pointer" onClick={() => setIsExpended(!isExpended)}>
                         <div className="italic text-white/50 flex items-center gap-1">
@@ -85,7 +84,7 @@ export const ThinkingStreamingMessage: React.FC<ThinkingStreamingMessageProps> =
                                 table: true,
                             }}
                         >
-                            {normalizeRelativeUrls(text)}
+                            {normalizeRelativeUrls(thinking)}
                         </Streamdown>
                     </div>
                 </div>

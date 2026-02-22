@@ -752,6 +752,14 @@ class WebViewBridge(
                 val type = obj["type"]?.jsonPrimitive?.content
 
                 when (type) {
+                    "thinking" -> {
+                        val thinkingBlock = json.decodeFromJsonElement(ThinkingBlock.serializer(), element)
+                        contentBlocks.add(mapOf(
+                            "type" to "thinking",
+                            "thinking" to thinkingBlock.thinking,
+                            "signature" to thinkingBlock.signature
+                        ))
+                    }
                     "text" -> {
                         val text = json.decodeFromJsonElement(TextBlock.serializer(), element)
                         contentBlocks.add(mapOf(
@@ -851,6 +859,13 @@ class WebViewBridge(
                                 "id" to deltaObj["id"]?.jsonPrimitive?.contentOrNull,
                                 "name" to deltaObj["name"]?.jsonPrimitive?.contentOrNull,
                                 "input" to deltaObj["input"]
+                            )
+                        }
+                        "thinking_delta" -> {
+                            val thinkingDelta = json.decodeFromJsonElement(ThinkingDelta.serializer(), delta)
+                            deltaData["delta"] = mapOf(
+                                "type" to "thinking_delta",
+                                "thinking" to thinkingDelta.thinking
                             )
                         }
                     }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { LoadedMessageDto, isContentBlockArray } from '../../types';
-import { ToolUseBlockDto } from '../../dto/message/ContentBlockDto';
+import { ToolUseBlockDto, ThinkingBlockDto } from '../../dto/message/ContentBlockDto';
 import { StreamingMessage } from '../StreamingMessage';
 import { ToolRenderer } from './ToolRenderer';
 import {ThinkingStreamingMessage} from "@/components/ThinkingStreamingMessage.tsx";
@@ -22,9 +22,11 @@ export const AssistantMessageRenderer: React.FC<AssistantMessageRendererProps> =
   if (!message.isStreaming) {
     const isEmpty = typeof content === 'string'
       ? content.trim() === ''
-      : blocks.every(block =>
-          block.type === 'text' ? block.text.trim() === '' : false
-        );
+      : blocks.every(block => {
+          if (block.type === 'text') return block.text.trim() === '';
+          if (block.type === 'thinking') return !(block as ThinkingBlockDto).thinking;
+          return false;
+        });
     if (isEmpty) return null;
   }
 
@@ -43,19 +45,18 @@ export const AssistantMessageRenderer: React.FC<AssistantMessageRendererProps> =
                   />
               ) : (
                   blocks.map((block, index) => {
+                    if (block.type === 'thinking') {
+                      return (
+                          <ThinkingStreamingMessage
+                              key={`${message.uuid}-thinking-${index}`}
+                              thinking={(block as ThinkingBlockDto).thinking}
+                              isStreaming={message.isStreaming ?? false}
+                              className="text-zinc-200 text-[13px] leading-relaxed"
+                              message={message}
+                          />
+                      );
+                    }
                     if (block.type === 'text') {
-                      if (block.text.startsWith('{"type":"thinking"')) {
-                        return (
-                            <ThinkingStreamingMessage
-                                key={`${message.uuid}-thinking-${index}`}
-                                content={block.text}
-                                isStreaming={message.isStreaming ?? false}
-                                className="text-zinc-200 text-[13px] leading-relaxed"
-                                message={message}
-                            />
-                        );
-                      }
-
                       return (
                           <StreamingMessage
                               key={`${message.uuid}-text-${index}`}

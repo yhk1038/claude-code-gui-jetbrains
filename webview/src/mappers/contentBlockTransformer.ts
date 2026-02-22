@@ -5,6 +5,7 @@ import {
   ToolUseBlockDto,
   ToolResultBlockDto,
   ImageBlockDto,
+  ThinkingBlockDto,
 } from '../dto/message/ContentBlockDto';
 
 /**
@@ -64,6 +65,9 @@ function transformSingleBlock(block: unknown): AnyContentBlockDto {
 
     case 'image':
       return plainToInstance(ImageBlockDto, block);
+
+    case 'thinking':
+      return plainToInstance(ThinkingBlockDto, block);
 
     default:
       // Unknown type - treat as text with stringified content

@@ -295,6 +295,28 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
         scheduleFlush();
       }
 
+      // thinking_delta 처리
+      if (delta && delta.type === 'thinking_delta' && delta.thinking) {
+        // thinking delta도 text_delta와 동일한 스트리밍 방식 사용
+        // 첫 delta 시 streamingMessageId가 없으면 placeholder 자동 생성
+        if (!streamingMessageIdRef.current) {
+          const assistantMessageId = generateMessageId();
+          const assistantMessage: LoadedMessageDto = {
+            type: 'assistant',
+            uuid: assistantMessageId,
+            timestamp: new Date().toISOString(),
+            message: { role: 'assistant', content: '' } as any,
+            isStreaming: true,
+          };
+          appendMessage(assistantMessage);
+          startStreaming(assistantMessageId);
+        }
+
+        // thinking delta는 별도로 축적하지 않고 로그만 남김
+        // (완성된 thinking 블록은 ASSISTANT_MESSAGE에서 처리됨)
+        console.log('[useChatStream] thinking_delta received');
+      }
+
       // tool_use_delta 처리 (추후 확장)
       if (delta && delta.type === 'tool_use_delta') {
         // TODO: tool_use 정보 축적
