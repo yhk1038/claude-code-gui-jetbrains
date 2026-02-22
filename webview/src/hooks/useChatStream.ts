@@ -364,12 +364,27 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
       endStreaming();
     });
 
+    // USER_MESSAGE_BROADCAST handler — 다른 탭에서 보낸 사용자 메시지 수신
+    const unsubscribeUserBroadcast = bridge.subscribe('USER_MESSAGE_BROADCAST', (message: IPCMessage) => {
+      const content = message.payload?.content as string;
+      if (!content) return;
+
+      const userMessage: LoadedMessageDto = {
+        type: 'user',
+        uuid: generateMessageId(),
+        timestamp: new Date().toISOString(),
+        message: { role: 'user', content } as any,
+      };
+      appendMessage(userMessage);
+    });
+
     // Cleanup
     return () => {
       unsubscribeStreamEvent();
       unsubscribeAssistantMessage();
       unsubscribeResultMessage();
       unsubscribeServiceError();
+      unsubscribeUserBroadcast();
     };
   // bridge.subscribe는 useBridge의 useCallback([], [])이므로 안정적.
   // 나머지 콜백들은 ref로 안정화했으므로 의존성에서 제외.

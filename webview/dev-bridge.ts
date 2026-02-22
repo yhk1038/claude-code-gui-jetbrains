@@ -21,10 +21,25 @@ interface IPCMessage {
   timestamp: number;
 }
 
-let claudeProcess: ChildProcess | null = null;
-let currentWebSocket: WebSocket | null = null;
-let sessionId: string | null = null;
-let isFirstMessage: boolean = true;
+// ─── Session Registry (Pub/Sub) ─────────────────────────────────────────────
+
+interface SessionRecord {
+  sessionId: string;
+  process: ChildProcess | null;
+  subscribers: Set<WebSocket>;
+  buffer: string;          // stdout 파싱용 줄 버퍼
+  workingDir: string;
+}
+
+interface ClientRecord {
+  subscribedSessionId: string | null;
+}
+
+/** sessionId -> SessionRecord */
+const sessionRegistry = new Map<string, SessionRecord>();
+
+/** ws -> ClientRecord */
+const clientRegistry = new Map<WebSocket, ClientRecord>();
 
 interface SessionEntry {
   sessionId: string;
@@ -425,6 +440,103 @@ function sendToClient(ws: WebSocket, type: string, payload: Record<string, unkno
   ws.send(JSON.stringify(message));
 }
 
+/**
+ * 특정 세션의 모든 구독자에게 메시지 브로드캐스트.
+ * 전송 실패한 ws는 조용히 무시 (disconnect 이벤트에서 정리됨).
+ */
+function broadcastToSession(sessionId: string, type: string, payload: Record<string, unknown> = {}, excludeWs?: WebSocket) {
+  const session = sessionRegistry.get(sessionId);
+  if (!session) return;
+
+  const message: IPCMessage = {
+    type,
+    payload,
+    timestamp: Date.now(),
+  };
+  const data = JSON.stringify(message);
+
+  for (const ws of session.subscribers) {
+    if (ws === excludeWs) continue;
+    try {
+      if (ws.readyState === 1 /* WebSocket.OPEN */) {
+        ws.send(data);
+      }
+    } catch {
+      // 전송 실패 — disconnect 핸들러에서 정리
+    }
+  }
+}
+
+/**
+ * ws를 sessionId에 구독. 기존 구독이 있으면 자동 해제 후 새 구독.
+ * SessionRecord가 없으면 생성 (프로세스 없는 빈 레코드).
+ */
+function subscribeToSession(ws: WebSocket, sessionId: string) {
+  // 기존 구독 해제
+  unsubscribeFromSession(ws);
+
+  // SessionRecord 없으면 생성
+  if (!sessionRegistry.has(sessionId)) {
+    sessionRegistry.set(sessionId, {
+      sessionId,
+      process: null,
+      subscribers: new Set(),
+      buffer: '',
+      workingDir: process.cwd(),
+    });
+  }
+
+  const session = sessionRegistry.get(sessionId)!;
+  session.subscribers.add(ws);
+
+  // ClientRecord 갱신
+  const client = clientRegistry.get(ws);
+  if (client) {
+    client.subscribedSessionId = sessionId;
+  }
+
+  console.log(`[dev-bridge] WS subscribed to session ${sessionId} (subscribers: ${session.subscribers.size})`);
+}
+
+/**
+ * ws의 현재 구독 해제. 구독자가 0이 되면 cleanupSession 호출.
+ */
+function unsubscribeFromSession(ws: WebSocket) {
+  const client = clientRegistry.get(ws);
+  if (!client?.subscribedSessionId) return;
+
+  const sessionId = client.subscribedSessionId;
+  const session = sessionRegistry.get(sessionId);
+
+  if (session) {
+    session.subscribers.delete(ws);
+    console.log(`[dev-bridge] WS unsubscribed from session ${sessionId} (subscribers: ${session.subscribers.size})`);
+
+    if (session.subscribers.size === 0) {
+      cleanupSession(sessionId);
+    }
+  }
+
+  client.subscribedSessionId = null;
+}
+
+/**
+ * 세션 프로세스 종료 + 레지스트리에서 제거.
+ */
+function cleanupSession(sessionId: string) {
+  const session = sessionRegistry.get(sessionId);
+  if (!session) return;
+
+  if (session.process) {
+    console.log(`[dev-bridge] Killing process for session ${sessionId} (PID: ${session.process.pid})`);
+    session.process.kill('SIGTERM');
+    session.process = null;
+  }
+
+  sessionRegistry.delete(sessionId);
+  console.log(`[dev-bridge] Session ${sessionId} cleaned up`);
+}
+
 function generateSessionId(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = Math.random() * 16 | 0;
@@ -433,50 +545,49 @@ function generateSessionId(): string {
   });
 }
 
-function startClaudeProcess(ws: WebSocket, content: string, workingDir: string, isNewSession: boolean = false) {
-  // Kill existing process if any
-  if (claudeProcess) {
-    claudeProcess.kill();
-    claudeProcess = null;
+function startClaudeProcess(ws: WebSocket, content: string, workingDir: string, targetSessionId: string, isNewSession: boolean) {
+  // 동일 세션의 기존 프로세스 kill (같은 세션에 새 메시지 전송 시)
+  const existingSession = sessionRegistry.get(targetSessionId);
+  if (existingSession?.process) {
+    console.log(`[dev-bridge] Killing existing process for session ${targetSessionId}`);
+    existingSession.process.kill('SIGTERM');
+    existingSession.process = null;
   }
 
   console.log('[dev-bridge] Starting Claude CLI process...');
   console.log('[dev-bridge] Working directory:', workingDir);
   console.log('[dev-bridge] Message:', content.substring(0, 100) + '...');
 
-  // sessionId는 WebView가 SEND_MESSAGE payload로 이미 설정함
-  // fallback: sessionId가 없으면 자체 생성
-  if (!sessionId) {
-    sessionId = generateSessionId();
-  }
+  // ws를 이 세션에 구독
+  subscribeToSession(ws, targetSessionId);
 
   let args: string[];
   if (isNewSession) {
-    console.log('[dev-bridge] New session:', sessionId);
+    console.log('[dev-bridge] New session:', targetSessionId);
     args = [
       '--print',
       '--output-format', 'stream-json',
       '--verbose',
       '--include-partial-messages',
-      '--session-id', sessionId,
+      '--session-id', targetSessionId,
       '--',
       content
     ];
   } else {
-    console.log('[dev-bridge] Resuming session:', sessionId);
+    console.log('[dev-bridge] Resuming session:', targetSessionId);
     args = [
       '--print',
       '--output-format', 'stream-json',
       '--verbose',
       '--include-partial-messages',
-      '--resume', sessionId,
+      '--resume', targetSessionId,
       '--',
       content
     ];
   }
   console.log('[dev-bridge] Command: claude ' + args.map(a => JSON.stringify(a)).join(' '));
 
-  claudeProcess = spawn('claude', args, {
+  const proc = spawn('claude', args, {
     cwd: workingDir,
     shell: false,
     stdio: ['pipe', 'pipe', 'pipe'],
@@ -489,33 +600,37 @@ function startClaudeProcess(ws: WebSocket, content: string, workingDir: string, 
     }
   });
 
-  console.log('[dev-bridge] Claude CLI spawned with PID:', claudeProcess.pid);
-  console.log('[dev-bridge] stdout exists:', !!claudeProcess.stdout);
-  console.log('[dev-bridge] stderr exists:', !!claudeProcess.stderr);
+  console.log('[dev-bridge] Claude CLI spawned with PID:', proc.pid);
+  console.log('[dev-bridge] stdout exists:', !!proc.stdout);
+  console.log('[dev-bridge] stderr exists:', !!proc.stderr);
+
+  // SessionRecord 갱신
+  const sessionRecord = sessionRegistry.get(targetSessionId)!;
+  sessionRecord.process = proc;
+  sessionRecord.buffer = '';
+  sessionRecord.workingDir = workingDir;
 
   // Close stdin immediately to signal no more input
-  claudeProcess.stdin?.end();
+  proc.stdin?.end();
   console.log('[dev-bridge] stdin closed');
 
-  claudeProcess.on('spawn', () => {
+  proc.on('spawn', () => {
     console.log('[dev-bridge] Process spawned successfully');
   });
 
-  currentWebSocket = ws;
+  // 모든 구독자에게 스트림 시작 알림
+  broadcastToSession(targetSessionId, 'STREAM_START');
 
-  // Send stream start
-  sendToClient(ws, 'STREAM_START');
-
-  let buffer = '';
-
-  claudeProcess.stdout?.on('data', (data: Buffer) => {
+  proc.stdout?.on('data', (data: Buffer) => {
     const chunk = data.toString();
     console.log('[dev-bridge] RAW stdout:', chunk.substring(0, 200));
-    buffer += chunk;
 
-    // stream-json 모드에서는 줄 단위로 JSON 객체가 출력됨
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || ''; // 마지막 불완전한 줄은 버퍼에 유지
+    const sr = sessionRegistry.get(targetSessionId);
+    if (!sr) return; // 세션이 이미 정리됨
+    sr.buffer += chunk;
+
+    const lines = sr.buffer.split('\n');
+    sr.buffer = lines.pop() || '';
 
     console.log('[dev-bridge] Parsed lines count:', lines.length);
 
@@ -525,48 +640,55 @@ function startClaudeProcess(ws: WebSocket, content: string, workingDir: string, 
       try {
         const event = JSON.parse(line);
         console.log('[dev-bridge] JSON event type:', event.type);
-        handleStreamEvent(ws, event);
+        handleStreamEvent(targetSessionId, event);
       } catch {
-        // JSON이 아닌 경우 텍스트로 처리 (stream-json 모드에서는 발생하지 않아야 함)
         console.log('[dev-bridge] Non-JSON output (unexpected in stream-json mode):', line);
       }
     }
   });
 
-  claudeProcess.stderr?.on('data', (data: Buffer) => {
+  proc.stderr?.on('data', (data: Buffer) => {
     const error = data.toString();
     console.error('[dev-bridge] Claude CLI stderr:', error);
     // stream-json 모드에서는 stderr를 로그만 남기고 UI에는 전송하지 않음
   });
 
-  claudeProcess.on('close', (code) => {
+  proc.on('close', (code) => {
     console.log('[dev-bridge] Claude CLI process exited with code:', code);
 
+    const sr = sessionRegistry.get(targetSessionId);
     // 남은 버퍼 처리
-    if (buffer.trim()) {
+    if (sr?.buffer.trim()) {
       try {
-        const event = JSON.parse(buffer);
-        handleStreamEvent(ws, event);
+        const event = JSON.parse(sr.buffer);
+        handleStreamEvent(targetSessionId, event);
       } catch {
-        console.log('[dev-bridge] Remaining buffer (non-JSON):', buffer);
+        console.log('[dev-bridge] Remaining buffer (non-JSON):', sr.buffer);
       }
+      sr.buffer = '';
     }
 
-    sendToClient(ws, 'STREAM_END');
-    claudeProcess = null;
-    currentWebSocket = null;
+    broadcastToSession(targetSessionId, 'STREAM_END');
+
+    // 프로세스 참조만 해제 (세션 레코드는 유지 — 구독자가 아직 있을 수 있음)
+    if (sr) {
+      sr.process = null;
+    }
   });
 
-  claudeProcess.on('error', (error) => {
+  proc.on('error', (error) => {
     console.error('[dev-bridge] Failed to start Claude CLI:', error);
-    sendToClient(ws, 'SERVICE_ERROR', { error: error.message });
-    sendToClient(ws, 'STREAM_END');
-    claudeProcess = null;
-    currentWebSocket = null;
+    broadcastToSession(targetSessionId, 'SERVICE_ERROR', { error: error.message });
+    broadcastToSession(targetSessionId, 'STREAM_END');
+
+    const sr = sessionRegistry.get(targetSessionId);
+    if (sr) {
+      sr.process = null;
+    }
   });
 }
 
-function handleStreamEvent(ws: WebSocket, event: Record<string, unknown>) {
+function handleStreamEvent(targetSessionId: string, event: Record<string, unknown>) {
   // Claude CLI --output-format stream-json 이벤트 처리
   // CLI 출력 타입: system, stream_event, assistant, result
 
@@ -575,7 +697,7 @@ function handleStreamEvent(ws: WebSocket, event: Record<string, unknown>) {
   switch (eventType) {
     case 'system':
       // 세션 초기화 이벤트
-      sendToClient(ws, 'STREAM_EVENT', {
+      broadcastToSession(targetSessionId, 'STREAM_EVENT', {
         eventType: 'system',
         subtype: event.subtype,
         sessionId: event.session_id,
@@ -626,14 +748,14 @@ function handleStreamEvent(ws: WebSocket, event: Record<string, unknown>) {
         deltaData.contentBlock = innerEvent.content_block;
       }
 
-      sendToClient(ws, 'STREAM_EVENT', deltaData);
+      broadcastToSession(targetSessionId, 'STREAM_EVENT', deltaData);
       break;
     }
 
     case 'assistant': {
       // 완성된 어시스턴트 메시지
       const message = event.message as Record<string, unknown> | undefined;
-      sendToClient(ws, 'ASSISTANT_MESSAGE', {
+      broadcastToSession(targetSessionId, 'ASSISTANT_MESSAGE', {
         messageId: message?.id,
         content: message?.content || [],
       });
@@ -643,7 +765,7 @@ function handleStreamEvent(ws: WebSocket, event: Record<string, unknown>) {
     case 'result': {
       // 완료 결과
       const errorField = event.error as Record<string, unknown> | undefined;
-      sendToClient(ws, 'RESULT_MESSAGE', {
+      broadcastToSession(targetSessionId, 'RESULT_MESSAGE', {
         status: event.subtype || event.status || 'unknown',
         isError: event.is_error || false,
         result: event.result || null,
@@ -662,14 +784,6 @@ function handleStreamEvent(ws: WebSocket, event: Record<string, unknown>) {
     default:
       console.log('[dev-bridge] Unknown CLI event type:', eventType, event);
       break;
-  }
-}
-
-function stopClaudeProcess() {
-  if (claudeProcess) {
-    console.log('[dev-bridge] Stopping Claude CLI process...');
-    claudeProcess.kill('SIGTERM');
-    claudeProcess = null;
   }
 }
 
@@ -845,6 +959,9 @@ export function devBridgePlugin() {
       wss.on('connection', (ws: WebSocket) => {
         console.log('[dev-bridge] Client connected');
 
+        // 클라이언트 레지스트리에 등록
+        clientRegistry.set(ws, { subscribedSessionId: null });
+
         // 연결 확인 메시지 전송
         sendToClient(ws, 'BRIDGE_READY');
 
@@ -854,31 +971,41 @@ export function devBridgePlugin() {
             console.log('[dev-bridge] Received:', message.type);
 
             switch (message.type) {
-              case 'SEND_MESSAGE':
+              case 'SEND_MESSAGE': {
                 const content = message.payload?.content as string;
                 const workingDir = message.payload?.workingDir as string || process.cwd();
                 const msgSessionId = message.payload?.sessionId as string | undefined;
                 const isNewSession = message.payload?.isNewSession as boolean ?? false;
-                // WebView가 생성한 sessionId 사용
-                if (msgSessionId) {
-                  sessionId = msgSessionId;
-                }
+                const resolvedSessionId = msgSessionId || generateSessionId();
                 if (content) {
-                  startClaudeProcess(ws, content, workingDir, isNewSession);
+                  startClaudeProcess(ws, content, workingDir, resolvedSessionId, isNewSession);
+                  // 다른 구독자에게 사용자 메시지 브로드캐스트 (보낸 ws 제외)
+                  broadcastToSession(resolvedSessionId, 'USER_MESSAGE_BROADCAST', {
+                    content: content.trim(),
+                    sessionId: resolvedSessionId,
+                  }, ws);
                 }
-                // ACK 전송
                 sendToClient(ws, 'ACK', { requestId: message.requestId });
                 break;
+              }
 
-              case 'STOP_GENERATION':
-                stopClaudeProcess();
+              case 'STOP_GENERATION': {
+                const client = clientRegistry.get(ws);
+                if (client?.subscribedSessionId) {
+                  const session = sessionRegistry.get(client.subscribedSessionId);
+                  if (session?.process) {
+                    console.log(`[dev-bridge] Stopping process for session ${client.subscribedSessionId}`);
+                    session.process.kill('SIGTERM');
+                    // process = null은 close 이벤트에서 처리됨
+                  }
+                }
                 sendToClient(ws, 'ACK', { requestId: message.requestId });
                 break;
+              }
 
               case 'NEW_SESSION':
-                sessionId = null;
-                isFirstMessage = true;
-                console.log('[dev-bridge] Session cleared, will create new on next message');
+                unsubscribeFromSession(ws);
+                console.log('[dev-bridge] Client unsubscribed, will create new session on next message');
                 sendToClient(ws, 'ACK', { requestId: message.requestId });
                 break;
 
@@ -896,12 +1023,12 @@ export function devBridgePlugin() {
                 sendToClient(ws, 'ACK', { requestId: message.requestId });
                 break;
 
-              case 'LOAD_SESSION':
+              case 'LOAD_SESSION': {
                 const loadWorkingDir = message.payload?.workingDir as string || process.cwd();
                 const loadSessionId = message.payload?.sessionId as string;
                 if (loadSessionId) {
-                  // Update current session ID
-                  sessionId = loadSessionId;
+                  // 암묵적 구독: LOAD_SESSION 시 해당 세션에 자동 구독
+                  subscribeToSession(ws, loadSessionId);
                   const loadedMessages = await loadSessionMessages(loadWorkingDir, loadSessionId);
                   sendToClient(ws, 'SESSION_LOADED', {
                     sessionId: loadSessionId,
@@ -910,6 +1037,7 @@ export function devBridgePlugin() {
                 }
                 sendToClient(ws, 'ACK', { requestId: message.requestId });
                 break;
+              }
 
               case 'OPEN_FILE':
                 const openFilePath = message.payload?.filePath as string;
@@ -966,7 +1094,8 @@ export function devBridgePlugin() {
 
         ws.on('close', () => {
           console.log('[dev-bridge] Client disconnected');
-          stopClaudeProcess();
+          unsubscribeFromSession(ws);
+          clientRegistry.delete(ws);
         });
       });
 
