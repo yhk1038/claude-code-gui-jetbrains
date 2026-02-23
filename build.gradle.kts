@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.github.yhk1038"
-version = "0.2.0"
+version = "0.2.1"
 
 repositories {
     mavenCentral()
@@ -44,6 +44,10 @@ intellijPlatform {
             untilBuild = "253.*"
         }
         changeNotes = """
+            <h3>0.2.1 - Patch</h3>
+            <ul>
+                <li>Fix deprecated API usage: replaced UIUtil.isUnderDarcula() with JBColor.isBright()</li>
+            </ul>
             <h3>0.2.0 - Feature-Complete Initial Release</h3>
             <ul>
                 <li>Chat interface with Claude Code agent and streaming Markdown responses</li>

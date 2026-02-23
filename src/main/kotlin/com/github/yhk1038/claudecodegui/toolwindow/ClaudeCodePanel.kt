@@ -8,10 +8,10 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.ui.JBColor
 import com.intellij.ui.jcef.JBCefBrowser
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefJSQuery
-import com.intellij.util.ui.UIUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -501,7 +501,7 @@ class ClaudeCodePanel(
     }
 
     private fun sendTheme() {
-        val isDark = UIUtil.isUnderDarcula()
+        val isDark = !JBColor.isBright()
         sendToWebView("THEME_CHANGE", mapOf("mode" to if (isDark) "dark" else "light"))
     }
 
