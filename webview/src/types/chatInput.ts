@@ -2,11 +2,14 @@
 // Chat Input Mode Types
 // ============================================
 
-export type InputMode =
-  | 'plan'              // Plan mode - 회색
-  | 'bypass'            // Bypass permissions - 빨간색
-  | 'ask_before_edit'   // Ask before edits - 주황색
-  | 'auto_edit';        // Edit automatically - 녹색
+export const InputModeValues = {
+  PLAN: 'plan',
+  BYPASS: 'bypass',
+  ASK_BEFORE_EDIT: 'ask_before_edit',
+  AUTO_EDIT: 'auto_edit',
+} as const;
+
+export type InputMode = typeof InputModeValues[keyof typeof InputModeValues];
 
 export interface InputModeConfig {
   id: InputMode;
@@ -63,7 +66,22 @@ export const INPUT_MODES: Record<InputMode, InputModeConfig> = {
 };
 
 // 모드 순환 순서
-export const MODE_CYCLE: InputMode[] = ['plan', 'bypass', 'ask_before_edit', 'auto_edit'];
+export const MODE_CYCLE: InputMode[] = [
+  InputModeValues.PLAN,
+  InputModeValues.BYPASS,
+  InputModeValues.ASK_BEFORE_EDIT,
+  InputModeValues.AUTO_EDIT,
+];
+
+/**
+ * InputMode -> Claude CLI --permission-mode flag value mapping
+ */
+export const INPUT_MODE_TO_CLI_FLAG: Record<InputMode, string> = {
+  [InputModeValues.PLAN]: 'plan',
+  [InputModeValues.BYPASS]: 'bypassPermissions',
+  [InputModeValues.ASK_BEFORE_EDIT]: 'default',
+  [InputModeValues.AUTO_EDIT]: 'acceptEdits',
+} as const;
 
 // ============================================
 // Active File Types (IDE에서 전달받을 타입)

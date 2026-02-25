@@ -1,4 +1,4 @@
-import type { InputMode } from './chatInput';
+import { InputModeValues, type InputMode } from './chatInput';
 
 /**
  * 설정 키 정의 - Kotlin SettingsManager와 동기화 (settings.js 파일 기반)
@@ -76,5 +76,5 @@ export const DEFAULT_SETTINGS: SettingsState = {
   [SettingKey.FONT_SIZE]: 13,
   [SettingKey.DEBUG_MODE]: false,
   [SettingKey.LOG_LEVEL]: LogLevel.INFO,
-  [SettingKey.INITIAL_INPUT_MODE]: 'ask_before_edit',
+  [SettingKey.INITIAL_INPUT_MODE]: InputModeValues.ASK_BEFORE_EDIT,
 };
