@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.github.yhk1038"
-version = "0.2.2"
+version = "0.2.3"
 
 repositories {
     mavenCentral()
@@ -44,6 +44,11 @@ intellijPlatform {
             untilBuild = "253.*"
         }
         changeNotes = """
+            <h3>0.2.3 - Patch</h3>
+            <ul>
+                <li>Refactored slash command panel to registry-based CommandPalette module</li>
+                <li>Added Clear conversation action to Context section</li>
+            </ul>
             <h3>0.2.2 - Patch</h3>
             <ul>
                 <li>Fixed header and input area with improved chat panel layout</li>
