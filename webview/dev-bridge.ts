@@ -14,6 +14,14 @@ import { homedir } from 'os';
 
 const require = createRequire(import.meta.url);
 
+// InputMode -> CLI --permission-mode flag mapping
+const INPUT_MODE_TO_CLI_FLAG: Record<string, string> = {
+  plan: 'plan',
+  bypass: 'bypassPermissions',
+  ask_before_edit: 'default',
+  auto_edit: 'acceptEdits',
+};
+
 interface IPCMessage {
   type: string;
   requestId?: string;
@@ -545,7 +553,7 @@ function generateSessionId(): string {
   });
 }
 
-function startClaudeProcess(ws: WebSocket, content: string, workingDir: string, targetSessionId: string, isNewSession: boolean) {
+function startClaudeProcess(ws: WebSocket, content: string, workingDir: string, targetSessionId: string, isNewSession: boolean, inputMode?: string) {
   // 동일 세션의 기존 프로세스 kill (같은 세션에 새 메시지 전송 시)
   const existingSession = sessionRegistry.get(targetSessionId);
   if (existingSession?.process) {
@@ -584,6 +592,18 @@ function startClaudeProcess(ws: WebSocket, content: string, workingDir: string, 
       '--',
       content
     ];
+  }
+  // Add --permission-mode flag if inputMode is provided
+  if (inputMode) {
+    const cliFlag = INPUT_MODE_TO_CLI_FLAG[inputMode];
+    if (cliFlag) {
+      const separatorIndex = args.indexOf('--');
+      if (separatorIndex !== -1) {
+        args.splice(separatorIndex, 0, '--permission-mode', cliFlag);
+      } else {
+        args.push('--permission-mode', cliFlag);
+      }
+    }
   }
   console.log('[dev-bridge] Command: claude ' + args.map(a => JSON.stringify(a)).join(' '));
 
@@ -978,9 +998,10 @@ export function devBridgePlugin() {
                 const workingDir = message.payload?.workingDir as string || process.cwd();
                 const msgSessionId = message.payload?.sessionId as string | undefined;
                 const isNewSession = message.payload?.isNewSession as boolean ?? false;
+                const inputMode = message.payload?.inputMode as string | undefined;
                 const resolvedSessionId = msgSessionId || generateSessionId();
                 if (content) {
-                  startClaudeProcess(ws, content, workingDir, resolvedSessionId, isNewSession);
+                  startClaudeProcess(ws, content, workingDir, resolvedSessionId, isNewSession, inputMode);
                   // 다른 구독자에게 사용자 메시지 브로드캐스트 (보낸 ws 제외)
                   broadcastToSession(resolvedSessionId, 'USER_MESSAGE_BROADCAST', {
                     content: content.trim(),
