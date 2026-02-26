@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.github.yhk1038"
-version = "0.2.3"
+version = "0.3.0"
 
 repositories {
     mavenCentral()
@@ -44,15 +44,14 @@ intellijPlatform {
             untilBuild = "253.*"
         }
         changeNotes = """
-            <h3>0.2.3 - Patch</h3>
+            <h3>0.3.0 - Permission Mode &amp; Data Integrity</h3>
             <ul>
-                <li>Refactored slash command panel to registry-based CommandPalette module</li>
-                <li>Added Clear conversation action to Context section</li>
-            </ul>
-            <h3>0.2.2 - Patch</h3>
-            <ul>
+                <li>Added permission mode support: inputMode selection maps to Claude Code CLI --permission-mode flag</li>
+                <li>Aligned session wire format with Claude Code CLI original data structures</li>
                 <li>Fixed header and input area with improved chat panel layout</li>
-                <li>Updated chat input container styling and max-width</li>
+                <li>Refactored slash command panel to registry-based CommandPalette module</li>
+                <li>Refactored dev-bridge from single file to modular architecture</li>
+                <li>Added CLI command logging for debugging</li>
             </ul>
             <h3>0.2.1 - Patch</h3>
             <ul>
