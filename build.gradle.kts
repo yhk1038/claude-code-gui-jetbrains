@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.github.yhk1038"
-version = "0.3.0"
+version = "0.4.0"
 
 repositories {
     mavenCentral()
@@ -44,6 +44,13 @@ intellijPlatform {
             untilBuild = "253.*"
         }
         changeNotes = """
+            <h3>0.4.0 - Cross-Tab Sync &amp; Broader IDE Support</h3>
+            <ul>
+                <li>Expanded JetBrains IDE support range to 2024.2+</li>
+                <li>Real-time cross-tab session list synchronization</li>
+                <li>Added Plan Usage Limits page in Settings</li>
+                <li>Input history integration on session restore with multi-line cursor guard</li>
+            </ul>
             <h3>0.3.0 - Permission Mode &amp; Data Integrity</h3>
             <ul>
                 <li>Added permission mode support: inputMode selection maps to Claude Code CLI --permission-mode flag</li>
