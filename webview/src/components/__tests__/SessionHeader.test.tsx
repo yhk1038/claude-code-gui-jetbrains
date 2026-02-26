@@ -11,9 +11,9 @@ const daysAgo = (days: number) => new Date(now.getTime() - days * 24 * 60 * 60 *
 const hoursAgo = (hours: number) => new Date(now.getTime() - hours * 60 * 60 * 1000);
 
 const mockSessions: SessionMetaDto[] = [
-  { id: 'session-1', title: 'First Chat', updatedAt: hoursAgo(2), createdAt: hoursAgo(3), messageCount: 3 },           // Today
-  { id: 'session-2', title: 'Second Chat', updatedAt: daysAgo(1), createdAt: daysAgo(1), messageCount: 2 },            // Yesterday
-  { id: 'session-3', title: 'API Discussion', updatedAt: daysAgo(5), createdAt: daysAgo(5), messageCount: 5 },         // Past week
+  { id: 'session-1', title: 'First Chat', updatedAt: hoursAgo(2), createdAt: hoursAgo(3), messageCount: 3, isSidechain: false },           // Today
+  { id: 'session-2', title: 'Second Chat', updatedAt: daysAgo(1), createdAt: daysAgo(1), messageCount: 2, isSidechain: false },            // Yesterday
+  { id: 'session-3', title: 'API Discussion', updatedAt: daysAgo(5), createdAt: daysAgo(5), messageCount: 5, isSidechain: false },         // Past week
 ];
 
 // Mock context values

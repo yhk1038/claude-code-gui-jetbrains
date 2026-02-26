@@ -27,9 +27,10 @@ data class SessionData(
     val id: String,
     val title: String,
     val createdAt: String,
-    val updatedAt: String,
+    val lastTimestamp: String? = null,
     val messages: List<JsonElement>,
-    val messageCount: Int = -1  // -1 means use messages.size
+    val messageCount: Int = -1,  // -1 means use messages.size
+    val isSidechain: Boolean = false
 )
 
 /**
@@ -156,7 +157,7 @@ class ClaudeSessionService(private val project: Project) {
                 id = id,
                 title = firstUserMessage?.take(50) ?: "No title",
                 createdAt = firstTimestamp ?: "",
-                updatedAt = lastTimestamp ?: "",
+                lastTimestamp = lastTimestamp,
                 messages = messages.map { it as JsonElement }
             )
 
@@ -175,7 +176,7 @@ class ClaudeSessionService(private val project: Project) {
         logger.info("getAllSessions() called, project: ${project.basePath}")
         val cliSessions = getCliSessions()
         logger.info("Loaded ${cliSessions.size} CLI sessions")
-        return cliSessions.sortedByDescending { it.updatedAt }
+        return cliSessions.sortedByDescending { it.lastTimestamp ?: it.createdAt }
     }
 
     /**
@@ -324,18 +325,14 @@ class ClaudeSessionService(private val project: Project) {
                     val sessionId = file.nameWithoutExtension
                     val sessionInfo = extractSessionInfo(file)
 
-                    // Skip sidechain sessions
-                    if (sessionInfo.isSidechain) {
-                        return@mapNotNull null
-                    }
-
                     SessionData(
                         id = sessionId,
                         title = sessionInfo.title,
                         createdAt = sessionInfo.createdAt,
-                        updatedAt = sessionInfo.lastTimestamp ?: sessionInfo.createdAt,
+                        lastTimestamp = sessionInfo.lastTimestamp,
                         messages = emptyList(),
-                        messageCount = sessionInfo.messageCount
+                        messageCount = sessionInfo.messageCount,
+                        isSidechain = sessionInfo.isSidechain
                     )
                 } catch (e: Exception) {
                     logger.warn("Failed to parse session file: ${file.name}", e)

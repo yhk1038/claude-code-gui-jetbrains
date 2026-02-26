@@ -30,19 +30,21 @@ describe('SessionsApi', () => {
         sessions: [
           {
             sessionId: 'session-1',
-            firstPrompt: 'Hello world',
-            created: '2026-02-02T10:00:00Z',
-            modified: '2026-02-02T11:00:00Z',
+            title: 'Hello world',
+            createdAt: '2026-02-02T10:00:00Z',
+            lastTimestamp: '2026-02-02T11:00:00Z',
             messageCount: 5,
+            isSidechain: false,
             projectPath: '/project/path',
             gitBranch: 'main',
           },
           {
             sessionId: 'session-2',
-            firstPrompt: 'Test prompt',
-            created: '2026-02-01T09:00:00Z',
-            modified: '2026-02-01T10:00:00Z',
+            title: 'Test prompt',
+            createdAt: '2026-02-01T09:00:00Z',
+            lastTimestamp: '2026-02-01T10:00:00Z',
             messageCount: 3,
+            isSidechain: false,
           },
         ],
       };
@@ -61,6 +63,7 @@ describe('SessionsApi', () => {
       expect(result[0].createdAt).toEqual(new Date('2026-02-02T10:00:00Z'));
       expect(result[0].updatedAt).toEqual(new Date('2026-02-02T11:00:00Z'));
       expect(result[0].messageCount).toBe(5);
+      expect(result[0].isSidechain).toBe(false);
       expect(result[0].projectPath).toBe('/project/path');
       expect(result[0].gitBranch).toBe('main');
     });
@@ -81,15 +84,16 @@ describe('SessionsApi', () => {
       expect(result).toEqual([]);
     });
 
-    it('should map sessionId to id and firstPrompt to title', async () => {
+    it('should map sessionId to id and truncate title to 50 chars', async () => {
       const mockResponse = {
         sessions: [
           {
             sessionId: 'test-id',
-            firstPrompt: 'This is a very long prompt that should be truncated to 50 characters maximum length',
-            created: '2026-01-01T00:00:00Z',
-            modified: '2026-01-01T01:00:00Z',
+            title: 'This is a very long prompt that should be truncated to 50 characters maximum length',
+            createdAt: '2026-01-01T00:00:00Z',
+            lastTimestamp: '2026-01-01T01:00:00Z',
             messageCount: 10,
+            isSidechain: false,
           },
         ],
       };
@@ -100,18 +104,19 @@ describe('SessionsApi', () => {
 
       expect(result[0].id).toBe('test-id');
       expect(result[0].title).toHaveLength(50);
-      expect(result[0].title).toBe(mockResponse.sessions[0].firstPrompt!.substring(0, 50));
+      expect(result[0].title).toBe(mockResponse.sessions[0].title.substring(0, 50));
     });
 
-    it('should use default title when firstPrompt is null', async () => {
+    it('should use default title when title is empty', async () => {
       const mockResponse = {
         sessions: [
           {
             sessionId: 'session-no-prompt',
-            firstPrompt: null,
-            created: '2026-02-01T09:00:00Z',
-            modified: '2026-02-01T10:00:00Z',
+            title: '',
+            createdAt: '2026-02-01T09:00:00Z',
+            lastTimestamp: '2026-02-01T10:00:00Z',
             messageCount: 0,
+            isSidechain: false,
           },
         ],
       };
@@ -123,14 +128,16 @@ describe('SessionsApi', () => {
       expect(result[0].title).toBe('No title');
     });
 
-    it('should default messageCount to 0 when not provided', async () => {
+    it('should fall back updatedAt to createdAt when lastTimestamp is null', async () => {
       const mockResponse = {
         sessions: [
           {
             sessionId: 'session-3',
-            firstPrompt: 'Test',
-            created: '2026-02-01T09:00:00Z',
-            modified: '2026-02-01T10:00:00Z',
+            title: 'Test',
+            createdAt: '2026-02-01T09:00:00Z',
+            lastTimestamp: null,
+            messageCount: 5,
+            isSidechain: false,
           },
         ],
       };
@@ -139,7 +146,7 @@ describe('SessionsApi', () => {
 
       const result = await api.index();
 
-      expect(result[0].messageCount).toBe(0);
+      expect(result[0].updatedAt).toEqual(new Date('2026-02-01T09:00:00Z'));
     });
   });
 

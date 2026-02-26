@@ -6,10 +6,11 @@ import type { ApiConfig } from '../ClaudeCodeApi';
 interface GetSessionsResponse {
   sessions: {
     sessionId: string;
-    firstPrompt?: string;
-    created: string;
-    modified: string;
-    messageCount?: number;
+    title: string;
+    createdAt: string;
+    lastTimestamp: string | null;
+    messageCount: number;
+    isSidechain: boolean;
     projectPath?: string;
     gitBranch?: string;
   }[];

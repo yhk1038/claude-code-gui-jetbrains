@@ -28,8 +28,6 @@ export function To<T>(
   return applyDecorators(
     Expose(),
     Transform(({ obj, value, key }: TransformFnParams) => {
-      if (value) return value;
-
       const source = sourceField || key;
       return source in obj ? actualTransformer(obj[source]) : value;
     })

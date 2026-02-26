@@ -99,12 +99,13 @@ export function SessionProvider({ children }: SessionProviderProps) {
       console.log('[SessionContext] Loading sessions from:', workingDirectory);
 
       const sessions = await api.sessions.index().then((sessions) => {
-        sessions.sort((a, b) => {
-          const aTime = a.updatedAt?.getTime() ?? 0;
-          const bTime = b.updatedAt?.getTime() ?? 0;
-          return bTime - aTime;
-        });
-        return sessions;
+        return sessions
+          .filter(s => !s.isSidechain)
+          .sort((a, b) => {
+            const aTime = a.updatedAt?.getTime() ?? 0;
+            const bTime = b.updatedAt?.getTime() ?? 0;
+            return bTime - aTime;
+          });
       });
       setSessions(sessions);
       console.log('[SessionContext] Loaded CLI sessions:', sessions);

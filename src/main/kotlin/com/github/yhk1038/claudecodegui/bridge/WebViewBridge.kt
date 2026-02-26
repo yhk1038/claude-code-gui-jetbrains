@@ -53,7 +53,7 @@ class WebViewBridge(
     private var streamParser: StreamParser? = null
     private var parserJob: Job? = null
     private var isServiceRunning = false
-    private var currentPermissionMode: PermissionMode? = null
+    private var currentPermissionMode: PermissionMode = PermissionMode.ASK_BEFORE_EDIT
 
     init {
         setupCliListeners()
@@ -71,7 +71,7 @@ class WebViewBridge(
     /**
      * Start a per-tab CLI process
      */
-    private suspend fun startCliProcess(sessionId: String? = null, workingDir: String? = null, permissionMode: PermissionMode? = null): Result<Unit> {
+    private suspend fun startCliProcess(sessionId: String? = null, workingDir: String? = null, permissionMode: PermissionMode = PermissionMode.ASK_BEFORE_EDIT): Result<Unit> {
         if (isServiceRunning) {
             logger.info("CLI process already running for this tab")
             return Result.success(Unit)
@@ -244,6 +244,7 @@ class WebViewBridge(
         val workingDir = payload["workingDir"]?.jsonPrimitive?.contentOrNull
         val inputMode = payload["inputMode"]?.jsonPrimitive?.contentOrNull
         val permissionMode = PermissionMode.fromInputMode(inputMode)
+            ?: PermissionMode.ASK_BEFORE_EDIT  // default fallback
 
         // Update current session ID from WebView
         if (sessionId != null) {
@@ -263,7 +264,7 @@ class WebViewBridge(
                 }
             }
             currentPermissionMode = permissionMode
-        } else if (permissionMode != null && permissionMode != currentPermissionMode) {
+        } else if (permissionMode != currentPermissionMode) {
             // Permission mode changed - restart CLI process
             logger.info("Permission mode changed from $currentPermissionMode to $permissionMode, restarting CLI process...")
             broadcastOrSend("RESULT_MESSAGE", mapOf(
@@ -504,10 +505,11 @@ class WebViewBridge(
                 sessions.forEach { session ->
                     addJsonObject {
                         put("sessionId", session.id)
-                        put("firstPrompt", session.title)
-                        put("created", session.createdAt)
-                        put("modified", session.updatedAt)
+                        put("title", session.title)
+                        put("createdAt", session.createdAt)
+                        put("lastTimestamp", session.lastTimestamp)
                         put("messageCount", if (session.messageCount >= 0) session.messageCount else session.messages.size)
+                        put("isSidechain", session.isSidechain)
                     }
                 }
             }

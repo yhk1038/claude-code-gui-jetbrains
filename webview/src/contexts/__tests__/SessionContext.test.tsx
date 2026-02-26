@@ -54,6 +54,7 @@ const mockSessionDtos: SessionMetaDto[] = [
     createdAt: new Date('2026-02-02T10:00:00Z'),
     updatedAt: new Date('2026-02-02T11:00:00Z'),
     messageCount: 5,
+    isSidechain: false,
   },
   {
     id: 'session-2',
@@ -61,6 +62,7 @@ const mockSessionDtos: SessionMetaDto[] = [
     createdAt: new Date('2026-02-01T09:00:00Z'),
     updatedAt: new Date('2026-02-01T10:00:00Z'),
     messageCount: 3,
+    isSidechain: false,
   },
 ];
 

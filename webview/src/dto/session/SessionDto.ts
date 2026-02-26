@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Type, Transform, Expose } from 'class-transformer';
 import { AnyMessageDto } from '../message/MessageDto';
 import { transformMessages } from '../../mappers/messageTransformer';
 import { toTitle } from '../../mappers/sessionTransformer';
@@ -9,14 +9,19 @@ import { To, ToDate, Rename } from '../decorators';
  */
 export class SessionMetaDto {
   @Rename('sessionId') id: string;
-  @To('firstPrompt', toTitle) title: string;
-  @ToDate('created') createdAt: Date;
-  @ToDate('modified') updatedAt: Date;
+  @To(toTitle) title: string;
+  @ToDate() createdAt: Date;
+  @Expose()
+  @Transform(({ obj }) => {
+    const ts = obj.lastTimestamp || obj.createdAt;
+    return ts ? new Date(ts) : new Date();
+  })
+  updatedAt: Date;
 
   messageCount: number = 0;
+  isSidechain: boolean = false;
   projectPath?: string;
   gitBranch?: string;
-  firstPrompt?: string;
 }
 
 /**
