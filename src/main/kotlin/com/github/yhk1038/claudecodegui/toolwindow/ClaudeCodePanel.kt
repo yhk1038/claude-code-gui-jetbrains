@@ -24,10 +24,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import org.cef.browser.CefBrowser
 import org.cef.browser.CefFrame
-import org.cef.callback.CefContextMenuParams
-import org.cef.callback.CefMenuModel
-import org.cef.callback.CefRunContextMenuCallback
-import org.cef.handler.CefContextMenuHandler
 import org.cef.handler.CefDisplayHandler
 import org.cef.handler.CefDisplayHandlerAdapter
 import org.cef.handler.CefLoadHandlerAdapter
@@ -170,46 +166,6 @@ class ClaudeCodePanel(
             browser.cefBrowser
         )
 
-        // Register context menu handler to add "Open DevTools" option
-        browser.jbCefClient.addContextMenuHandler(object : CefContextMenuHandler {
-            private val DEVTOOLS_CMD_ID = 28500
-
-            override fun onBeforeContextMenu(
-                browser: CefBrowser?,
-                frame: CefFrame?,
-                params: CefContextMenuParams?,
-                model: CefMenuModel?
-            ) {
-                model?.addSeparator()
-                model?.addItem(DEVTOOLS_CMD_ID, "Open DevTools")
-            }
-
-            override fun onContextMenuCommand(
-                browser: CefBrowser?,
-                frame: CefFrame?,
-                params: CefContextMenuParams?,
-                commandId: Int,
-                eventFlags: Int
-            ): Boolean {
-                if (commandId == DEVTOOLS_CMD_ID) {
-                    openDevTools()
-                    return true
-                }
-                return false
-            }
-
-            override fun onContextMenuDismissed(browser: CefBrowser?, frame: CefFrame?) {}
-
-            override fun runContextMenu(
-                browser: CefBrowser?,
-                frame: CefFrame?,
-                params: CefContextMenuParams?,
-                model: CefMenuModel?,
-                callback: CefRunContextMenuCallback?
-            ): Boolean {
-                return false
-            }
-        }, browser.cefBrowser)
     }
 
     /**

@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.github.yhk1038"
-version = "0.4.1"
+version = "0.4.2"
 
 repositories {
     mavenCentral()
@@ -44,9 +44,9 @@ intellijPlatform {
             untilBuild = "253.*"
         }
         changeNotes = """
-            <h3>0.4.1 - Compatibility Fix</h3>
+            <h3>0.4.2 - Compatibility Fix</h3>
             <ul>
-                <li>Fix AbstractMethodError: implement CefContextMenuHandler.runContextMenu for IntelliJ 2025.3+</li>
+                <li>Remove CefContextMenuHandler to resolve cross-version compatibility (DevTools via F12 only)</li>
                 <li>Fix deprecated URL(String) constructor usage</li>
             </ul>
             <h3>0.4.0 - Cross-Tab Sync &amp; Broader IDE Support</h3>
