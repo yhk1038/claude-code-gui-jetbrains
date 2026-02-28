@@ -35,6 +35,23 @@ function formatTimeUntil(isoString: string): string {
   return `${remainingMinutes}분 후 재설정`;
 }
 
+function formatExactTime(isoString: string): string {
+  const target = new Date(isoString);
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const formatted = target.toLocaleString('ko-KR', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  const tzAbbr =
+    target.toLocaleTimeString('en-US', { timeZone, timeZoneName: 'short' }).split(' ').pop() ?? timeZone;
+  return `${formatted} (${tzAbbr})`;
+}
+
 function getBarColorClass(utilization: number): string {
   if (utilization >= 80) return 'bg-red-500';
   if (utilization >= 50) return 'bg-yellow-500';
@@ -59,9 +76,10 @@ export function UsageMeter({ label, utilization, resetsAt }: UsageMeterProps) {
       </div>
 
       {resetsAt && (
-        <p className="text-xs text-zinc-500 mt-1.5">
-          {formatTimeUntil(resetsAt)}
-        </p>
+        <div className="flex items-center justify-between mt-1.5">
+          <p className="text-xs text-zinc-500">{formatTimeUntil(resetsAt)}</p>
+          <p className="text-xs text-zinc-600">{formatExactTime(resetsAt)}</p>
+        </div>
       )}
     </div>
   );
