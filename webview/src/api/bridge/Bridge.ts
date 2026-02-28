@@ -1,7 +1,6 @@
 // webview/src/api/bridge/Bridge.ts
 
 import type { Connector, ConnectionChangeHandler } from './Connector';
-import { KotlinConnector } from './KotlinConnector';
 import { WebSocketConnector } from './WebSocketConnector';
 
 type MessageHandler = (message: IPCMessage) => void;
@@ -249,26 +248,21 @@ let bridgeInstance: Bridge | null = null;
 /**
  * Bridge 싱글턴 생성/접근.
  *
- * 최초 호출 시:
- * 1. import.meta.env.PROD에 따라 적절한 Connector 생성
- * 2. Bridge 인스턴스 생성
- * 3. bridge.connect() 호출 (fire-and-forget - Promise 반환하지 않음)
+ * 단일 백엔드 아키텍처: 항상 WebSocketConnector 사용.
+ * - 개발 환경: ws://localhost:3001/ws (Node.js standalone, Vite dev server와 별도)
+ * - JetBrains 환경: ws://{window.location.host}/ws (Node.js가 정적 파일과 같은 포트로 서빙)
  *
  * 이 함수는 module-level에서 호출 가능 (React 외부).
- * Kotlin bridge가 아직 준비되지 않았더라도 KotlinConnector.connect()가
- * kotlinBridgeReady 이벤트를 기다리므로 안전.
+ * WebSocketConnector는 연결 실패 시 자동 재연결을 시도하므로 안전.
  */
 export function getBridge(): Bridge {
   if (!bridgeInstance) {
-    const connector = import.meta.env.PROD
-      ? new KotlinConnector()
-      : new WebSocketConnector();
+    const connector = new WebSocketConnector();
 
     bridgeInstance = new Bridge(connector);
 
     // 연결 시작 (비동기, fire-and-forget)
-    // KotlinConnector: kotlinBridge 존재하면 즉시, 아니면 이벤트 대기
-    // WebSocketConnector: WS 연결 시도 (실패 시 자동 재연결)
+    // WebSocketConnector: WS 연결 시도 (실패 시 2초마다 자동 재연결)
     bridgeInstance.connect().catch((error) => {
       console.error('[Bridge] Initial connection failed:', error);
     });

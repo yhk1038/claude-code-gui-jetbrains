@@ -25,6 +25,11 @@ webview/dist/
 # WebView build output
 src/main/resources/webview/
 
+# Node.js backend build output
+backend/node_modules/
+backend/dist/
+src/main/resources/backend/
+
 # TypeScript build info
 *.tsbuildinfo
 

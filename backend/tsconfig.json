@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "composite": true,
     "target": "ES2020",
     "skipLibCheck": true,
     "module": "ESNext",
@@ -9,6 +8,6 @@
     "strict": true
   },
   "include": [
-    "vite.config.ts"
+    "src/**/*.ts"
   ]
 }

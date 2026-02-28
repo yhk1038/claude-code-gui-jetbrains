@@ -1,14 +1,16 @@
 package com.github.yhk1038.claudecodegui.toolwindow
 
-import com.github.yhk1038.claudecodegui.bridge.WebViewBridge
-import com.github.yhk1038.claudecodegui.services.ClaudeCliService
-import com.github.yhk1038.claudecodegui.settings.SettingsManager
+import com.github.yhk1038.claudecodegui.actions.OpenClaudeCodeAction
+import com.github.yhk1038.claudecodegui.bridge.NodeProcessManager
+import com.github.yhk1038.claudecodegui.services.DiffService
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.components.service
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.ui.JBColor
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.ui.jcef.JBCefBrowser
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefJSQuery
@@ -16,20 +18,27 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
 import org.cef.browser.CefBrowser
 import org.cef.browser.CefFrame
-import org.cef.handler.CefDisplayHandler
 import org.cef.handler.CefDisplayHandlerAdapter
 import org.cef.handler.CefLoadHandlerAdapter
 import java.awt.BorderLayout
+import java.util.UUID
 import javax.swing.JPanel
 
+/**
+ * JCEF browser panel that hosts the WebView UI.
+ *
+ * In the v4 single-backend architecture, all business logic (Claude CLI, sessions,
+ * settings, file I/O) lives in the Node.js backend. This panel only:
+ * - Manages the JCEF browser component
+ * - Starts [NodeProcessManager] to spawn the Node.js backend
+ * - Loads `http://localhost:{port}` once the backend is ready
+ * - Implements [NodeProcessManager.RpcHandler] for IDE-native operations
+ *   (open file, diff viewer, new tab, settings) requested by the Node.js backend
+ * - Handles cursor CSS -> Java cursor mapping
+ * - Handles title changes, console logging, keyboard shortcuts, DevTools
+ */
 class ClaudeCodePanel(
     private val project: Project,
     private val sessionId: String = "default",
@@ -39,63 +48,50 @@ class ClaudeCodePanel(
     private val logger = Logger.getInstance(ClaudeCodePanel::class.java)
 
     private val browser: JBCefBrowser = JBCefBrowser()
-    private val jsQuery: JBCefJSQuery = JBCefJSQuery.create(browser as JBCefBrowserBase)
     private val cursorQuery: JBCefJSQuery = JBCefJSQuery.create(browser as JBCefBrowserBase)
 
-    // 제목 변경 콜백 (FileEditor에서 설정)
+    // Title change callback (set by FileEditor)
     var onTitleChanged: ((String) -> Unit)? = null
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val cliService: ClaudeCliService = project.service()
 
-    private lateinit var webViewBridge: WebViewBridge
+    private val nodeProcessManager = NodeProcessManager(project, scope)
+    private val diffService: DiffService = DiffService.getInstance(project)
 
-    private val json = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-    }
-
-    // 로딩 화면용 레이블
-    private val loadingLabel = javax.swing.JLabel("Loading settings...").apply {
+    // Loading label
+    private val loadingLabel = javax.swing.JLabel("Starting backend...").apply {
         horizontalAlignment = javax.swing.SwingConstants.CENTER
         font = font.deriveFont(14f)
     }
 
-    // 에러 화면용 패널
+    // Error panel
     private var errorPanel: JPanel? = null
 
     init {
-        // Phase 1: 로딩 화면 표시
+        // Phase 1: Show loading screen
         add(loadingLabel, BorderLayout.CENTER)
 
-        // Phase 2: 설정 로딩 (동기)
-        // EDT 동기 실행 허용 - SettingsManager.ensureAndLoad() KDoc 참조
-        val settingsManager = SettingsManager.getInstance()
-        val loadSuccess = settingsManager.ensureAndLoad()
+        // Phase 2: Set up JCEF handlers (cursor, title, console, keyboard)
+        setupBrowserHandlers()
 
-        // Phase 3: 결과에 따라 분기
-        if (loadSuccess) {
-            remove(loadingLabel)
-            setupBridge()
-            loadWebView()
-            add(browser.component, BorderLayout.CENTER)
-        } else {
-            remove(loadingLabel)
-            showSettingsError()
+        // Phase 3: Start Node.js backend and load URL once ready
+        nodeProcessManager.start(createRpcHandler())
+        scope.launch {
+            try {
+                val port = nodeProcessManager.port.await()
+                loadWebView(port)
+            } catch (e: Exception) {
+                logger.error("Failed to start Node.js backend", e)
+                javax.swing.SwingUtilities.invokeLater {
+                    showBackendError(e.message ?: "Unknown error")
+                }
+            }
         }
     }
 
-    private fun setupBridge() {
-        // Initialize WebViewBridge
-        webViewBridge = WebViewBridge(cliService, this, scope, project)
+    // ─── Browser handlers (JCEF) ────────────────────────────────────
 
-        // Handle messages from WebView
-        jsQuery.addHandler { request: String ->
-            handleMessage(request)
-            // Return null response - actual responses are sent via executeJavaScript
-            JBCefJSQuery.Response(null)
-        }
-
+    private fun setupBrowserHandlers() {
         // Handle CSS cursor changes from WebView
         cursorQuery.addHandler { cursorName: String ->
             val javaCursorType = when (cursorName) {
@@ -118,12 +114,12 @@ class ClaudeCodePanel(
             JBCefJSQuery.Response(null)
         }
 
-        // Set up load handler to inject bridge on page load
+        // Inject cursor tracking script on page load
         browser.jbCefClient.addLoadHandler(object : CefLoadHandlerAdapter() {
             override fun onLoadEnd(browser: CefBrowser, frame: CefFrame, httpStatusCode: Int) {
                 if (frame.isMain) {
-                    injectBridge(frame)
-                    sendTheme()
+                    injectCursorTracking(frame)
+                    injectInitialHash(frame)
                     logger.info("WebView loaded successfully")
                     javax.swing.SwingUtilities.invokeLater {
                         this@ClaudeCodePanel.browser.component.requestFocusInWindow()
@@ -132,7 +128,7 @@ class ClaudeCodePanel(
             }
         }, browser.cefBrowser)
 
-        // Title 변경 감지 및 콘솔 로그 캡처
+        // Title change detection and console log capture
         browser.jbCefClient.addDisplayHandler(object : CefDisplayHandlerAdapter() {
             override fun onTitleChange(browser: CefBrowser?, title: String?) {
                 if (title != null && title.isNotBlank()) {
@@ -149,53 +145,30 @@ class ClaudeCodePanel(
             ): Boolean {
                 val logPrefix = "[WebView]"
                 when (level) {
-                    org.cef.CefSettings.LogSeverity.LOGSEVERITY_ERROR -> logger.error("$logPrefix $message (source: $source:$line)")
-                    org.cef.CefSettings.LogSeverity.LOGSEVERITY_WARNING -> logger.warn("$logPrefix $message")
-                    else -> logger.info("$logPrefix $message")
+                    org.cef.CefSettings.LogSeverity.LOGSEVERITY_ERROR ->
+                        logger.error("$logPrefix $message (source: $source:$line)")
+                    org.cef.CefSettings.LogSeverity.LOGSEVERITY_WARNING ->
+                        logger.warn("$logPrefix $message")
+                    else ->
+                        logger.info("$logPrefix $message")
                 }
-                return false // Allow default handling
+                return false
             }
         }, browser.cefBrowser)
 
-        // Register keyboard handler to prevent IDE from intercepting WebView shortcuts
-        // - macOS: Cmd+Arrow/Option+Arrow (텍스트 내비게이션), Cmd+, (설정)
-        // - All platforms: Cmd/Ctrl+, (설정 - IntelliJ Settings 다이얼로그 방지)
-        // - F12: DevTools 열기
+        // Keyboard handler: prevent IDE from intercepting WebView shortcuts
         browser.jbCefClient.addKeyboardHandler(
             WebViewKeyboardHandler(onOpenDevTools = { openDevTools() }),
             browser.cefBrowser
         )
-
     }
 
     /**
-     * Opens the JCEF DevTools for debugging
+     * Inject cursor CSS tracking script into the loaded page.
+     * This replaces the old cursorQuery injection that was part of injectBridge().
      */
-    private fun openDevTools() {
-        try {
-            (browser as? JBCefBrowserBase)?.openDevtools()
-                ?: logger.warn("Failed to open DevTools: browser is not JBCefBrowserBase")
-        } catch (e: Exception) {
-            logger.error("Failed to open DevTools", e)
-        }
-    }
-
-    private fun injectBridge(frame: CefFrame) {
-        val hashJs = if (initialHash != null) {
-            val escapedHash = initialHash.replace("\\", "\\\\").replace("'", "\\'")
-            "window.location.hash = '$escapedHash';"
-        } else ""
+    private fun injectCursorTracking(frame: CefFrame) {
         val js = """
-            $hashJs
-            window.kotlinBridge = {
-                send: function(message) {
-                    ${jsQuery.inject("JSON.stringify(message)")}
-                }
-            };
-            window.dispatchKotlinMessage = function(message) {
-                window.dispatchEvent(new CustomEvent('kotlinMessage', { detail: message }));
-            };
-            window.dispatchEvent(new Event('kotlinBridgeReady'));
             (function() {
                 var lastCursor = '';
                 document.addEventListener('mouseover', function(e) {
@@ -210,59 +183,77 @@ class ClaudeCodePanel(
         frame.executeJavaScript(js, frame.url, 0)
     }
 
-    private fun loadWebView() {
-        val devMode = System.getProperty("claude.dev.mode", "false").toBoolean() ||
-                      System.getenv("CLAUDE_DEV_MODE") == "true"
+    /**
+     * Set the initial hash if specified (e.g., for settings page navigation).
+     */
+    private fun injectInitialHash(frame: CefFrame) {
+        if (initialHash != null) {
+            val escapedHash = initialHash.replace("\\", "\\\\").replace("'", "\\'")
+            frame.executeJavaScript("window.location.hash = '$escapedHash';", frame.url, 0)
+        }
+    }
 
+    /**
+     * Opens the JCEF DevTools for debugging.
+     */
+    private fun openDevTools() {
+        try {
+            (browser as? JBCefBrowserBase)?.openDevtools()
+                ?: logger.warn("Failed to open DevTools: browser is not JBCefBrowserBase")
+        } catch (e: Exception) {
+            logger.error("Failed to open DevTools", e)
+        }
+    }
+
+    // ─── WebView loading ────────────────────────────────────────────
+
+    /**
+     * Load the WebView URL from the Node.js backend.
+     * Called once the backend has printed its PORT.
+     */
+    private fun loadWebView(port: Int) {
         val workingDirParam = project.basePath?.let {
             "?workingDir=${java.net.URLEncoder.encode(it, "UTF-8")}"
         } ?: ""
 
-        if (devMode && isViteDevServerRunning()) {
-            logger.info("Loading WebView from Vite dev server")
-            browser.loadURL("http://localhost:5173$workingDirParam")
-            return
-        }
+        val url = "http://localhost:$port$workingDirParam"
+        logger.info("Loading WebView from Node.js backend: $url")
 
-        if (devMode) {
-            logger.info("Dev mode enabled but Vite dev server not running, using bundled resources")
+        javax.swing.SwingUtilities.invokeLater {
+            remove(loadingLabel)
+            browser.loadURL(url)
+            add(browser.component, BorderLayout.CENTER)
+            revalidate()
+            repaint()
         }
-
-        // Use IntelliJ's built-in server with custom request handler to serve resources
-        val builtInServerPort = org.jetbrains.ide.BuiltInServerManager.getInstance().port
-        val url = "http://localhost:$builtInServerPort${WebViewRequestHandler.PREFIX}/index.html$workingDirParam"
-        logger.info("Loading WebView via custom HTTP handler: $url")
-        browser.loadURL(url)
     }
 
-    private fun showSettingsError() {
-        val settingsPath = "${System.getProperty("user.home")}/.claude-code-gui/settings.js"
-        logger.error("Failed to load settings from: $settingsPath")
+    /**
+     * Show error when the Node.js backend fails to start.
+     */
+    private fun showBackendError(errorMessage: String) {
+        remove(loadingLabel)
 
         errorPanel = JPanel(BorderLayout(0, 12)).apply {
             border = javax.swing.BorderFactory.createEmptyBorder(40, 40, 40, 40)
 
-            // 에러 메시지
             val messageLabel = javax.swing.JLabel(
                 "<html><div style='text-align:center;'>" +
-                "<b>설정 파일을 불러올 수 없습니다</b><br><br>" +
-                "경로: $settingsPath<br><br>" +
-                "파일이 올바른 JavaScript 형식인지 확인하세요.<br>" +
-                "파일을 삭제하면 다음 실행 시 기본값으로 재생성됩니다." +
+                "<b>Node.js backend failed to start</b><br><br>" +
+                "Error: $errorMessage<br><br>" +
+                "Ensure Node.js is installed and available on PATH.<br>" +
+                "The backend file (backend.mjs) must be built before running." +
                 "</div></html>"
             ).apply {
                 horizontalAlignment = javax.swing.SwingConstants.CENTER
             }
             add(messageLabel, BorderLayout.CENTER)
 
-            // 새로고침 버튼
-            val refreshButton = javax.swing.JButton("새로고침").apply {
-                addActionListener {
-                    retryLoadSettings()
-                }
+            val retryButton = javax.swing.JButton("Retry").apply {
+                addActionListener { retryBackendStart() }
             }
             val buttonPanel = JPanel(java.awt.FlowLayout(java.awt.FlowLayout.CENTER))
-            buttonPanel.add(refreshButton)
+            buttonPanel.add(retryButton)
             add(buttonPanel, BorderLayout.SOUTH)
         }
         add(errorPanel!!, BorderLayout.CENTER)
@@ -270,228 +261,110 @@ class ClaudeCodePanel(
         repaint()
     }
 
-    private fun retryLoadSettings() {
-        val settingsManager = SettingsManager.getInstance()
-        val loadSuccess = settingsManager.ensureAndLoad()
+    /**
+     * Retry starting the Node.js backend after a failure.
+     */
+    private fun retryBackendStart() {
+        errorPanel?.let { remove(it) }
+        errorPanel = null
+        add(loadingLabel, BorderLayout.CENTER)
+        revalidate()
+        repaint()
 
-        if (loadSuccess) {
-            errorPanel?.let { remove(it) }
-            errorPanel = null
-            setupBridge()
-            loadWebView()
-            add(browser.component, BorderLayout.CENTER)
-            revalidate()
-            repaint()
-            logger.info("Settings loaded successfully on retry")
-        } else {
-            logger.error("Settings load retry failed")
-        }
-    }
+        // Dispose old manager and create a new one
+        nodeProcessManager.dispose()
 
-    private fun isViteDevServerRunning(): Boolean {
-        return try {
-            val socket = java.net.Socket()
-            socket.connect(java.net.InetSocketAddress("localhost", 5173), 500)
-            socket.close()
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    private fun extractWebViewResources(): java.io.File? {
-        return try {
-            val tempDir = java.io.File(System.getProperty("java.io.tmpdir"), "claude-code-webview-${project.locationHash}")
-
-            // Always re-extract to ensure latest version
-            if (tempDir.exists()) {
-                tempDir.deleteRecursively()
-            }
-            tempDir.mkdirs()
-
-            // Extract all resources from /webview/ directory
-            // This approach works for both IDE runtime and packaged JAR
-            val webviewUrl = javaClass.getResource("/webview/")
-            if (webviewUrl != null && webviewUrl.protocol == "jar") {
-                // Running from JAR - extract all entries starting with /webview/
-                extractFromJar(tempDir)
-            } else {
-                // IDE runtime or file system - try to extract known resources
-                val resources = listOf(
-                    "index.html",
-                    "favicon.svg",
-                    "assets/codicon.ttf",
-                    "assets/index.js",
-                    "assets/index.css",
-                    "assets/code-block-37QAKDTI.js"
-                )
-
-                for (resource in resources) {
-                    val inputStream = javaClass.getResourceAsStream("/webview/$resource")
-                    if (inputStream != null) {
-                        val targetFile = java.io.File(tempDir, resource)
-                        targetFile.parentFile?.mkdirs()
-                        inputStream.use { input ->
-                            targetFile.outputStream().use { output ->
-                                input.copyTo(output)
-                            }
-                        }
-                        logger.debug("Extracted: $resource")
-                    } else {
-                        logger.warn("Resource not found: /webview/$resource")
-                    }
-                }
-            }
-
-            logger.info("Extracted WebView resources to: ${tempDir.absolutePath}")
-            tempDir
-        } catch (e: Exception) {
-            logger.error("Failed to extract WebView resources", e)
-            null
-        }
-    }
-
-    private fun extractFromJar(targetDir: java.io.File) {
-        val jarPath = javaClass.protectionDomain.codeSource.location.toURI().path
-        val jarFile = java.util.jar.JarFile(jarPath)
-
-        jarFile.use { jar ->
-            val entries = jar.entries()
-            while (entries.hasMoreElements()) {
-                val entry = entries.nextElement()
-                if (entry.name.startsWith("webview/") && !entry.isDirectory) {
-                    val relativePath = entry.name.removePrefix("webview/")
-                    val targetFile = java.io.File(targetDir, relativePath)
-                    targetFile.parentFile?.mkdirs()
-
-                    jar.getInputStream(entry).use { input ->
-                        targetFile.outputStream().use { output ->
-                            input.copyTo(output)
-                        }
-                    }
-                    logger.debug("Extracted from JAR: ${entry.name}")
-                }
-            }
-        }
-    }
-
-    private fun handleMessage(request: String) {
-        logger.debug("Received message from WebView: ${request.take(200)}")
-
+        // We need a new NodeProcessManager since the old deferred is already completed
+        val newManager = NodeProcessManager(project, scope)
+        newManager.start(createRpcHandler())
         scope.launch {
             try {
-                // Parse incoming message
-                val messageJson = json.parseToJsonElement(request).jsonObject
-                val type = messageJson["type"]?.jsonPrimitive?.content ?: "UNKNOWN"
-                val requestId = messageJson["requestId"]?.jsonPrimitive?.content ?: "unknown"
-                val payload = messageJson["payload"]?.jsonObject ?: kotlinx.serialization.json.buildJsonObject {}
-
-                logger.debug("Processing message: type=$type, requestId=$requestId")
-
-                // Route message to WebViewBridge
-                val response = webViewBridge.handleWebViewMessage(type, requestId, payload)
-
-                // Send response back to WebView
-                sendResponse(requestId, response)
-
+                val port = newManager.port.await()
+                loadWebView(port)
             } catch (e: Exception) {
-                logger.error("Error handling message from WebView", e)
-
-                // Send error response
-                try {
-                    val messageJson = json.parseToJsonElement(request).jsonObject
-                    val requestId = messageJson["requestId"]?.jsonPrimitive?.content ?: "unknown"
-
-                    sendResponse(requestId, kotlinx.serialization.json.buildJsonObject {
-                        put("status", "error")
-                        put("error", e.message ?: "Unknown error")
-                    })
-                } catch (parseError: Exception) {
-                    logger.error("Failed to send error response", parseError)
+                logger.error("Retry: Failed to start Node.js backend", e)
+                javax.swing.SwingUtilities.invokeLater {
+                    showBackendError(e.message ?: "Unknown error")
                 }
             }
         }
     }
 
+    // ─── RPC Handler (IDE-native operations) ────────────────────────
+
     /**
-     * Send response back to WebView for a specific request
+     * Create an RPC handler that implements IDE-native operations
+     * requested by the Node.js backend via JSON-RPC over stdout.
      */
-    private fun sendResponse(requestId: String, response: kotlinx.serialization.json.JsonObject) {
-        val responseJson = kotlinx.serialization.json.buildJsonObject {
-            put("type", "ACK")
-            put("requestId", requestId)
-            put("payload", response)
-            put("timestamp", System.currentTimeMillis())
-        }
+    private fun createRpcHandler(): NodeProcessManager.RpcHandler {
+        return object : NodeProcessManager.RpcHandler {
 
-        val jsonString = json.encodeToString(
-            kotlinx.serialization.json.JsonObject.serializer(),
-            responseJson
-        )
-
-        browser.cefBrowser.executeJavaScript(
-            "window.dispatchKotlinMessage($jsonString);",
-            browser.cefBrowser.url,
-            0
-        )
-    }
-
-    fun sendToWebView(type: String, payload: Map<String, Any?>) {
-        val json = """{"type":"$type","payload":${payload.toJsonString()},"timestamp":${System.currentTimeMillis()}}"""
-        logger.info("sendToWebView: type=$type, json length=${json.length}")
-        logger.debug("sendToWebView JSON: ${json.take(500)}")
-
-        val script = """
-            (function() {
-                console.log('[Kotlin] Dispatching message: $type');
-                if (typeof window.dispatchKotlinMessage === 'function') {
-                    window.dispatchKotlinMessage($json);
-                    console.log('[Kotlin] Message dispatched successfully');
-                } else {
-                    console.error('[Kotlin] dispatchKotlinMessage is not defined!');
+            override suspend fun openFile(path: String) {
+                ApplicationManager.getApplication().invokeLater {
+                    try {
+                        val virtualFile = LocalFileSystem.getInstance().findFileByPath(path)
+                        if (virtualFile != null) {
+                            FileEditorManager.getInstance(project).openFile(virtualFile, true)
+                            logger.info("Opened file: $path")
+                        } else {
+                            logger.warn("File not found: $path")
+                        }
+                    } catch (e: Exception) {
+                        logger.error("Failed to open file: $path", e)
+                    }
                 }
-            })();
-        """.trimIndent()
+            }
 
-        browser.cefBrowser.executeJavaScript(script, browser.cefBrowser.url, 0)
-    }
+            override suspend fun openDiff(
+                filePath: String,
+                oldContent: String,
+                newContent: String,
+                toolUseId: String?
+            ) {
+                diffService.openDiffViewer(filePath, oldContent, newContent)
+                logger.info("Opened diff viewer: $filePath (toolUseId=$toolUseId)")
+            }
 
-    private fun sendTheme() {
-        val isDark = !JBColor.isBright()
-        sendToWebView("THEME_CHANGE", mapOf("mode" to if (isDark) "dark" else "light"))
-    }
+            override suspend fun applyDiff(
+                filePath: String,
+                newContent: String,
+                toolUseId: String?
+            ): Boolean {
+                val result = diffService.applyDiff(filePath, newContent)
+                logger.info("Applied diff: $filePath, success=${result.isSuccess} (toolUseId=$toolUseId)")
+                return result.isSuccess
+            }
 
-    private fun Map<String, Any?>.toJsonString(): String {
-        return entries.joinToString(",", "{", "}") { (k, v) ->
-            "\"$k\":${v.toJsonValue()}"
+            override suspend fun rejectDiff(toolUseId: String?) {
+                logger.info("Diff rejected (toolUseId=$toolUseId)")
+                // Diff viewer close is handled by user manually; nothing to do here
+            }
+
+            override suspend fun newSession() {
+                ApplicationManager.getApplication().invokeLater {
+                    OpenClaudeCodeAction.openSession(project, UUID.randomUUID().toString())
+                    logger.info("Opened new Claude Code session tab")
+                }
+            }
+
+            override suspend fun openSettings() {
+                ApplicationManager.getApplication().invokeLater {
+                    ShowSettingsUtil.getInstance().showSettingsDialog(
+                        project,
+                        "com.github.yhk1038.claudecodegui.settings"
+                    )
+                    logger.info("Opened Claude Code settings")
+                }
+            }
         }
     }
 
-    private fun Any?.toJsonValue(): String = when (this) {
-        null -> "null"
-        is String -> "\"${this.escapeJson()}\""
-        is Number, is Boolean -> toString()
-        is JsonElement -> this.toString()  // JsonElement is already valid JSON
-        is Map<*, *> -> (this as Map<String, Any?>).toJsonString()
-        is List<*> -> this.joinToString(",", "[", "]") { it.toJsonValue() }
-        else -> "\"${this.toString().escapeJson()}\""
-    }
-
-    private fun String.escapeJson(): String {
-        return this.replace("\\", "\\\\")
-                   .replace("\"", "\\\"")
-                   .replace("\n", "\\n")
-                   .replace("\r", "\\r")
-                   .replace("\t", "\\t")
-    }
+    // ─── Lifecycle ──────────────────────────────────────────────────
 
     override fun dispose() {
         scope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
-        if (::webViewBridge.isInitialized) {
-            webViewBridge.dispose()
-        }
+        nodeProcessManager.dispose()
         Disposer.dispose(cursorQuery)
-        Disposer.dispose(jsQuery)
         Disposer.dispose(browser)
         logger.info("ClaudeCodePanel disposed")
     }

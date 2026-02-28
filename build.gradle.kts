@@ -100,4 +100,68 @@ tasks {
             listOf("-Dclaude.dev.mode=${System.getenv("CLAUDE_DEV_MODE") ?: "true"}")
         }
     }
+
+    // Node.js 빌드 통합 태스크
+    register<Exec>("pnpmInstallWebview") {
+        description = "Install webview npm dependencies via pnpm"
+        workingDir = file("webview")
+        commandLine("pnpm", "install", "--frozen-lockfile")
+        inputs.files(file("webview/package.json"), file("webview/pnpm-lock.yaml"))
+        outputs.dir(file("webview/node_modules"))
+    }
+
+    register<Exec>("pnpmInstallBackend") {
+        description = "Install backend npm dependencies via pnpm"
+        workingDir = file("backend")
+        commandLine("pnpm", "install")
+        inputs.files(fileTree("backend").include("package.json"))
+        outputs.dir(file("backend/node_modules"))
+    }
+
+    register<Exec>("buildWebviewFrontend") {
+        description = "Build the WebView frontend (Vite)"
+        dependsOn("pnpmInstallWebview")
+        workingDir = file("webview")
+        commandLine("pnpm", "run", "build")
+        inputs.dir(file("webview/src"))
+        inputs.files(file("webview/package.json"), file("webview/vite.config.ts"))
+        outputs.dir(file("webview/dist"))
+    }
+
+    register<Exec>("buildNodeBackend") {
+        description = "Build the Node.js backend bundle (esbuild)"
+        dependsOn("pnpmInstallBackend")
+        workingDir = file("backend")
+        commandLine("pnpm", "run", "build")
+        inputs.dir(file("backend/src"))
+        inputs.files(file("backend/esbuild.mjs"), file("backend/package.json"))
+        outputs.file(file("backend/dist/backend.mjs"))
+    }
+
+    register("syncWebviewResources") {
+        description = "Sync built webview/backend artifacts into src/main/resources"
+        dependsOn("buildWebviewFrontend", "buildNodeBackend")
+        inputs.dir(file("webview/dist"))
+        inputs.file(file("backend/dist/backend.mjs"))
+        outputs.dir(file("src/main/resources/webview"))
+        outputs.file(file("src/main/resources/backend/backend.mjs"))
+        doLast {
+            // WebView 정적 파일 동기화 (stale 파일 방지를 위해 기존 디렉토리 삭제 후 복사)
+            file("src/main/resources/webview").deleteRecursively()
+            copy {
+                from(file("webview/dist"))
+                into(file("src/main/resources/webview"))
+            }
+            // Node.js 백엔드 번들 복사
+            file("src/main/resources/backend").mkdirs()
+            copy {
+                from(file("backend/dist/backend.mjs"))
+                into(file("src/main/resources/backend"))
+            }
+        }
+    }
+
+    named("processResources") {
+        dependsOn("syncWebviewResources")
+    }
 }
