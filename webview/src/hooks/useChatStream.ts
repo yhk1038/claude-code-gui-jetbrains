@@ -77,7 +77,11 @@ function filterActiveChain(messages: LoadedMessageDto[]): LoadedMessageDto[] {
 
   // Filter: keep only messages in the active chain
   // Messages without uuid are excluded (they're not part of any chain)
-  return messages.filter(msg => msg.uuid ? activeUuids.has(msg.uuid) : false);
+  // Progress entries are always kept — they link via parentToolUseID, not parentUuid
+  return messages.filter(msg => {
+    if (msg.type === 'progress') return true;
+    return msg.uuid ? activeUuids.has(msg.uuid) : false;
+  });
 }
 
 export function useChatStream(options: UseChatStreamOptions): UseChatStreamReturn {
@@ -486,6 +490,21 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
       appendMessage(userMessage);
     });
 
+    // PROGRESS_MESSAGE handler — sub-agent progress (Task 블록의 자식 도구 호출)
+    const unsubscribeProgress = bridge.subscribe('PROGRESS_MESSAGE', (message: IPCMessage) => {
+      const payload = message.payload;
+      if (!payload) return;
+
+      const progressEntry: LoadedMessageDto = {
+        type: 'progress',
+        uuid: (payload.uuid as string) || generateMessageId(),
+        parentToolUseID: payload.parentToolUseID as string,
+        data: payload.data as any,
+        timestamp: (payload.timestamp as string) ?? new Date().toISOString(),
+      };
+      appendMessage(progressEntry);
+    });
+
     // Cleanup
     return () => {
       unsubscribeStreamEvent();
@@ -493,6 +512,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
       unsubscribeResultMessage();
       unsubscribeServiceError();
       unsubscribeUserBroadcast();
+      unsubscribeProgress();
     };
   // bridge.subscribe는 useBridge의 useCallback([], [])이므로 안정적.
   // 나머지 콜백들은 ref로 안정화했으므로 의존성에서 제외.

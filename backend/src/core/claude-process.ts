@@ -268,6 +268,16 @@ function handleStreamEvent(
       break;
     }
 
+    case 'progress': {
+      connections.broadcastToSession(targetSessionId, 'PROGRESS_MESSAGE', {
+        parentToolUseID: event.parentToolUseID,
+        data: event.data,
+        timestamp: event.timestamp,
+        uuid: event.uuid,
+      });
+      break;
+    }
+
     default:
       console.error('[node-backend]', `Unknown CLI event type: ${eventType}`);
       break;
