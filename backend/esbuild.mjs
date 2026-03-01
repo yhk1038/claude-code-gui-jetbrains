@@ -10,6 +10,9 @@ await build({
   sourcemap: true,
   minify: false,
   external: [],
+  banner: {
+    js: `import { createRequire } from 'node:module';\nconst require = createRequire(import.meta.url);`,
+  },
 });
 
 console.log('Backend bundled successfully');
