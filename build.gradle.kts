@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.github.yhk1038"
-version = "0.6.1"
+version = "0.6.2"
 
 repositories {
     mavenCentral()
@@ -44,6 +44,12 @@ intellijPlatform {
             untilBuild = "253.*"
         }
         changeNotes = """
+            <h3>0.6.2 - Command Palette Fix</h3>
+            <ul>
+                <li>Fix stale WebView bundle causing command palette items to be non-functional</li>
+                <li>Remove phantom Thinking toggle from Model section</li>
+                <li>Fix wv-build alias to use subshell (prevent cd side-effect in dist builds)</li>
+            </ul>
             <h3>0.6.1 - Compact Session History Preservation</h3>
             <ul>
                 <li>Fix compacted sessions losing pre-compact message history on reload</li>
