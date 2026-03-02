@@ -7,7 +7,6 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -216,7 +215,8 @@ class ClaudeCodePanel(
             "?workingDir=${java.net.URLEncoder.encode(it, "UTF-8")}"
         } ?: ""
 
-        val url = "http://localhost:$port$workingDirParam"
+        val envParam = if (workingDirParam.isNotEmpty()) "&env=jcef" else "?env=jcef"
+        val url = "http://localhost:$port$workingDirParam$envParam"
         logger.info("Loading WebView from Node.js backend: $url")
 
         javax.swing.SwingUtilities.invokeLater {
@@ -349,11 +349,8 @@ class ClaudeCodePanel(
 
             override suspend fun openSettings() {
                 ApplicationManager.getApplication().invokeLater {
-                    ShowSettingsUtil.getInstance().showSettingsDialog(
-                        project,
-                        "com.github.yhk1038.claudecodegui.settings"
-                    )
-                    logger.info("Opened Claude Code settings")
+                    OpenClaudeCodeAction.openSession(project, UUID.randomUUID().toString(), "#/settings/general")
+                    logger.info("Opened Claude Code settings in editor tab")
                 }
             }
         }

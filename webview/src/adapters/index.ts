@@ -15,8 +15,16 @@ let adapterInstance: IdeAdapter | null = null;
  * Detect the current environment and return the appropriate adapter type
  */
 export function detectEnvironment(): IdeAdapterType {
-  if (typeof window !== 'undefined' && window.kotlinBridge) {
-    return IdeAdapterType.JETBRAINS;
+  if (typeof window !== 'undefined') {
+    // Legacy: window.kotlinBridge 직접 통신
+    if (window.kotlinBridge) {
+      return IdeAdapterType.JETBRAINS;
+    }
+    // v4: JCEF 환경은 URL 파라미터로 감지 (WebSocket 통신 사용)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('env') === 'jcef') {
+      return IdeAdapterType.JETBRAINS;
+    }
   }
   return IdeAdapterType.BROWSER;
 }
@@ -71,10 +79,13 @@ export function resetAdapter(): void {
 export function onBridgeReady(): void {
   const currentType = adapterInstance?.type;
 
-  // If we were using browser adapter but now have Kotlin bridge, switch
-  if (currentType === IdeAdapterType.BROWSER && window.kotlinBridge) {
-    console.log('[IdeAdapter] Kotlin bridge detected, switching to JetBrains adapter');
-    resetAdapter();
-    initializeAdapter();
+  // If we were using browser adapter but now have Kotlin bridge or JCEF env, switch
+  if (currentType === IdeAdapterType.BROWSER) {
+    const params = new URLSearchParams(window.location.search);
+    if (window.kotlinBridge || params.get('env') === 'jcef') {
+      console.log('[IdeAdapter] JetBrains environment detected, switching to JetBrains adapter');
+      resetAdapter();
+      initializeAdapter();
+    }
   }
 }

@@ -1,67 +1,31 @@
 import { IdeAdapterType, type IdeAdapter } from './IdeAdapter';
+import { getBridge } from '../api/bridge/Bridge';
 
 /**
  * JetBrains IDE Adapter
  *
- * Communicates directly with the JetBrains IDE via window.kotlinBridge.
- * Opens new editor tabs within the IDE.
+ * Communicates with the JetBrains IDE via WebSocket → Node.js backend → Kotlin RPC.
+ * Opens new editor tabs, settings, and files within the IDE.
  */
 export class JetBrainsAdapter implements IdeAdapter {
   readonly type = IdeAdapterType.JETBRAINS;
 
-  private sendToKotlin(message: IPCMessage): void {
-    if (!window.kotlinBridge?.send) {
-      throw new Error('Kotlin bridge is not available');
-    }
-    window.kotlinBridge.send(message);
-  }
-
   isReady(): boolean {
-    return !!window.kotlinBridge?.send;
+    return getBridge().isConnected;
   }
 
   async openNewTab(): Promise<void> {
-    if (!this.isReady()) {
-      throw new Error('Bridge is not ready');
-    }
-
-    const message: IPCMessage = {
-      type: 'NEW_SESSION',
-      payload: {},
-      timestamp: Date.now(),
-    };
-
-    this.sendToKotlin(message);
-    console.log('[JetBrainsAdapter] Sent NEW_SESSION to open new editor tab');
+    await getBridge().request('NEW_SESSION');
+    console.log('[JetBrainsAdapter] Sent NEW_SESSION via WebSocket bridge');
   }
 
   async openSettings(): Promise<void> {
-    if (!this.isReady()) {
-      throw new Error('Bridge is not ready');
-    }
-
-    const message: IPCMessage = {
-      type: 'OPEN_SETTINGS',
-      payload: {},
-      timestamp: Date.now(),
-    };
-
-    this.sendToKotlin(message);
-    console.log('[JetBrainsAdapter] Sent OPEN_SETTINGS to open settings in new tab');
+    await getBridge().request('OPEN_SETTINGS');
+    console.log('[JetBrainsAdapter] Sent OPEN_SETTINGS via WebSocket bridge');
   }
 
   async openFile(filePath: string): Promise<void> {
-    if (!this.isReady()) {
-      throw new Error('Bridge is not ready');
-    }
-
-    const message: IPCMessage = {
-      type: 'OPEN_FILE',
-      payload: { filePath },
-      timestamp: Date.now(),
-    };
-
-    this.sendToKotlin(message);
-    console.log('[JetBrainsAdapter] Sent OPEN_FILE:', filePath);
+    await getBridge().request('OPEN_FILE', { filePath });
+    console.log('[JetBrainsAdapter] Sent OPEN_FILE via WebSocket bridge:', filePath);
   }
 }
