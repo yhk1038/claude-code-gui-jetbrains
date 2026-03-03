@@ -3,6 +3,7 @@ package com.github.yhk1038.claudecodegui.toolwindow
 import com.github.yhk1038.claudecodegui.actions.OpenClaudeCodeAction
 import com.github.yhk1038.claudecodegui.bridge.NodeProcessManager
 import com.github.yhk1038.claudecodegui.services.DiffService
+import com.github.yhk1038.claudecodegui.services.NodeBackendService
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
@@ -54,7 +55,7 @@ class ClaudeCodePanel(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    private val nodeProcessManager = NodeProcessManager(project, scope)
+    private val backendService = NodeBackendService.getInstance(project)
     private val diffService: DiffService = DiffService.getInstance(project)
 
     // Loading label
@@ -74,10 +75,10 @@ class ClaudeCodePanel(
         setupBrowserHandlers()
 
         // Phase 3: Start Node.js backend and load URL once ready
-        nodeProcessManager.start(createRpcHandler())
+        backendService.ensureStarted(createRpcHandler())
         scope.launch {
             try {
-                val port = nodeProcessManager.port.await()
+                val port = backendService.awaitPort()
                 loadWebView(port)
             } catch (e: Exception) {
                 logger.error("Failed to start Node.js backend", e)
@@ -275,15 +276,10 @@ class ClaudeCodePanel(
         revalidate()
         repaint()
 
-        // Dispose old manager and create a new one
-        nodeProcessManager.dispose()
-
-        // We need a new NodeProcessManager since the old deferred is already completed
-        val newManager = NodeProcessManager(project, scope)
-        newManager.start(createRpcHandler())
+        backendService.restart(createRpcHandler())
         scope.launch {
             try {
-                val port = newManager.port.await()
+                val port = backendService.awaitPort()
                 loadWebView(port)
             } catch (e: Exception) {
                 logger.error("Retry: Failed to start Node.js backend", e)
@@ -364,7 +360,7 @@ class ClaudeCodePanel(
 
     override fun dispose() {
         scope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
-        nodeProcessManager.dispose()
+        backendService.releasePanel()
         Disposer.dispose(cursorQuery)
         Disposer.dispose(browser)
         logger.info("ClaudeCodePanel disposed")
