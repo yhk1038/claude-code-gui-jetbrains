@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { LoadedMessageDto, getTextContent, isContentBlockArray } from '../../types';
 import type { ImageBlockDto } from '../../dto/message/ContentBlockDto';
+import { ContentBlockType } from '../../dto/message/ContentBlockDto';
 import { useCopyToClipboard } from './hooks/useCopyToClipboard';
 import { ContextPills } from './components/ContextPills';
 import { ImageAttachments } from './components/ImageAttachments';
@@ -23,7 +24,7 @@ export const UserMessageRenderer: React.FC<UserMessageRendererProps> = ({ messag
   const imageBlocks = useMemo(() => {
     const content = message.message?.content;
     if (!isContentBlockArray(content)) return [];
-    return content.filter((b): b is ImageBlockDto => b.type === 'image');
+    return content.filter((b): b is ImageBlockDto => b.type === ContentBlockType.Image);
   }, [message.message?.content]);
 
   const handleCopy = () => {

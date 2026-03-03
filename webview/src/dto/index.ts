@@ -7,7 +7,7 @@ export {
   ImageBlockDto,
   ImageSourceDto,
   type AnyContentBlockDto,
-  type ContentBlockType,
+  ContentBlockType,
 } from './message/ContentBlockDto';
 
 export {
@@ -42,8 +42,10 @@ export {
 // Common types
 export {
   toInstance,
-  type ToolUseStatus,
-  type FileOperation,
-  type PermissionType,
-  type RiskLevel,
+  ToolUseStatus,
+  FileOperation,
+  PermissionType,
+  RiskLevel,
+  MessageRole,
+  LoadedMessageType,
 } from './common';

@@ -2,12 +2,13 @@ import { useEffect, useMemo, useRef } from 'react';
 import {LoadedMessageDto, isContentBlockArray} from '../types';
 import { MessageBubble } from './MessageBubble';
 import { ProjectSelector } from './ProjectSelector';
-import { ToolUseBlockDto, ToolResultBlockDto } from '../dto/message/ContentBlockDto';
+import { ToolUseBlockDto, ToolResultBlockDto, ContentBlockType } from '../dto/message/ContentBlockDto';
 import { transformContentBlocks } from '../mappers/contentBlockTransformer';
 import type { SubAgentMessage } from '../dto/message/ContentBlockDto';
 import { useSessionContext } from '../contexts/SessionContext';
 import { useChatStreamContext } from '../contexts/ChatStreamContext';
 import { StreamErrorBanner } from './StreamErrorBanner';
+import { LoadedMessageType, MessageRole } from '../dto/common';
 
 /**
  * Convert progress entries into SubAgentMessage array.
@@ -23,7 +24,7 @@ function buildSubAgentMessages(progressEntries: LoadedMessageDto[]): SubAgentMes
       const content = transformContentBlocks(msgData.content);
       return {
         content,
-        role: msgData.role as 'assistant' | 'user',
+        role: msgData.role as MessageRole,
         timestamp: entry.timestamp ?? '',
       };
     })
@@ -50,7 +51,7 @@ export function ChatMessageArea() {
     // Phase 0: Collect progress entries grouped by parentToolUseID
     const progressMap = new Map<string, LoadedMessageDto[]>();
     for (const msg of messages) {
-      if (msg.type === 'progress' && msg.parentToolUseID) {
+      if (msg.type === LoadedMessageType.Progress && msg.parentToolUseID) {
         const list = progressMap.get(msg.parentToolUseID) || [];
         list.push(msg);
         progressMap.set(msg.parentToolUseID, list);
@@ -60,11 +61,11 @@ export function ChatMessageArea() {
     // Build tool_use_id → ToolUseBlockDto lookup from all assistant messages
     const toolUseMap = new Map<string, ToolUseBlockDto>();
     for (const msg of messages) {
-      if (msg.type !== 'assistant') continue;
+      if (msg.type !== LoadedMessageType.Assistant) continue;
       const content = msg.message?.content;
       if (!isContentBlockArray(content)) continue;
       for (const block of content) {
-        if (block.type === 'tool_use') {
+        if (block.type === ContentBlockType.ToolUse) {
           toolUseMap.set((block as ToolUseBlockDto).id, block as ToolUseBlockDto);
         }
       }
@@ -88,8 +89,8 @@ export function ChatMessageArea() {
     // Attach tool_result messages to matching tool_use blocks and filter them out
     const result: LoadedMessageDto[] = [];
     for (const msg of messages) {
-      if (msg.type === 'progress') continue; // Skip progress entries (rendered inside TaskRenderer)
-      if (msg.type === 'user') {
+      if (msg.type === LoadedMessageType.Progress) continue; // Skip progress entries (rendered inside TaskRenderer)
+      if (msg.type === LoadedMessageType.User) {
         // Phase 2a: Attach child messages linked via sourceToolUseID (e.g. skill-expanded prompts)
         if (msg.sourceToolUseID) {
           const toolUseBlock = toolUseMap.get(msg.sourceToolUseID);
@@ -103,11 +104,11 @@ export function ChatMessageArea() {
         // Phase 2b: Attach tool_result messages
         const content = msg.message?.content;
         if (isContentBlockArray(content)) {
-          const isToolResultOnly = content.every(block => block.type === 'tool_result');
+          const isToolResultOnly = content.every(block => block.type === ContentBlockType.ToolResult);
           if (isToolResultOnly) {
             // Attach this message to each matching tool_use block
             for (const block of content) {
-              if (block.type === 'tool_result') {
+              if (block.type === ContentBlockType.ToolResult) {
                 const toolUseBlock = toolUseMap.get((block as ToolResultBlockDto).tool_use_id);
                 if (toolUseBlock) {
                   toolUseBlock.tool_result = msg;

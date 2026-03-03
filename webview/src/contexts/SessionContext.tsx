@@ -42,7 +42,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
 
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<SessionMetaDto[]>([]);
-  const [sessionState, setSessionState] = useState<SessionState>('idle');
+  const [sessionState, setSessionState] = useState<SessionState>(SessionState.Idle);
   const [isLoading, setIsLoading] = useState(false);
   const [workingDirectory, setWorkingDirectoryState] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
@@ -157,7 +157,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
 
   const resetToNewSession = useCallback(() => {
     setCurrentSessionId(null);
-    setSessionState('idle');
+    setSessionState(SessionState.Idle);
 
     api.sessions.create().catch(error => {
       console.error('[SessionContext] Failed to clear CLI session:', error);
@@ -185,7 +185,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
 
     if (sessions.some(s => s.id === sessionId)) {
       setCurrentSessionId(sessionId);
-      setSessionState('idle');
+      setSessionState(SessionState.Idle);
 
       try {
         // Triggers SESSION_LOADED event → AppProviders.SessionLoader handles message injection
@@ -205,7 +205,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
       setSessions(prev => prev.filter(s => s.id !== sessionId));
       if (currentSessionId === sessionId) {
         setCurrentSessionId(null);
-        setSessionState('idle');
+        setSessionState(SessionState.Idle);
       }
     } catch (error) {
       console.error('[SessionContext] Failed to delete session:', error);

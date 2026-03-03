@@ -13,7 +13,8 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useChatStreamContext } from '@/contexts/ChatStreamContext';
 import { SettingKey } from '@/types/settings';
-import { getTextContent } from '@/types';
+import { getTextContent, SessionState } from '@/types';
+import { LoadedMessageType } from '@/dto';
 import { useAttachments } from './hooks/useAttachments';
 import { AttachmentPreview } from './AttachmentPreview';
 import { ContextWindowTag } from './ContextWindowTag';
@@ -48,7 +49,7 @@ export function ChatInput() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const disabled = sessionState === 'error' || !workingDirectory;
+  const disabled = sessionState === SessionState.Error || !workingDirectory;
 
   const { mode, cycleMode } = useInputMode(
     settings[SettingKey.INITIAL_INPUT_MODE]
@@ -135,7 +136,7 @@ export function ChatInput() {
     lastInitSessionRef.current = currentSessionId;
 
     const userTexts = messages
-      .filter(m => m.type === 'user')
+      .filter(m => m.type === LoadedMessageType.User)
       .map(m => getTextContent(m))
       .filter((t): t is string => Boolean(t));
     inputHistory.initHistory(userTexts);

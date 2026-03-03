@@ -1,5 +1,5 @@
 import React from 'react';
-import { Context } from '../../../types';
+import { Context, ContextType } from '../../../types';
 import { getAdapter } from '../../../adapters';
 
 interface ContextPillsProps {
@@ -9,7 +9,7 @@ interface ContextPillsProps {
 function getDisplayName(ctx: Context): string {
   if (!ctx.path) return ctx.type;
   const filename = ctx.path.split('/').pop() || ctx.path;
-  if (ctx.type === 'selection' && ctx.startLine != null && ctx.endLine != null) {
+  if (ctx.type === ContextType.Selection && ctx.startLine != null && ctx.endLine != null) {
     return `${filename}:${ctx.startLine}-${ctx.endLine}`;
   }
   return filename;

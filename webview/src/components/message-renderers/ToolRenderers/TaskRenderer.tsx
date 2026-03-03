@@ -1,6 +1,7 @@
 import { ToolUseBlockDto, ToolResultBlockDto } from "@/types";
 import { Container, LabelValue, RendererProps, ToolHeader, ToolWrapper } from "./common";
 import { ToolRenderer } from "../ToolRenderer";
+import { MessageRole, LoadedMessageType, ContentBlockType } from "@/dto";
 
 class TaskToolUseDto extends ToolUseBlockDto {
     caller: { type: 'direct' };
@@ -24,9 +25,9 @@ export function TaskRenderer(props: RendererProps) {
     const subAgentToolUseMap = new Map<string, ToolUseBlockDto>();
 
     for (const msg of subAgentMessages) {
-        if (msg.role === 'assistant') {
+        if (msg.role === MessageRole.Assistant) {
             for (const block of msg.content) {
-                if (block.type === 'tool_use') {
+                if (block.type === ContentBlockType.ToolUse) {
                     const tuBlock = block as ToolUseBlockDto;
                     subAgentToolUseMap.set(tuBlock.id, tuBlock);
                 }
@@ -37,16 +38,16 @@ export function TaskRenderer(props: RendererProps) {
     // Merge sub-agent tool_results into sub-agent tool_uses
     // (same pattern as ChatMessageArea does for top-level messages)
     for (const msg of subAgentMessages) {
-        if (msg.role === 'user') {
+        if (msg.role === MessageRole.User) {
             for (const block of msg.content) {
-                if (block.type === 'tool_result') {
+                if (block.type === ContentBlockType.ToolResult) {
                     const trBlock = block as ToolResultBlockDto;
                     const matchingToolUse = subAgentToolUseMap.get(trBlock.tool_use_id);
                     if (matchingToolUse) {
                         // Create a minimal LoadedMessageDto-like wrapper
                         matchingToolUse.tool_result = {
-                            type: 'user',
-                            message: { role: 'user', content: [block] },
+                            type: LoadedMessageType.User,
+                            message: { role: MessageRole.User, content: [block] },
                         } as any;
                     }
                 }

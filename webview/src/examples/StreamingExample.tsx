@@ -1,5 +1,6 @@
 import React from 'react';
 import { useChatStreamContext } from '../contexts/ChatStreamContext';
+import { MessageRole, LoadedMessageType } from '../dto/common';
 
 /**
  * Example component demonstrating streaming message integration
@@ -90,16 +91,16 @@ export const StreamingExample: React.FC = () => {
 export const mockStreamingData = {
   messages: [
     {
-      type: 'user' as const,
+      type: LoadedMessageType.User,
       uuid: 'msg-1',
       timestamp: new Date(Date.now() - 60000).toISOString(),
-      message: { role: 'user' as const, content: 'Hello! Can you explain React hooks?' },
+      message: { role: MessageRole.User, content: 'Hello! Can you explain React hooks?' },
     },
     {
-      type: 'assistant' as const,
+      type: LoadedMessageType.Assistant,
       uuid: 'msg-2',
       timestamp: new Date(Date.now() - 59000).toISOString(),
-      message: { role: 'assistant' as const, content: '# React Hooks\n\nReact Hooks are functions...' },
+      message: { role: MessageRole.Assistant, content: '# React Hooks\n\nReact Hooks are functions...' },
       isStreaming: false,
     },
   ],

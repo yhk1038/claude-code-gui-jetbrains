@@ -2,12 +2,13 @@ import { Type, Transform } from 'class-transformer';
 import { AnyContentBlockDto } from './ContentBlockDto';
 import { transformContentBlocks } from '../../mappers/contentBlockTransformer';
 import { ContentBlockDeltaMessageDto } from '../stream/StreamEventDto';
+import { MessageRole, LoadedMessageType } from '../common';
 
 /**
  * User message payload containing role and content
  */
 export class UserMessagePayloadDto {
-  role: 'user' = 'user';
+  role: MessageRole = MessageRole.User;
 
   @Transform(({ value }) => transformContentBlocks(value))
   content!: string | AnyContentBlockDto[];
@@ -17,7 +18,7 @@ export class UserMessagePayloadDto {
  * User message from Claude CLI JSONL
  */
 export class UserMessageDto {
-  type: 'user' = 'user';
+  type: LoadedMessageType = LoadedMessageType.User;
 
   @Type(() => UserMessagePayloadDto)
   message!: UserMessagePayloadDto;
@@ -29,7 +30,7 @@ export class UserMessageDto {
  * Assistant message from Claude CLI JSONL
  */
 export class AssistantMessageDto {
-  type: 'assistant' = 'assistant';
+  type: LoadedMessageType = LoadedMessageType.Assistant;
   sessionId!: string;
   messageId!: string;
 
@@ -41,7 +42,7 @@ export class AssistantMessageDto {
  * System message from Claude CLI JSONL (session initialization)
  */
 export class SystemMessageDto {
-  type: 'system' = 'system';
+  type: LoadedMessageType = LoadedMessageType.System;
   session_id!: string;
   timestamp!: string;
   content!: string;
@@ -51,7 +52,7 @@ export class SystemMessageDto {
  * Result message from Claude CLI JSONL (completion)
  */
 export class ResultMessageDto {
-  type: 'result' = 'result';
+  type: LoadedMessageType = LoadedMessageType.Result;
   sessionId!: string;
   status!: 'success' | 'error';
   messageId?: string;

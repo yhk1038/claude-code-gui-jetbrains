@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { PendingDiff } from '../types';
+import { PendingDiff, DiffStatus } from '../types';
 
 interface UseDiffsReturn {
   pendingDiffs: PendingDiff[];
@@ -19,26 +19,26 @@ export function useDiffs(): UseDiffsReturn {
   const addDiff = useCallback((diff: Omit<PendingDiff, 'status'>) => {
     const newDiff: PendingDiff = {
       ...diff,
-      status: 'pending',
+      status: DiffStatus.Pending,
     };
     setPendingDiffs(prev => [...prev, newDiff]);
   }, []);
 
   const applyDiff = useCallback(async (diffId: string) => {
     setPendingDiffs(prev => prev.map(d =>
-      d.id === diffId ? { ...d, status: 'applied' as const } : d
+      d.id === diffId ? { ...d, status: DiffStatus.Applied } : d
     ));
     // Actual application will be handled by bridge
   }, []);
 
   const rejectDiff = useCallback((diffId: string) => {
     setPendingDiffs(prev => prev.map(d =>
-      d.id === diffId ? { ...d, status: 'rejected' as const } : d
+      d.id === diffId ? { ...d, status: DiffStatus.Rejected } : d
     ));
   }, []);
 
   const applyAll = useCallback(async () => {
-    const pendingIds = pendingDiffs.filter(d => d.status === 'pending').map(d => d.id);
+    const pendingIds = pendingDiffs.filter(d => d.status === DiffStatus.Pending).map(d => d.id);
     for (const id of pendingIds) {
       await applyDiff(id);
     }
@@ -46,7 +46,7 @@ export function useDiffs(): UseDiffsReturn {
 
   const rejectAll = useCallback(() => {
     setPendingDiffs(prev => prev.map(d =>
-      d.status === 'pending' ? { ...d, status: 'rejected' as const } : d
+      d.status === DiffStatus.Pending ? { ...d, status: DiffStatus.Rejected } : d
     ));
   }, []);
 
@@ -58,7 +58,7 @@ export function useDiffs(): UseDiffsReturn {
     return pendingDiffs.find(d => d.id === diffId);
   }, [pendingDiffs]);
 
-  const hasPendingDiffs = pendingDiffs.some(d => d.status === 'pending');
+  const hasPendingDiffs = pendingDiffs.some(d => d.status === DiffStatus.Pending);
 
   return {
     pendingDiffs,

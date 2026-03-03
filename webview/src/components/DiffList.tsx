@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PendingDiff } from '../types';
+import { PendingDiff, DiffStatus } from '../types';
 import { DiffCard } from './DiffCard';
 
 interface DiffListProps {
@@ -19,7 +19,7 @@ export function DiffList({
 }: DiffListProps) {
   const [isApplyingAll, setIsApplyingAll] = useState(false);
 
-  const pendingDiffs = diffs.filter(d => d.status === 'pending');
+  const pendingDiffs = diffs.filter(d => d.status === DiffStatus.Pending);
   const hasPending = pendingDiffs.length > 0;
 
   const handleApplyAll = async () => {

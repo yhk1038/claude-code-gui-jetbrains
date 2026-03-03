@@ -1,7 +1,8 @@
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { Context, getTextContent, LoadedMessageDto, Attachment } from '../types';
-import type { TextBlockDto, ToolUseBlockDto, ThinkingBlockDto, ImageBlockDto, ImageSourceDto, AnyContentBlockDto, ContentBlockType } from '../dto/message/ContentBlockDto';
-import { toInstance } from '../dto/common';
+import type { TextBlockDto, ToolUseBlockDto, ThinkingBlockDto, ImageBlockDto, ImageSourceDto, AnyContentBlockDto } from '../dto/message/ContentBlockDto';
+import { ContentBlockType } from '../dto/message/ContentBlockDto';
+import { toInstance, LoadedMessageType, MessageRole } from '../dto/common';
 
 /** Re-export for backwards compatibility */
 export type { LoadedMessageDto as LoadedMessage } from '../types';
@@ -98,8 +99,8 @@ function filterActiveChain(messages: LoadedMessageDto[]): LoadedMessageDto[] {
   // Filter: keep messages in any active chain
   // progress and summary entries are always kept
   return messages.filter(msg => {
-    if (msg.type === 'progress') return true;
-    if (msg.type === 'summary') return true;
+    if (msg.type === LoadedMessageType.Progress) return true;
+    if (msg.type === LoadedMessageType.Summary) return true;
     return msg.uuid ? activeUuids.has(msg.uuid) : false;
   });
 }
@@ -186,12 +187,12 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
       // Append thinking delta to the active thinking block (index-based)
       if (thinkingDelta) {
         const idx = activeThinkingBlockIndexRef.current;
-        if (idx >= 0 && idx < currentBlocks.length && currentBlocks[idx].type === 'thinking') {
+        if (idx >= 0 && idx < currentBlocks.length && currentBlocks[idx].type === ContentBlockType.Thinking) {
           const block = currentBlocks[idx] as ThinkingBlockDto;
           currentBlocks[idx] = { ...block, thinking: block.thinking + thinkingDelta };
         } else {
           // Fallback: no active thinking block yet, create one
-          currentBlocks.push({ type: 'thinking', thinking: thinkingDelta } as ThinkingBlockDto);
+          currentBlocks.push({ type: ContentBlockType.Thinking, thinking: thinkingDelta } as ThinkingBlockDto);
           activeThinkingBlockIndexRef.current = currentBlocks.length - 1;
         }
       }
@@ -199,12 +200,12 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
       // Append text delta to the active text block (index-based)
       if (textDelta) {
         const idx = activeTextBlockIndexRef.current;
-        if (idx >= 0 && idx < currentBlocks.length && currentBlocks[idx].type === 'text') {
+        if (idx >= 0 && idx < currentBlocks.length && currentBlocks[idx].type === ContentBlockType.Text) {
           const block = currentBlocks[idx] as TextBlockDto;
           currentBlocks[idx] = { ...block, text: block.text + textDelta };
         } else {
           // Fallback: no active text block yet, create one
-          currentBlocks.push({ type: 'text', text: textDelta } as TextBlockDto);
+          currentBlocks.push({ type: ContentBlockType.Text, text: textDelta } as TextBlockDto);
           activeTextBlockIndexRef.current = currentBlocks.length - 1;
         }
       }
@@ -212,7 +213,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
       // Append input JSON delta to the active tool_use block
       if (inputJsonDelta) {
         const idx = activeToolUseBlockIndexRef.current;
-        if (idx >= 0 && idx < currentBlocks.length && currentBlocks[idx].type === 'tool_use') {
+        if (idx >= 0 && idx < currentBlocks.length && currentBlocks[idx].type === ContentBlockType.ToolUse) {
           const block = currentBlocks[idx] as ToolUseBlockDto;
           // accumulatedInputJsonRef holds the full JSON string across all RAF frames
           accumulatedInputJsonRef.current += inputJsonDelta;
@@ -262,10 +263,10 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
     }
     const assistantMessageId = generateMessageId();
     const assistantMessage: LoadedMessageDto = {
-      type: 'assistant',
+      type: LoadedMessageType.Assistant,
       uuid: assistantMessageId,
       timestamp: new Date().toISOString(),
-      message: { role: 'assistant', content: [] } as LoadedMessageDto['message'],
+      message: { role: MessageRole.Assistant, content: [] } as LoadedMessageDto['message'],
       isStreaming: true,
     };
     appendMessage(assistantMessage);
@@ -315,11 +316,11 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
     if (attachments && attachments.length > 0) {
       const blocks: AnyContentBlockDto[] = [];
       if (content.trim()) {
-        blocks.push({ type: 'text', text: content.trim() } as TextBlockDto);
+        blocks.push({ type: ContentBlockType.Text, text: content.trim() } as TextBlockDto);
       }
       for (const att of attachments) {
         blocks.push({
-          type: 'image',
+          type: ContentBlockType.Image,
           source: {
             type: 'base64',
             media_type: att.mimeType,
@@ -334,10 +335,10 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
 
     // Create user message in JSONL structure
     const userMessage: LoadedMessageDto = {
-      type: 'user',
+      type: LoadedMessageType.User,
       uuid: generateMessageId(),
       timestamp: new Date().toISOString(),
-      message: { role: 'user', content: messageContent } as any,
+      message: { role: MessageRole.User, content: messageContent } as any,
       context,
     };
     appendMessage(userMessage);
@@ -345,10 +346,10 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
     // Create assistant placeholder
     const assistantMessageId = generateMessageId();
     const assistantMessage: LoadedMessageDto = {
-      type: 'assistant',
+      type: LoadedMessageType.Assistant,
       uuid: assistantMessageId,
       timestamp: new Date().toISOString(),
-      message: { role: 'assistant', content: [] } as any,
+      message: { role: MessageRole.Assistant, content: [] } as any,
       isStreaming: true,
     };
     appendMessage(assistantMessage);
@@ -388,7 +389,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
   // LoadedMessageDto's @Type/@Transform decorators handle nested transformation automatically.
   const loadMessages = useCallback((msgs: LoadedMessageDto[]) => {
     const convertedMessages = msgs
-      // .filter(raw => raw.type === 'user' || raw.type === 'assistant')
+      // .filter(raw => raw.type === LoadedMessageType.User || raw.type === LoadedMessageType.Assistant)
       .map(raw => toInstance(LoadedMessageDto, raw));
 
     // Build active chain by tracing parentUuid from the last message
@@ -407,7 +408,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
     // Find the last user message before this message
     let userMessage: LoadedMessageDto | null = null;
     for (let i = messageIndex; i >= 0; i--) {
-      if (messages[i].type === 'user') {
+      if (messages[i].type === LoadedMessageType.User) {
         userMessage = messages[i];
         break;
       }
@@ -510,13 +511,13 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
             ? [...msg.message!.content]
             : [];
 
-          if (contentBlock.type === 'text') {
-            const newBlock: TextBlockDto = { type: 'text', text: contentBlock.text ?? '' } as TextBlockDto;
+          if (contentBlock.type === ContentBlockType.Text) {
+            const newBlock: TextBlockDto = { type: ContentBlockType.Text, text: contentBlock.text ?? '' } as TextBlockDto;
             currentBlocks.push(newBlock);
             activeTextBlockIndexRef.current = currentBlocks.length - 1;
-          } else if (contentBlock.type === 'tool_use') {
+          } else if (contentBlock.type === ContentBlockType.ToolUse) {
             const newBlock: ToolUseBlockDto = {
-              type: 'tool_use',
+              type: ContentBlockType.ToolUse,
               id: contentBlock.id ?? '',
               name: contentBlock.name ?? '',
               input: contentBlock.input ?? {},
@@ -525,8 +526,8 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
             activeToolUseBlockIndexRef.current = currentBlocks.length - 1;
             // Reset accumulated input JSON for new tool_use block
             accumulatedInputJsonRef.current = '';
-          } else if (contentBlock.type === 'thinking') {
-            const newBlock: ThinkingBlockDto = { type: 'thinking', thinking: contentBlock.thinking ?? '' } as ThinkingBlockDto;
+          } else if (contentBlock.type === ContentBlockType.Thinking) {
+            const newBlock: ThinkingBlockDto = { type: ContentBlockType.Thinking, thinking: contentBlock.thinking ?? '' } as ThinkingBlockDto;
             currentBlocks.push(newBlock);
             activeThinkingBlockIndexRef.current = currentBlocks.length - 1;
           }
@@ -645,10 +646,10 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
       } else {
         // 새 메시지 추가 (스트리밍 없이 바로 온 경우)
         const assistantMessage: LoadedMessageDto = {
-          type: 'assistant',
+          type: LoadedMessageType.Assistant,
           uuid: generateMessageId(),
           timestamp: new Date().toISOString(),
-          message: { role: 'assistant', content: finalTurnBlocks } as LoadedMessageDto['message'],
+          message: { role: MessageRole.Assistant, content: finalTurnBlocks } as LoadedMessageDto['message'],
           isStreaming: false,
           message_id: messageId,
         };
@@ -715,10 +716,10 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
       if (!content) return;
 
       const userMessage: LoadedMessageDto = {
-        type: 'user',
+        type: LoadedMessageType.User,
         uuid: generateMessageId(),
         timestamp: new Date().toISOString(),
-        message: { role: 'user', content } as any,
+        message: { role: MessageRole.User, content } as any,
       };
       appendMessage(userMessage);
     });
@@ -729,7 +730,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
       if (!payload) return;
 
       const progressEntry: LoadedMessageDto = {
-        type: 'progress',
+        type: LoadedMessageType.Progress,
         uuid: (payload.uuid as string) || generateMessageId(),
         parentToolUseID: payload.parentToolUseID as string,
         data: payload.data as any,

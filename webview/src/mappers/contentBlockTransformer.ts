@@ -1,6 +1,7 @@
 import { plainToInstance } from 'class-transformer';
 import {
   AnyContentBlockDto,
+  ContentBlockType,
   TextBlockDto,
   ToolUseBlockDto,
   ToolResultBlockDto,
@@ -17,7 +18,7 @@ export function transformContentBlocks(
 ): AnyContentBlockDto[] {
   // Legacy: string content is converted to a single TextBlock
   if (typeof value === 'string') {
-    return [plainToInstance(TextBlockDto, { type: 'text', text: value })];
+    return [plainToInstance(TextBlockDto, { type: ContentBlockType.Text, text: value })];
   }
 
   // Null/undefined returns empty array
@@ -39,7 +40,7 @@ function transformSingleBlock(block: unknown): AnyContentBlockDto {
   if (!block || typeof block !== 'object') {
     // Fallback: treat as text
     return plainToInstance(TextBlockDto, {
-      type: 'text',
+      type: ContentBlockType.Text,
       text: String(block),
     });
   }
@@ -48,13 +49,13 @@ function transformSingleBlock(block: unknown): AnyContentBlockDto {
   const type = blockObj.type;
 
   switch (type) {
-    case 'text':
+    case ContentBlockType.Text:
       return plainToInstance(TextBlockDto, block);
 
-    case 'tool_use':
+    case ContentBlockType.ToolUse:
       return plainToInstance(ToolUseBlockDto, block);
 
-    case 'tool_result': {
+    case ContentBlockType.ToolResult: {
       const result = plainToInstance(ToolResultBlockDto, block);
       // tool_result.content can be string or content block array
       if (Array.isArray(blockObj.content)) {
@@ -63,17 +64,17 @@ function transformSingleBlock(block: unknown): AnyContentBlockDto {
       return result;
     }
 
-    case 'image':
+    case ContentBlockType.Image:
       return plainToInstance(ImageBlockDto, block);
 
-    case 'thinking':
+    case ContentBlockType.Thinking:
       return plainToInstance(ThinkingBlockDto, block);
 
     default:
       // Unknown type - treat as text with stringified content
       console.warn('Unknown content block type:', type);
       return plainToInstance(TextBlockDto, {
-        type: 'text',
+        type: ContentBlockType.Text,
         text: JSON.stringify(block),
       });
   }

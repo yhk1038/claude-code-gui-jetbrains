@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useChatStream, type LoadedMessage } from '../useChatStream';
 import type { LoadedMessageDto } from '../../types';
+import { ContextType } from '../../types';
+import { LoadedMessageType, MessageRole } from '../../dto/common';
 
 // Mock requestAnimationFrame and cancelAnimationFrame
 const rafCallbacks: ((time: number) => void)[] = [];
@@ -146,7 +148,7 @@ describe('useChatStream', () => {
       const { result } = renderHook(() => useChatStream({ bridge }));
 
       const context = [
-        { type: 'file' as const, path: '/test.ts', content: 'test content' },
+        { type: ContextType.File, path: '/test.ts', content: 'test content' },
       ];
 
       act(() => {
@@ -527,14 +529,14 @@ describe('useChatStream', () => {
 
       const loadedMessages: LoadedMessage[] = [
         {
-          type: 'user',
+          type: LoadedMessageType.User,
           timestamp: '2024-01-01T00:00:00Z',
-          message: { role: 'user', content: 'Hello' },
+          message: { role: MessageRole.User, content: 'Hello' },
         },
         {
-          type: 'assistant',
+          type: LoadedMessageType.Assistant,
           timestamp: '2024-01-01T00:00:01Z',
-          message: { role: 'assistant', content: 'Hi there' },
+          message: { role: MessageRole.Assistant, content: 'Hi there' },
         },
       ];
 
@@ -558,9 +560,9 @@ describe('useChatStream', () => {
 
       const loadedMessages: LoadedMessage[] = [
         {
-          type: 'user',
+          type: LoadedMessageType.User,
           timestamp: '2024-01-01T00:00:00Z',
-          message: { role: 'user', content: 'New message' },
+          message: { role: MessageRole.User, content: 'New message' },
         },
       ];
 

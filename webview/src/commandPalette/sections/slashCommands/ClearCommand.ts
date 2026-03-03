@@ -1,4 +1,5 @@
 import { SlashCommand } from '../../types';
+import { SessionState } from '@/types';
 
 export class ClearCommand extends SlashCommand {
   readonly id = 'cmd-clear';
@@ -15,7 +16,7 @@ export class ClearCommand extends SlashCommand {
     chatStream.resetForSessionSwitch();
 
     session.setCurrentSessionId(null);
-    session.setSessionState('idle');
+    session.setSessionState(SessionState.Idle);
   }
 
   bindKeyboard(e: KeyboardEvent): boolean {

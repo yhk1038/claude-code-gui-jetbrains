@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { ToolUse } from '../types';
+import { ToolUseStatus } from '../dto/common';
 
 interface UseToolsReturn {
   toolUses: ToolUse[];
@@ -18,20 +19,20 @@ export function useTools(): UseToolsReturn {
   const addToolUse = useCallback((toolUse: Omit<ToolUse, 'status'>) => {
     const newToolUse: ToolUse = {
       ...toolUse,
-      status: 'pending',
+      status: ToolUseStatus.Pending,
     };
     setToolUses(prev => [...prev, newToolUse]);
   }, []);
 
   const approveToolUse = useCallback((toolId: string) => {
     setToolUses(prev => prev.map(t =>
-      t.id === toolId ? { ...t, status: 'approved' as const } : t
+      t.id === toolId ? { ...t, status: ToolUseStatus.Approved } : t
     ));
   }, []);
 
   const denyToolUse = useCallback((toolId: string) => {
     setToolUses(prev => prev.map(t =>
-      t.id === toolId ? { ...t, status: 'denied' as const } : t
+      t.id === toolId ? { ...t, status: ToolUseStatus.Denied } : t
     ));
   }, []);
 
@@ -49,7 +50,7 @@ export function useTools(): UseToolsReturn {
     return toolUses.find(t => t.id === toolId);
   }, [toolUses]);
 
-  const pendingPermissions = toolUses.filter(t => t.status === 'pending');
+  const pendingPermissions = toolUses.filter(t => t.status === ToolUseStatus.Pending);
 
   return {
     toolUses,

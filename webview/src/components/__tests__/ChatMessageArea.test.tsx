@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ChatMessageArea } from '../ChatMessageArea';
 import type { LoadedMessageDto, ToolUse } from '../../types';
+import { LoadedMessageType, MessageRole } from '../../dto/common';
 
 // Mock contexts
 const mockSessionContext = {
@@ -83,8 +84,8 @@ describe('ChatMessageArea', () => {
     mockSessionContext.workingDirectory = '/test/path';
     mockChatStreamContext.messages = [{
       uuid: 'msg1',
-      type: 'user',
-      message: { role: 'user', content: 'Hello, assistant!' },
+      type: LoadedMessageType.User,
+      message: { role: MessageRole.User, content: 'Hello, assistant!' },
       timestamp: new Date().toISOString(),
     }];
 
@@ -98,8 +99,8 @@ describe('ChatMessageArea', () => {
     mockSessionContext.workingDirectory = '/test/path';
     mockChatStreamContext.messages = [{
       uuid: 'msg2',
-      type: 'assistant',
-      message: { role: 'assistant', content: 'Hello, user!' },
+      type: LoadedMessageType.Assistant,
+      message: { role: MessageRole.Assistant, content: 'Hello, user!' },
       timestamp: new Date().toISOString(),
     }];
 
@@ -113,9 +114,9 @@ describe('ChatMessageArea', () => {
     mockSessionContext.workingDirectory = '/test/path';
     mockChatStreamContext.messages = [{
       uuid: 'msg3',
-      type: 'assistant',
+      type: LoadedMessageType.Assistant,
       message: {
-        role: 'assistant',
+        role: MessageRole.Assistant,
         content: [
           { type: 'text', text: 'I need to read a file' },
           { type: 'tool_use', id: 'tool1', name: 'read_file', input: { path: '/test.txt' } },
@@ -137,20 +138,20 @@ describe('ChatMessageArea', () => {
     mockChatStreamContext.messages = [
       {
         uuid: 'msg1',
-        type: 'user',
-        message: { role: 'user', content: 'First message' },
+        type: LoadedMessageType.User,
+        message: { role: MessageRole.User, content: 'First message' },
         timestamp: now,
       },
       {
         uuid: 'msg2',
-        type: 'assistant',
-        message: { role: 'assistant', content: 'Second message' },
+        type: LoadedMessageType.Assistant,
+        message: { role: MessageRole.Assistant, content: 'Second message' },
         timestamp: now,
       },
       {
         uuid: 'msg3',
-        type: 'user',
-        message: { role: 'user', content: 'Third message' },
+        type: LoadedMessageType.User,
+        message: { role: MessageRole.User, content: 'Third message' },
         timestamp: now,
       },
     ];
@@ -169,9 +170,9 @@ describe('ChatMessageArea', () => {
     mockSessionContext.workingDirectory = '/test/path';
     mockChatStreamContext.messages = [{
       uuid: 'msg4',
-      type: 'assistant',
+      type: LoadedMessageType.Assistant,
       message: {
-        role: 'assistant',
+        role: MessageRole.Assistant,
         content: [
           { type: 'text', text: 'Using multiple tools' },
           { type: 'tool_use', id: 'tool1', name: 'read_file', input: { path: '/test1.txt' } },

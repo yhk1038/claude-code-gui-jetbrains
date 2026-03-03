@@ -11,6 +11,8 @@ export * from '../dto';
 // ============================================
 
 import type { AnyContentBlockDto } from '@/dto';
+import { ContentBlockType, TextBlockDto, ToolUseBlockDto } from '@/dto/message/ContentBlockDto';
+import { MessageRole, LoadedMessageType, ToolUseStatus, FileOperation } from '@/dto/common';
 import { Transform, Type } from 'class-transformer';
 import { transformContentBlocks } from '../mappers/contentBlockTransformer';
 
@@ -21,7 +23,7 @@ import { transformContentBlocks } from '../mappers/contentBlockTransformer';
  * `@Transform` on `content` runs only when `plainToInstance()` is called.
  */
 export class MessageDto {
-  role!: 'user' | 'assistant';
+  role!: MessageRole;
 
   @Transform(({ value }) => {
     if (typeof value === 'string' || !value) return value;
@@ -46,7 +48,7 @@ export class MessageDto {
  * which in turn triggers `@Transform` on `MessageDto.content`.
  */
 export class LoadedMessageDto {
-  type!: 'user' | 'assistant' | 'system' | 'result' | 'progress' | 'summary';
+  type!: LoadedMessageType;
   uuid?: string;
   timestamp?: string;
   parentUuid?: string | null;
@@ -98,8 +100,14 @@ export class LoadedMessageDto {
 // Supporting types
 // ============================================
 
+export enum ContextType {
+  Selection = 'selection',
+  File = 'file',
+  Explicit = 'explicit',
+}
+
 export interface Context {
-  type: 'selection' | 'file' | 'explicit';
+  type: ContextType;
   path?: string;
   content: string;
   startLine?: number;
@@ -130,7 +138,7 @@ export interface ToolUse {
   id: string;
   name: string;
   input: Record<string, unknown>;
-  status: 'pending' | 'approved' | 'denied' | 'executing' | 'completed' | 'failed';
+  status: ToolUseStatus;
   result?: string;
   error?: string;
 }
@@ -140,7 +148,7 @@ export interface PendingDiff {
   filePath: string;
   diff: string;
   summary: DiffSummary;
-  status: 'pending' | 'applied' | 'rejected';
+  status: DiffStatus;
   toolUseId: string;
   oldContent?: string;
   newContent?: string;
@@ -152,7 +160,7 @@ export interface PendingDiff {
 export interface DiffSummary {
   additions: number;
   deletions: number;
-  operation: 'create' | 'modify' | 'delete';
+  operation: FileOperation;
 }
 
 export interface SessionMeta {
@@ -163,7 +171,19 @@ export interface SessionMeta {
   messageCount: number;
 }
 
-export type SessionState = 'idle' | 'streaming' | 'waiting_permission' | 'has_diff' | 'error';
+export enum SessionState {
+  Idle = 'idle',
+  Streaming = 'streaming',
+  WaitingPermission = 'waiting_permission',
+  HasDiff = 'has_diff',
+  Error = 'error',
+}
+
+export enum DiffStatus {
+  Pending = 'pending',
+  Applied = 'applied',
+  Rejected = 'rejected',
+}
 
 // ============================================
 // Utility type guards
@@ -196,7 +216,7 @@ export function getTextContent(message: LoadedMessageDto): string {
 
   if (isContentBlockArray(content)) {
     return content
-      .filter((block): block is { type: 'text'; text: string } => block.type === 'text')
+      .filter((block): block is TextBlockDto => block.type === ContentBlockType.Text)
       .map((block) => block.text)
       .join('\n');
   }
@@ -215,14 +235,14 @@ export function getToolUses(message: LoadedMessageDto): ToolUse[] {
   }
 
   return content
-    .filter((block): block is { type: 'tool_use'; id: string; name: string; input: Record<string, unknown> } =>
-      block.type === 'tool_use'
+    .filter((block): block is ToolUseBlockDto =>
+      block.type === ContentBlockType.ToolUse
     )
     .map((block) => ({
       id: block.id,
       name: block.name,
       input: block.input,
-      status: message.isStreaming ? ('pending' as const) : ('completed' as const),
+      status: message.isStreaming ? ToolUseStatus.Pending : ToolUseStatus.Completed,
     }));
 }
 

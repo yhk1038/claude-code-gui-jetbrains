@@ -1,4 +1,5 @@
 import { AttachedContext } from '../hooks/useContext';
+import { ContextType } from '../types';
 
 interface ContextChipProps {
   context: AttachedContext;
@@ -51,7 +52,7 @@ export function ContextChip({ context, onRemove }: ContextChipProps) {
   const getContextLabel = () => {
     const fileName = context.path.split('/').pop() || context.path;
 
-    if (context.type === 'selection' && context.startLine !== undefined && context.endLine !== undefined) {
+    if (context.type === ContextType.Selection && context.startLine !== undefined && context.endLine !== undefined) {
       return `${fileName}:${context.startLine}-${context.endLine}`;
     }
 
@@ -59,7 +60,7 @@ export function ContextChip({ context, onRemove }: ContextChipProps) {
   };
 
   const getContextTypeIcon = () => {
-    if (context.type === 'selection') {
+    if (context.type === ContextType.Selection) {
       return (
         <svg className="w-3 h-3 text-blue-400" viewBox="0 0 16 16" fill="currentColor">
           <path d="M2 3h12v2H2V3zm0 4h12v2H2V7zm0 4h12v2H2v-2z" />

@@ -1,4 +1,4 @@
-import { Context } from '../../../types';
+import { Context, ContextType } from '../../../types';
 
 /**
  * 사용자 메시지에서 시스템 태그를 파싱하여 컨텍스트를 추출하고, 정리된 텍스트를 반환
@@ -83,7 +83,7 @@ function parseOpenedFileTag(tagContent: string): Context | null {
   if (!pathMatch) return null;
 
   return {
-    type: 'file',
+    type: ContextType.File,
     path: pathMatch[1].trim(),
     content: tagContent.trim(),
   };
@@ -100,7 +100,7 @@ function parseSelectionTag(tagContent: string): Context | null {
   );
   if (rangeMatch) {
     return {
-      type: 'selection',
+      type: ContextType.Selection,
       path: rangeMatch[3].trim(),
       content: rangeMatch[4].trim(),
       startLine: parseInt(rangeMatch[1], 10),
@@ -114,7 +114,7 @@ function parseSelectionTag(tagContent: string): Context | null {
   );
   if (simpleMatch) {
     return {
-      type: 'selection',
+      type: ContextType.Selection,
       path: simpleMatch[1].trim(),
       content: (simpleMatch[2] || tagContent).trim(),
     };

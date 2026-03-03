@@ -142,11 +142,11 @@ export class ToolsApi {
     switch (toolName) {
       case 'Write':
       case 'Edit':
-        return 'FILE_WRITE';
+        return PermissionType.FileWrite;
       case 'Delete':
-        return 'FILE_DELETE';
+        return PermissionType.FileDelete;
       case 'Bash':
-        return 'BASH_EXECUTE';
+        return PermissionType.BashExecute;
       default:
         return null;
     }
@@ -159,12 +159,12 @@ export class ToolsApi {
     switch (toolName) {
       case 'Bash':
       case 'Delete':
-        return 'HIGH';
+        return RiskLevel.High;
       case 'Write':
       case 'Edit':
-        return 'MEDIUM';
+        return RiskLevel.Medium;
       default:
-        return 'LOW';
+        return RiskLevel.Low;
     }
   }
 

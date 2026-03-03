@@ -1,7 +1,14 @@
 import { Type } from 'class-transformer';
 import type { LoadedMessageDto } from '../../types';
+import { MessageRole } from '../common';
 
-export type ContentBlockType = 'text' | 'tool_use' | 'tool_result' | 'image' | 'thinking';
+export enum ContentBlockType {
+  Text = 'text',
+  ToolUse = 'tool_use',
+  ToolResult = 'tool_result',
+  Image = 'image',
+  Thinking = 'thinking',
+}
 
 /**
  * Base class for all content blocks in Claude CLI messages
@@ -14,7 +21,7 @@ export abstract class ContentBlockDto {
  * Text content block
  */
 export class TextBlockDto extends ContentBlockDto {
-  override type: 'text' = 'text';
+  override type = ContentBlockType.Text as const;
   text!: string;
 }
 
@@ -22,7 +29,7 @@ export class TextBlockDto extends ContentBlockDto {
  * Tool use content block - represents a tool call from the assistant
  */
 export class ToolUseBlockDto extends ContentBlockDto {
-  override type: 'tool_use' = 'tool_use';
+  override type = ContentBlockType.ToolUse as const;
   id!: string;
   name!: string;
   input!: Record<string, unknown>;
@@ -38,7 +45,7 @@ export class ToolUseBlockDto extends ContentBlockDto {
  * Tool result content block - represents the result of a tool call
  */
 export class ToolResultBlockDto extends ContentBlockDto {
-  override type: 'tool_result' = 'tool_result';
+  override type = ContentBlockType.ToolResult as const;
   tool_use_id!: string;
   content!: string | AnyContentBlockDto[];
   is_error?: boolean;
@@ -57,7 +64,7 @@ export class ImageSourceDto {
  * Image content block
  */
 export class ImageBlockDto extends ContentBlockDto {
-  override type: 'image' = 'image';
+  override type = ContentBlockType.Image as const;
 
   @Type(() => ImageSourceDto)
   source!: ImageSourceDto;
@@ -67,7 +74,7 @@ export class ImageBlockDto extends ContentBlockDto {
  * Thinking content block - represents the model's extended thinking
  */
 export class ThinkingBlockDto extends ContentBlockDto {
-  override type: 'thinking' = 'thinking';
+  override type = ContentBlockType.Thinking as const;
   thinking!: string;
   signature?: string;
 }
@@ -79,7 +86,7 @@ export interface SubAgentMessage {
   /** The content blocks from the sub-agent (tool_use or tool_result) */
   content: AnyContentBlockDto[];
   /** Role: assistant for tool_use, user for tool_result */
-  role: 'assistant' | 'user';
+  role: MessageRole;
   /** Timestamp for ordering (always present in real data) */
   timestamp: string;
 }

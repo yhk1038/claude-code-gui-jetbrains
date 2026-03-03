@@ -4,7 +4,8 @@ import { useDiffs } from '../hooks/useDiffs';
 import { useTools } from '../hooks/useTools';
 import { useBridgeContext } from './BridgeContext';
 import { useSessionContext } from './SessionContext';
-import { LoadedMessageDto, Context, Attachment, AttachmentPayload } from '../types';
+import { LoadedMessageDto, Context, Attachment, AttachmentPayload, SessionState } from '../types';
+import { MessageRole, LoadedMessageType } from '../dto/common';
 import { InputMode } from '../types/chatInput';
 
 interface ChatStreamContextType {
@@ -82,15 +83,15 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
     },
     onStreamStart: (messageId: string) => {
       console.log('[ChatStreamContext] Stream started:', messageId);
-      session.setSessionState('streaming');
+      session.setSessionState(SessionState.Streaming);
     },
     onStreamEnd: (messageId: string) => {
       console.log('[ChatStreamContext] Stream ended:', messageId);
-      session.setSessionState('idle');
+      session.setSessionState(SessionState.Idle);
     },
     onError: (error: Error) => {
       console.error('[ChatStreamContext] Stream error:', error);
-      session.setSessionState('error');
+      session.setSessionState(SessionState.Error);
     },
     onSystemMessage: (data: Record<string, unknown>) => {
       console.log('[ChatStreamContext] System message:', data);
@@ -133,13 +134,13 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
     const unsubscribeToolUse = bridge.subscribe('TOOL_USE', (message: IPCMessage) => {
       console.log('[ChatStreamContext] TOOL_USE received:', message.payload);
       toolsRef.current.addToolUse(message.payload as any);
-      sessionRef.current.setSessionState('waiting_permission');
+      sessionRef.current.setSessionState(SessionState.WaitingPermission);
     });
 
     const unsubscribeDiff = bridge.subscribe('DIFF_PROPOSED', (message: IPCMessage) => {
       console.log('[ChatStreamContext] DIFF_PROPOSED received:', message.payload);
       diffsRef.current.addDiff(message.payload as any);
-      sessionRef.current.setSessionState('has_diff');
+      sessionRef.current.setSessionState(SessionState.HasDiff);
     });
 
     return () => {
@@ -206,16 +207,16 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
     console.log('[ChatStreamContext] Stopping session');
 
     // Determine interrupt type based on current session state
-    const interruptText = session.sessionState === 'waiting_permission'
+    const interruptText = session.sessionState === SessionState.WaitingPermission
       ? '[Request interrupted by user for tool use]'
       : '[Request interrupted by user]';
 
     // Add interrupted message immediately to chat
     chatStream.appendMessage({
-      type: 'user',
+      type: LoadedMessageType.User,
       uuid: crypto.randomUUID(),
       timestamp: new Date().toISOString(),
-      message: { role: 'user', content: interruptText } as LoadedMessageDto['message'],
+      message: { role: MessageRole.User, content: interruptText } as LoadedMessageDto['message'],
     });
 
     // Stop local streaming
@@ -227,7 +228,7 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
     });
 
     // Set session state to idle
-    session.setSessionState('idle');
+    session.setSessionState(SessionState.Idle);
   }, [chatStream, bridge, session]);
 
   // continue: continue generation locally (no Kotlin handler exists)

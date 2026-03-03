@@ -19,25 +19,58 @@ export function toInstance<T, V>(
 /**
  * Tool use status
  */
-export type ToolUseStatus =
-  | 'pending'
-  | 'approved'
-  | 'denied'
-  | 'executing'
-  | 'completed'
-  | 'failed';
+export enum ToolUseStatus {
+  Pending = 'pending',
+  Approved = 'approved',
+  Denied = 'denied',
+  Executing = 'executing',
+  Completed = 'completed',
+  Failed = 'failed',
+}
 
 /**
  * File operation type
  */
-export type FileOperation = 'create' | 'modify' | 'delete';
+export enum FileOperation {
+  Create = 'create',
+  Modify = 'modify',
+  Delete = 'delete',
+}
 
 /**
  * Permission type for tools
  */
-export type PermissionType = 'FILE_WRITE' | 'FILE_DELETE' | 'BASH_EXECUTE';
+export enum PermissionType {
+  FileWrite = 'FILE_WRITE',
+  FileDelete = 'FILE_DELETE',
+  BashExecute = 'BASH_EXECUTE',
+}
 
 /**
  * Risk level for tools
  */
-export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
+export enum RiskLevel {
+  Low = 'LOW',
+  Medium = 'MEDIUM',
+  High = 'HIGH',
+}
+
+/**
+ * Message role
+ */
+export enum MessageRole {
+  User = 'user',
+  Assistant = 'assistant',
+}
+
+/**
+ * Loaded message type (JSONL line type)
+ */
+export enum LoadedMessageType {
+  User = 'user',
+  Assistant = 'assistant',
+  System = 'system',
+  Result = 'result',
+  Progress = 'progress',
+  Summary = 'summary',
+}

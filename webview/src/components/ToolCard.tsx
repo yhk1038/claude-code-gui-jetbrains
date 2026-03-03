@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ToolUse } from '../types';
+import { ToolUseStatus } from '../dto/common';
 
 interface ToolCardProps {
   toolUse: ToolUse;
@@ -149,7 +150,7 @@ export function ToolCard({ toolUse, onApprove, onDeny }: ToolCardProps) {
           </div>
 
           {/* Action Buttons */}
-          {toolUse.status === 'pending' && (
+          {toolUse.status === ToolUseStatus.Pending && (
             <div className="border-t border-zinc-800/50 p-3 flex gap-2">
               <button
                 onClick={() => onApprove?.(toolUse.id)}

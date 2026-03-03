@@ -3,6 +3,7 @@ import { PermissionDialog } from './PermissionDialog';
 import { PermissionBanner } from './PermissionBanner';
 import { usePermissions } from '../hooks/usePermissions';
 import { ToolUse } from '../types';
+import { ToolUseStatus } from '../dto/common';
 
 /**
  * Demo component showing Permission Dialog and Banner usage
@@ -49,7 +50,7 @@ export function PermissionDemo() {
     id: `tool-${Date.now()}`,
     name,
     input,
-    status: 'pending',
+    status: ToolUseStatus.Pending,
   });
 
   const handleShowDialogDemo = () => {

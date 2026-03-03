@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PendingDiff } from '../types';
+import { PendingDiff, DiffStatus } from '../types';
 import { DiffViewer } from './DiffViewer';
 
 interface DiffCardProps {
@@ -58,19 +58,19 @@ export function DiffCard({ diff, onApply, onReject, onOpenInIDE }: DiffCardProps
 
   const getStatusBadge = () => {
     switch (diff.status) {
-      case 'pending':
+      case DiffStatus.Pending:
         return (
           <span className="px-2 py-0.5 text-xs rounded bg-yellow-900/30 text-yellow-400">
             Pending
           </span>
         );
-      case 'applied':
+      case DiffStatus.Applied:
         return (
           <span className="px-2 py-0.5 text-xs rounded bg-green-900/30 text-green-400">
             Applied
           </span>
         );
-      case 'rejected':
+      case DiffStatus.Rejected:
         return (
           <span className="px-2 py-0.5 text-xs rounded bg-red-900/30 text-red-400">
             Rejected
@@ -119,7 +119,7 @@ export function DiffCard({ diff, onApply, onReject, onOpenInIDE }: DiffCardProps
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           {getStatusBadge()}
-          {diff.status === 'pending' && (
+          {diff.status === DiffStatus.Pending && (
             <>
               {onOpenInIDE && (
                 <button
