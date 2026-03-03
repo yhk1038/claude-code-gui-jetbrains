@@ -204,6 +204,31 @@ export class ConnectionManager {
 
   // ─── Internal ───────────────────────────────────────────────────────────────
 
+  shutdownAll(): void {
+    let killedSessions = 0;
+    let closedConnections = 0;
+
+    for (const session of this.sessionRegistry.values()) {
+      if (session.process) {
+        session.process.kill('SIGTERM');
+        killedSessions++;
+      }
+    }
+
+    for (const ws of this.connectionMap.values()) {
+      ws.close();
+      closedConnections++;
+    }
+
+    this.sessionRegistry.clear();
+    this.connectionMap.clear();
+
+    console.error(
+      '[node-backend]',
+      `Shutdown: killed ${killedSessions} session(s), closed ${closedConnections} connection(s)`,
+    );
+  }
+
   private cleanupSession(sessionId: string): void {
     const session = this.sessionRegistry.get(sessionId);
     if (!session) return;

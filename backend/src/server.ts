@@ -39,7 +39,7 @@ async function main() {
     ? new JetBrainsBridge(process.stdout, process.stdin)
     : new BrowserBridge();
 
-  const { port } = await startWebSocketServer(requestedPort, bridge, handleMessage, webviewDir);
+  const { port, close, connections } = await startWebSocketServer(requestedPort, bridge, handleMessage, webviewDir);
 
   if (isJetBrainsMode) {
     // PORT를 stdout 첫 줄에 출력 — Kotlin이 이를 읽고 JCEF에 http://localhost:PORT 를 로드
@@ -53,15 +53,15 @@ async function main() {
     webviewDir ? `(webviewDir: ${webviewDir})` : '',
   );
 
-  process.on('SIGTERM', () => {
-    console.error('[node-backend]', 'SIGTERM received, shutting down...');
+  function shutdown(signal: string) {
+    console.error('[node-backend]', `${signal} received, shutting down...`);
+    connections.shutdownAll();
+    close();
     process.exit(0);
-  });
+  }
 
-  process.on('SIGINT', () => {
-    console.error('[node-backend]', 'SIGINT received, shutting down...');
-    process.exit(0);
-  });
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 main().catch((err) => {
