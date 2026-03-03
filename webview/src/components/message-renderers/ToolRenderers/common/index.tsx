@@ -1,5 +1,5 @@
 import {ReactNode, useState} from "react";
-import {ContextPills, StreamingIndicator} from "@/components/message-renderers";
+import {ContextPills} from "@/components/message-renderers";
 import type {LoadedMessageDto} from "@/types";
 import {cn} from "@/utils/cn.ts";
 
@@ -19,8 +19,6 @@ export const ToolWrapper = (props: {
             <div className="flex items-start gap-3">
                 {/* Bullet indicator */}
                 <span className="text-zinc-500 mt-[3px] text-[9px]">●</span>
-
-                {message?.isStreaming && <StreamingIndicator />}
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
@@ -55,15 +53,12 @@ export const ToolHeader = (props: {
     className?: string;
     children?: ReactNode;
 }) => {
-    const {name, description = '', className = '', inProgress = false, children} = props;
+    const {name, description = '', className = '', children} = props;
 
     return (
         <div className={cn(`flex items-start gap-1.5 text-[13px]`, className)}>
             <div className="text-white text-[13px] font-semibold">
                 <span className="">{name}</span>
-                {inProgress && (
-                    <span className="text-white/50 animate-pulse">...</span>
-                )}
             </div>
 
             {children || <div className="text-white/60">{description}</div>}

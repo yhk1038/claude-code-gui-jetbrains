@@ -10,6 +10,7 @@ import { useChatStreamContext } from '../contexts/ChatStreamContext';
 import { StreamErrorBanner } from './StreamErrorBanner';
 import { LoadedMessageType, MessageRole } from '../dto/common';
 import './streaming.css';
+import {StreamingIndicator} from "./StreamingIndicator/index.tsx";
 
 /**
  * Convert progress entries into SubAgentMessage array.
@@ -163,11 +164,7 @@ export function ChatMessageArea() {
           <MessageBubble message={message} onRetry={onRetry} />
         </div>
       ))}
-      {isStreaming && (
-        <div className="streaming-indicator">
-          <span className="dot-pulse"/>
-        </div>
-      )}
+      {isStreaming && <StreamingIndicator />}
       <StreamErrorBanner />
       <div ref={messagesEndRef} />
     </div>

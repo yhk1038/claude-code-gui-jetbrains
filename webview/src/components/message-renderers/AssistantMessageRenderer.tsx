@@ -32,8 +32,6 @@ export const AssistantMessageRenderer: React.FC<AssistantMessageRendererProps> =
 
   return (
       <>
-        {/*{message.isStreaming && <StreamingIndicator />}*/}
-
         {hasContent ? (
             <>
               {typeof content === 'string' ? (
@@ -80,9 +78,7 @@ export const AssistantMessageRenderer: React.FC<AssistantMessageRendererProps> =
                   })
               )}
             </>
-        ) : (
-            <ToolWrapper message={message} />
-        )}
+        ) : null}
 
         {/*{message.context && <ContextPills context={message.context} />}*/}
       </>

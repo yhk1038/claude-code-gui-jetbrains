@@ -9,6 +9,5 @@ export { SummaryMessageRenderer } from './SummaryMessageRenderer';
 export { useCopyToClipboard } from './hooks/useCopyToClipboard';
 
 // Components
-export { StreamingIndicator } from './components/StreamingIndicator';
 export { ContextPills } from './components/ContextPills';
 export { MessageActions } from './components/MessageActions';

@@ -59,7 +59,7 @@ export const StreamingMessage: React.FC<StreamingMessageProps> = ({
     const showIncompleteIndicator = isStreaming && !isMarkdownComplete(content) && isInsideCodeBlock(content);
 
     return (
-        <ToolWrapper message={message} className="mt-0">
+        <ToolWrapper message={message} className="!mt-0">
             <div className={`streaming-message ${className}`}>
                 <div className={`markdown-content ${shouldAnimate ? 'streaming-animate' : ''}`}>
                     <Streamdown
