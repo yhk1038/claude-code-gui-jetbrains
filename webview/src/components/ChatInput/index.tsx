@@ -48,6 +48,7 @@ export function ChatInput() {
   } = useAttachments();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const lastMetaArrowTime = useRef<number>(0);
 
   const disabled = sessionState === SessionState.Error || !workingDirectory;
 
@@ -128,6 +129,16 @@ export function ChatInput() {
     return () => window.removeEventListener('keydown', handleEscKey);
   }, [isStreaming, onStop, textareaRef]);
 
+  // [KeyDebug] window 캡처 단계 Arrow 키 로깅
+  useEffect(() => {
+    const handleArrowCapture = (e: globalThis.KeyboardEvent) => {
+      if (!e.key.startsWith('Arrow')) return;
+      console.log('[KeyDebug:window-capture]', e.key, { altKey: e.altKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, defaultPrevented: e.defaultPrevented });
+    };
+    window.addEventListener('keydown', handleArrowCapture, true);
+    return () => window.removeEventListener('keydown', handleArrowCapture, true);
+  }, []);
+
   // Populate input history from session messages on session change
   useEffect(() => {
     if (!currentSessionId || currentSessionId === lastInitSessionRef.current) return;
@@ -200,10 +211,45 @@ export function ChatInput() {
   }, [addAttachment, setIsDragOver]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key.startsWith('Arrow')) console.log('[KeyDebug:textarea-keydown]', e.key, { altKey: e.altKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, defaultPrevented: e.defaultPrevented });
+
+    // JCEF workaround: Cmd+Arrow 처리 후 발생하는 순수 Arrow 유령 이벤트 무시
+    const isArrowKey = e.key.startsWith('Arrow');
+    const hasModifier = e.metaKey || e.altKey || e.ctrlKey;
+    if (isArrowKey && !hasModifier && Date.now() - lastMetaArrowTime.current < 50) {
+      e.preventDefault();
+      return;
+    }
+
     // Shift+Tab: 모드 전환
     if (e.shiftKey && e.key === 'Tab') {
       e.preventDefault();
       cycleMode();
+      return;
+    }
+
+    // JCEF workaround: Cmd+Arrow (macOS 줄 처음/끝 이동) 수동 처리
+    // shiftKey가 있으면 선택 영역 확장이므로 기본 동작에 맡김
+    if (e.metaKey && !e.altKey && !e.ctrlKey && !e.shiftKey && isArrowKey) {
+      const textarea = e.currentTarget;
+      const pos = textarea.selectionStart;
+      const text = textarea.value;
+
+      e.preventDefault();
+      lastMetaArrowTime.current = Date.now();
+
+      if (e.key === 'ArrowLeft') {
+        const lineStart = text.lastIndexOf('\n', pos - 1) + 1;
+        textarea.setSelectionRange(lineStart, lineStart);
+      } else if (e.key === 'ArrowRight') {
+        let lineEnd = text.indexOf('\n', pos);
+        if (lineEnd === -1) lineEnd = text.length;
+        textarea.setSelectionRange(lineEnd, lineEnd);
+      } else if (e.key === 'ArrowUp') {
+        textarea.setSelectionRange(0, 0);
+      } else if (e.key === 'ArrowDown') {
+        textarea.setSelectionRange(text.length, text.length);
+      }
       return;
     }
 
@@ -219,6 +265,7 @@ export function ChatInput() {
         clearAttachments();
       }
     } else if (e.key === 'ArrowUp' && !palette.showSlashCommands) {
+      console.log('[KeyDebug:history-up-triggered]');
       // 복수행: 커서가 첫 번째 줄에 있을 때만 히스토리 탐색
       const pos = e.currentTarget.selectionStart;
       if (value.lastIndexOf('\n', pos - 1) !== -1) return;
@@ -228,6 +275,7 @@ export function ChatInput() {
       e.preventDefault();
       onChange(historyValue);
     } else if (e.key === 'ArrowDown' && !palette.showSlashCommands) {
+      console.log('[KeyDebug:history-down-triggered]');
       // 복수행: 커서가 마지막 줄에 있을 때만 히스토리 탐색
       const pos = e.currentTarget.selectionStart;
       if (value.indexOf('\n', pos) !== -1) return;
