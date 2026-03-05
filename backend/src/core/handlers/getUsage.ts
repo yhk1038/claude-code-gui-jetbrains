@@ -3,6 +3,10 @@ import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { getClaudeAccessToken } from '../features/getClaudeCredentials';
 
+const CACHE_TTL_MS = 30_000;
+let cachedUsage: unknown = null;
+let cachedAt = 0;
+
 export async function getUsageHandler(
   connectionId: string,
   message: IPCMessage,
@@ -15,6 +19,15 @@ export async function getUsageHandler(
       requestId: message.requestId,
       status: 'error',
       error: 'Claude Code credentials not found. Please log in with Claude Code CLI first.',
+    });
+    return;
+  }
+
+  if (cachedUsage !== null && Date.now() - cachedAt < CACHE_TTL_MS) {
+    connections.sendTo(connectionId, 'ACK', {
+      requestId: message.requestId,
+      status: 'ok',
+      usage: cachedUsage,
     });
     return;
   }
@@ -33,6 +46,8 @@ export async function getUsageHandler(
     }
 
     const usage = await response.json();
+    cachedUsage = usage;
+    cachedAt = Date.now();
 
     connections.sendTo(connectionId, 'ACK', {
       requestId: message.requestId,
