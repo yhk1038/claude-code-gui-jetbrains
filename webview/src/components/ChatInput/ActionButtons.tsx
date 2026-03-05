@@ -1,8 +1,9 @@
 import { InputMode, INPUT_MODES } from '../../types/chatInput';
 
-interface ActionButtonsProps {
+interface Props {
   mode: InputMode;
   isStreaming: boolean;
+  isActive: boolean;
   isStopped: boolean;
   disabled: boolean;
   hasValue: boolean;
@@ -13,18 +14,20 @@ interface ActionButtonsProps {
   onContinue?: () => void;
 }
 
-export function ActionButtons({
-  mode,
-  isStreaming,
-  isStopped,
-  disabled,
-  hasValue,
-  onAttach,
-  onSlashCommand,
-  onSubmit,
-  onStop,
-  onContinue,
-}: ActionButtonsProps) {
+export function ActionButtons(props: Props) {
+  const {
+    mode,
+    isStreaming,
+    isActive,
+    isStopped,
+    disabled,
+    hasValue,
+    onAttach,
+    onSlashCommand,
+    onSubmit,
+    onStop,
+    onContinue,
+  } = props;
   const config = INPUT_MODES[mode];
 
   return (
@@ -54,7 +57,7 @@ export function ActionButtons({
       </div>
 
       {/* 전송/정지/계속 버튼 */}
-      {isStreaming && onStop ? (
+      {isActive && onStop ? (
         <button
           type="button"
           onClick={onStop}
@@ -65,7 +68,7 @@ export function ActionButtons({
             <rect x="4" y="4" width="8" height="8" rx="1" />
           </svg>
         </button>
-      ) : isStopped && onContinue ? (
+      ) : isStopped && !isActive && onContinue ? (
         <button
           type="button"
           onClick={onContinue}

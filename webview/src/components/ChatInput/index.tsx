@@ -114,10 +114,16 @@ export function ChatInput() {
     }
   }, [currentSessionId, clearAttachments, inputHistory]);
 
-  // ESC key: interrupt streaming
+  const isActive = isStreaming
+    || sessionState === SessionState.WaitingPermission
+    || sessionState === SessionState.HasDiff;
+
+  const isInterruptible = isActive;
+
+  // ESC key: interrupt streaming or active state
   useEffect(() => {
     const handleEscKey = (e: globalThis.KeyboardEvent) => {
-      if (e.key === 'Escape' && isStreaming) {
+      if (e.key === 'Escape' && isInterruptible) {
         e.preventDefault();
         onStop();
         // Re-focus textarea after interrupt
@@ -127,7 +133,7 @@ export function ChatInput() {
 
     window.addEventListener('keydown', handleEscKey);
     return () => window.removeEventListener('keydown', handleEscKey);
-  }, [isStreaming, onStop, textareaRef]);
+  }, [isInterruptible, onStop, textareaRef]);
 
   // [KeyDebug] window 캡처 단계 Arrow 키 로깅
   useEffect(() => {
@@ -375,6 +381,7 @@ export function ChatInput() {
           <ActionButtons
             mode={mode}
             isStreaming={isStreaming}
+            isActive={isActive}
             isStopped={isStopped}
             disabled={disabled}
             hasValue={hasValue}

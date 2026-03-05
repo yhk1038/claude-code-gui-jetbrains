@@ -308,6 +308,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
     if (isStreaming) return;
 
     setError(null);
+    setIsStopped(false);
 
     // Build content: string if no attachments, ContentBlock[] if attachments
     // isContentBlockArray() type guard는 duck-typing이므로 plain object도 통과한다.
@@ -434,7 +435,6 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
 
   // Stop
   const stop = useCallback(() => {
-    setIsStopped(true);
     endStreaming();
   }, [endStreaming]);
 

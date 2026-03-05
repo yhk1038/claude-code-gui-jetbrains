@@ -1,6 +1,7 @@
 import { useEffect, useRef, KeyboardEvent } from 'react';
 import { PendingAskUserQuestion } from '@/hooks/usePendingAskUserQuestion';
 import { useApi } from '@/contexts/ApiContext';
+import { useChatStreamContext } from '@/contexts/ChatStreamContext';
 import { useFormState } from './useFormState';
 import { TabBar } from './TabBar';
 import { OptionList } from './OptionList';
@@ -15,6 +16,7 @@ interface Props {
 export const AskUserQuestionInputPanel = (props: Props) => {
   const { toolUse, controlRequestId, onDismiss } = props;
   const api = useApi();
+  const { stop } = useChatStreamContext();
   const panelRef = useRef<HTMLDivElement>(null);
 
   const questions = toolUse.input.questions;
@@ -34,12 +36,13 @@ export const AskUserQuestionInputPanel = (props: Props) => {
         if (controlRequestId) {
           api.tools.deny(toolUse.id, controlRequestId);
         }
+        stop();
         onDismiss();
       }
     };
     window.addEventListener('keydown', handler, true);
     return () => window.removeEventListener('keydown', handler, true);
-  }, [toolUse.id, controlRequestId, api, onDismiss]);
+  }, [toolUse.id, controlRequestId, api, onDismiss, stop]);
 
   // Auto-focus panel on mount
   useEffect(() => {

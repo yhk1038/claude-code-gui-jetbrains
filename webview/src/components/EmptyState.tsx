@@ -37,23 +37,11 @@ export const EmptyState = () => {
   return (
     <div className="h-full flex flex-col">
       <div className="pt-4 flex justify-center">
-        <img
-          src={claudeCodeLogo}
-          width={172}
-          height={24}
-          alt="Claude Code"
-          className="opacity-40"
-        />
+        <img src={claudeCodeLogo} alt="Claude Code" width={120} />
       </div>
-      <div className="flex-1 flex flex-col items-center justify-center gap-3">
-        <img
-          src={clawdSvg}
-          width={46}
-          height={45}
-          alt=""
-          className="opacity-60"
-        />
-        <p className="text-zinc-500 text-sm text-center max-w-sm">{hint}</p>
+      <div className="flex-1 flex flex-col items-center justify-center gap-5 pt-14">
+        <img src={clawdSvg} alt="Clawd" width={46} />
+        <p className="text-zinc-300 text-[13px] text-center max-w-[18rem] leading-[1.7]">{hint}</p>
       </div>
     </div>
   );

@@ -231,15 +231,16 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
     session.setSessionState(SessionState.Idle);
   }, [chatStream, bridge, session]);
 
-  // continue: continue generation locally (no Kotlin handler exists)
+  // continue: reset isStopped + send auto-continue message via --resume
   const continueGeneration = useCallback(() => {
-    console.log('[ChatStreamContext] Continuing generation (local only)');
+    console.log('[ChatStreamContext] Continuing generation via sendMessage');
 
-    // Continue local streaming
+    // Reset isStopped state
     chatStream.continue();
 
-    // Note: No Kotlin handler exists for CONTINUE, so just local state change
-  }, [chatStream]);
+    // Auto-send continue message — triggers ensureClaudeProcess(--resume) in backend
+    sendMessage('Please continue from where you left off.', 'ask_before_edit');
+  }, [chatStream, sendMessage]);
 
   // retry: delegate to chatStream
   const retry = useCallback(
