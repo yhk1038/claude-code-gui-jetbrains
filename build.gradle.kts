@@ -45,9 +45,12 @@ intellijPlatform {
             untilBuild = "253.*"
         }
         changeNotes = """
-            <h3>0.7.3 - Bug Fixes</h3>
+            <h3>0.8.0 - File &amp; Folder Attachments</h3>
             <ul>
-                <li>Fix SVG image rendering broken in JCEF environment</li>
+                <li>Add file and folder attachment support (beyond images)</li>
+                <li>Add native file picker dialog support for Windows/Linux</li>
+                <li>Improve attachment context pills with chip-style UI in messages</li>
+                <li>Fix settings page intermittently failing to open in production builds</li>
             </ul>
             <h3>0.7.2 - Compatibility Fix</h3>
             <ul>
