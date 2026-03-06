@@ -45,6 +45,10 @@ intellijPlatform {
             untilBuild = "253.*"
         }
         changeNotes = """
+            <h3>0.7.3 - Bug Fixes</h3>
+            <ul>
+                <li>Fix SVG image rendering broken in JCEF environment</li>
+            </ul>
             <h3>0.7.2 - Compatibility Fix</h3>
             <ul>
                 <li>Replace deprecated terminal API to fix compatibility warnings across all IDE versions</li>
