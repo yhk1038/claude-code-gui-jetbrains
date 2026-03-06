@@ -2,6 +2,7 @@ import { spawn } from 'child_process';
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
+import { readSettingsFile } from '../features/settings';
 
 export async function loginHandler(
   connectionId: string,
@@ -9,8 +10,11 @@ export async function loginHandler(
   connections: ConnectionManager,
   _bridge: Bridge,
 ): Promise<void> {
+  const settings = await readSettingsFile();
+  const claudeCmd = (settings.cliPath as string) || 'claude';
+
   return new Promise((resolve) => {
-    const child = spawn('claude', ['auth', 'login'], {
+    const child = spawn(claudeCmd, ['auth', 'login'], {
       stdio: ['ignore', 'pipe', 'pipe'],
       env: { ...process.env },
     });

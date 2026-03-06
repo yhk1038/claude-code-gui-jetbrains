@@ -1,5 +1,6 @@
 import { spawn } from 'child_process';
 import type { ConnectionManager } from '../ws/connection-manager';
+import { readSettingsFile } from './features/settings';
 
 // InputMode -> CLI --permission-mode flag mapping
 const INPUT_MODE_TO_CLI_FLAG: Record<string, string> = {
@@ -71,9 +72,12 @@ export async function ensureClaudeProcess(
     args.push('--permission-mode', cliFlag);
   }
 
-  console.error('[node-backend]', `Command: claude ${args.join(' ')}`);
+  const settings = await readSettingsFile();
+  const claudeCmd = (settings.cliPath as string) || 'claude';
 
-  const proc = spawn('claude', args, {
+  console.error('[node-backend]', `Command: ${claudeCmd} ${args.join(' ')}`);
+
+  const proc = spawn(claudeCmd, args, {
     cwd: workingDir,
     shell: false,
     stdio: ['pipe', 'pipe', 'pipe'],
