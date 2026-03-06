@@ -149,7 +149,7 @@ export function startWebSocketServer(
         }
       });
 
-      httpServer.listen(currentPort, () => {
+      httpServer.listen(currentPort, '127.0.0.1', () => {
         const addr = httpServer.address();
         const assignedPort = typeof addr === 'object' && addr !== null ? addr.port : currentPort;
         console.error('[node-backend]', `WebSocket server listening on port ${assignedPort}`);
