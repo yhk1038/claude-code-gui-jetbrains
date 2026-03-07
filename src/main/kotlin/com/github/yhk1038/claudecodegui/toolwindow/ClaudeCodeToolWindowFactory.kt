@@ -1,6 +1,7 @@
 package com.github.yhk1038.claudecodegui.toolwindow
 
 import com.github.yhk1038.claudecodegui.editor.ClaudeCodeVirtualFile
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
@@ -30,15 +31,19 @@ class ClaudeCodeToolWindowFactory : ToolWindowFactory, DumbAware {
             override fun stateChanged(toolWindowManager: ToolWindowManager) {
                 val tw = toolWindowManager.getToolWindow("Claude Code")
                 if (tw != null && tw.isVisible) {
-                    focusOrOpenClaudeCodeTab(project)
-                    tw.hide()
+                    ApplicationManager.getApplication().invokeLater {
+                        focusOrOpenClaudeCodeTab(project)
+                        tw.hide()
+                    }
                 }
             }
         })
 
         // 첫 번째 열기에서도 에디터 탭 열기
-        focusOrOpenClaudeCodeTab(project)
-        toolWindow.hide()
+        ApplicationManager.getApplication().invokeLater {
+            focusOrOpenClaudeCodeTab(project)
+            toolWindow.hide()
+        }
     }
 
     private fun focusOrOpenClaudeCodeTab(project: Project) {
