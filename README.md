@@ -49,6 +49,15 @@ The same Claude Code GUI you love in Cursor and VS Code, now available in JetBra
 
 - Configure CLI path, theme, font size, permission policy, and log level
 
+<details>
+<summary>More screenshots</summary>
+
+| Welcome screen | Settings panel |
+|---|---|
+| <img src="docs/img/screenshot-welcome.png" alt="Welcome screen" width="400" /> | <img src="docs/img/screenshot-settings.png" alt="Settings panel" width="400" /> |
+
+</details>
+
 ## Requirements
 
 - JetBrains IDE 2024.2 — 2025.3
