@@ -1,3 +1,4 @@
+import { execSync } from 'child_process';
 import { startWebSocketServer } from './ws/ws-server';
 import { BrowserBridge } from './bridge/browser-bridge';
 import { JetBrainsBridge } from './bridge/jetbrains-bridge';
@@ -34,12 +35,48 @@ const requestedPort = parseInt(process.env.PORT ?? String(DEFAULT_PORT), 10);
 // Kotlin이 WEBVIEW_DIR 환경변수를 통해 추출된 WebView 파일 경로를 전달
 const webviewDir = isJetBrainsMode ? (process.env.WEBVIEW_DIR ?? undefined) : undefined;
 
+function killProcessOnPort(port: number): void {
+  try {
+    const pids = execSync(`lsof -ti :${port}`, { encoding: 'utf8' }).trim();
+    if (pids) {
+      pids.split('\n').forEach((pid) => {
+        try {
+          execSync(`kill -9 ${pid.trim()}`);
+          console.error('[node-backend]', `Killed process ${pid.trim()} occupying port ${port}`);
+        } catch {
+          // 이미 종료된 프로세스면 무시
+        }
+      });
+    }
+  } catch {
+    // lsof가 아무 결과도 없으면 비정상 종료 코드 반환 — 무시
+  }
+}
+
+async function startServerWithRetry(
+  bridge: InstanceType<typeof BrowserBridge> | InstanceType<typeof JetBrainsBridge>,
+): Promise<Awaited<ReturnType<typeof startWebSocketServer>>> {
+  try {
+    return await startWebSocketServer(requestedPort, bridge, handleMessage, webviewDir);
+  } catch (err: unknown) {
+    const nodeErr = err as NodeJS.ErrnoException;
+    if (nodeErr.code !== 'EADDRINUSE') throw err;
+
+    console.error('[node-backend]', `Port ${requestedPort} already in use. Killing existing process and retrying...`);
+    killProcessOnPort(requestedPort);
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    return await startWebSocketServer(requestedPort, bridge, handleMessage, webviewDir);
+  }
+}
+
 async function main() {
   const bridge = isJetBrainsMode
     ? new JetBrainsBridge(process.stdout, process.stdin)
     : new BrowserBridge();
 
-  const { port, close, connections } = await startWebSocketServer(requestedPort, bridge, handleMessage, webviewDir);
+  const { port, close, connections } = await startServerWithRetry(bridge);
 
   if (isJetBrainsMode) {
     // PORT를 stdout 첫 줄에 출력 — Kotlin이 이를 읽고 JCEF에 http://localhost:PORT 를 로드
