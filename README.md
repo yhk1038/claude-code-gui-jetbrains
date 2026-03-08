@@ -7,14 +7,22 @@ The same Claude Code GUI you love in Cursor and VS Code, now available in JetBra
 ![JetBrains IDE](https://img.shields.io/badge/JetBrains%20IDE-2024.2%2B-000000?logo=jetbrains)
 ![Claude Code](https://img.shields.io/badge/Claude%20Code%20CLI-%3E%3D1.0.0-blueviolet)
 
+🌐 **English** | [한국어](docs/README.ko.md) | [日本語](docs/README.ja.md) | [中文](docs/README.zh.md) | [Español](docs/README.es.md) | [Deutsch](docs/README.de.md) | [Français](docs/README.fr.md)
+
 ---
 
 ## Overview
 
-**Claude Code with GUI** embeds the Claude Code CLI agent directly inside your JetBrains IDE as a first-class GUI panel. Unlike terminal-only solutions, it brings the full visual experience — streaming responses, tool call cards, inline diff review, and permission dialogs — directly into the editor you already use. Designed to match the interaction patterns and look-and-feel of the Claude Code extension in Cursor and VS Code, it works across all JetBrains IDEs including IntelliJ IDEA, PyCharm, WebStorm, GoLand, Rider, and CLion.
+**Claude Code with GUI** aims to bring the same level of UI/UX as the Claude Code plugin in Cursor and VS Code to JetBrains IDEs.
+
+- In JetBrains, Claude Code is still only available as a terminal. But I still prefer an IDE-native experience over the terminal.
+- Other Claude Code GUI plugins for JetBrains have drifted too far from the original Claude Code for VS Code UI/UX.
+- Beyond that, the goal is to deliver the rapidly evolving Claude Code experience (e.g., Agent Team, Remote Control) as a GUI — so developers can stay on the latest features without a terminal.
+- **What about models other than Claude Code?** It would be great if users could optionally plug in other local or community models as an opt-in setting.
+- **What about environments beyond JetBrains?** With Remote Control in mind, the client is built as a browser-capable application. I believe this is the right approach to ultimately support the full Claude Code client-side experience.
 
 <p align="center">
-  <img src="docs/img/screenshot-chat.png" alt="Chat interface" width="800" />
+  <img src="https://raw.githubusercontent.com/yhk1038/claude-code-gui-jetbrains/main/docs/img/screenshot-chat.png" alt="Chat interface" width="800" />
 </p>
 
 ## Features
@@ -54,7 +62,7 @@ The same Claude Code GUI you love in Cursor and VS Code, now available in JetBra
 
 | Welcome screen | Settings panel |
 |---|---|
-| <img src="docs/img/screenshot-welcome.png" alt="Welcome screen" width="400" /> | <img src="docs/img/screenshot-settings.png" alt="Settings panel" width="400" /> |
+| <img src="https://raw.githubusercontent.com/yhk1038/claude-code-gui-jetbrains/main/docs/img/screenshot-welcome.png" alt="Welcome screen" width="400" /> | <img src="https://raw.githubusercontent.com/yhk1038/claude-code-gui-jetbrains/main/docs/img/screenshot-settings.png" alt="Settings panel" width="400" /> |
 
 </details>
 
@@ -79,11 +87,6 @@ The same Claude Code GUI you love in Cursor and VS Code, now available in JetBra
 ---
 
 ## Changelog
-
-### v0.8.1
-
-- Fixed `cliPath` setting being ignored during CLI spawn
-- Hardened HTTP listener security
 
 See [CHANGELOG.md](CHANGELOG.md) for full version history.
 
