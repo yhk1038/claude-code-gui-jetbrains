@@ -5,11 +5,8 @@ import com.github.yhk1038.claudecodegui.bridge.NodeProcessManager
 import com.github.yhk1038.claudecodegui.services.DiffService
 import com.github.yhk1038.claudecodegui.services.NodeBackendService
 import com.intellij.ide.BrowserUtil
-import com.intellij.ide.plugins.DynamicPlugins
-import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -443,22 +440,7 @@ class ClaudeCodePanel(
             }
 
             override suspend fun requiresRestart(): Boolean {
-                return try {
-                    val pluginId = PluginId.findId("com.github.yhk1038.claudecodegui")
-                    if (pluginId != null) {
-                        val descriptor = PluginManagerCore.getPlugin(pluginId)
-                        if (descriptor != null && descriptor is com.intellij.ide.plugins.IdeaPluginDescriptorImpl) {
-                            !DynamicPlugins.allowLoadUnloadWithoutRestart(descriptor)
-                        } else {
-                            true
-                        }
-                    } else {
-                        true
-                    }
-                } catch (e: Exception) {
-                    logger.warn("Failed to check requiresRestart, defaulting to true", e)
-                    true
-                }
+                return true
             }
         }
     }
