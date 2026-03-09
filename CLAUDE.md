@@ -82,43 +82,42 @@ Idle → Streaming → Waiting Permission → Has Diff → Error
 | **새 탭 버튼** | 상단바 우측에 있는 플러스 버튼. 클릭 시 IDE에서 새로운 Claude Code 에디터 탭을 열음 |
 | **초기화된 세션** | 아직 첫 번째 메시지도 시작하지 않아서 세션이 생성되지 않은 상태 |
 
-## 빌드 명령어 (direnv)
+## 빌드 명령어
 
-이 프로젝트는 `.envrc`를 통해 빌드 관련 alias를 정의합니다.
-터미널에서 `de` 명령으로 로드하거나, 이 디렉토리 진입 시 자동 로드됩니다.
+모든 빌드는 `./scripts/build.sh <command>` 를 통해 실행한다. 직접 `cd`, `pnpm`, `./gradlew` 명령을 조합하지 않는다.
 
-### 에이전트 필수 규칙
+> **중요**: `./scripts/build.sh -h` 로 전체 명령 목록을 확인할 수 있다.
 
-> **중요**: 아래 정의된 alias를 반드시 사용하세요. 직접 명령을 구성하지 마세요.
+### 주요 명령
 
-| Alias | 용도 | 금지된 직접 명령 |
-|-------|------|-----------------|
-| `build` | 전체 빌드 | ~~./gradlew build~~ |
-| `run-ide` | IDE 테스트 실행 | ~~./gradlew runIde~~ |
-| `build-plugin` | 배포용 ZIP 생성 | ~~./gradlew buildPlugin~~ |
-| `clean` | 클린 | ~~./gradlew clean~~ |
-| `test` | 테스트 | ~~./gradlew test~~ |
-| `watch` | 자동 빌드 | ~~./gradlew build --continuous~~ |
-| `wv-dev` | WebView 개발 서버 | ~~cd webview && pnpm dev~~ |
-| `wv-build` | WebView 빌드 | ~~cd webview && pnpm build~~ |
-| `wv-lint` | TypeScript 체크 | ~~cd webview && pnpm lint~~ |
-| `wv-install` | 의존성 설치 | ~~cd webview && pnpm install~~ |
-| `full-build` | 전체 빌드 | ~~wv-build && build~~ |
-| `dist` | 배포 빌드 | ~~wv-build && build-plugin~~ |
-| `clear-cache` | 빌드 캐시/결과물 초기화 | ~~rm -rf build webview/dist backend/dist ...~~ |
-| `ide-log` | IDE 로그 확인 | ~~tail -f build/idea-sandbox/...~~ |
+| 명령 | 용도 |
+|------|------|
+| `./scripts/build.sh be-build` | 백엔드 빌드 |
+| `./scripts/build.sh wv-build` | 웹뷰 빌드 |
+| `./scripts/build.sh build` | 플러그인 빌드 |
+| `./scripts/build.sh full-build` | 전체 빌드 (be + wv + plugin) |
+| `./scripts/build.sh dist` | 배포용 빌드 (be + wv + buildPlugin) |
+| `./scripts/build.sh run-ide` | IDE 테스트 실행 |
+| `./scripts/build.sh clear-cache` | 빌드 캐시/결과물 초기화 |
+| `./scripts/build.sh wv-lint` | WebView TypeScript 체크 |
+| `./scripts/build.sh wv-test` | WebView 테스트 |
+| `./scripts/build.sh all` | 전체 빌드 + IDE 실행 |
 
 ### 에이전트 행동 지침
 
-1. **빌드/테스트 시**: 반드시 위 alias 사용
-2. **새 명령 필요 시**: 직접 실행하지 말고 `.envrc`에 추가 제안
-3. **경로 하드코딩 금지**: alias에 이미 경로가 포함되어 있음
+1. **빌드/테스트 시**: 반드시 `./scripts/build.sh` 사용
+2. **cd 금지**: 스크립트가 내부적으로 `pnpm -C`, `gradlew -p` 로 경로 처리
+3. **새 명령 필요 시**: `scripts/build.sh`에 case 추가 제안
 
-## 스킬 트리거
+## 로컬 스킬
 
-| 키워드 | 호출 스킬 | 비고 |
-|--------|-----------|------|
-| "배포", "deploy", "릴리즈", "release", "publish", "마켓플레이스 발행" | `/release` (직접 정의 스킬) | oh-my-claudecode:release 가 아닌 프로젝트 로컬 스킬 |
+프로젝트 로컬 스킬은 `.claude/skills/` 에 위치한다. oh-my-claudecode 스킬이 아닌 **프로젝트 로컬 스킬**을 우선 사용한다.
+
+| 스킬 | 파일 경로 | 트리거 키워드 |
+|------|-----------|--------------|
+| `/deploy` | `.claude/skills/deploy.md` | "배포", "deploy", "릴리즈", "release", "publish", "마켓플레이스 발행" |
+| `/build` | `.claude/skills/build.md` | "빌드", "build", "컴파일", "compile" |
+| `/precheck` | `.claude/skills/precheck.md` | "프리체크", "precheck", "배포 전 검수" |
 
 ## 작업 플랜
 
