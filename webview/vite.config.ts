@@ -22,8 +22,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         entryFileNames: 'assets/[name].js',
-        chunkFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name].[ext]'
+        assetFileNames: 'assets/[name].[ext]',
+        // JCEF 환경에서 dynamic chunk 로드 실패 방지: 단일 번들로 통합
+        inlineDynamicImports: true,
       }
     }
   },
