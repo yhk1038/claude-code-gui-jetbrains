@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { ChatInput } from './ChatInput';
 import { SessionHeader } from './SessionHeader';
 import { ChatMessageArea } from './ChatMessageArea';
@@ -15,6 +15,7 @@ export function ChatPanel() {
   const { messages, isStreaming } = useChatStreamContext();
   const { pending: pendingUserAnswer, dismiss } = usePendingAskUserQuestion(messages, isStreaming);
   const { pending: pendingPermission, approve: approvePermission, deny: denyPermission } = usePendingPermissions();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // 빈 영역 클릭 시 textarea로 포커스 이동
   // mousedown 시점에 확인해야 포커스 이동 전 activeElement를 비교할 수 있음
@@ -41,8 +42,8 @@ export function ChatPanel() {
       <UpdateBanner />
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto w-full h-screen pt-10 pb-36 bg-neutral-900 z-0">
-        <ChatMessageArea isStreaming={isStreaming && !pendingUserAnswer && !pendingPermission} />
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto w-full h-screen pt-10 pb-36 bg-neutral-900 z-0">
+        <ChatMessageArea isStreaming={isStreaming && !pendingUserAnswer && !pendingPermission} scrollContainerRef={scrollContainerRef} />
       </div>
 
       {/* Input Area */}

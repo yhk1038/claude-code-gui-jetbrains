@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import {LoadedMessageDto, isContentBlockArray} from '../types';
 import { MessageBubble } from './MessageBubble';
 import { ProjectSelector } from './ProjectSelector';
@@ -36,23 +36,42 @@ function buildSubAgentMessages(progressEntries: LoadedMessageDto[]): SubAgentMes
     });
 }
 
+const SCROLL_THRESHOLD = 80;
+
 interface Props {
   isStreaming: boolean;
+  scrollContainerRef: RefObject<HTMLDivElement | null>;
 }
 
 export function ChatMessageArea(props: Props) {
-  const { isStreaming } = props;
+  const { isStreaming, scrollContainerRef } = props;
   const { workingDirectory, setWorkingDirectory } = useSessionContext();
   const { messages, retry: onRetry } = useChatStreamContext();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isUserNearBottom, setIsUserNearBottom] = useState(true);
 
-  // Auto-scroll to bottom when messages change or streaming updates
+  // 스크롤 컨테이너의 스크롤 이벤트를 감지하여 사용자가 하단 근처인지 판별
+  const handleScroll = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setIsUserNearBottom(distanceFromBottom <= SCROLL_THRESHOLD);
+  }, [scrollContainerRef]);
+
   useEffect(() => {
-    if (messagesEndRef.current) {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, [scrollContainerRef, handleScroll]);
+
+  // 사용자가 하단 근처에 있을 때만 자동 스크롤
+  useEffect(() => {
+    if (isUserNearBottom && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages.length, messages[messages.length - 1]?.message?.content]);
+  }, [isUserNearBottom, messages.length, messages[messages.length - 1]?.message?.content]);
 
   // Merge tool_result user messages into preceding assistant's tool_use blocks
   const mergedMessages = useMemo(() => {
