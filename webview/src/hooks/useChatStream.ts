@@ -485,223 +485,265 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
     }
   }, []);
 
-  // Subscribe to Kotlin events
+  // Subscribe to backend events
   useEffect(() => {
-    // STREAM_EVENT handler
-    const unsubscribeStreamEvent = bridge.subscribe('STREAM_EVENT', (message) => {
-      const payload = message.payload;
+    // CLI_EVENT handler — 백엔드가 CLI 이벤트를 통합 전달
+    const unsubscribeCliEvent = bridge.subscribe('CLI_EVENT', (message) => {
+      const cliEvent = message.payload as Record<string, unknown> | undefined;
+      if (!cliEvent) return;
 
-      // 시스템 메시지 판별
-      if (payload?.eventType === 'system') {
-        if (payload.subtype === 'init') {
-          setSystemInit(payload as Record<string, unknown>);
+      const eventType = cliEvent.type as string | undefined;
+
+      // ── system ──
+      if (eventType === 'system') {
+        if (cliEvent.subtype === 'init') {
+          setSystemInit(cliEvent as Record<string, unknown>);
         }
-        onSystemMessageRef.current?.(payload as Record<string, unknown>);
+        onSystemMessageRef.current?.(cliEvent as Record<string, unknown>);
         return;
       }
 
-      const event = payload?.event as string | undefined;
-      const delta = payload?.delta as Record<string, unknown> | undefined;
+      // ── stream_event ──
+      if (eventType === 'stream_event') {
+        const innerEvent = cliEvent.event as Record<string, unknown> | undefined;
+        if (!innerEvent) return;
 
-      // content_block_start: 새로운 content block 시작
-      if (event === 'content_block_start') {
-        ensureStreamingPlaceholder();
+        const streamEventType = innerEvent.type as string | undefined;
+        const delta = innerEvent.delta as Record<string, unknown> | undefined;
 
-        const contentBlock = payload?.content_block as { type: ContentBlockType; id?: string; name?: string; text?: string; thinking?: string; input?: Record<string, unknown> } | undefined;
-        const blockIndex = payload?.index as number | undefined;
-        if (!contentBlock) return;
+        // content_block_start: 새로운 content block 시작
+        if (streamEventType === 'content_block_start') {
+          ensureStreamingPlaceholder();
 
-        if (blockIndex !== undefined) {
-          activeBlockIndexRef.current = blockIndex;
-        }
+          const contentBlock = innerEvent.content_block as { type: ContentBlockType; id?: string; name?: string; text?: string; thinking?: string; input?: Record<string, unknown> } | undefined;
+          const blockIndex = innerEvent.index as number | undefined;
+          if (!contentBlock) return;
 
-        // content 배열에 새 블록을 push하고 활성 인덱스를 기록
-        setMessages(prev => prev.map(msg => {
-          if (msg.uuid !== streamingMessageIdRef.current) return msg;
-
-          const currentBlocks: AnyContentBlockDto[] = Array.isArray(msg.message?.content)
-            ? [...msg.message!.content]
-            : [];
-
-          if (contentBlock.type === ContentBlockType.Text) {
-            const newBlock: TextBlockDto = { type: ContentBlockType.Text, text: contentBlock.text ?? '' } as TextBlockDto;
-            currentBlocks.push(newBlock);
-            activeTextBlockIndexRef.current = currentBlocks.length - 1;
-          } else if (contentBlock.type === ContentBlockType.ToolUse) {
-            const newBlock: ToolUseBlockDto = {
-              type: ContentBlockType.ToolUse,
-              id: contentBlock.id ?? '',
-              name: contentBlock.name ?? '',
-              input: contentBlock.input ?? {},
-            } as ToolUseBlockDto;
-            currentBlocks.push(newBlock);
-            activeToolUseBlockIndexRef.current = currentBlocks.length - 1;
-            // Reset accumulated input JSON for new tool_use block
-            accumulatedInputJsonRef.current = '';
-          } else if (contentBlock.type === ContentBlockType.Thinking) {
-            const newBlock: ThinkingBlockDto = { type: ContentBlockType.Thinking, thinking: contentBlock.thinking ?? '' } as ThinkingBlockDto;
-            currentBlocks.push(newBlock);
-            activeThinkingBlockIndexRef.current = currentBlocks.length - 1;
+          if (blockIndex !== undefined) {
+            activeBlockIndexRef.current = blockIndex;
           }
 
-          return { ...msg, message: { ...msg.message!, content: currentBlocks } };
-        }));
-        return;
-      }
+          // content 배열에 새 블록을 push하고 활성 인덱스를 기록
+          setMessages(prev => prev.map(msg => {
+            if (msg.uuid !== streamingMessageIdRef.current) return msg;
 
-      // content_block_stop: 현재 블록 종료
-      if (event === 'content_block_stop') {
-        activeBlockIndexRef.current = -1;
-        // Flush any remaining delta for the completed block
-        if (pendingTextRef.current || pendingThinkingRef.current || pendingInputJsonRef.current) {
-          flushPendingDeltas();
+            const currentBlocks: AnyContentBlockDto[] = Array.isArray(msg.message?.content)
+              ? [...msg.message!.content]
+              : [];
+
+            if (contentBlock.type === ContentBlockType.Text) {
+              const newBlock: TextBlockDto = { type: ContentBlockType.Text, text: contentBlock.text ?? '' } as TextBlockDto;
+              currentBlocks.push(newBlock);
+              activeTextBlockIndexRef.current = currentBlocks.length - 1;
+            } else if (contentBlock.type === ContentBlockType.ToolUse) {
+              const newBlock: ToolUseBlockDto = {
+                type: ContentBlockType.ToolUse,
+                id: contentBlock.id ?? '',
+                name: contentBlock.name ?? '',
+                input: contentBlock.input ?? {},
+              } as ToolUseBlockDto;
+              currentBlocks.push(newBlock);
+              activeToolUseBlockIndexRef.current = currentBlocks.length - 1;
+              // Reset accumulated input JSON for new tool_use block
+              accumulatedInputJsonRef.current = '';
+            } else if (contentBlock.type === ContentBlockType.Thinking) {
+              const newBlock: ThinkingBlockDto = { type: ContentBlockType.Thinking, thinking: contentBlock.thinking ?? '' } as ThinkingBlockDto;
+              currentBlocks.push(newBlock);
+              activeThinkingBlockIndexRef.current = currentBlocks.length - 1;
+            }
+
+            return { ...msg, message: { ...msg.message!, content: currentBlocks } };
+          }));
+          return;
         }
-        return;
-      }
 
-      // content_block_delta 처리
-      if (!delta) return;
+        // content_block_stop: 현재 블록 종료
+        if (streamEventType === 'content_block_stop') {
+          activeBlockIndexRef.current = -1;
+          // Flush any remaining delta for the completed block
+          if (pendingTextRef.current || pendingThinkingRef.current || pendingInputJsonRef.current) {
+            flushPendingDeltas();
+          }
+          return;
+        }
 
-      // text_delta 처리
-      if (delta.type === 'text_delta' && delta.text) {
-        ensureStreamingPlaceholder();
-        pendingTextRef.current += delta.text as string;
-        scheduleFlush();
-      }
+        // content_block_delta 처리
+        if (!delta) return;
 
-      // thinking_delta 처리
-      if (delta.type === 'thinking_delta' && delta.thinking) {
-        ensureStreamingPlaceholder();
-        pendingThinkingRef.current += delta.thinking as string;
-        scheduleFlush();
-      }
+        // text_delta 처리
+        if (delta.type === 'text_delta' && delta.text) {
+          ensureStreamingPlaceholder();
+          pendingTextRef.current += delta.text as string;
+          scheduleFlush();
+        }
 
-      // input_json_delta 처리 (tool_use의 input 축적)
-      if (delta.type === 'input_json_delta' && typeof delta.partial_json === 'string') {
-        ensureStreamingPlaceholder();
-        pendingInputJsonRef.current += delta.partial_json;
-        scheduleFlush();
-      }
+        // thinking_delta 처리
+        if (delta.type === 'thinking_delta' && delta.thinking) {
+          ensureStreamingPlaceholder();
+          pendingThinkingRef.current += delta.thinking as string;
+          scheduleFlush();
+        }
 
-      // tool_use_delta 처리 (일부 백엔드에서 이 타입으로 올 수 있음)
-      if (delta.type === 'tool_use_delta') {
-        // tool_use_delta는 보통 content_block_start에서 이미 처리됨
-        // partial_json이 있으면 input_json_delta와 동일하게 처리
-        if (typeof delta.partial_json === 'string') {
+        // input_json_delta 처리 (tool_use의 input 축적)
+        if (delta.type === 'input_json_delta' && typeof delta.partial_json === 'string') {
           ensureStreamingPlaceholder();
           pendingInputJsonRef.current += delta.partial_json;
           scheduleFlush();
         }
-      }
-    });
 
-    // ASSISTANT_MESSAGE handler
-    // 에이전트 루프에서 각 턴마다 해당 턴의 content만 포함하여 발생.
-    // 이전 턴의 블록을 보존하면서 현재 턴의 스트리밍 블록을 최종 버전으로 교체.
-    const unsubscribeAssistantMessage = bridge.subscribe('ASSISTANT_MESSAGE', (message) => {
-      const payload = message.payload;
-      const messageId = payload?.messageId as string;
-      const incomingContent = payload?.content;
-      const assistantModel = payload?.model as string | null;
-      const assistantUsage = payload?.usage as { input_tokens?: number; output_tokens?: number } | null;
-      if (assistantUsage && typeof assistantUsage.input_tokens === 'number') {
-        setContextWindowUsage({
-          inputTokens: assistantUsage.input_tokens,
-          outputTokens: assistantUsage.output_tokens ?? 0,
-          model: assistantModel,
-        });
+        // tool_use_delta 처리 (일부 백엔드에서 이 타입으로 올 수 있음)
+        if (delta.type === 'tool_use_delta') {
+          if (typeof delta.partial_json === 'string') {
+            ensureStreamingPlaceholder();
+            pendingInputJsonRef.current += delta.partial_json;
+            scheduleFlush();
+          }
+        }
+        return;
       }
 
-      if (!incomingContent || !Array.isArray(incomingContent)) return;
-      const finalTurnBlocks = incomingContent as AnyContentBlockDto[];
+      // ── assistant ──
+      // 에이전트 루프에서 각 턴마다 해당 턴의 content만 포함하여 발생.
+      // 이전 턴의 블록을 보존하면서 현재 턴의 스트리밍 블록을 최종 버전으로 교체.
+      if (eventType === 'assistant') {
+        const assistantMessage = cliEvent.message as Record<string, unknown> | undefined;
+        if (!assistantMessage) return;
 
-      if (streamingMessageIdRef.current) {
-        // Flush any pending deltas before replacing
-        if (pendingTextRef.current || pendingThinkingRef.current || pendingInputJsonRef.current) {
-          flushPendingDeltas();
+        const messageId = assistantMessage.id as string;
+        const incomingContent = assistantMessage.content;
+        const assistantModel = assistantMessage.model as string | null;
+        const assistantUsage = assistantMessage.usage as { input_tokens?: number; output_tokens?: number } | null;
+        if (assistantUsage && typeof assistantUsage.input_tokens === 'number') {
+          setContextWindowUsage({
+            inputTokens: assistantUsage.input_tokens,
+            outputTokens: assistantUsage.output_tokens ?? 0,
+            model: assistantModel,
+          });
         }
 
-        // Replace current turn's streaming blocks with final blocks from ASSISTANT_MESSAGE.
-        // Blocks before turnStartBlockCountRef are from previous turns and must be preserved.
-        const turnStart = turnStartBlockCountRef.current;
+        if (!incomingContent || !Array.isArray(incomingContent)) return;
+        const finalTurnBlocks = incomingContent as AnyContentBlockDto[];
 
-        setMessages(prev => prev.map(msg => {
-          if (msg.uuid !== streamingMessageIdRef.current) return msg;
+        if (streamingMessageIdRef.current) {
+          // Flush any pending deltas before replacing
+          if (pendingTextRef.current || pendingThinkingRef.current || pendingInputJsonRef.current) {
+            flushPendingDeltas();
+          }
 
-          const existingBlocks: AnyContentBlockDto[] = Array.isArray(msg.message?.content)
-            ? [...msg.message!.content]
-            : [];
+          // Replace current turn's streaming blocks with final blocks.
+          // Blocks before turnStartBlockCountRef are from previous turns and must be preserved.
+          const turnStart = turnStartBlockCountRef.current;
 
-          // Preserve blocks from previous turns, replace current turn's blocks
-          const preservedBlocks = existingBlocks.slice(0, turnStart);
-          const mergedBlocks = [...preservedBlocks, ...finalTurnBlocks];
+          setMessages(prev => prev.map(msg => {
+            if (msg.uuid !== streamingMessageIdRef.current) return msg;
 
-          // Update turnStartBlockCount for the next turn
-          turnStartBlockCountRef.current = mergedBlocks.length;
+            const existingBlocks: AnyContentBlockDto[] = Array.isArray(msg.message?.content)
+              ? [...msg.message!.content]
+              : [];
 
-          return {
-            ...msg,
-            message: { ...msg.message!, content: mergedBlocks },
+            // Preserve blocks from previous turns, replace current turn's blocks
+            const preservedBlocks = existingBlocks.slice(0, turnStart);
+            const mergedBlocks = [...preservedBlocks, ...finalTurnBlocks];
+
+            // Update turnStartBlockCount for the next turn
+            turnStartBlockCountRef.current = mergedBlocks.length;
+
+            return {
+              ...msg,
+              message: { ...msg.message!, content: mergedBlocks },
+              isStreaming: false,
+              message_id: messageId,
+            };
+          }));
+
+          // Reset active block indices (this turn is done, next turn may start new blocks)
+          activeBlockIndexRef.current = -1;
+          activeTextBlockIndexRef.current = -1;
+          activeThinkingBlockIndexRef.current = -1;
+          activeToolUseBlockIndexRef.current = -1;
+          accumulatedInputJsonRef.current = '';
+          // NOTE: streamingMessageIdRef is NOT reset here - next turn's stream_event
+          // may continue with the same message. Only result resets it.
+        } else {
+          // 새 메시지 추가 (스트리밍 없이 바로 온 경우)
+          const newAssistantMessage: LoadedMessageDto = {
+            type: LoadedMessageType.Assistant,
+            uuid: generateMessageId(),
+            timestamp: new Date().toISOString(),
+            message: { role: MessageRole.Assistant, content: finalTurnBlocks } as LoadedMessageDto['message'],
             isStreaming: false,
             message_id: messageId,
           };
-        }));
+          appendMessage(newAssistantMessage);
+        }
+        return;
+      }
 
-        // Reset active block indices (this turn is done, next turn may start new blocks)
-        activeBlockIndexRef.current = -1;
-        activeTextBlockIndexRef.current = -1;
-        activeThinkingBlockIndexRef.current = -1;
-        activeToolUseBlockIndexRef.current = -1;
-        accumulatedInputJsonRef.current = '';
-        // NOTE: streamingMessageIdRef is NOT reset here - next turn's stream_event
-        // may continue with the same message. Only RESULT_MESSAGE resets it.
-      } else {
-        // 새 메시지 추가 (스트리밍 없이 바로 온 경우)
-        const assistantMessage: LoadedMessageDto = {
-          type: LoadedMessageType.Assistant,
-          uuid: generateMessageId(),
-          timestamp: new Date().toISOString(),
-          message: { role: MessageRole.Assistant, content: finalTurnBlocks } as LoadedMessageDto['message'],
-          isStreaming: false,
-          message_id: messageId,
+      // ── result ──
+      if (eventType === 'result') {
+        const errorData = cliEvent.error as { code?: string; message?: string; details?: string } | null;
+
+        // Flush 잔여 buffer
+        if ((pendingTextRef.current || pendingThinkingRef.current || pendingInputJsonRef.current) && streamingMessageIdRef.current) {
+          flushPendingDeltas();
+        }
+
+        // 에러 처리
+        if (errorData) {
+          const err = new Error(errorData.message || 'Unknown error');
+          setError(err);
+          onErrorRef.current?.(err);
+        }
+
+        // Context window usage 추출
+        const usageData = cliEvent.usage as { input_tokens?: number; output_tokens?: number } | null;
+        const modelStr = cliEvent.model as string | null;
+        if (usageData && typeof usageData.input_tokens === 'number') {
+          setContextWindowUsage({
+            inputTokens: usageData.input_tokens,
+            outputTokens: usageData.output_tokens ?? 0,
+            model: modelStr,
+          });
+        }
+
+        // 스트리밍 종료
+        endStreaming();
+        return;
+      }
+
+      // ── progress ──
+      if (eventType === 'progress') {
+        const progressEntry: LoadedMessageDto = {
+          type: LoadedMessageType.Progress,
+          uuid: (cliEvent.uuid as string) || generateMessageId(),
+          parentToolUseID: cliEvent.parentToolUseID as string,
+          data: cliEvent.data as any,
+          timestamp: (cliEvent.timestamp as string) ?? new Date().toISOString(),
         };
-        appendMessage(assistantMessage);
+        appendMessage(progressEntry);
+        return;
       }
+
+      // ── user (NEW — 다른 탭/소스에서 보낸 user 메시지) ──
+      if (eventType === 'user') {
+        const userMsg = cliEvent.message as Record<string, unknown> | undefined;
+        if (userMsg) {
+          const userMessage: LoadedMessageDto = {
+            type: LoadedMessageType.User,
+            uuid: (cliEvent as any).uuid || generateMessageId(),
+            timestamp: new Date().toISOString(),
+            message: userMsg as unknown as LoadedMessageDto['message'],
+          };
+          appendMessage(userMessage);
+        }
+        return;
+      }
+
+      // ── 미지원 타입 — crash 방지 ──
+      console.log('[useChatStream] Unhandled CLI_EVENT type:', eventType, cliEvent);
     });
 
-    // RESULT_MESSAGE handler
-    const unsubscribeResultMessage = bridge.subscribe('RESULT_MESSAGE', (message) => {
-      const payload = message.payload;
-      const errorData = payload?.error as { code?: string; message?: string; details?: string } | null;
-
-      // Flush 잔여 buffer
-      if ((pendingTextRef.current || pendingThinkingRef.current || pendingInputJsonRef.current) && streamingMessageIdRef.current) {
-        flushPendingDeltas();
-      }
-
-      // 에러 처리
-      if (errorData) {
-        const err = new Error(errorData.message || 'Unknown error');
-        setError(err);
-        onErrorRef.current?.(err);
-      }
-
-      // Context window usage 추출
-      const usageData = payload?.usage as { input_tokens?: number; output_tokens?: number } | null;
-      const modelStr = payload?.model as string | null;
-      if (usageData && typeof usageData.input_tokens === 'number') {
-        setContextWindowUsage({
-          inputTokens: usageData.input_tokens,
-          outputTokens: usageData.output_tokens ?? 0,
-          model: modelStr,
-        });
-      }
-
-      // 스트리밍 종료
-      endStreaming();
-    });
-
-    // SERVICE_ERROR handler
+    // SERVICE_ERROR handler — 프로세스 spawn/close 에러 (CLI 이벤트가 아닌 백엔드 자체 이벤트)
     const unsubscribeServiceError = bridge.subscribe('SERVICE_ERROR', (message) => {
       const payload = message.payload;
       const errorType = payload?.type as string | undefined;
@@ -736,23 +778,8 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
       appendMessage(userMessage);
     });
 
-    // PROGRESS_MESSAGE handler — sub-agent progress (Task 블록의 자식 도구 호출)
-    const unsubscribeProgress = bridge.subscribe('PROGRESS_MESSAGE', (message: IPCMessage) => {
-      const payload = message.payload;
-      if (!payload) return;
-
-      const progressEntry: LoadedMessageDto = {
-        type: LoadedMessageType.Progress,
-        uuid: (payload.uuid as string) || generateMessageId(),
-        parentToolUseID: payload.parentToolUseID as string,
-        data: payload.data as any,
-        timestamp: (payload.timestamp as string) ?? new Date().toISOString(),
-      };
-      appendMessage(progressEntry);
-    });
-
     // STREAM_END handler — 스트림 종료 안전망
-    // RESULT_MESSAGE나 SERVICE_ERROR가 도착하지 않은 경우에도 스트리밍 상태를 정리
+    // result나 SERVICE_ERROR가 도착하지 않은 경우에도 스트리밍 상태를 정리
     const unsubscribeStreamEnd = bridge.subscribe('STREAM_END', () => {
       if (streamingMessageIdRef.current) {
         console.warn('[useChatStream] STREAM_END received while still streaming — ending stream as safety net');
@@ -762,12 +789,9 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
 
     // Cleanup
     return () => {
-      unsubscribeStreamEvent();
-      unsubscribeAssistantMessage();
-      unsubscribeResultMessage();
+      unsubscribeCliEvent();
       unsubscribeServiceError();
       unsubscribeUserBroadcast();
-      unsubscribeProgress();
       unsubscribeStreamEnd();
     };
   // bridge.subscribe는 useBridge의 useCallback([], [])이므로 안정적.

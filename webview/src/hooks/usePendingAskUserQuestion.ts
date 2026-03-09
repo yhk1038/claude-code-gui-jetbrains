@@ -34,15 +34,17 @@ export function usePendingAskUserQuestion(
   // control_request의 request_id를 tool_use_id로 매핑 (state로 관리하여 useMemo 재실행 보장)
   const [controlRequestIds, setControlRequestIds] = useState<Map<string, string>>(new Map());
 
-  // CONTROL_REQUEST 이벤트 구독
+  // CLI_EVENT에서 control_request 이벤트 구독
   useEffect(() => {
     const bridge = getBridgeClient();
-    const unsubscribe = bridge.subscribe('CONTROL_REQUEST', (message) => {
-      const payload = message.payload as any;
-      const request = payload?.request;
+    const unsubscribe = bridge.subscribe('CLI_EVENT', (message) => {
+      const cliEvent = message.payload as any;
+      if (cliEvent?.type !== 'control_request') return;
+
+      const request = cliEvent?.request;
       if (request?.subtype === 'can_use_tool' && request?.tool_name === 'AskUserQuestion') {
         const toolUseId = request.tool_use_id as string;
-        const requestId = payload.requestId as string;
+        const requestId = cliEvent.request_id as string;
         if (toolUseId && requestId) {
           setControlRequestIds(prev => new Map(prev).set(toolUseId, requestId));
         }

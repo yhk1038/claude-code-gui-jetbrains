@@ -371,126 +371,19 @@ function handleStreamEvent(
   event: Record<string, unknown>,
   connections: ConnectionManager,
 ): void {
-  // Claude CLI --output-format stream-json 이벤트 처리
   const eventType = event.type as string;
 
-  switch (eventType) {
-    case 'system':
-      connections.broadcastToSession(targetSessionId, 'STREAM_EVENT', {
-        ...event,
-        eventType: 'system',
-        sessionId: event.session_id,
-      });
-      break;
-
-    case 'stream_event': {
-      const innerEvent = event.event as Record<string, unknown>;
-      if (!innerEvent) {
-        console.error('[node-backend]', 'stream_event with no inner event, skipping');
-        break;
-      }
-
-      const innerType = innerEvent.type as string;
-      const deltaData: Record<string, unknown> = { event: innerType };
-
-      if (innerEvent.index !== undefined) {
-        deltaData.index = innerEvent.index;
-      }
-
-      if (innerEvent.delta) {
-        const delta = innerEvent.delta as Record<string, unknown>;
-        const deltaType = delta.type as string;
-
-        if (deltaType === 'text_delta') {
-          deltaData.delta = { type: 'text_delta', text: delta.text };
-        } else if (deltaType === 'tool_use_delta') {
-          deltaData.delta = {
-            type: 'tool_use_delta',
-            id: delta.id,
-            name: delta.name,
-            input: delta.input,
-          };
-        } else if (deltaType === 'thinking_delta') {
-          deltaData.delta = { type: 'thinking_delta', thinking: delta.thinking };
-        } else {
-          deltaData.delta = delta;
-        }
-      }
-
-      if (innerEvent.message) {
-        deltaData.message = innerEvent.message;
-      }
-
-      if (innerEvent.content_block) {
-        deltaData.content_block = innerEvent.content_block;
-      }
-
-      connections.broadcastToSession(targetSessionId, 'STREAM_EVENT', deltaData);
-      break;
-    }
-
-    case 'assistant': {
-      const message = event.message as Record<string, unknown> | undefined;
-      connections.broadcastToSession(targetSessionId, 'ASSISTANT_MESSAGE', {
-        messageId: message?.id,
-        content: message?.content ?? [],
-        model: message?.model ?? null,
-        usage: message?.usage ?? null,
-      });
-      break;
-    }
-
-    case 'result': {
-      sessionsWithResult.add(targetSessionId);
-      const errorField = event.error as Record<string, unknown> | undefined;
-      connections.broadcastToSession(targetSessionId, 'RESULT_MESSAGE', {
-        status: event.subtype ?? event.status ?? 'unknown',
-        isError: event.is_error ?? false,
-        result: event.result ?? null,
-        sessionId: event.session_id ?? null,
-        error: errorField
-          ? {
-              code: errorField.code,
-              message: errorField.message,
-              details: errorField.details,
-            }
-          : null,
-        usage: event.usage ?? null,
-        model: event.model ?? null,
-      });
-      // 세션 목록 갱신 알림 (모든 탭)
-      connections.broadcastToAll('SESSIONS_UPDATED', {
-        action: 'upsert',
-        session: {
-          sessionId: event.session_id ?? targetSessionId,
-        },
-      });
-      break;
-    }
-
-    case 'progress': {
-      connections.broadcastToSession(targetSessionId, 'PROGRESS_MESSAGE', {
-        parentToolUseID: event.parentToolUseID,
-        data: event.data,
-        timestamp: event.timestamp,
-        uuid: event.uuid,
-      });
-      break;
-    }
-
-    case 'control_request': {
-      const request = event.request as Record<string, unknown>;
-      const requestId = event.request_id as string;
-      console.error('[node-backend]', `control_request received: ${(request as any)?.subtype} (request_id: ${requestId})`);
-      connections.broadcastToSession(targetSessionId, 'CONTROL_REQUEST', {
-        requestId,
-        request,
-      });
-      break;
-    }
-
-    default:
-      console.error('[node-backend]', `Unknown CLI event type: ${eventType}`);
-      break;
+  // 백엔드 고유 사이드이펙트 (WebView 전달과 무관한 서버 내부 로직)
+  if (eventType === 'result') {
+    sessionsWithResult.add(targetSessionId);
+    connections.broadcastToAll('SESSIONS_UPDATED', {
+      action: 'upsert',
+      session: {
+        sessionId: event.session_id ?? targetSessionId,
+      },
+    });
   }
+
+  // 모든 CLI 이벤트를 있는 그대로 전달 — 타입별 분기/가공 없음
+  connections.broadcastToSession(targetSessionId, 'CLI_EVENT', event);
 }

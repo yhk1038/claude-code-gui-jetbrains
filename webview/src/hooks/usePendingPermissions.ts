@@ -62,19 +62,21 @@ export function usePendingPermissions(): {
   const [requests, setRequests] = useState<PendingPermission[]>([]);
   const processedIdsRef = useRef<Set<string>>(new Set());
 
-  // Subscribe to CONTROL_REQUEST events for non-AskUserQuestion tools
+  // Subscribe to CLI_EVENT for control_request (non-AskUserQuestion tools)
   useEffect(() => {
     const bridge = getBridgeClient();
-    const unsubscribe = bridge.subscribe('CONTROL_REQUEST', (message) => {
-      const payload = message.payload as any;
-      const request = payload?.request;
+    const unsubscribe = bridge.subscribe('CLI_EVENT', (message) => {
+      const cliEvent = message.payload as any;
+      if (cliEvent?.type !== 'control_request') return;
+
+      const request = cliEvent?.request;
 
       // Skip AskUserQuestion (handled by usePendingAskUserQuestion)
       if (!request || request.subtype !== 'can_use_tool' || request.tool_name === 'AskUserQuestion') {
         return;
       }
 
-      const controlRequestId = payload.requestId as string;
+      const controlRequestId = cliEvent.request_id as string;
       const toolName = request.tool_name as string;
       const toolUseId = request.tool_use_id as string;
       const input = (request.input || {}) as Record<string, unknown>;
