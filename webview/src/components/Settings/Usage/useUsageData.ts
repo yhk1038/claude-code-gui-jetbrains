@@ -27,6 +27,7 @@ export function useUsageData(): UseUsageDataReturn {
       if (result.status === 'ok' && result.usage) {
         setData(result.usage as UsageResponse);
         setLastUpdated(new Date());
+        window.dispatchEvent(new CustomEvent('usage-data-updated', { detail: result.usage }));
       } else {
         setError(result.error || 'Failed to fetch usage data');
       }
@@ -43,6 +44,17 @@ export function useUsageData(): UseUsageDataReturn {
       fetchUsage();
     }
   }, [isConnected, fetchUsage]);
+
+  // 다른 인스턴스가 fetch 성공 시 데이터 동기화
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const customEvent = e as CustomEvent<UsageResponse>;
+      setData(customEvent.detail);
+      setLastUpdated(new Date());
+    };
+    window.addEventListener('usage-data-updated', handler);
+    return () => window.removeEventListener('usage-data-updated', handler);
+  }, []);
 
   // messages 변경 시(새 메시지 수신, 세션 복원, 클리어) refresh
   useEffect(() => {
