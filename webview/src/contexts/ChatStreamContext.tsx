@@ -108,16 +108,11 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
     diffs.clearDiffs();
   }, [chatStream.clearMessages, chatStream.resetStreamState, tools.clearToolUses, diffs.clearDiffs]);
 
-  // 세션 전환 자동 감지: currentSessionId 변경 시 모든 세션별 상태 리셋
-  const prevSessionIdRef = useRef<string | null>(session.currentSessionId);
+  // SessionContext.switchSession()이 호출될 때 동기적으로 리셋되도록 콜백 등록
+  // (useEffect 자동 감지 방식은 SESSION_LOADED와의 레이스 컨디션 유발)
   useEffect(() => {
-    const prevId = prevSessionIdRef.current;
-    prevSessionIdRef.current = session.currentSessionId;
-    if (prevId !== null && prevId !== session.currentSessionId) {
-      console.log('[ChatStreamContext] Session switch detected:', prevId, '→', session.currentSessionId);
-      resetForSessionSwitch();
-    }
-  }, [session.currentSessionId, resetForSessionSwitch]);
+    session.registerBeforeSwitch(resetForSessionSwitch);
+  }, [session.registerBeforeSwitch, resetForSessionSwitch]);
 
   // ref로 안정화 (useEffect 의존성 churn 방지)
   const toolsRef = useRef(tools);

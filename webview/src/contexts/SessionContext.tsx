@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef, ReactNode } from 'react';
 import { SessionState } from '../types';
 import { SessionMetaDto } from '../dto';
 import { useBridgeContext } from './BridgeContext';
@@ -28,6 +28,7 @@ interface SessionContextValue {
   addNewSession: (sessionId: string, firstPrompt: string) => void;
   setSessionState: (state: SessionState) => void;
   setWorkingDirectory: (dir: string | null) => void;
+  registerBeforeSwitch: (cb: () => void) => void;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -44,6 +45,12 @@ export function SessionProvider({ children }: SessionProviderProps) {
   const [sessions, setSessions] = useState<SessionMetaDto[]>([]);
   const [sessionState, setSessionState] = useState<SessionState>(SessionState.Idle);
   const [isLoading, setIsLoading] = useState(false);
+  // 세션 전환 전 호출되는 콜백 (ChatStreamContext가 등록)
+  const beforeSwitchRef = useRef<(() => void) | null>(null);
+  const registerBeforeSwitch = useCallback((cb: () => void) => {
+    beforeSwitchRef.current = cb;
+  }, []);
+
   const [workingDirectory, setWorkingDirectoryState] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('workingDir') || null;
@@ -156,6 +163,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
   }, [subscribe, loadSessions]);
 
   const resetToNewSession = useCallback(() => {
+    beforeSwitchRef.current?.();
     setCurrentSessionId(null);
     setSessionState(SessionState.Idle);
 
@@ -184,6 +192,9 @@ export function SessionProvider({ children }: SessionProviderProps) {
     console.log('[SessionContext] switchSession called with:', sessionId);
 
     if (sessions.some(s => s.id === sessionId)) {
+      // 동기적으로 이전 세션 상태를 먼저 리셋 (레이스 컨디션 방지)
+      beforeSwitchRef.current?.();
+
       setCurrentSessionId(sessionId);
       setSessionState(SessionState.Idle);
 
@@ -257,6 +268,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
     addNewSession,
     setSessionState,
     setWorkingDirectory,
+    registerBeforeSwitch,
   };
 
   return (
