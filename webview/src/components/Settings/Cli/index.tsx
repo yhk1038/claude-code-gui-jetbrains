@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { SettingSection, SettingRow } from '../common';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 import { useBridge } from '@/hooks/useBridge';
 import { SettingKey } from '@/types/settings';
 import { ROUTE_META, Route } from '@/router/routes';
 import { getAdapter, IdeAdapterType } from '@/adapters';
+import { CLAUDE_MODELS } from '@/types/models';
 
 interface TerminalInfo {
   id: string;
@@ -25,6 +27,7 @@ export function CliSettings() {
   const meta = ROUTE_META[Route.SETTINGS_CLI];
   const { send } = useBridge();
   const isJetBrains = getAdapter().type === IdeAdapterType.JETBRAINS;
+  const { settings: claudeSettings, updateSetting: updateClaudeSetting } = useClaudeSettings();
 
   const [terminals, setTerminals] = useState<TerminalInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,6 +112,25 @@ export function CliSettings() {
               )}
             </div>
           )}
+        </SettingRow>
+      </SettingSection>
+
+      <SettingSection title="Model">
+        <SettingRow
+          label="Default Model"
+          description="Default model for new sessions. Saved to ~/.claude/settings.json"
+        >
+          <select
+            value={claudeSettings.model ?? ''}
+            onChange={(e) => void updateClaudeSetting('model', e.target.value || null)}
+            className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-zinc-100"
+          >
+            {CLAUDE_MODELS.map((m) => (
+              <option key={m.key} value={m.id ?? ''}>
+                {m.label}
+              </option>
+            ))}
+          </select>
         </SettingRow>
       </SettingSection>
 

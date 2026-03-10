@@ -4,6 +4,8 @@ import { useSessionContext } from '@/contexts/SessionContext';
 import { useBridgeContext } from '@/contexts/BridgeContext';
 import { getAdapter } from '@/adapters';
 import { PanelSection, PanelSectionId } from '@/types/commandPalette';
+import { ClaudeModel } from '@/types';
+import { getModelDef } from '@/types/models';
 import { CommandPaletteServices } from './types';
 import { CommandPaletteRegistry } from './CommandPaletteRegistry';
 import { KeyboardRegistry } from './KeyboardRegistry';
@@ -47,9 +49,14 @@ interface CommandPaletteProviderProps {
   children: ReactNode;
 }
 
+function getModelSecondaryLabel(sessionModel: ClaudeModel | null): string {
+  if (!sessionModel) return 'Default';
+  return getModelDef(sessionModel).label;
+}
+
 export function CommandPaletteProvider({ children }: CommandPaletteProviderProps) {
   const chatStream = useChatStreamContext();
-  const { systemInit } = chatStream;
+  const { systemInit, sessionModel } = chatStream;
   const session = useSessionContext();
   const bridge = useBridgeContext();
 
@@ -227,14 +234,20 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
       registry.registerSection(new SlashCommandsSection(), allCommands);
     }
     const built = registry.buildSections();
-    // Inject onHeaderClick for SlashCommands section
+    // Inject dynamic labels and handlers into sections
     for (const section of built) {
       if (section.id === PanelSectionId.SlashCommands) {
         section.onHeaderClick = fetchSlashCommands;
       }
+      if (section.id === PanelSectionId.Model) {
+        const switchModelItem = section.items.find(i => i.id === 'switch-model');
+        if (switchModelItem) {
+          switchModelItem.secondaryLabel = getModelSecondaryLabel(sessionModel);
+        }
+      }
     }
     return built;
-  }, [registry, allDynamicCommandNames, fetchSlashCommands]);
+  }, [registry, allDynamicCommandNames, fetchSlashCommands, sessionModel]);
 
   const contextValue = useMemo<CommandPaletteRegistryContextValue>(
     () => ({ registry, keyboardRegistry, sections }),
