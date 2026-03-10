@@ -106,15 +106,12 @@ intellijPlatform {
             untilBuild = "261.*"
         }
         changeNotes = """
-            <h3>0.9.4 - Streaming UX & Input Improvements</h3>
+            <h3>0.9.5 - Environment & Compatibility Fix</h3>
             <ul>
-                <li>Added message queuing during streaming (Cursor-style UX)</li>
-                <li>Fixed partial JSON rendering for tool_use inputs during streaming</li>
-                <li>Fixed smart scroll to respect user scroll position during streaming</li>
-                <li>Fixed IME composition Enter key sending message prematurely</li>
-                <li>Fixed message queue not actually sending queued messages</li>
-                <li>Fixed CLI version detection in IDE environment with augmented PATH</li>
-                <li>Switched stop mechanism from SIGTERM to stdin interrupt (control_request)</li>
+                <li>Fixed Node.js/CLI executable not found when IDE is launched from GUI (Dock, Spotlight, Finder)</li>
+                <li>Added Windows support for executable path discovery (which → where)</li>
+                <li>Used JetBrains EnvironmentUtil API to load full shell PATH including nvm, volta, fnm</li>
+                <li>Fixed sub-agent events not rendering during streaming</li>
             </ul>
         """.trimIndent()
     }

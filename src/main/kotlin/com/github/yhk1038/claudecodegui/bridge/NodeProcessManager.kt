@@ -3,6 +3,8 @@ package com.github.yhk1038.claudecodegui.bridge
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.SystemInfo
+import com.intellij.util.EnvironmentUtil
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.*
 import java.io.BufferedReader
@@ -93,7 +95,7 @@ class NodeProcessManager(
         scope.launch(Dispatchers.IO) {
             try {
                 val env = buildMap {
-                    putAll(System.getenv())
+                    putAll(EnvironmentUtil.getEnvironmentMap())
                     put("JETBRAINS_MODE", "true")
                     if (webviewDir != null) {
                         put("WEBVIEW_DIR", webviewDir.absolutePath)
@@ -397,35 +399,51 @@ class NodeProcessManager(
             }
         }
 
-        // 2. PATH lookup via `which`
+        // 2. PATH lookup via shell command (EnvironmentUtil provides full shell PATH)
         try {
-            val proc = ProcessBuilder("which", "node")
-                .redirectErrorStream(true)
-                .start()
+            val command = if (SystemInfo.isWindows) arrayOf("cmd", "/c", "where", "node") else arrayOf("which", "node")
+            val pb = ProcessBuilder(*command).redirectErrorStream(true)
+            // Inject shell-aware PATH so lookup succeeds even when IDE is launched from GUI
+            pb.environment()["PATH"] = EnvironmentUtil.getEnvironmentMap()["PATH"] ?: System.getenv("PATH") ?: ""
+            val proc = pb.start()
             val output = proc.inputStream.bufferedReader().readText().trim()
             val exitCode = proc.waitFor()
-            if (exitCode == 0 && output.isNotBlank() && File(output).exists()) {
-                logger.info("Found node in PATH: $output")
-                return output
+            // `where` on Windows may return multiple lines; take the first
+            val firstLine = output.lines().firstOrNull()?.trim().orEmpty()
+            if (exitCode == 0 && firstLine.isNotBlank() && File(firstLine).exists()) {
+                logger.info("Found node in PATH: $firstLine")
+                return firstLine
             }
         } catch (e: Exception) {
             logger.debug("PATH lookup for node failed: ${e.message}")
         }
 
         // 3. Well-known locations
-        val home = System.getenv("HOME") ?: return null
-        val standardPaths = listOf(
-            "/usr/local/bin/node",
-            "/opt/homebrew/bin/node",
-            "$home/.nvm/current/bin/node",
-            "$home/.volta/bin/node",
-            "$home/.fnm/aliases/default/bin/node",
-            "$home/.local/bin/node",
-            "/usr/bin/node"
-        )
+        val wellKnownPaths = if (SystemInfo.isWindows) {
+            val appData = System.getenv("APPDATA") ?: ""
+            val programFiles = System.getenv("ProgramFiles") ?: "C:\\Program Files"
+            val localAppData = System.getenv("LOCALAPPDATA") ?: ""
+            listOf(
+                "$programFiles\\nodejs\\node.exe",
+                "$appData\\nvm\\current\\node.exe",
+                "$localAppData\\volta\\bin\\node.exe",
+                "$localAppData\\fnm\\aliases\\default\\bin\\node.exe",
+            )
+        } else {
+            val home = System.getenv("HOME") ?: return null
+            listOf(
+                "/usr/local/bin/node",
+                "/opt/homebrew/bin/node",
+                "$home/.nvm/current/bin/node",
+                "$home/.volta/bin/node",
+                "$home/.fnm/aliases/default/bin/node",
+                "$home/.local/bin/node",
+                "/usr/bin/node",
+            )
+        }
 
-        standardPaths.firstOrNull { File(it).exists() && File(it).canExecute() }?.let { found ->
-            logger.info("Found node at: $found")
+        wellKnownPaths.firstOrNull { File(it).exists() && File(it).canExecute() }?.let { found ->
+            logger.info("Found node at well-known location: $found")
             return found
         }
 
