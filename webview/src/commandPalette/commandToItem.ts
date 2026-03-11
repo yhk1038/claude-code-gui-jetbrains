@@ -2,9 +2,10 @@ import {
   PanelItemType,
   ActionItem,
   CommandItem,
+  ToggleItem,
   PanelItem,
 } from '@/types/commandPalette';
-import { CommandPaletteCommand, SlashCommand } from './types';
+import { CommandPaletteCommand, SlashCommand, StaticToggleItem } from './types';
 
 /**
  * Convert a CommandPaletteCommand to a PanelItem for rendering.
@@ -16,7 +17,7 @@ export function commandToItem(cmd: CommandPaletteCommand): PanelItem {
     label: cmd.label,
     type: cmd.type,
     icon: cmd.icon,
-    secondaryLabel: cmd.secondaryLabel,
+    valueComponent: cmd.valueComponent,
     disabled: cmd.disabled,
   };
 
@@ -37,6 +38,15 @@ export function commandToItem(cmd: CommandPaletteCommand): PanelItem {
         type: PanelItemType.Action,
         action: () => cmd.execute(),
       } as ActionItem;
+    case PanelItemType.Toggle: {
+      const toggleCmd = cmd as StaticToggleItem;
+      return {
+        ...base,
+        type: PanelItemType.Toggle,
+        toggled: toggleCmd.toggled,
+        onToggle: toggleCmd.onToggle,
+      } as ToggleItem;
+    }
     default:
       return {
         ...base,

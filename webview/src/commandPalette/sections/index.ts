@@ -8,7 +8,7 @@ export { SupportSection } from './support/SupportSection';
 
 // Section items
 export { contextItems } from './context/items';
-export { modelItems } from './model/items';
+export { modelItems } from './model';
 export { customizeItems } from './customize/items';
 export { settingsItems } from './settings/items';
 export { supportItems } from './support/items';

@@ -2,6 +2,8 @@
 // Slash Command Panel Types
 // ============================================
 
+import React from 'react';
+
 // Icon Types
 export enum IconType {
   Terminal = 'terminal',
@@ -35,7 +37,7 @@ export interface PanelItemBase {
   label: string;
   type: PanelItemType;
   icon?: IconType;
-  secondaryLabel?: string;
+  valueComponent?: () => React.ReactNode;
   disabled?: boolean;
   textStyle?: {
     underline?: boolean;

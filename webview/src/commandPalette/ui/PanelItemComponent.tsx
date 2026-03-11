@@ -76,22 +76,13 @@ export const PanelItemComponent = React.forwardRef<HTMLDivElement, {
 
       {/* Right side: secondary label / toggle / icon */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-        {item.secondaryLabel && (
-          <span
-            style={{
-              fontSize: '12px',
-              color: 'var(--secondary-text-color, #858585)',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {item.secondaryLabel}
-          </span>
-        )}
+        {item.valueComponent && item.valueComponent()}
 
         {item.type === PanelItemType.Toggle && (
           <ToggleSwitch
             checked={(item as ToggleItem).toggled}
             onChange={(value) => (item as ToggleItem).onToggle(value)}
+            size="small"
           />
         )}
 

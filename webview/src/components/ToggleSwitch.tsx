@@ -1,16 +1,20 @@
-import React from 'react';
-
-interface ToggleSwitchProps {
+interface Props {
   checked: boolean;
   onChange: (checked: boolean) => void;
   disabled?: boolean;
+  size?: 'small' | 'normal';
 }
 
-export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
-  checked,
-  onChange,
-  disabled = false
-}) => {
+export const ToggleSwitch = (props: Props) => {
+  const { checked, onChange, disabled = false, size = 'normal' } = props;
+
+  const isSmall = size === 'small';
+  const width = isSmall ? 28 : 36;
+  const height = isSmall ? 16 : 20;
+  const knobSize = isSmall ? 12 : 16;
+  const borderRadius = isSmall ? 8 : 10;
+  const knobLeft = checked ? (isSmall ? 14 : 18) : 2;
+
   return (
     <button
       type="button"
@@ -23,9 +27,9 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
       }}
       className="toggle-switch"
       style={{
-        width: 'var(--toggle-width, 36px)',
-        height: 'var(--toggle-height, 20px)',
-        borderRadius: 'var(--toggle-border-radius, 10px)',
+        width: `${width}px`,
+        height: `${height}px`,
+        borderRadius: `${borderRadius}px`,
         backgroundColor: checked
           ? 'var(--toggle-on-bg, #0078d4)'
           : 'var(--toggle-off-bg, #3c3c3c)',
@@ -42,9 +46,9 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
         style={{
           position: 'absolute',
           top: '2px',
-          left: checked ? '18px' : '2px',
-          width: 'var(--toggle-knob-size, 16px)',
-          height: 'var(--toggle-knob-size, 16px)',
+          left: `${knobLeft}px`,
+          width: `${knobSize}px`,
+          height: `${knobSize}px`,
           borderRadius: '50%',
           backgroundColor: 'var(--toggle-knob-color, #ffffff)',
           transition: 'left 0.2s ease',

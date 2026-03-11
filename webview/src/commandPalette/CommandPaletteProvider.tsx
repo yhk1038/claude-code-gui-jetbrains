@@ -4,8 +4,6 @@ import { useSessionContext } from '@/contexts/SessionContext';
 import { useBridgeContext } from '@/contexts/BridgeContext';
 import { getAdapter } from '@/adapters';
 import { PanelSection, PanelSectionId } from '@/types/commandPalette';
-import { ClaudeModel } from '@/types';
-import { getModelDef } from '@/types/models';
 import { CommandPaletteServices } from './types';
 import { CommandPaletteRegistry } from './CommandPaletteRegistry';
 import { KeyboardRegistry } from './KeyboardRegistry';
@@ -49,14 +47,9 @@ interface CommandPaletteProviderProps {
   children: ReactNode;
 }
 
-function getModelSecondaryLabel(sessionModel: ClaudeModel | null): string {
-  if (!sessionModel) return 'Default';
-  return getModelDef(sessionModel).label;
-}
-
 export function CommandPaletteProvider({ children }: CommandPaletteProviderProps) {
   const chatStream = useChatStreamContext();
-  const { systemInit, sessionModel } = chatStream;
+  const { systemInit } = chatStream;
   const session = useSessionContext();
   const bridge = useBridgeContext();
 
@@ -239,15 +232,9 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
       if (section.id === PanelSectionId.SlashCommands) {
         section.onHeaderClick = fetchSlashCommands;
       }
-      if (section.id === PanelSectionId.Model) {
-        const switchModelItem = section.items.find(i => i.id === 'switch-model');
-        if (switchModelItem) {
-          switchModelItem.secondaryLabel = getModelSecondaryLabel(sessionModel);
-        }
-      }
     }
     return built;
-  }, [registry, allDynamicCommandNames, fetchSlashCommands, sessionModel]);
+  }, [registry, allDynamicCommandNames, fetchSlashCommands]);
 
   const contextValue = useMemo<CommandPaletteRegistryContextValue>(
     () => ({ registry, keyboardRegistry, sections }),

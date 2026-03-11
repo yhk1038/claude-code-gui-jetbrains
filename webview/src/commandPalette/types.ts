@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   PanelItemType,
   IconType,
@@ -46,7 +47,7 @@ export interface CommandPaletteCommand {
   readonly label: string;
   readonly type: PanelItemType;
   readonly icon?: IconType;
-  readonly secondaryLabel?: string;
+  readonly valueComponent?: () => React.ReactNode;
   readonly disabled: boolean;
   readonly order?: number;
 
@@ -80,6 +81,49 @@ export abstract class SlashCommand implements CommandPaletteCommand {
 }
 
 /**
+ * A static toggle panel item.
+ * Used for toggle items in sections like Model.
+ */
+export class StaticToggleItem implements CommandPaletteCommand {
+  readonly type = PanelItemType.Toggle;
+  readonly disabled: boolean;
+  readonly order?: number;
+  readonly icon?: IconType;
+  readonly valueComponent?: () => React.ReactNode;
+  toggled: boolean;
+  onToggle: (value: boolean) => void;
+
+  constructor(
+    readonly id: string,
+    readonly label: string,
+    options: {
+      toggled: boolean;
+      onToggle: (value: boolean) => void;
+      icon?: IconType;
+      valueComponent?: () => React.ReactNode;
+      disabled?: boolean;
+      order?: number;
+    },
+  ) {
+    this.toggled = options.toggled;
+    this.onToggle = options.onToggle;
+    this.icon = options.icon;
+    this.valueComponent = options.valueComponent;
+    this.disabled = options.disabled ?? false;
+    this.order = options.order;
+  }
+
+  /** @internal Called by CommandPaletteRegistry to inject service accessor */
+  _bind(_getServices: () => CommandPaletteServices): void {
+    // Toggle items don't need services
+  }
+
+  async execute(): Promise<void> {
+    this.onToggle(!this.toggled);
+  }
+}
+
+/**
  * A static panel item that may or may not be active.
  * Used for non-slash-command items in sections like Context, Model, Customize, Settings, Support.
  * NOTE: No `section` constructor parameter - section is determined by registerSection().
@@ -98,7 +142,7 @@ export class StaticItem implements CommandPaletteCommand {
     readonly label: string,
     options?: {
       icon?: IconType;
-      secondaryLabel?: string;
+      valueComponent?: () => React.ReactNode;
       disabled?: boolean;
       order?: number;
       action?: () => Promise<void>;
@@ -106,7 +150,7 @@ export class StaticItem implements CommandPaletteCommand {
     },
   ) {
     this.icon = options?.icon;
-    this.secondaryLabel = options?.secondaryLabel;
+    this.valueComponent = options?.valueComponent;
     this.disabled = options?.disabled ?? true;
     this.order = options?.order;
     this.action = options?.action;
@@ -114,7 +158,7 @@ export class StaticItem implements CommandPaletteCommand {
   }
 
   readonly icon?: IconType;
-  readonly secondaryLabel?: string;
+  readonly valueComponent?: () => React.ReactNode;
 
   /** @internal Called by CommandPaletteRegistry to inject service accessor */
   _bind(getServices: () => CommandPaletteServices): void {

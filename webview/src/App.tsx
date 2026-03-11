@@ -6,7 +6,7 @@ import { AccountUsageModal } from './components/AccountUsageModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useRouter, isSettingsRoute, isSwitchAccountRoute } from './router';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
-import { OPEN_ACCOUNT_USAGE_EVENT } from './commandPalette/sections/model/items';
+import { OPEN_ACCOUNT_USAGE_EVENT } from './commandPalette/sections/model/AccountUsageItem';
 
 function AppContent() {
   useKeyboardShortcuts();
