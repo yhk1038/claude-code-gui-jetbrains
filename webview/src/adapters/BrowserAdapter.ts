@@ -15,8 +15,11 @@ export class BrowserAdapter implements IdeAdapter {
   }
 
   async openNewTab(): Promise<void> {
-    // Open a new browser tab with the same URL
-    const newWindow = window.open(window.location.href, '_blank');
+    // 새 탭은 항상 빈 세션(/sessions/new)으로 열기
+    const url = new URL(window.location.href);
+    url.hash = '';
+    url.pathname = '/sessions/new';
+    const newWindow = window.open(url.toString(), '_blank');
 
     if (!newWindow) {
       throw new Error('Failed to open new tab. Pop-up might be blocked.');
@@ -27,7 +30,8 @@ export class BrowserAdapter implements IdeAdapter {
 
   async openSettings(): Promise<void> {
     const url = new URL(window.location.href);
-    url.hash = '#/settings/general';
+    url.hash = '';
+    url.pathname = '/settings/general';
     const newWindow = window.open(url.toString(), '_blank');
 
     if (!newWindow) {

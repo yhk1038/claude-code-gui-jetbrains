@@ -9,7 +9,7 @@ export function SettingsHeader() {
   return (
     <header className="flex items-center gap-2 px-2 py-1 border-b border-zinc-800">
       <button
-        onClick={() => navigate(Route.CHAT)}
+        onClick={() => navigate(Route.NEW_SESSION)}
         className="p-1 rounded text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
         title={Label.BACK}
       >

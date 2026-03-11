@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MarqueeText } from './MarqueeText';
 import { useBridgeContext } from '../contexts/BridgeContext';
+import { useSessionContext } from '../contexts/SessionContext';
+import { withWorkingDir } from '@/router/routes';
 
 interface Project {
   name: string;
@@ -9,15 +12,13 @@ interface Project {
   lastModified: string;
 }
 
-interface ProjectSelectorProps {
-  onSelectProject: (path: string) => void;
-}
-
-export function ProjectSelector({ onSelectProject }: ProjectSelectorProps) {
+export function ProjectSelector() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { send, isConnected, subscribe } = useBridgeContext();
+  const { setWorkingDirectory } = useSessionContext();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!isConnected) {
@@ -48,9 +49,14 @@ export function ProjectSelector({ onSelectProject }: ProjectSelectorProps) {
     fetchProjects();
   }, [isConnected, send, subscribe]);
 
+  const handleSelectProject = (path: string) => {
+    setWorkingDirectory(path);
+    navigate(withWorkingDir('/sessions/new', path));
+  };
+
   if (isLoading) {
     return (
-      <div className="h-full flex items-center justify-center">
+      <div className="h-full flex items-center justify-center bg-[#1a1a1a]">
         <div className="text-center">
           <div className="animate-spin w-6 h-6 border-2 border-zinc-500 border-t-zinc-300 rounded-full mx-auto mb-3" />
           <p className="text-zinc-500 text-sm">Loading projects...</p>
@@ -61,7 +67,7 @@ export function ProjectSelector({ onSelectProject }: ProjectSelectorProps) {
 
   if (error) {
     return (
-      <div className="h-full flex items-center justify-center">
+      <div className="h-full flex items-center justify-center bg-[#1a1a1a]">
         <div className="text-center">
           <p className="text-red-400 text-sm mb-2">{error}</p>
           <button
@@ -77,7 +83,7 @@ export function ProjectSelector({ onSelectProject }: ProjectSelectorProps) {
 
   if (projects.length === 0) {
     return (
-      <div className="h-full flex items-center justify-center">
+      <div className="h-full flex items-center justify-center bg-[#1a1a1a]">
         <div className="text-center max-w-md px-4">
           <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
             <svg className="w-6 h-6 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -94,7 +100,7 @@ export function ProjectSelector({ onSelectProject }: ProjectSelectorProps) {
   }
 
   return (
-    <div className="h-full flex items-center justify-center">
+    <div className="h-full flex items-center justify-center bg-[#1a1a1a]">
       <div className="w-full max-w-md px-4">
         {/* Header */}
         <div className="text-center mb-6">
@@ -112,7 +118,7 @@ export function ProjectSelector({ onSelectProject }: ProjectSelectorProps) {
           {projects.map((project) => (
             <button
               key={project.path}
-              onClick={() => onSelectProject(project.path)}
+              onClick={() => handleSelectProject(project.path)}
               className="w-full px-4 py-3 text-left hover:bg-zinc-800/50 transition-colors border-b border-zinc-800 last:border-b-0 group"
             >
               <div className="flex items-center justify-between gap-2">

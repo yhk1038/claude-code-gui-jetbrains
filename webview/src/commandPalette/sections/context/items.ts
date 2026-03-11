@@ -1,6 +1,5 @@
 import { IconType } from '@/types/commandPalette';
 import { StaticItem } from '../../types';
-import { SessionState } from '@/types';
 
 export const contextItems = [
   new StaticItem('attach-file', 'Attach file...', {
@@ -16,8 +15,7 @@ export const contextItems = [
     serviceAction: async (services) => {
       if (services.chatStream.isStreaming) services.chatStream.stop();
       services.chatStream.resetForSessionSwitch();
-      services.session.setCurrentSessionId(null);
-      services.session.setSessionState(SessionState.Idle);
+      services.session.resetToNewSession();
     },
   }),
 ];

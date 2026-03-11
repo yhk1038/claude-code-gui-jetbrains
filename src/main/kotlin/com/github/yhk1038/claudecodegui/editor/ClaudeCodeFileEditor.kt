@@ -1,5 +1,6 @@
 package com.github.yhk1038.claudecodegui.editor
 
+import com.github.yhk1038.claudecodegui.services.EditorTabStateService
 import com.github.yhk1038.claudecodegui.toolwindow.ClaudeCodePanel
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorLocation
@@ -16,7 +17,7 @@ class ClaudeCodeFileEditor(
     private val virtualFile: ClaudeCodeVirtualFile
 ) : UserDataHolderBase(), FileEditor {
 
-    private val panel: ClaudeCodePanel = ClaudeCodePanel(project, virtualFile.sessionId, virtualFile.initialHash)
+    private val panel: ClaudeCodePanel = ClaudeCodePanel(project, virtualFile.sessionId, virtualFile.initialPath)
 
     init {
         Disposer.register(this, panel)
@@ -50,6 +51,7 @@ class ClaudeCodeFileEditor(
 
     override fun dispose() {
         ClaudeCodeVirtualFile.removeSession(project, virtualFile.sessionId)
+        EditorTabStateService.getInstance(project).removeTab(virtualFile.sessionId)
         // panel은 Disposer에 의해 자동으로 dispose됨
     }
 }

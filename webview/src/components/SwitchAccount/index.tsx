@@ -34,7 +34,7 @@ export function SwitchAccount(props: Props) {
       );
 
       if (result?.status === 'ok') {
-        navigate(Route.CHAT);
+        navigate(Route.NEW_SESSION);
       } else {
         setError(result?.error ?? 'Login failed. Please try again.');
       }
@@ -65,7 +65,7 @@ export function SwitchAccount(props: Props) {
     <div className={`flex flex-col h-full bg-[#1a1a1a] ${className ?? ''}`}>
       <header className="flex items-center gap-2 px-2 py-1 border-b border-zinc-800">
         <button
-          onClick={() => navigate(Route.CHAT)}
+          onClick={() => navigate(Route.NEW_SESSION)}
           className="p-1 rounded text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
           title={Label.BACK}
         >

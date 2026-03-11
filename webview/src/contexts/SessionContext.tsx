@@ -1,10 +1,12 @@
 import { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef, ReactNode } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { SessionState } from '../types';
 import { SessionMetaDto } from '../dto';
 import { useBridgeContext } from './BridgeContext';
 import { useApi } from './ApiContext';
 import { getAdapter, onBridgeReady } from '../adapters';
 import { toTitle } from '../mappers/sessionTransformer';
+import { Route, routeToPath, sessionToPath, withWorkingDir } from '../router/routes';
 
 
 interface SessionContextValue {
@@ -40,6 +42,8 @@ interface SessionProviderProps {
 export function SessionProvider({ children }: SessionProviderProps) {
   const { subscribe, send, isConnected } = useBridgeContext();
   const api = useApi();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<SessionMetaDto[]>([]);
@@ -91,8 +95,9 @@ export function SessionProvider({ children }: SessionProviderProps) {
   }, []);
 
   // workingDir가 없는 상태로 연결되면 백엔드에서 process.cwd()를 가져옴
+  // 단, 루트 경로(/)에서는 프로젝트 선택 화면이므로 자동 복원하지 않음
   useEffect(() => {
-    if (!isConnected || workingDirectory) return;
+    if (!isConnected || workingDirectory || location.pathname === '/') return;
 
     send('GET_WORKING_DIR', {}).then((payload: { workingDir: string }) => {
       if (payload?.workingDir) {
@@ -101,7 +106,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
     }).catch((error: unknown) => {
       console.error('[SessionContext] Failed to get working directory:', error);
     });
-  }, [isConnected, workingDirectory, send, setWorkingDirectory]);
+  }, [isConnected, workingDirectory, location.pathname, send, setWorkingDirectory]);
 
 
   // loadSessions - using new API
@@ -180,10 +185,16 @@ export function SessionProvider({ children }: SessionProviderProps) {
     setCurrentSessionId(null);
     setSessionState(SessionState.Idle);
 
+    // URL을 /sessions/new로 복원
+    const targetPath = routeToPath(Route.NEW_SESSION);
+    if (location.pathname !== targetPath) {
+      navigate(withWorkingDir(targetPath), { replace: true });
+    }
+
     api.sessions.create().catch(error => {
       console.error('[SessionContext] Failed to clear CLI session:', error);
     });
-  }, [api.sessions]);
+  }, [api.sessions, location.pathname, navigate]);
 
   const openNewTab = useCallback(() => {
     // Use IDE adapter to open new tab
@@ -211,6 +222,12 @@ export function SessionProvider({ children }: SessionProviderProps) {
       setCurrentSessionId(sessionId);
       setSessionState(SessionState.Idle);
 
+      // URL 동기화 (순환 방지: 현재 pathname과 비교)
+      const targetPath = sessionToPath(sessionId);
+      if (location.pathname !== targetPath) {
+        navigate(withWorkingDir(targetPath), { replace: true });
+      }
+
       try {
         // Triggers SESSION_LOADED event → AppProviders.SessionLoader handles message injection
         await api.sessions.load(sessionId);
@@ -221,7 +238,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
     } else {
       console.warn('[SessionContext] Session not found in list:', sessionId);
     }
-  }, [sessions, api.sessions]);
+  }, [sessions, api.sessions, location.pathname, navigate]);
 
   const deleteSession = useCallback(async (sessionId: string) => {
     try {
@@ -230,11 +247,12 @@ export function SessionProvider({ children }: SessionProviderProps) {
       if (currentSessionId === sessionId) {
         setCurrentSessionId(null);
         setSessionState(SessionState.Idle);
+        navigate(withWorkingDir(routeToPath(Route.NEW_SESSION)), { replace: true });
       }
     } catch (error) {
       console.error('[SessionContext] Failed to delete session:', error);
     }
-  }, [currentSessionId, api.sessions]);
+  }, [currentSessionId, api.sessions, navigate]);
 
   const renameSession = useCallback((sessionId: string, title: string) => {
     // Update local state only - CLI sessions are read-only
@@ -257,7 +275,13 @@ export function SessionProvider({ children }: SessionProviderProps) {
       isSidechain: false,
     });
     setSessions(prev => [newSession, ...prev]);
-  }, []);
+
+    // 새 세션 생성 시 URL 갱신
+    const targetPath = sessionToPath(sessionId);
+    if (location.pathname !== targetPath) {
+      navigate(withWorkingDir(targetPath), { replace: true });
+    }
+  }, [location.pathname, navigate]);
 
   const currentSession = useMemo(() => {
     return sessions.find(s => s.id === currentSessionId) ?? null;

@@ -46,7 +46,7 @@ interface Props {
 
 export function ChatMessageArea(props: Props) {
   const { isStreaming, scrollContainerRef } = props;
-  const { workingDirectory, setWorkingDirectory } = useSessionContext();
+  const { workingDirectory } = useSessionContext();
   const { messages, retry: onRetry } = useChatStreamContext();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -67,12 +67,24 @@ export function ChatMessageArea(props: Props) {
     return () => el.removeEventListener('scroll', handleScroll);
   }, [scrollContainerRef, handleScroll]);
 
-  // 사용자가 하단 근처에 있을 때만 자동 스크롤
+  // 사용자가 하단 근처에 있을 때 1초 인터벌로 자동 스크롤
   useEffect(() => {
-    if (isUserNearBottom && messagesEndRef.current) {
+    if (!isUserNearBottom) return;
+
+    const tick = () => {
+      const el = scrollContainerRef.current;
+      if (!el || !messagesEndRef.current) return;
+
+      const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
+      if (dist <= 5) return; // 이미 바닥
+
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [isUserNearBottom, messages.length, messages[messages.length - 1]?.message?.content]);
+    };
+
+    tick(); // 즉시 1회 실행
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [isUserNearBottom, scrollContainerRef]);
 
   // Merge tool_result user messages into preceding assistant's tool_use blocks
   const mergedMessages = useMemo(() => {
@@ -165,7 +177,7 @@ export function ChatMessageArea(props: Props) {
         </div>
       );
     }
-    return <ProjectSelector onSelectProject={setWorkingDirectory} />;
+    return <ProjectSelector />;
   }
 
   const log = () => {

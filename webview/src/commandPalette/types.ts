@@ -30,6 +30,7 @@ export interface CommandPaletteServices {
     workingDirectory: string | null;
     setCurrentSessionId: (id: string | null) => void;
     setSessionState: (state: SessionState) => void;
+    resetToNewSession: () => void;
   };
   adapter: {
     openNewTab: () => Promise<void>;

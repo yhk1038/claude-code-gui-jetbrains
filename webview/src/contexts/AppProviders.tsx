@@ -1,10 +1,11 @@
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
+import { BrowserRouter, useLocation, useNavigate } from 'react-router-dom';
 import { BridgeProvider, useBridgeContext } from './BridgeContext';
 import { ApiProvider, useApiContext } from './ApiContext';
 import { SessionProvider, useSessionContext } from './SessionContext';
 import { ChatStreamProvider, useChatStreamContext } from './ChatStreamContext';
 import { ThemeProvider } from './ThemeContext';
-import { Router } from '../router';
+import { Route, routeToPath, parseSessionIdFromPath, withWorkingDir } from '../router/routes';
 import { SettingsProvider } from './SettingsContext';
 import { ClaudeSettingsProvider } from './ClaudeSettingsContext';
 import { ChatInputFocusProvider } from './ChatInputFocusContext';
@@ -21,8 +22,13 @@ interface AppProvidersProps {
 function SessionLoader({ children }: { children: ReactNode }) {
   const { isConnected } = useApiContext();
   const { subscribe } = useBridgeContext();
-  const { loadSessions } = useSessionContext();
+  const { loadSessions, switchSession, sessions, currentSessionId } = useSessionContext();
   const { loadMessages } = useChatStreamContext();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const urlSessionRestored = useRef(false);
+
+  const sessionIdFromUrl = parseSessionIdFromPath(location.pathname);
 
   useEffect(() => {
     if (isConnected) {
@@ -30,6 +36,21 @@ function SessionLoader({ children }: { children: ReactNode }) {
       loadSessions();
     }
   }, [isConnected, loadSessions]);
+
+  // URL에 sessionId가 있으면 세션 목록 로드 후 해당 세션으로 전환
+  useEffect(() => {
+    if (urlSessionRestored.current || !sessionIdFromUrl || sessions.length === 0 || currentSessionId) return;
+
+    urlSessionRestored.current = true;
+    const sessionExists = sessions.some(s => s.id === sessionIdFromUrl);
+    if (sessionExists) {
+      console.log('[AppProviders] Restoring session from URL:', sessionIdFromUrl);
+      switchSession(sessionIdFromUrl);
+    } else {
+      console.warn('[AppProviders] Session from URL not found, falling back to new session:', sessionIdFromUrl);
+      navigate(withWorkingDir(routeToPath(Route.NEW_SESSION)), { replace: true });
+    }
+  }, [sessionIdFromUrl, sessions, currentSessionId, switchSession, navigate]);
 
   // Subscribe to SESSION_LOADED to load messages into chat
   // Raw JSONL entries are passed through - transformation is handled by useChatStream.loadMessages()
@@ -51,19 +72,20 @@ function SessionLoader({ children }: { children: ReactNode }) {
  *
  * Hierarchy:
  * 1. BridgeProvider - Kotlin IPC bridge (foundation)
- * 2. ApiProvider - ClaudeCodeApi initialization (depends on Bridge)
- * 3. SessionProvider - Session management (depends on Bridge)
- * 4. ChatStreamProvider - Chat state + Streaming + Diffs + Tools (depends on Bridge + Session)
- * 5. CommandPaletteProvider - 슬래시 커맨드 매니저 (depends on ChatStream + Session)
- * 6. ClaudeSettingsProvider - Claude Code settings (~/.claude/settings.json) (depends on Bridge)
- * 7. SettingsProvider - IDE settings (terminal, theme, etc.) (depends on Bridge)
- * 8. ThemeProvider - Theme management (independent)
- * 9. SessionLoader - Auto-load sessions when bridge connects
+ * 2. BrowserRouter - react-router path-based routing
+ * 3. ApiProvider - ClaudeCodeApi initialization (depends on Bridge)
+ * 4. SessionProvider - Session management (depends on Bridge)
+ * 5. ChatStreamProvider - Chat state + Streaming + Diffs + Tools (depends on Bridge + Session)
+ * 6. CommandPaletteProvider - 슬래시 커맨드 매니저 (depends on ChatStream + Session)
+ * 7. ClaudeSettingsProvider - Claude Code settings (~/.claude/settings.json) (depends on Bridge)
+ * 8. SettingsProvider - IDE settings (terminal, theme, etc.) (depends on Bridge)
+ * 9. ThemeProvider - Theme management (independent)
+ * 10. SessionLoader - Auto-load sessions when bridge connects
  */
 export function AppProviders({ children }: AppProvidersProps) {
   return (
     <BridgeProvider>
-      <Router>
+      <BrowserRouter>
         <ApiProvider>
           <SessionProvider>
             <ChatStreamProvider>
@@ -81,7 +103,7 @@ export function AppProviders({ children }: AppProvidersProps) {
             </ChatStreamProvider>
           </SessionProvider>
         </ApiProvider>
-      </Router>
+      </BrowserRouter>
     </BridgeProvider>
   );
 }

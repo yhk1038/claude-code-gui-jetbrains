@@ -74,6 +74,7 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
       workingDirectory: session.workingDirectory,
       setCurrentSessionId: session.setCurrentSessionId,
       setSessionState: session.setSessionState,
+      resetToNewSession: session.resetToNewSession,
     },
     adapter: {
       openNewTab: () => getAdapter().openNewTab(),
@@ -103,6 +104,7 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
       workingDirectory: session.workingDirectory,
       setCurrentSessionId: session.setCurrentSessionId,
       setSessionState: session.setSessionState,
+      resetToNewSession: session.resetToNewSession,
     },
     adapter: {
       openNewTab: () => getAdapter().openNewTab(),

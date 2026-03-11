@@ -44,7 +44,7 @@ import javax.swing.JPanel
 class ClaudeCodePanel(
     private val project: Project,
     private val sessionId: String = "default",
-    private val initialHash: String? = null
+    private val initialPath: String? = null
 ) : JPanel(BorderLayout()), Disposable {
 
     private val logger = Logger.getInstance(ClaudeCodePanel::class.java)
@@ -271,8 +271,9 @@ class ClaudeCodePanel(
             "?workingDir=${java.net.URLEncoder.encode(it, "UTF-8")}"
         } ?: ""
 
+        val pathSegment = initialPath ?: "/sessions/new"
         val envParam = if (workingDirParam.isNotEmpty()) "&env=jcef" else "?env=jcef"
-        val url = "http://localhost:$port$workingDirParam$envParam${initialHash ?: ""}"
+        val url = "http://localhost:$port$pathSegment$workingDirParam$envParam"
         System.err.println("[ClaudeCodePanel] Loading URL: $url")
         logger.info("Loading WebView from Node.js backend: $url")
 
@@ -401,7 +402,7 @@ class ClaudeCodePanel(
 
             override suspend fun openSettings() {
                 ApplicationManager.getApplication().invokeLater {
-                    OpenClaudeCodeAction.openSession(project, UUID.randomUUID().toString(), "#/settings/general")
+                    OpenClaudeCodeAction.openSession(project, UUID.randomUUID().toString(), "/settings/general")
                     logger.info("Opened Claude Code settings in editor tab")
                 }
             }

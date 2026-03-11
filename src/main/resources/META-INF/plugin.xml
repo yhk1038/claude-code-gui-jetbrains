@@ -45,6 +45,14 @@
         <applicationService
             serviceImplementation="com.github.yhk1038.claudecodegui.settings.SettingsManager"/>
 
+        <!-- Project service for editor tab state persistence -->
+        <projectService
+            serviceImplementation="com.github.yhk1038.claudecodegui.services.EditorTabStateService"/>
+
+        <!-- Restore editor tabs on project open -->
+        <postStartupActivity
+            implementation="com.github.yhk1038.claudecodegui.startup.EditorTabRestoreActivity"/>
+
         <!-- WebView resource server -->
         <httpRequestHandler
             implementation="com.github.yhk1038.claudecodegui.toolwindow.WebViewRequestHandler"/>

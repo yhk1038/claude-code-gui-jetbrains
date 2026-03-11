@@ -34,7 +34,8 @@ export enum IconName {
  * 인라인 문자열 사용 금지 - 모든 경로는 이 enum으로 참조
  */
 export enum Route {
-  CHAT = 'chat',
+  NEW_SESSION = 'sessions/new',
+  SESSION = 'sessions/:current_session_id',
   SETTINGS = 'settings',
   SETTINGS_GENERAL = 'settings/general',
   SETTINGS_APPEARANCE = 'settings/appearance',
@@ -58,9 +59,14 @@ export interface RouteMeta {
  * 라우트별 통합 메타데이터
  */
 export const ROUTE_META: Record<Route, RouteMeta> = {
-  [Route.CHAT]: {
-    path: '/',
-    label: 'Chat',
+  [Route.NEW_SESSION]: {
+    path: '/sessions/new',
+    label: 'New Session',
+    icon: null
+  },
+  [Route.SESSION]: {
+    path: '/sessions/:current_session_id',
+    label: 'Session',
     icon: null
   },
   [Route.SWITCH_ACCOUNT]: {
@@ -141,10 +147,15 @@ export const ICON_COMPONENTS: Record<IconName, ComponentType<SVGProps<SVGSVGElem
 };
 
 /**
- * hash에서 Route enum 추출
+ * pathname에서 Route enum 추출
  */
-export function hashToRoute(hash: string): Route {
-  const path = hash.replace('#', '') || '/';
+export function pathToRoute(pathname: string): Route {
+  const path = pathname || '/sessions/new';
+
+  // 동적 세션 라우트: /sessions/{id} (단, /sessions/new 제외)
+  if (path.startsWith('/sessions/') && path !== '/sessions/new') {
+    return Route.SESSION;
+  }
 
   for (const [route, meta] of Object.entries(ROUTE_META)) {
     if (meta.path === path) {
@@ -152,15 +163,47 @@ export function hashToRoute(hash: string): Route {
     }
   }
 
-  // 기본값: CHAT
-  return Route.CHAT;
+  return Route.NEW_SESSION;
 }
 
 /**
- * Route enum에서 hash 생성
+ * pathname에서 세션 ID 추출 (동적 라우트 전용)
+ * /sessions/new → null, /sessions/{id} → id
  */
-export function routeToHash(route: Route): string {
-  return `#${ROUTE_META[route].path}`;
+export function parseSessionIdFromPath(pathname: string): string | null {
+  if (pathname.startsWith('/sessions/') && pathname !== '/sessions/new') {
+    return pathname.slice('/sessions/'.length) || null;
+  }
+  return null;
+}
+
+/**
+ * 세션 ID로 path 생성
+ */
+export function sessionToPath(sessionId: string): string {
+  return `/sessions/${sessionId}`;
+}
+
+/**
+ * Route enum에서 path 생성 (정적 라우트 전용)
+ * SESSION 라우트에는 sessionToPath()를 사용할 것
+ */
+export function routeToPath(route: Route): string {
+  return ROUTE_META[route].path;
+}
+
+/**
+ * 현재 URL의 workingDir 쿼리 파라미터를 보존하여 경로 생성
+ * 루트 경로(/)는 프로젝트 선택 페이지이므로 workingDir를 포함하지 않음
+ */
+export function withWorkingDir(path: string, workingDir?: string | null): string {
+  if (path === '/') return path;
+
+  const dir = workingDir ?? new URLSearchParams(window.location.search).get('workingDir');
+  if (!dir) return path;
+
+  const sep = path.includes('?') ? '&' : '?';
+  return `${path}${sep}workingDir=${encodeURIComponent(dir)}`;
 }
 
 /**

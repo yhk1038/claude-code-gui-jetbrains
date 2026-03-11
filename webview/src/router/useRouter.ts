@@ -1,30 +1,43 @@
-import { useContext } from 'react';
-import { RouterContext } from './Router';
-import { Route, isSettingsRoute } from './routes';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { Route, pathToRoute, routeToPath, isSettingsRoute, sessionToPath, withWorkingDir } from './routes';
 
 export interface UseRouterReturn {
   route: Route;
   params: Record<string, string>;
   navigate: (route: Route, params?: Record<string, string>) => void;
+  navigateToSession: (sessionId: string) => void;
   goBack: () => void;
   isSettings: boolean;
 }
 
 /**
- * 라우터 훅 - RouterContext에서 라우팅 상태와 함수 제공
+ * 라우터 훅 - react-router의 useNavigate, useLocation, useParams를 감싸는 래퍼
  */
 export function useRouter(): UseRouterReturn {
-  const context = useContext(RouterContext);
+  const nav = useNavigate();
+  const location = useLocation();
+  const routeParams = useParams();
+  const route = pathToRoute(location.pathname);
 
-  if (!context) {
-    throw new Error('useRouter must be used within a RouterProvider');
-  }
+  const navigate = (targetRoute: Route, _params?: Record<string, string>) => {
+    const resolved = targetRoute === Route.SETTINGS ? Route.SETTINGS_GENERAL : targetRoute;
+    nav(withWorkingDir(routeToPath(resolved)));
+  };
+
+  const navigateToSession = (sessionId: string) => {
+    nav(withWorkingDir(sessionToPath(sessionId)));
+  };
+
+  const goBack = () => {
+    nav(-1);
+  };
 
   return {
-    route: context.route,
-    params: context.params,
-    navigate: context.navigate,
-    goBack: context.goBack,
-    isSettings: isSettingsRoute(context.route),
+    route,
+    params: routeParams as Record<string, string>,
+    navigate,
+    navigateToSession,
+    goBack,
+    isSettings: isSettingsRoute(route),
   };
 }

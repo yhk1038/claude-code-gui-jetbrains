@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 class ClaudeCodeVirtualFile(
     val sessionId: String,
-    val initialHash: String? = null
+    val initialPath: String? = null
 ) : LightVirtualFile("Claude Code", ClaudeCodeFileType, "") {
 
     // 동적으로 변경 가능한 표시 이름
@@ -21,10 +21,10 @@ class ClaudeCodeVirtualFile(
             WeakHashMap<Project, MutableMap<String, ClaudeCodeVirtualFile>>()
         )
 
-        fun getOrCreate(project: Project, sessionId: String, initialHash: String? = null): ClaudeCodeVirtualFile {
+        fun getOrCreate(project: Project, sessionId: String, initialPath: String? = null): ClaudeCodeVirtualFile {
             synchronized(openSessions) {
                 val projectSessions = openSessions.getOrPut(project) { ConcurrentHashMap() }
-                return projectSessions.getOrPut(sessionId) { ClaudeCodeVirtualFile(sessionId, initialHash) }
+                return projectSessions.getOrPut(sessionId) { ClaudeCodeVirtualFile(sessionId, initialPath) }
             }
         }
 
