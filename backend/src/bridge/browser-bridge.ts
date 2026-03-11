@@ -1,4 +1,4 @@
-import { exec } from 'child_process';
+import { execFile, spawn } from 'child_process';
 import type { Bridge } from './bridge-interface';
 import { readSettingsFile } from '../core/features/settings';
 
@@ -10,21 +10,20 @@ import { readSettingsFile } from '../core/features/settings';
 export class BrowserBridge implements Bridge {
   async openFile(path: string): Promise<void> {
     return new Promise<void>((resolve) => {
-      let command: string;
-      if (process.platform === 'darwin') {
-        command = `open "${path}"`;
-      } else if (process.platform === 'win32') {
-        command = `start "" "${path}"`;
-      } else {
-        command = `xdg-open "${path}"`;
-      }
-
-      exec(command, (err) => {
+      const cb = (err: Error | null) => {
         if (err) {
           console.error('[node-backend]', 'Failed to open file:', err.message);
         }
         resolve();
-      });
+      };
+
+      if (process.platform === 'darwin') {
+        execFile('open', [path], cb);
+      } else if (process.platform === 'win32') {
+        execFile('cmd', ['/c', 'start', '', path], cb);
+      } else {
+        execFile('xdg-open', [path], cb);
+      }
     });
   }
 
@@ -50,21 +49,20 @@ export class BrowserBridge implements Bridge {
 
   async openUrl(url: string): Promise<void> {
     return new Promise<void>((resolve) => {
-      let command: string;
-      if (process.platform === 'darwin') {
-        command = `open "${url}"`;
-      } else if (process.platform === 'win32') {
-        command = `start "" "${url}"`;
-      } else {
-        command = `xdg-open "${url}"`;
-      }
-
-      exec(command, (err) => {
+      const cb = (err: Error | null) => {
         if (err) {
           console.error('[node-backend]', 'Failed to open URL:', err.message);
         }
         resolve();
-      });
+      };
+
+      if (process.platform === 'darwin') {
+        execFile('open', [url], cb);
+      } else if (process.platform === 'win32') {
+        execFile('cmd', ['/c', 'start', '', url], cb);
+      } else {
+        execFile('xdg-open', [url], cb);
+      }
     });
   }
 
@@ -117,7 +115,9 @@ export class BrowserBridge implements Bridge {
         }
       }
 
-      exec(`osascript -e '${script.replace(/'/g, "'\\''")}'`, (err, stdout) => {
+      // osascript -e requires shell for proper AppleScript escaping
+      // but the script content is fully controlled (no user input in the script itself)
+      execFile('osascript', ['-e', script], (err, stdout) => {
         if (err) {
           // 사용자가 취소하면 에러가 발생 — 빈 배열 반환
           console.error('[node-backend]', 'pickFiles cancelled or failed:', err.message);
@@ -157,7 +157,8 @@ if ($dialog.ShowDialog() -eq 'OK') {
 }`;
       }
 
-      exec(`powershell -NoProfile -Command "${script.replace(/"/g, '\\"')}"`, (err, stdout) => {
+      // Use -Command with script passed as argument (no shell interpolation)
+      execFile('powershell', ['-NoProfile', '-Command', script], (err, stdout) => {
         if (err) {
           console.error('[node-backend]', 'pickFiles cancelled or failed:', err.message);
           resolve({ paths: [] });
@@ -185,7 +186,8 @@ if ($dialog.ShowDialog() -eq 'OK') {
         args.push('--separator=\\n');
       }
 
-      exec(`zenity ${args.join(' ')}`, (err, stdout) => {
+      // Use execFile with array args instead of exec with string interpolation
+      execFile('zenity', args, (err, stdout) => {
         if (err) {
           // 사용자 취소 시 exit code 1
           console.error('[node-backend]', 'pickFiles cancelled or failed:', err.message);
@@ -201,21 +203,20 @@ if ($dialog.ShowDialog() -eq 'OK') {
   async updatePlugin(): Promise<void> {
     return new Promise<void>((resolve) => {
       const url = 'https://plugins.jetbrains.com/plugin/30313-claude-code-with-gui';
-      let command: string;
-      if (process.platform === 'darwin') {
-        command = `open "${url}"`;
-      } else if (process.platform === 'win32') {
-        command = `start "" "${url}"`;
-      } else {
-        command = `xdg-open "${url}"`;
-      }
-
-      exec(command, (err) => {
+      const cb = (err: Error | null) => {
         if (err) {
           console.error('[node-backend]', 'Failed to open plugin marketplace URL:', err.message);
         }
         resolve();
-      });
+      };
+
+      if (process.platform === 'darwin') {
+        execFile('open', [url], cb);
+      } else if (process.platform === 'win32') {
+        execFile('cmd', ['/c', 'start', '', url], cb);
+      } else {
+        execFile('xdg-open', [url], cb);
+      }
     });
   }
 
@@ -228,59 +229,77 @@ if ($dialog.ShowDialog() -eq 'OK') {
     const terminalApp = settings['terminalApp'] as string | null;
 
     const claudePath = await new Promise<string>((resolve) => {
-      const cmd = process.platform === 'win32' ? 'where claude' : 'which claude';
-      exec(cmd, (err, stdout) => {
-        resolve(err ? 'claude' : stdout.trim().split('\n')[0]);
-      });
+      if (process.platform === 'win32') {
+        execFile('where', ['claude'], (err, stdout) => {
+          resolve(err ? 'claude' : stdout.trim().split('\n')[0]);
+        });
+      } else {
+        execFile('which', ['claude'], (err, stdout) => {
+          resolve(err ? 'claude' : stdout.trim().split('\n')[0]);
+        });
+      }
     });
 
     if (process.platform === 'darwin') {
       const app = terminalApp || 'Terminal';
-      const escapedDir = workingDir.replace(/"/g, '\\"');
+      // Escape both double quotes and backslashes for AppleScript string embedding
+      const escapedDir = workingDir.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      const escapedClaudePath = claudePath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
       const isITerm = app === 'iTerm' || app === 'iTerm2' || app.toLowerCase().includes('iterm');
       const script = isITerm
         ? `tell application "${app}"
              activate
              set newWindow to (create window with default profile)
              tell current session of newWindow
-               write text "cd \\"${escapedDir}\\"; ${claudePath}"
+               write text "cd \\"${escapedDir}\\" && \\"${escapedClaudePath}\\""
              end tell
            end tell`
         : `tell application "${app}"
              activate
-             do script "cd \\"${escapedDir}\\"; ${claudePath}"
+             do script "cd \\"${escapedDir}\\" && \\"${escapedClaudePath}\\""
            end tell`;
 
-      exec(`osascript -e '${script.replace(/'/g, "'\\''")}'`, (err) => {
+      // Pass script as argument to osascript (no shell interpolation)
+      execFile('osascript', ['-e', script], (err) => {
         if (err) {
           console.error('[node-backend]', 'Failed to open terminal:', err.message);
         }
       });
     } else if (process.platform === 'win32') {
-      let command: string;
       const app = terminalApp ?? '';
 
       if (!app) {
-        command = `start cmd /k "cd /d \\"${workingDir}\\" && claude"`;
+        // Use spawn with explicit args — no shell string interpolation
+        spawn('cmd', ['/c', 'start', 'cmd', '/k', `cd /d "${workingDir}" && claude`], {
+          stdio: 'ignore',
+          detached: true,
+        }).unref();
       } else if (app === 'Windows Terminal' || app === 'wt') {
-        command = `wt -d "${workingDir}" cmd /k claude`;
+        spawn('wt', ['-d', workingDir, 'cmd', '/k', 'claude'], {
+          stdio: 'ignore',
+          detached: true,
+        }).unref();
       } else if (app === 'PowerShell' || app === 'powershell') {
-        command = `start powershell -NoExit -Command "cd '${workingDir}'; claude"`;
+        spawn('powershell', ['-NoExit', '-Command', `Set-Location '${workingDir}'; claude`], {
+          stdio: 'ignore',
+          detached: true,
+        }).unref();
       } else if (app === 'Git Bash' || app === 'bash') {
         const gitBashPath = `${process.env['PROGRAMFILES'] ?? 'C:\\Program Files'}\\Git\\bin\\bash.exe`;
-        command = `start "" "${gitBashPath}" --cd="${workingDir}" -c "claude; exec bash"`;
+        spawn(gitBashPath, [`--cd=${workingDir}`, '-c', 'claude; exec bash'], {
+          stdio: 'ignore',
+          detached: true,
+        }).unref();
       } else {
-        command = `start "" "${app}" "${workingDir}"`;
+        spawn(app, [workingDir], {
+          stdio: 'ignore',
+          detached: true,
+        }).unref();
       }
-
-      exec(command, (err) => {
-        if (err) {
-          console.error('[node-backend]', 'Failed to open terminal:', err.message);
-        }
-      });
     } else {
       const terminal = terminalApp || 'x-terminal-emulator';
-      exec(`${terminal} -e "cd '${workingDir}'; ${claudePath}"`, (err) => {
+      // Use execFile with array arguments to prevent shell injection
+      execFile(terminal, ['-e', `cd '${workingDir}' && '${claudePath}'`], (err) => {
         if (err) {
           console.error('[node-backend]', 'Failed to open terminal:', err.message);
         }

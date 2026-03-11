@@ -1,6 +1,6 @@
-import { spawn, execSync } from 'child_process';
+import { spawn, execSync, execFileSync } from 'child_process';
 import { existsSync } from 'fs';
-import { join, delimiter } from 'path';
+import { join, delimiter, resolve } from 'path';
 import type { ConnectionManager } from '../ws/connection-manager';
 import { readSettingsFile } from './features/settings';
 
@@ -30,8 +30,14 @@ function buildAugmentedPath(): string {
   // Add nvm current version bin if NVM_DIR is set
   const nvmDir = process.env.NVM_DIR ?? join(home, '.nvm');
   try {
-    const nvmDefaultBin = execSync(
-      `bash -c 'source "${nvmDir}/nvm.sh" --no-use 2>/dev/null && nvm which current 2>/dev/null'`,
+    // Validate nvmDir is a real path (prevent injection via NVM_DIR)
+    const resolvedNvmDir = resolve(nvmDir);
+    const nvmScript = join(resolvedNvmDir, 'nvm.sh');
+    if (!existsSync(nvmScript)) throw new Error('nvm.sh not found');
+
+    const nvmDefaultBin = execFileSync(
+      'bash',
+      ['-c', `source "${nvmScript}" --no-use 2>/dev/null && nvm which current 2>/dev/null`],
       { encoding: 'utf-8', timeout: 3000 },
     ).trim();
     if (nvmDefaultBin) {

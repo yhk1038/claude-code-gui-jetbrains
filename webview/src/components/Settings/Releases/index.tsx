@@ -1,9 +1,58 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ROUTE_META, Route } from '@/router/routes';
 import { ArrowPathIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { usePluginUpdates } from '@/hooks/usePluginUpdates';
 import { useVersionInfo } from '@/hooks/useVersionInfo';
 import { useBridgeContext } from '@/contexts/BridgeContext';
+
+/**
+ * Sanitize HTML by stripping all tags except a safe allowlist.
+ * This prevents XSS from untrusted release notes.
+ */
+const ALLOWED_TAGS = new Set([
+  'p', 'br', 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li',
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'code', 'pre', 'blockquote',
+  'hr', 'span', 'div', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
+  'dl', 'dt', 'dd', 'sup', 'sub', 'del', 'ins',
+]);
+const ALLOWED_ATTRS = new Set(['href', 'title', 'class', 'id']);
+
+function sanitizeReleaseHtml(html: string): string {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const walk = (node: Node): void => {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const el = node as Element;
+      if (!ALLOWED_TAGS.has(el.tagName.toLowerCase())) {
+        // Replace disallowed element with its children
+        while (el.firstChild) {
+          el.parentNode?.insertBefore(el.firstChild, el);
+        }
+        el.parentNode?.removeChild(el);
+        return;
+      }
+      // Remove disallowed attributes
+      for (const attr of Array.from(el.attributes)) {
+        if (!ALLOWED_ATTRS.has(attr.name.toLowerCase())) {
+          el.removeAttribute(attr.name);
+        }
+      }
+      // Sanitize href to prevent javascript: protocol
+      if (el.hasAttribute('href')) {
+        const href = el.getAttribute('href') ?? '';
+        if (!/^https?:\/\//i.test(href) && !href.startsWith('#') && !href.startsWith('/')) {
+          el.removeAttribute('href');
+        }
+      }
+    }
+    // Process children in reverse to handle mutations during walk
+    const children = Array.from(node.childNodes);
+    for (const child of children) {
+      walk(child);
+    }
+  };
+  walk(doc.body);
+  return doc.body.innerHTML;
+}
 
 function formatDate(cdate: string | number): string {
   const ms = typeof cdate === 'string' ? parseInt(cdate, 10) : cdate;
@@ -23,7 +72,11 @@ function formatDate(cdate: string | number): string {
 
 function extractTitle(notes: string): string | null {
   const match = notes.match(/<h[1-3][^>]*>(.*?)<\/h[1-3]>/i);
-  return match ? match[1] : null;
+  if (!match) return null;
+  // Strip any HTML tags from the title text to prevent XSS
+  const temp = document.createElement('div');
+  temp.innerHTML = match[1];
+  return temp.textContent ?? null;
 }
 
 function stripTitle(notes: string): string {
@@ -58,7 +111,8 @@ function ReleaseAccordion(props: ReleaseAccordionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   const title = extractTitle(update.notes);
-  const body = stripTitle(update.notes);
+  const rawBody = stripTitle(update.notes);
+  const body = useMemo(() => rawBody ? sanitizeReleaseHtml(rawBody) : '', [rawBody]);
 
   return (
     <div className="bg-zinc-900 rounded-lg border border-zinc-800">

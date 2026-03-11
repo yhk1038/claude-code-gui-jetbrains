@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import { startWebSocketServer } from './ws/ws-server';
 import { BrowserBridge } from './bridge/browser-bridge';
 import { JetBrainsBridge } from './bridge/jetbrains-bridge';
@@ -28,12 +28,14 @@ import { isJetBrainsMode, serverPort, webviewDir } from './config/environment';
 
 function killProcessOnPort(port: number): void {
   try {
-    const pids = execSync(`lsof -ti :${port}`, { encoding: 'utf8' }).trim();
+    const pids = execFileSync('lsof', ['-ti', `:${port}`], { encoding: 'utf8' }).trim();
     if (pids) {
-      pids.split('\n').forEach((pid) => {
+      pids.split('\n').forEach((pidStr) => {
+        const pid = parseInt(pidStr.trim(), 10);
+        if (!Number.isFinite(pid) || pid <= 0) return;
         try {
-          execSync(`kill -9 ${pid.trim()}`);
-          console.error('[node-backend]', `Killed process ${pid.trim()} occupying port ${port}`);
+          process.kill(pid, 'SIGKILL');
+          console.error('[node-backend]', `Killed process ${pid} occupying port ${port}`);
         } catch {
           // 이미 종료된 프로세스면 무시
         }

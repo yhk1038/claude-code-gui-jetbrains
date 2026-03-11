@@ -1,10 +1,17 @@
 import { createServer, type Server, type IncomingMessage, type ServerResponse } from 'http';
 import { readFile } from 'fs/promises';
-import { join, extname } from 'path';
+import { join, extname, resolve } from 'path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { ConnectionManager } from './connection-manager';
 import type { Bridge } from '../bridge/bridge-interface';
 import type { IPCMessage } from '../core/types';
+
+const ALLOWED_WS_ORIGINS = new Set([
+  'http://localhost',
+  'http://127.0.0.1',
+  'https://localhost',
+  'https://127.0.0.1',
+]);
 
 export type MessageHandler = (
   connectionId: string,
@@ -41,13 +48,25 @@ async function serveStaticFile(
   // Strip querystring and hash before resolving the file path
   const cleanUrl = (urlPath ?? '/').split('?')[0].split('#')[0];
   const normalized = cleanUrl === '/' || !cleanUrl ? 'index.html' : cleanUrl.replace(/^\//, '');
-  const filePath = join(webviewDir, normalized);
+  const filePath = resolve(webviewDir, normalized);
+
+  // Prevent path traversal — resolved path must stay within webviewDir
+  const resolvedWebviewDir = resolve(webviewDir);
+  if (!filePath.startsWith(resolvedWebviewDir + '/') && filePath !== resolvedWebviewDir) {
+    res.writeHead(403);
+    res.end('Forbidden');
+    return;
+  }
 
   try {
     const data = await readFile(filePath);
     const ext = extname(filePath).toLowerCase();
     const contentType = MIME_TYPES[ext] ?? 'application/octet-stream';
-    res.writeHead(200, { 'Content-Type': contentType });
+    res.writeHead(200, {
+      'Content-Type': contentType,
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+    });
     res.end(data);
   } catch {
     // Only fall back to index.html for SPA navigation routes (no file extension)
@@ -61,7 +80,11 @@ async function serveStaticFile(
     // SPA route fallback
     try {
       const indexData = await readFile(join(webviewDir, 'index.html'));
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'DENY',
+      });
       res.end(indexData);
     } catch {
       res.writeHead(404);
@@ -120,15 +143,36 @@ export function startWebSocketServer(
       },
     );
 
-    // /ws 경로만 WebSocket으로 업그레이드
+    // /ws 경로만 WebSocket으로 업그레이드 (Origin 검증 포함)
     httpServer.on('upgrade', (request, socket, head) => {
-      if (request.url === '/ws') {
-        wss.handleUpgrade(request, socket, head, (ws: WebSocket) => {
-          wss.emit('connection', ws, request);
-        });
-      } else {
+      if (request.url !== '/ws') {
         socket.destroy();
+        return;
       }
+
+      // Origin 검증 — localhost만 허용
+      const origin = request.headers.origin;
+      if (origin) {
+        try {
+          const url = new URL(origin);
+          const normalized = `${url.protocol}//${url.hostname}`;
+          if (!ALLOWED_WS_ORIGINS.has(normalized)) {
+            console.error('[node-backend]', `WebSocket connection rejected: disallowed origin "${origin}"`);
+            socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
+            socket.destroy();
+            return;
+          }
+        } catch {
+          console.error('[node-backend]', `WebSocket connection rejected: malformed origin "${origin}"`);
+          socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
+          socket.destroy();
+          return;
+        }
+      }
+
+      wss.handleUpgrade(request, socket, head, (ws: WebSocket) => {
+        wss.emit('connection', ws, request);
+      });
     });
 
     httpServer.on('error', (err: NodeJS.ErrnoException) => {

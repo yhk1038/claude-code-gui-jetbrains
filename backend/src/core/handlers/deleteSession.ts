@@ -1,5 +1,5 @@
 import { unlink } from 'fs/promises';
-import { join } from 'path';
+import { join, resolve, basename } from 'path';
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
@@ -23,10 +23,31 @@ export async function deleteSessionHandler(
   }
 
   try {
+    // Validate sessionId to prevent path traversal (must be a simple filename component)
+    if (sessionId !== basename(sessionId) || sessionId.includes('..')) {
+      connections.sendTo(connectionId, 'ACK', {
+        requestId: message.requestId,
+        status: 'error',
+        error: 'Invalid sessionId',
+      });
+      return;
+    }
+
     const sessionsDir = await getProjectSessionsPath(
       (message.payload?.workingDir as string) || process.cwd(),
     );
-    const sessionFile = join(sessionsDir, `${sessionId}.jsonl`);
+    const sessionFile = resolve(sessionsDir, `${sessionId}.jsonl`);
+
+    // Ensure resolved path stays within sessionsDir
+    if (!sessionFile.startsWith(resolve(sessionsDir) + '/')) {
+      connections.sendTo(connectionId, 'ACK', {
+        requestId: message.requestId,
+        status: 'error',
+        error: 'Invalid sessionId',
+      });
+      return;
+    }
+
     await unlink(sessionFile);
 
     connections.broadcastToAll('SESSIONS_UPDATED', {
