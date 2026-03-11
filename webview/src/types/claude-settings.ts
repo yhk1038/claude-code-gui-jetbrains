@@ -14,6 +14,7 @@ export interface ClaudeSettingsState {
   language: string | null; // Claude's preferred response language (e.g., "korean", "japanese")
   effortLevel: string | null; // CLI effort level: 'low' | 'medium' | 'high' | null (auto)
   alwaysThinkingEnabled: boolean; // extended thinking always on
+  preferFastMode: boolean; // fast output mode (Opus 4.6 only)
   [key: string]: unknown; // extensible for future settings
 }
 
@@ -22,4 +23,5 @@ export const DEFAULT_CLAUDE_SETTINGS: ClaudeSettingsState = {
   language: null,
   effortLevel: null,
   alwaysThinkingEnabled: true,
+  preferFastMode: false,
 };

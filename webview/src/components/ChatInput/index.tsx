@@ -23,6 +23,7 @@ import { AttachMenu } from './AttachMenu';
 import { ModelSwitchOverlay, SWITCH_MODEL_EVENT } from '@/components/ModelSwitchOverlay';
 import { EFFORT_CYCLE_EVENT } from '@/commandPalette/sections/model/EffortItem';
 import { THINKING_TOGGLE_EVENT } from '@/commandPalette/sections/model/ThinkingItem';
+import { FAST_MODE_TOGGLE_EVENT } from '@/commandPalette/sections/model/ToggleFastModeItem';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 import { EffortLevel, nextEffortLevel, parseEffortLevel } from '@/types/effort';
 
@@ -101,6 +102,16 @@ export function ChatInput() {
     window.addEventListener(THINKING_TOGGLE_EVENT, handler);
     return () => window.removeEventListener(THINKING_TOGGLE_EVENT, handler);
   }, [claudeSettings.alwaysThinkingEnabled, updateClaudeSetting]);
+
+  // 커맨드 팔레트 "Toggle fast mode" 항목 연동: 라벨 클릭 시 토글
+  useEffect(() => {
+    const handler = () => {
+      const current = claudeSettings.preferFastMode ?? false;
+      void updateClaudeSetting('preferFastMode', !current);
+    };
+    window.addEventListener(FAST_MODE_TOGGLE_EVENT, handler);
+    return () => window.removeEventListener(FAST_MODE_TOGGLE_EVENT, handler);
+  }, [claudeSettings.preferFastMode, updateClaudeSetting]);
 
   const disabled = sessionState === SessionState.Error || !workingDirectory;
 
