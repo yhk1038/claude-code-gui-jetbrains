@@ -4,6 +4,7 @@ import { BrowserBridge } from './bridge/browser-bridge';
 import { JetBrainsBridge } from './bridge/jetbrains-bridge';
 import { handleMessage } from './core/handlers/index';
 import { watchClaudeSettingsFile, stopWatchingClaudeSettingsFile } from './core/features/claude-settings';
+import { isJetBrainsMode, serverPort, webviewDir } from './config/environment';
 
 /**
  * JetBrains 모드: JETBRAINS_MODE=true 환경변수로 감지
@@ -24,17 +25,6 @@ import { watchClaudeSettingsFile, stopWatchingClaudeSettingsFile } from './core/
  * 4. Kotlin이 http://localhost:{port} 로 JCEF 로드 → WebSocketConnector가 WS에 연결
  * → 레이스 컨디션 없음
  */
-
-const isJetBrainsMode = process.env.JETBRAINS_MODE === 'true';
-
-// JetBrains, 브라우저 모두 동일한 고정 포트 사용
-// PORT 환경변수로 오버라이드 가능
-const DEFAULT_PORT = 19836;
-const requestedPort = parseInt(process.env.PORT ?? String(DEFAULT_PORT), 10);
-
-// JetBrains 모드: Node.js가 WebView 정적 파일도 제공
-// Kotlin이 WEBVIEW_DIR 환경변수를 통해 추출된 WebView 파일 경로를 전달
-const webviewDir = isJetBrainsMode ? (process.env.WEBVIEW_DIR ?? undefined) : undefined;
 
 function killProcessOnPort(port: number): void {
   try {
@@ -58,17 +48,17 @@ async function startServerWithRetry(
   bridge: InstanceType<typeof BrowserBridge> | InstanceType<typeof JetBrainsBridge>,
 ): Promise<Awaited<ReturnType<typeof startWebSocketServer>>> {
   try {
-    return await startWebSocketServer(requestedPort, bridge, handleMessage, webviewDir);
+    return await startWebSocketServer(serverPort, bridge, handleMessage, webviewDir);
   } catch (err: unknown) {
     const nodeErr = err as NodeJS.ErrnoException;
     if (nodeErr.code !== 'EADDRINUSE') throw err;
 
-    console.error('[node-backend]', `Port ${requestedPort} already in use. Killing existing process and retrying...`);
-    killProcessOnPort(requestedPort);
+    console.error('[node-backend]', `Port ${serverPort} already in use. Killing existing process and retrying...`);
+    killProcessOnPort(serverPort);
 
     await new Promise((resolve) => setTimeout(resolve, 200));
 
-    return await startWebSocketServer(requestedPort, bridge, handleMessage, webviewDir);
+    return await startWebSocketServer(serverPort, bridge, handleMessage, webviewDir);
   }
 }
 

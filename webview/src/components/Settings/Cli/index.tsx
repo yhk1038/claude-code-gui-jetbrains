@@ -5,7 +5,7 @@ import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 import { useBridge } from '@/hooks/useBridge';
 import { SettingKey } from '@/types/settings';
 import { ROUTE_META, Route } from '@/router/routes';
-import { getAdapter, IdeAdapterType } from '@/adapters';
+import { isJetBrains } from '@/config/environment';
 import { CLAUDE_MODELS } from '@/types/models';
 
 interface TerminalInfo {
@@ -26,7 +26,7 @@ export function CliSettings() {
   const { settings, updateSetting } = useSettings();
   const meta = ROUTE_META[Route.SETTINGS_CLI];
   const { send } = useBridge();
-  const isJetBrains = getAdapter().type === IdeAdapterType.JETBRAINS;
+  const isJetBrainsEnv = isJetBrains();
   const { settings: claudeSettings, updateSetting: updateClaudeSetting } = useClaudeSettings();
 
   const [terminals, setTerminals] = useState<TerminalInfo[]>([]);
@@ -77,12 +77,12 @@ export function CliSettings() {
         <SettingRow
           label="Terminal App"
           description={
-            isJetBrains
+            isJetBrainsEnv
               ? 'JetBrains IDE built-in terminal is always used.'
               : "Terminal application used when running 'Open Claude in Terminal'"
           }
         >
-          {isJetBrains ? (
+          {isJetBrainsEnv ? (
             <span className="text-sm text-zinc-500">JetBrains built-in terminal</span>
           ) : loading ? (
             <span className="text-sm text-zinc-500">Detecting terminals...</span>

@@ -4,10 +4,20 @@ import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { getAugmentedPath } from '../claude-process';
 
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { resolve, dirname } from 'path';
+import { isDev } from '../../config/environment';
+
 declare const __PLUGIN_VERSION__: string;
 
 function getPluginVersion(): string {
-  return typeof __PLUGIN_VERSION__ !== 'undefined' ? __PLUGIN_VERSION__ : 'unknown';
+  if (isDev()) {
+    const currentDir = dirname(fileURLToPath(import.meta.url));
+    const pkgPath = resolve(currentDir, '../../..', 'package.json');
+    return JSON.parse(readFileSync(pkgPath, 'utf-8')).version;
+  }
+  return __PLUGIN_VERSION__;
 }
 
 function getCliVersion(): Promise<string | null> {

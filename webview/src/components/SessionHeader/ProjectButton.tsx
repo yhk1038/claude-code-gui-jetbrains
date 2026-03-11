@@ -1,13 +1,12 @@
 import { FolderIcon } from '@heroicons/react/24/outline';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { SessionState } from '@/types';
-import { detectEnvironment, IdeAdapterType } from '@/adapters';
+import { isBrowser } from '@/config/environment';
 
 export function ProjectButton() {
   const { sessionState, setCurrentSessionId, setSessionState, setWorkingDirectory } = useSessionContext();
 
-  const isBrowser = detectEnvironment() === IdeAdapterType.BROWSER;
-  if (!isBrowser) return null;
+  if (!isBrowser()) return null;
 
   const isSessionActive =
     sessionState === SessionState.Streaming || sessionState === SessionState.WaitingPermission;

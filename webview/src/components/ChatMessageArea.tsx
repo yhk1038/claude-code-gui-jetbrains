@@ -12,6 +12,7 @@ import { LoadedMessageType, MessageRole } from '../dto/common';
 import './streaming.css';
 import {StreamingIndicator} from "./StreamingIndicator/index.tsx";
 import { EmptyState } from './EmptyState';
+import { isJetBrains } from '@/config/environment';
 
 /**
  * Convert progress entries into SubAgentMessage array.
@@ -157,7 +158,7 @@ export function ChatMessageArea(props: Props) {
   if (!workingDirectory) {
     // JetBrains에서는 URL에 ?workingDir= 파라미터가 포함되므로 이 분기에 도달하지 않음
     // kotlinBridge가 존재하면 로딩 상태 표시 (방어적 처리)
-    if (window.kotlinBridge) {
+    if (isJetBrains()) {
       return (
         <div className="h-full flex items-center justify-center">
           <p className="text-zinc-500 text-sm">Loading working directory...</p>
