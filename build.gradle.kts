@@ -106,13 +106,11 @@ intellijPlatform {
             untilBuild = "261.*"
         }
         changeNotes = """
-            <h3>0.10.2 - Security Fixes & Standalone Browser Support</h3>
+            <h3>0.10.3 - Command Palette & Session URL Routing</h3>
             <ul>
-                <li>Added standalone browser execution support (run without JetBrains IDE)</li>
-                <li>Added ToolSearch tool renderer</li>
-                <li>Fixed security vulnerabilities (path traversal, command injection, XSS, WebSocket origin validation)</li>
-                <li>Fixed 10 functional regressions caused by security patches</li>
-                <li>Improved context window percentage calculation and compact button disable state</li>
+                <li>Added Effort, Thinking, and Toggle Fast Mode command palette items</li>
+                <li>Added react-router-dom based session URL routing with workingDir parameter preservation</li>
+                <li>Fixed Toggle Fast Mode dynamic disabled state and isOpus detection</li>
             </ul>
         """.trimIndent()
     }
