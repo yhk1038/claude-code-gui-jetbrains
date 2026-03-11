@@ -2,6 +2,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
+const backendPort = process.env.BACKEND_PORT ?? '19836';
+
 export default defineConfig({
   plugins: [react()],
   base: './',
@@ -10,7 +12,7 @@ export default defineConfig({
     proxy: {
       // WebSocket 요청을 Node.js 백엔드로 프록시
       '/ws': {
-        target: 'ws://localhost:19836',
+        target: `ws://localhost:${backendPort}`,
         ws: true,
       },
     },
