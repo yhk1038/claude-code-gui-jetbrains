@@ -1,14 +1,10 @@
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {OptionButton, OptionItem} from './OptionButton';
 import { useAcceptPlanKeyboard } from './useAcceptPlanKeyboard';
-
-interface Props {
-  onAutoAccept: () => void;
-  onManualApprove: () => void;
-  onKeepPlanning: () => void;
-  onFeedback: (text: string) => void;
-  onCancel: () => void;
-}
+import { useChatStreamContext } from '../../contexts/ChatStreamContext';
+import { useSessionContext } from '../../contexts/SessionContext';
+import { usePendingPlanApproval } from '../../hooks/usePendingPlanApproval';
+import { InputModeValues } from '../../types/chatInput';
 
 const options: OptionItem[] = [
   { key: '1', label: 'Yes, and auto-accept' },
@@ -16,8 +12,10 @@ const options: OptionItem[] = [
   { key: '3', label: 'No, keep planning' },
 ];
 
-export function AcceptPlanPanel(props: Props) {
-  const { onAutoAccept, onManualApprove, onKeepPlanning, onFeedback, onCancel } = props;
+export function AcceptPlanPanel() {
+  const { stop } = useChatStreamContext();
+  const { setInputMode } = useSessionContext();
+  const { pending: pendingPlan, approve: approvePlan, deny: denyPlan } = usePendingPlanApproval();
 
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [feedbackText, setFeedbackText] = useState('');
@@ -35,19 +33,34 @@ export function AcceptPlanPanel(props: Props) {
   }, [feedbackText, autoResize]);
 
   const handleOptionClick = useCallback((index: number) => {
+    if (!pendingPlan) return;
     setFocusedIndex(index);
-    if (index === 0) onAutoAccept();
-    else if (index === 1) onManualApprove();
-    else if (index === 2) onKeepPlanning();
-  }, [onAutoAccept, onManualApprove, onKeepPlanning]);
+    if (index === 0) {
+      approvePlan(pendingPlan.controlRequestId);
+      setInputMode(InputModeValues.AUTO_EDIT);
+    } else if (index === 1) {
+      approvePlan(pendingPlan.controlRequestId);
+      setInputMode(InputModeValues.ASK_BEFORE_EDIT);
+    } else if (index === 2) {
+      denyPlan(pendingPlan.controlRequestId);
+      stop();
+    }
+  }, [pendingPlan, approvePlan, denyPlan, setInputMode, stop]);
 
   const handleFeedbackSubmit = useCallback(() => {
+    if (!pendingPlan) return;
     const text = feedbackText.trim();
     if (text) {
-      onFeedback(text);
+      denyPlan(pendingPlan.controlRequestId, text);
       setFeedbackText('');
     }
-  }, [feedbackText, onFeedback]);
+  }, [feedbackText, pendingPlan, denyPlan]);
+
+  const onCancel = useCallback(() => {
+    if (!pendingPlan) return;
+    denyPlan(pendingPlan.controlRequestId);
+    stop();
+  }, [pendingPlan, denyPlan, stop]);
 
   const { handleInputKeyDown } = useAcceptPlanKeyboard({
     focusedIndex,
@@ -61,6 +74,7 @@ export function AcceptPlanPanel(props: Props) {
     if (focusedIndex === options.length) textareaRef.current?.focus();
   }, [focusedIndex]);
 
+  if (!pendingPlan) return null;
 
   return (
     <div className="max-w-[44rem] mx-auto px-4 pb-[20px] pt-2">
