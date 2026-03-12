@@ -10,10 +10,8 @@ export function AskUserQuestionRenderer(props: RendererProps) {
 
     const isStreaming = props.message?.isStreaming === true;
 
-    const hasValidQuestions =
-        Array.isArray(input?.questions) &&
-        input.questions.length > 0 &&
-        typeof input.questions[0].question === "string";
+    const questions = input?.questions ?? [];
+    const hasValidQuestions = questions.length > 0 && typeof questions[0].question === "string";
 
     const inProgress = !toolResult && (isStreaming || !hasValidQuestions);
 
@@ -28,16 +26,11 @@ export function AskUserQuestionRenderer(props: RendererProps) {
             {toolResult && (
                 <Container>
                     {hasValidQuestions && (
-                        <div className="px-3 pt-3 pb-1">
-                            <div className="text-white/40 text-[11px] uppercase tracking-wider mb-1">
-                                Question
-                            </div>
-                            {input!.questions!.map((q, idx) => (
-                                <div key={idx} className="text-white/60 text-[12px] mb-0.5">
-                                    {q.question}
-                                </div>
+                        <LabelValue label="ASK">
+                            {questions.map((q, idx) => (
+                                <div key={idx}>{q.question}</div>
                             ))}
-                        </div>
+                        </LabelValue>
                     )}
                     <LabelValue label="OUT" maxHeight="max-h-[60px]">
                         {output}
