@@ -106,13 +106,13 @@ intellijPlatform {
             untilBuild = "261.*"
         }
         changeNotes = """
-            <h3>0.10.7 - Documentation & Identity Update</h3>
+            <h3>0.11.0 - Remote Tunnel & Connection Resilience</h3>
             <ul>
-                <li>Clarified project originality: all source code is designed and written from scratch</li>
-                <li>Documented CLI wrapper architecture (same approach as official VS Code extension)</li>
-                <li>Added service stabilization commitment and bug report turnaround policy</li>
-                <li>Adopted English as official common language for global collaboration</li>
-                <li>Updated all 7 README translations (EN, KO, JA, ZH, ES, DE, FR)</li>
+                <li>Added remote tunnel support via cloudflared (auto-install, QR code, URL copy)</li>
+                <li>Added sleep prevention to keep machine awake while tunnel is active</li>
+                <li>Added tunnel button in session header with quick-access modal</li>
+                <li>Added connection lost banner with automatic internet/backend disconnect detection</li>
+                <li>Simplified sleep guard by using caffeinate (no admin privileges required on macOS)</li>
             </ul>
         """.trimIndent()
     }
