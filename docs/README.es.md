@@ -22,6 +22,8 @@ La misma interfaz gráfica de Claude Code que amas en Cursor y VS Code, ahora di
 > **Este plugin funciona como un wrapper que ejecuta el CLI de Claude Code.** Este es el mismo enfoque utilizado por la extensión oficial de Claude Code para VS Code.
 >
 > Actualmente estamos dedicando un gran esfuerzo a estabilizar el servicio. Si reporta un error, normalmente lo resolvemos en un promedio de 1 día. Sus comentarios y reportes de errores son muy apreciados.
+>
+> Este proyecto aspira a crecer junto con una comunidad global de desarrolladores. Adoptamos el **inglés como idioma común oficial** para maximizar las oportunidades de colaboración con la mayor cantidad posible de desarrolladores. Rechazamos cualquier intento de construir un ecosistema sesgado hacia el idioma de cualquier país en particular.
 
 - En JetBrains, Claude Code sigue siendo solo una terminal. Pero aún prefiero una experiencia nativa del IDE sobre la terminal.
 - Otros plugins de Claude Code GUI para JetBrains se han alejado demasiado de la interfaz original de Claude Code para VS Code.

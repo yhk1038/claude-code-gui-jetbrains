@@ -20,6 +20,8 @@ The same Claude Code GUI you love in Cursor and VS Code, now available in JetBra
 > **This plugin works as a wrapper that spawns the Claude Code CLI** — the same approach used by the official Claude Code for VS Code extension.
 >
 > We are currently putting significant effort into stabilizing the service. If you report a bug, we typically resolve it within 1 day on average. Your feedback and bug reports are greatly appreciated.
+>
+> This project aspires to grow alongside a global developer community. We adopt **English as the official common language** to maximize collaboration opportunities with as many developers as possible. We reject any attempt to build an ecosystem biased toward any particular national language.
 
 - In JetBrains, Claude Code is still only available as a terminal. But I still prefer an IDE-native experience over the terminal.
 - Other Claude Code GUI plugins for JetBrains have drifted too far from the original Claude Code for VS Code UI/UX.
