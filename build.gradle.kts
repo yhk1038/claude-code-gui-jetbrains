@@ -106,9 +106,16 @@ intellijPlatform {
             untilBuild = "261.*"
         }
         changeNotes = """
-            <h3>0.10.5 - Localization Fix</h3>
+            <h3>0.10.6 - Stability & Logging Improvements</h3>
             <ul>
-                <li>Fixed hardcoded Korean text in attachment dropdown, error messages, and question panels to English (#4)</li>
+                <li>Added unified backend/WebView logging system for easier debugging</li>
+                <li>Fixed infinite reset loop in StreamSafeErrorBoundary when renderKey changes after error</li>
+                <li>Fixed Array.isArray() guard for streaming array fields</li>
+                <li>Fixed session directory path mismatch on Windows</li>
+                <li>Fixed all HTTP requests returning 403 Forbidden on Windows</li>
+                <li>Fixed InputMode not resetting on session switch/clear</li>
+                <li>Unified Permission UI into shared ApprovalPanel component</li>
+                <li>Reorganized WebView components into pages-based structure</li>
             </ul>
         """.trimIndent()
     }
