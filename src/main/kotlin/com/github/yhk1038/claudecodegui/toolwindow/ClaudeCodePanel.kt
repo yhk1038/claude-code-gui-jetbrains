@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 import org.cef.browser.CefBrowser
 import org.cef.browser.CefFrame
 import org.cef.handler.CefDisplayHandlerAdapter
+import org.cef.handler.CefLifeSpanHandlerAdapter
 import org.cef.handler.CefLoadHandlerAdapter
 import java.awt.BorderLayout
 import java.util.UUID
@@ -167,6 +168,52 @@ class ClaudeCodePanel(
             WebViewKeyboardHandler(onOpenDevTools = { openDevTools() }),
             browser.cefBrowser
         )
+
+        // Life span handler: intercept window.open() popups and route them correctly
+        browser.jbCefClient.addLifeSpanHandler(object : CefLifeSpanHandlerAdapter() {
+            override fun onBeforePopup(
+                browser: CefBrowser?,
+                frame: CefFrame?,
+                targetUrl: String?,
+                targetFrameName: String?
+            ): Boolean {
+                if (targetUrl.isNullOrBlank()) return true
+
+                ApplicationManager.getApplication().invokeLater {
+                    try {
+                        val uri = java.net.URI(targetUrl)
+                        val host = uri.host ?: ""
+                        val isLocalhost = host == "localhost" || host == "127.0.0.1"
+
+                        if (!isLocalhost) {
+                            // External URL — open in OS browser
+                            logger.info("[ClaudeCodePanel] Popup blocked (external): $targetUrl -> BrowserUtil.browse")
+                            BrowserUtil.browse(targetUrl)
+                            return@invokeLater
+                        }
+
+                        val path = uri.path ?: "/"
+                        when {
+                            path == "/sessions/new" || path.startsWith("/sessions/new?") -> {
+                                logger.info("[ClaudeCodePanel] Popup blocked: $targetUrl -> new session tab")
+                                OpenClaudeCodeAction.openSession(project, UUID.randomUUID().toString())
+                            }
+                            path.startsWith("/settings/") -> {
+                                logger.info("[ClaudeCodePanel] Popup blocked: $targetUrl -> settings tab")
+                                OpenClaudeCodeAction.openSession(project, UUID.randomUUID().toString(), "/settings/general")
+                            }
+                            else -> {
+                                logger.info("[ClaudeCodePanel] Popup blocked: $targetUrl -> new tab with path $path")
+                                OpenClaudeCodeAction.openSession(project, UUID.randomUUID().toString(), path)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        logger.warn("[ClaudeCodePanel] Failed to handle popup URL: $targetUrl", e)
+                    }
+                }
+                return true // Always block JCEF from opening the popup natively
+            }
+        }, browser.cefBrowser)
     }
 
     /**

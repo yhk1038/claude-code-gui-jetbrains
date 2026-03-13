@@ -4,6 +4,7 @@ import { render, screen } from '@testing-library/react';
 import { ChatMessageArea } from '../ChatMessageArea';
 import type { LoadedMessageDto } from '../../../types';
 import { LoadedMessageType, MessageRole } from '../../../dto/common';
+import { _resetRuntimeCache } from '@/config/environment';
 
 // Mock contexts
 const mockSessionContext = {
@@ -56,8 +57,9 @@ describe('ChatMessageArea', () => {
     vi.clearAllMocks();
     // Mock scrollIntoView
     Element.prototype.scrollIntoView = vi.fn();
-    // Clear kotlinBridge
+    // Clear kotlinBridge and runtime cache
     delete (window as any).kotlinBridge;
+    _resetRuntimeCache();
     // Reset context defaults
     mockSessionContext.workingDirectory = null;
     mockChatStreamContext.messages = [];
