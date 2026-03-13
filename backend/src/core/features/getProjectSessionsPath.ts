@@ -1,8 +1,11 @@
 import { join } from 'path';
 import { homedir } from 'os';
 
+/** OS 중립적 경로 정규화: 비영문자/비숫자를 모두 '-'로 치환 */
+export function normalizeProjectPath(workingDir: string): string {
+  return workingDir.replace(/[^a-zA-Z0-9]/g, '-');
+}
+
 export async function getProjectSessionsPath(workingDir: string): Promise<string> {
-  // Match Claude CLI's zu2(): replace all non-alphanumeric chars with '-'
-  const normalizedPath = workingDir.replace(/[^a-zA-Z0-9]/g, '-');
-  return join(homedir(), '.claude', 'projects', normalizedPath);
+  return join(homedir(), '.claude', 'projects', normalizeProjectPath(workingDir));
 }
