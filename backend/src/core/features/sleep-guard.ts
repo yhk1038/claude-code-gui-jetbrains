@@ -108,6 +108,43 @@ export async function disableSleepGuard(): Promise<void> {
   }
 }
 
+/**
+ * Check actual system sleep guard state and sync in-memory variables.
+ * Called on backend startup.
+ */
+export async function restoreSleepGuardState(): Promise<void> {
+  const os = process.platform;
+  try {
+    if (os === 'darwin') {
+      const { stdout } = await execAsync('pmset -g');
+      // pmset -g output contains "disablesleep   1" when active
+      const match = /disablesleep\s+(\d)/.exec(stdout);
+      if (match && match[1] === '1') {
+        sleepGuardEnabled = true;
+        // Check if -c only or -a by testing battery settings
+        const { stdout: batteryOut } = await execAsync('pmset -g custom').catch(() => ({ stdout: '' }));
+        const batterySection = batteryOut.split('Battery Power:')[1] ?? '';
+        const batteryMatch = /disablesleep\s+(\d)/.exec(batterySection);
+        sleepOnlyOnPower = !batteryMatch || batteryMatch[1] === '0';
+        console.error('[node-backend]', `Restored sleep guard state: enabled=true onlyOnPower=${sleepOnlyOnPower}`);
+      }
+    } else if (os === 'win32') {
+      const { stdout } = await execAsync('powercfg /query SCHEME_CURRENT SUB_SLEEP STANDBYIDLE');
+      // If AC timeout is 0x00000000, sleep is disabled
+      const acMatch = /Current AC Power Setting Index:\s*0x([0-9a-fA-F]+)/.exec(stdout);
+      if (acMatch && parseInt(acMatch[1], 16) === 0) {
+        sleepGuardEnabled = true;
+        const dcMatch = /Current DC Power Setting Index:\s*0x([0-9a-fA-F]+)/.exec(stdout);
+        sleepOnlyOnPower = !dcMatch || parseInt(dcMatch[1], 16) !== 0;
+        console.error('[node-backend]', `Restored sleep guard state: enabled=true onlyOnPower=${sleepOnlyOnPower}`);
+      }
+    }
+    // Linux: systemd-inhibit process doesn't survive backend restart, no restore needed
+  } catch {
+    // ignore — unable to determine system state
+  }
+}
+
 export function getSleepGuardStatus(): SleepGuardStatus {
   return {
     enabled: sleepGuardEnabled,
