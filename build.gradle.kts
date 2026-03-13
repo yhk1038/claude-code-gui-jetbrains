@@ -106,6 +106,11 @@ intellijPlatform {
             untilBuild = "261.*"
         }
         changeNotes = """
+            <h3>0.11.1 - JCEF Popup Handling</h3>
+            <ul>
+                <li>Fixed JCEF popup interception to prevent unwanted browser windows from external links</li>
+                <li>Cached runtime detection for improved startup performance</li>
+            </ul>
             <h3>0.11.0 - Remote Tunnel & Connection Resilience</h3>
             <ul>
                 <li>Added remote tunnel support via cloudflared (auto-install, QR code, URL copy)</li>
