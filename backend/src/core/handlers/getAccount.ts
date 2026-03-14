@@ -1,9 +1,8 @@
-import { exec } from 'child_process';
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { getClaudeCredentials } from '../features/getClaudeCredentials';
-import { getAugmentedPath } from '../claude-process';
+import { Claude } from '../claude';
 
 interface ClaudeAuthStatus {
   loggedIn?: boolean;
@@ -14,20 +13,14 @@ interface ClaudeAuthStatus {
   orgName?: string | null;
 }
 
-function runClaudeAuthStatus(): Promise<ClaudeAuthStatus | null> {
-  return new Promise((resolve) => {
-    exec('claude auth status', { timeout: 8000, env: { ...process.env, PATH: getAugmentedPath() } }, (err, stdout) => {
-      if (err || !stdout.trim()) {
-        resolve(null);
-        return;
-      }
-      try {
-        resolve(JSON.parse(stdout.trim()) as ClaudeAuthStatus);
-      } catch {
-        resolve(null);
-      }
-    });
-  });
+async function runClaudeAuthStatus(): Promise<ClaudeAuthStatus | null> {
+  try {
+    const { stdout } = await Claude.exec(['auth', 'status'], { timeout: 8000 });
+    if (!stdout.trim()) return null;
+    return JSON.parse(stdout.trim()) as ClaudeAuthStatus;
+  } catch {
+    return null;
+  }
 }
 
 interface ProfileInfo {

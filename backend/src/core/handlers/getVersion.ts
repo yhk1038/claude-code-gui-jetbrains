@@ -1,8 +1,7 @@
-import { exec } from 'child_process';
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
-import { getAugmentedPath } from '../claude-process';
+import { Claude } from '../claude';
 
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -22,23 +21,19 @@ function getPluginVersion(): string {
   return JSON.parse(readFileSync(pkgPath, 'utf-8')).version;
 }
 
-function getCliVersion(): Promise<string | null> {
-  return new Promise((resolve) => {
-    exec('which claude', { timeout: 5000, env: { ...process.env, PATH: getAugmentedPath() } }, (err, stdout) => {
-      const raw = stdout.trim();
-      console.log('which claude\n', raw, '\n');
-    });
-    exec('claude --version', { timeout: 5000, env: { ...process.env, PATH: getAugmentedPath() } }, (err, stdout) => {
-      if (err) {
-        resolve(null);
-        return;
-      }
-      const raw = stdout.trim();
-      console.log('claude --version\n', raw, '\n');
-      const match = raw.match(/^[\d.]+/);
-      resolve(match ? match[0] : raw);
-    });
-  });
+async function getCliVersion(): Promise<string | null> {
+  // Log detected path (non-blocking, for diagnostics)
+  Claude.which().then(path => console.log('which claude\n', path ?? '(not found)', '\n'));
+
+  try {
+    const { stdout } = await Claude.exec(['--version'], { timeout: 5000 });
+    const raw = stdout.trim();
+    console.log('claude --version\n', raw, '\n');
+    const match = raw.match(/^[\d.]+/);
+    return match ? match[0] : raw;
+  } catch {
+    return null;
+  }
 }
 
 export async function getVersionHandler(

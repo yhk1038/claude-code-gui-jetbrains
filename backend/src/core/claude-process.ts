@@ -1,67 +1,5 @@
-import { spawn, execSync, execFileSync } from 'child_process';
-import { existsSync } from 'fs';
-import { join, delimiter, resolve } from 'path';
 import type { ConnectionManager } from '../ws/connection-manager';
-import { readSettingsFile } from './features/settings';
-
-/**
- * Build an augmented PATH that includes well-known bin directories where
- * `claude` CLI is likely installed.  IDE-spawned Node.js processes often
- * inherit a minimal PATH that doesn't include nvm / volta / homebrew paths.
- */
-function buildAugmentedPath(): string {
-  const basePath = process.env.PATH ?? '';
-  const home = process.env.HOME ?? process.env.USERPROFILE ?? '';
-  if (!home) return basePath;
-
-  const extraDirs: string[] = [
-    join(home, '.local', 'bin'),          // pipx / manual installs
-    join(home, '.npm-global', 'bin'),     // npm global (custom prefix)
-    join(home, '.volta', 'bin'),          // volta
-    join(home, '.fnm', 'aliases', 'default', 'bin'), // fnm
-  ];
-  if (process.platform !== 'win32') {
-    extraDirs.push(
-      '/usr/local/bin',                    // macOS default / homebrew (Intel)
-      '/opt/homebrew/bin',                 // homebrew (Apple Silicon)
-    );
-  }
-
-  // Add nvm current version bin if NVM_DIR is set
-  const nvmDir = process.env.NVM_DIR ?? join(home, '.nvm');
-  try {
-    // Validate nvmDir is a real path (prevent injection via NVM_DIR)
-    const resolvedNvmDir = resolve(nvmDir);
-    const nvmScript = join(resolvedNvmDir, 'nvm.sh');
-    if (!existsSync(nvmScript)) throw new Error('nvm.sh not found');
-
-    // Escape single quotes in path for safe bash embedding: ' → '\''
-    const escapedNvmScript = nvmScript.replace(/'/g, "'\\''");
-    const nvmDefaultBin = execFileSync(
-      'bash',
-      ['-c', `source '${escapedNvmScript}' --no-use 2>/dev/null && nvm which current 2>/dev/null`],
-      { encoding: 'utf-8', timeout: 3000 },
-    ).trim();
-    if (nvmDefaultBin) {
-      const nvmBinDir = nvmDefaultBin.substring(0, nvmDefaultBin.lastIndexOf('/'));
-      if (nvmBinDir) extraDirs.push(nvmBinDir);
-    }
-  } catch {
-    // nvm not available — skip
-  }
-
-  const priorityDirs = extraDirs.filter(d => existsSync(d));
-  if (priorityDirs.length === 0) return basePath;
-  const prioritySet = new Set(priorityDirs);
-  const remaining = basePath.split(delimiter).filter(d => !prioritySet.has(d)).join(delimiter);
-  return `${priorityDirs.join(delimiter)}${delimiter}${remaining}`;
-}
-
-const augmentedPath = buildAugmentedPath();
-
-export function getAugmentedPath(): string {
-  return augmentedPath;
-}
+import { Claude } from './claude';
 
 // InputMode -> CLI --permission-mode flag mapping
 const INPUT_MODE_TO_CLI_FLAG: Record<string, string> = {
@@ -133,20 +71,15 @@ export async function ensureClaudeProcess(
     args.push('--permission-mode', cliFlag);
   }
 
-  const settings = await readSettingsFile();
-  const claudeCmd = (settings.cliPath as string) || 'claude';
+  console.error('[node-backend]', `Command: ${Claude.command} ${args.join(' ')}`);
 
-  console.error('[node-backend]', `Command: ${claudeCmd} ${args.join(' ')}`);
-
-  const proc = spawn(claudeCmd, args, {
+  const proc = Claude.spawn(args, {
     cwd: workingDir,
     shell: false,
     stdio: ['pipe', 'pipe', 'pipe'],
     env: {
-      ...process.env,
       TERM: 'dumb',
       CI: 'true',
-      PATH: augmentedPath,
       CLAUDECODE: undefined,
     },
   });

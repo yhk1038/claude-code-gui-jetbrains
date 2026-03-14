@@ -9,6 +9,7 @@ import { restoreSleepGuardState } from './core/features/sleep-guard';
 import { isJetBrainsMode, serverPort, webviewDir } from './config/environment';
 import { initLogger, getLogger } from './logging';
 import { LogWebSocketServer } from './logging/log-ws';
+import { Claude } from './core/claude';
 
 /**
  * JetBrains 모드: JETBRAINS_MODE=true 환경변수로 감지
@@ -74,6 +75,9 @@ async function main() {
   const logger = initLogger();
   await logger.init();
   logger.interceptConsole();
+
+  // Load CLI path from settings before any handler can spawn claude
+  await Claude.refresh();
 
   const bridge = isJetBrainsMode
     ? new JetBrainsBridge(process.stdout, process.stdin)
