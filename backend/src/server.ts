@@ -1,4 +1,4 @@
-import { execFileSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
 import { startWebSocketServer } from './ws/ws-server';
 import { BrowserBridge } from './bridge/browser-bridge';
 import { JetBrainsBridge } from './bridge/jetbrains-bridge';
@@ -32,22 +32,47 @@ import { Claude } from './core/claude';
  */
 
 function killProcessOnPort(port: number): void {
-  try {
-    const pids = execFileSync('lsof', ['-ti', `:${port}`], { encoding: 'utf8' }).trim();
-    if (pids) {
-      pids.split('\n').forEach((pidStr) => {
-        const pid = parseInt(pidStr.trim(), 10);
-        if (!Number.isFinite(pid) || pid <= 0) return;
+  if (process.platform === 'win32') {
+    try {
+      // Find PIDs listening on the port via netstat, then parse the last column
+      const output = execSync(`netstat -ano | findstr :${port}`, { encoding: 'utf8' }).trim();
+      if (!output) return;
+      const pids = new Set<number>();
+      output.split('\n').forEach((line) => {
+        const parts = line.trim().split(/\s+/);
+        const pidStr = parts[parts.length - 1];
+        const pid = parseInt(pidStr, 10);
+        if (Number.isFinite(pid) && pid > 0) pids.add(pid);
+      });
+      pids.forEach((pid) => {
         try {
-          process.kill(pid, 'SIGKILL');
+          execFileSync('taskkill', ['/F', '/PID', String(pid)]);
           console.error('[node-backend]', `Killed process ${pid} occupying port ${port}`);
         } catch {
-          // 이미 종료된 프로세스면 무시
+          // Process may have already exited — ignore
         }
       });
+    } catch {
+      // netstat/findstr returns non-zero when no match — ignore
     }
-  } catch {
-    // lsof가 아무 결과도 없으면 비정상 종료 코드 반환 — 무시
+  } else {
+    try {
+      const pids = execFileSync('lsof', ['-ti', `:${port}`], { encoding: 'utf8' }).trim();
+      if (pids) {
+        pids.split('\n').forEach((pidStr) => {
+          const pid = parseInt(pidStr.trim(), 10);
+          if (!Number.isFinite(pid) || pid <= 0) return;
+          try {
+            process.kill(pid, 'SIGKILL');
+            console.error('[node-backend]', `Killed process ${pid} occupying port ${port}`);
+          } catch {
+            // Process may have already exited — ignore
+          }
+        });
+      }
+    } catch {
+      // lsof returns non-zero when no process found — ignore
+    }
   }
 }
 
