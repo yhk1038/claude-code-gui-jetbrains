@@ -731,6 +731,23 @@ class NodeProcessManager(
 
     // ─── Lifecycle ──────────────────────────────────────────────────
 
+    /**
+     * Detach from the Node.js process without killing it.
+     * Does NOT close stdin/stdout/stderr pipes or cancel coroutines —
+     * closing pipes would cause SIGPIPE/EPIPE in the Node.js process.
+     * JVM shutdown will clean up naturally.
+     * The Node.js backend will self-exit via its idle shutdown timer
+     * when all WebSocket connections are closed.
+     */
+    fun detach() {
+        logger.info("Detaching from NodeProcessManager (process stays alive)")
+        // Intentionally NOT closing stdin or cancelling jobs.
+        // Pipes must stay open so Node.js doesn't receive SIGPIPE.
+        process = null
+        stdinWriter = null
+        logger.info("NodeProcessManager detached")
+    }
+
     override fun dispose() {
         logger.info("Disposing NodeProcessManager")
 

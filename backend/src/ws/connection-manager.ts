@@ -2,6 +2,9 @@ import type { WebSocket } from 'ws';
 import type { ChildProcess } from 'child_process';
 import type { IPCMessage } from '../core/types';
 
+const SESSION_CLEANUP_GRACE_MS = 30_000;
+const IDLE_SHUTDOWN_GRACE_MS = 60_000;
+
 interface SessionRecord {
   sessionId: string;
   process: ChildProcess | null;
@@ -18,6 +21,8 @@ export class ConnectionManager {
   private connectionMap = new Map<string, WebSocket>();
   private clientMap = new Map<string, ClientRecord>();
   private sessionRegistry = new Map<string, SessionRecord>();
+  private cleanupTimers = new Map<string, NodeJS.Timeout>();
+  private idleShutdownTimer: NodeJS.Timeout | null = null;
   private nextId = 0;
 
   // ─── Connection lifecycle ───────────────────────────────────────────────────
@@ -26,6 +31,7 @@ export class ConnectionManager {
     const connectionId = `conn-${++this.nextId}-${Date.now()}`;
     this.connectionMap.set(connectionId, ws);
     this.clientMap.set(connectionId, { subscribedSessionId: null });
+    this.cancelIdleShutdown();
     console.error('[node-backend]', `Connection added: ${connectionId}`);
     return connectionId;
   }
@@ -35,6 +41,10 @@ export class ConnectionManager {
     this.connectionMap.delete(connectionId);
     this.clientMap.delete(connectionId);
     console.error('[node-backend]', `Connection removed: ${connectionId}`);
+
+    if (this.connectionMap.size === 0) {
+      this.scheduleIdleShutdown();
+    }
   }
 
   // ─── Messaging ──────────────────────────────────────────────────────────────
@@ -123,6 +133,17 @@ export class ConnectionManager {
     const session = this.getOrCreateSession(sessionId);
     session.subscribers.add(connectionId);
 
+    // Cancel pending cleanup if reconnecting within grace period
+    const pendingTimer = this.cleanupTimers.get(sessionId);
+    if (pendingTimer) {
+      clearTimeout(pendingTimer);
+      this.cleanupTimers.delete(sessionId);
+      console.error(
+        '[node-backend]',
+        `Cancelled cleanup timer for session ${sessionId} (subscriber reconnected)`,
+      );
+    }
+
     if (client) {
       client.subscribedSessionId = sessionId;
     }
@@ -148,7 +169,18 @@ export class ConnectionManager {
       );
 
       if (session.subscribers.size === 0) {
-        this.cleanupSession(sessionId);
+        console.error(
+          '[node-backend]',
+          `Session ${sessionId} has no subscribers, scheduling cleanup in ${SESSION_CLEANUP_GRACE_MS}ms`,
+        );
+        const timer = setTimeout(() => {
+          this.cleanupTimers.delete(sessionId);
+          const currentSession = this.sessionRegistry.get(sessionId);
+          if (currentSession && currentSession.subscribers.size === 0) {
+            this.cleanupSession(sessionId);
+          }
+        }, SESSION_CLEANUP_GRACE_MS);
+        this.cleanupTimers.set(sessionId, timer);
       }
     }
 
@@ -205,6 +237,14 @@ export class ConnectionManager {
   // ─── Internal ───────────────────────────────────────────────────────────────
 
   shutdownAll(): void {
+    // Clear all pending cleanup timers
+    for (const timer of this.cleanupTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.cleanupTimers.clear();
+
+    this.cancelIdleShutdown();
+
     let killedSessions = 0;
     let closedConnections = 0;
 
@@ -227,6 +267,28 @@ export class ConnectionManager {
       '[node-backend]',
       `Shutdown: killed ${killedSessions} session(s), closed ${closedConnections} connection(s)`,
     );
+  }
+
+  private scheduleIdleShutdown(): void {
+    if (this.idleShutdownTimer !== null) return;
+
+    console.error(
+      '[node-backend]',
+      `No active connections. Idle shutdown scheduled in ${IDLE_SHUTDOWN_GRACE_MS}ms`,
+    );
+    this.idleShutdownTimer = setTimeout(() => {
+      console.error('[node-backend]', 'Idle shutdown grace period elapsed. Shutting down.');
+      this.shutdownAll();
+      process.exit(0);
+    }, IDLE_SHUTDOWN_GRACE_MS);
+  }
+
+  private cancelIdleShutdown(): void {
+    if (this.idleShutdownTimer === null) return;
+
+    clearTimeout(this.idleShutdownTimer);
+    this.idleShutdownTimer = null;
+    console.error('[node-backend]', 'Idle shutdown timer cancelled (new connection received)');
   }
 
   private cleanupSession(sessionId: string): void {

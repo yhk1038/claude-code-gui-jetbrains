@@ -71,6 +71,13 @@ async function startServerWithRetry(
 }
 
 async function main() {
+  // Survive parent process (Kotlin/JVM) shutdown.
+  // When JVM exits, stdin/stdout/stderr pipes break. Without these handlers,
+  // any console.error() call would crash the process with EPIPE.
+  process.on('SIGPIPE', () => {}); // Ignore SIGPIPE signal
+  process.stdout.on('error', () => {}); // Ignore stdout EPIPE
+  process.stderr.on('error', () => {}); // Ignore stderr EPIPE
+
   // 1. Logger 즉시 초기화 (부트스트랩 로그도 파일에 기록)
   const logger = initLogger();
   await logger.init();

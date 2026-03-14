@@ -158,6 +158,20 @@ class NodeBackendService(private val project: Project) : Disposable {
         }
     }
 
+    /**
+     * Detach from the backend without killing it.
+     * The Node.js process continues running for browser clients
+     * and will self-exit via its idle shutdown timer.
+     */
+    private fun detachBackend() {
+        nodeProcessManager?.detach()
+        nodeProcessManager = null
+    }
+
+    /**
+     * Kill the backend process immediately.
+     * Used by restart() to ensure a clean slate.
+     */
     private fun stopBackend() {
         nodeProcessManager?.dispose()
         nodeProcessManager = null
@@ -183,10 +197,13 @@ class NodeBackendService(private val project: Project) : Disposable {
     }
 
     override fun dispose() {
-        // IDE is shutting down — clean up child process
-        stopBackend()
-        scope.coroutineContext[Job]?.cancel()
-        logger.info("NodeBackendService disposed")
+        // IDE is shutting down — detach from backend, don't kill it.
+        // Browser clients may still be connected; Node.js will self-exit
+        // via idle shutdown (60s) when all WebSocket connections close.
+        // Do NOT cancel scope — cancelling coroutines would close stdout/stderr
+        // pipes, causing SIGPIPE in the Node.js process. JVM shutdown handles cleanup.
+        detachBackend()
+        logger.info("NodeBackendService disposed (backend detached, not killed)")
     }
 
     companion object {
