@@ -75,7 +75,6 @@ export async function ensureClaudeProcess(
 
   const proc = Claude.spawn(args, {
     cwd: workingDir,
-    shell: false,
     stdio: ['pipe', 'pipe', 'pipe'],
     env: {
       TERM: 'dumb',

@@ -36,6 +36,7 @@ export class Claude {
   static spawn(args: string[], options?: SpawnOptions): ChildProcess {
     return cpSpawn(Claude.command, args, {
       ...options,
+      shell: options?.shell ?? (process.platform === 'win32'),
       env: {
         ...Claude.env,
         ...options?.env,
@@ -90,7 +91,15 @@ export class Claude {
       join(home, '.volta', 'bin'),          // volta
       join(home, '.fnm', 'aliases', 'default', 'bin'), // fnm
     ];
-    if (process.platform !== 'win32') {
+    if (process.platform === 'win32') {
+      const appData = process.env.APPDATA ?? join(home, 'AppData', 'Roaming');
+      const localAppData = process.env.LOCALAPPDATA ?? join(home, 'AppData', 'Local');
+      extraDirs.push(
+        join(appData, 'npm'),                // npm global install default on Windows
+        join(localAppData, 'Volta', 'bin'),  // volta (Windows)
+        join(home, 'scoop', 'shims'),        // scoop
+      );
+    } else {
       extraDirs.push(
         '/usr/local/bin',                    // macOS default / homebrew (Intel)
         '/opt/homebrew/bin',                 // homebrew (Apple Silicon)
