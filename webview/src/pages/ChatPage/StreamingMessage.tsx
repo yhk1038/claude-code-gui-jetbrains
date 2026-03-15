@@ -1,5 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {Streamdown} from 'streamdown';
+import {math} from '@streamdown/math';
+import 'katex/dist/katex.min.css';
 import {isInsideCodeBlock, isMarkdownComplete} from '../../utils/markdownParser';
 import './streaming.css';
 import {ToolWrapper} from "@/pages/ChatPage/message-renderers/ToolRenderers/common";
@@ -72,6 +74,7 @@ export const StreamingMessage: React.FC<StreamingMessageProps> = ({
                             code: true,
                             table: true,
                         }}
+                        plugins={{ math }}
                     >
                         {normalizeRelativeUrls(content)}
                     </Streamdown>

@@ -1,4 +1,6 @@
 import {Streamdown} from 'streamdown';
+import {math} from '@streamdown/math';
+import 'katex/dist/katex.min.css';
 import {ToolUseBlockDto} from "@/dto";
 import {Container, LabelValue, RendererProps, ToolHeader, ToolWrapper} from "./common";
 
@@ -32,6 +34,7 @@ export function ExitPlanModeRenderer(props: RendererProps) {
                         mode="static"
                         shikiTheme={['github-dark', 'github-light']}
                         controls={{ code: true, table: true }}
+                        plugins={{ math }}
                     >
                         {plan}
                     </Streamdown>

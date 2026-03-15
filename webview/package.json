@@ -13,9 +13,11 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@streamdown/math": "^1.0.2",
     "@tippyjs/react": "^4.2.6",
     "@vscode/codicons": "^0.0.44",
     "class-transformer": "^0.5.1",
+    "katex": "^0.16.38",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
     "react-diff-view": "^3.2.1",
