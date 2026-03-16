@@ -12,7 +12,8 @@ export interface Bridge {
     toolUseId?: string;
   }): Promise<{ applied: boolean }>;
   rejectDiff(params: { toolUseId?: string }): Promise<void>;
-  newSession(workingDir?: string): Promise<void>;
+  createSession(workingDir?: string): Promise<void>;
+  openNewTab(workingDir?: string): Promise<void>;
   openSettings(workingDir?: string): Promise<void>;
   openTerminal(workingDir: string): Promise<void>;
   openUrl(url: string): Promise<void>;

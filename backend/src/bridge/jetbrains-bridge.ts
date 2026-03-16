@@ -135,8 +135,12 @@ export class JetBrainsBridge implements Bridge {
     await this.request('REJECT_DIFF', params ?? {});
   }
 
-  async newSession(workingDir?: string): Promise<void> {
-    await this.request('NEW_SESSION', workingDir ? { workingDir } : {});
+  async createSession(workingDir?: string): Promise<void> {
+    await this.request('CREATE_SESSION', workingDir ? { workingDir } : {});
+  }
+
+  async openNewTab(workingDir?: string): Promise<void> {
+    await this.request('OPEN_NEW_TAB', workingDir ? { workingDir } : {});
   }
 
   async openSettings(workingDir?: string): Promise<void> {

@@ -10,9 +10,9 @@ export async function openNewTabHandler(
 ): Promise<void> {
   try {
     const workingDir = message.payload?.workingDir as string | undefined;
-    await bridge.newSession(workingDir);
+    await bridge.openNewTab(workingDir);
   } catch (err) {
-    console.error('[node-backend]', 'bridge.newSession() for OPEN_NEW_TAB failed:', err);
+    console.error('[node-backend]', 'bridge.openNewTab() failed:', err);
   }
 
   connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });

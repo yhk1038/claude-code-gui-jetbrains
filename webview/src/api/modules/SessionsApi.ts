@@ -62,7 +62,7 @@ export class SessionsApi {
    * POST /sessions
    */
   async create(): Promise<void> {
-    await this.bridge.request('NEW_SESSION', {});
+    await this.bridge.request('CREATE_SESSION', {});
   }
 
   /**

@@ -176,12 +176,12 @@ describe('SessionsApi', () => {
   });
 
   describe('create()', () => {
-    it('should send NEW_SESSION request', async () => {
+    it('should send CREATE_SESSION request', async () => {
       mockBridge.request.mockResolvedValueOnce(undefined);
 
       await api.create();
 
-      expect(mockBridge.request).toHaveBeenCalledWith('NEW_SESSION', {});
+      expect(mockBridge.request).toHaveBeenCalledWith('CREATE_SESSION', {});
     });
   });
 

@@ -187,9 +187,14 @@ class RpcWebSocketClient(
                 rpcHandler.rejectDiff(toolUseId)
                 buildJsonObject {}
             }
-            "NEW_SESSION" -> {
+            "CREATE_SESSION" -> {
                 val workingDir = params["workingDir"]?.jsonPrimitive?.content ?: ""
-                rpcHandler.newSession(workingDir)
+                rpcHandler.createSession(workingDir)
+                buildJsonObject {}
+            }
+            "OPEN_NEW_TAB" -> {
+                val workingDir = params["workingDir"]?.jsonPrimitive?.content ?: ""
+                rpcHandler.openNewTab(workingDir)
                 buildJsonObject {}
             }
             "OPEN_SETTINGS" -> {

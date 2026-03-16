@@ -80,9 +80,14 @@ class NodeBackendService : Disposable {
                 ?: logger.warn("No active panel handler for rejectDiff")
         }
 
-        override suspend fun newSession(workingDir: String) {
-            handlerForWorkingDir(workingDir)?.newSession(workingDir)
-                ?: logger.warn("No handler for newSession: $workingDir")
+        override suspend fun createSession(workingDir: String) {
+            handlerForWorkingDir(workingDir)?.createSession(workingDir)
+                ?: logger.warn("No handler for createSession: $workingDir")
+        }
+
+        override suspend fun openNewTab(workingDir: String) {
+            handlerForWorkingDir(workingDir)?.openNewTab(workingDir)
+                ?: logger.warn("No handler for openNewTab: $workingDir")
         }
 
         override suspend fun openSettings(workingDir: String) {

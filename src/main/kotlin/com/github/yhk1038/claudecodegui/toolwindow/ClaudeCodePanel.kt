@@ -441,7 +441,11 @@ class ClaudeCodePanel(
                 // Diff viewer close is handled by user manually; nothing to do here
             }
 
-            override suspend fun newSession(workingDir: String) {
+            override suspend fun createSession(workingDir: String) {
+                logger.info("Session cleared (workingDir=$workingDir)")
+            }
+
+            override suspend fun openNewTab(workingDir: String) {
                 ApplicationManager.getApplication().invokeLater {
                     val targetProject = findProjectByBasePath(workingDir) ?: project
                     OpenClaudeCodeAction.openSession(targetProject, UUID.randomUUID().toString())

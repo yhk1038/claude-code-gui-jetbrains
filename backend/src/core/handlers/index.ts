@@ -18,7 +18,7 @@ import { openFileHandler } from './openFile';
 import { openDiffHandler } from './openDiff';
 import { applyDiffHandler } from './applyDiff';
 import { rejectDiffHandler } from './rejectDiff';
-import { newSessionHandler } from './newSession';
+import { createSessionHandler } from './createSession';
 import { openNewTabHandler } from './openNewTab';
 import { openSettingsHandler } from './openSettings';
 import { openTerminalHandler } from './openTerminal';
@@ -103,8 +103,8 @@ export async function handleMessage(
     case 'REJECT_DIFF':
       await rejectDiffHandler(connectionId, message, connections, bridge);
       break;
-    case 'NEW_SESSION':
-      await newSessionHandler(connectionId, message, connections, bridge);
+    case 'CREATE_SESSION':
+      await createSessionHandler(connectionId, message, connections, bridge);
       break;
     case 'OPEN_NEW_TAB':
       await openNewTabHandler(connectionId, message, connections, bridge);

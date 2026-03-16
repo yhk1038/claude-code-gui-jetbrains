@@ -2,7 +2,7 @@ import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 
-export async function newSessionHandler(
+export async function createSessionHandler(
   connectionId: string,
   message: IPCMessage,
   connections: ConnectionManager,
@@ -13,9 +13,9 @@ export async function newSessionHandler(
 
   try {
     const workingDir = message.payload?.workingDir as string | undefined;
-    await bridge.newSession(workingDir);
+    await bridge.createSession(workingDir);
   } catch (err) {
-    console.error('[node-backend]', 'bridge.newSession() failed:', err);
+    console.error('[node-backend]', 'bridge.createSession() failed:', err);
   }
 
   connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
