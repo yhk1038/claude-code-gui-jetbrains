@@ -7,7 +7,7 @@ interface Props {
   permission: PendingPermission;
   onApprove: () => void;
   onApproveForSession: () => void;
-  onDeny: () => void;
+  onDeny: (reason?: string) => void;
 }
 
 function basename(filePath: string): string {
@@ -79,7 +79,7 @@ export function PermissionBanner(props: Props) {
       options={options}
       onOptionSelect={handleOptionSelect}
       textareaPlaceholder="Tell Claude what to do instead"
-      onTextSubmit={() => onDeny()}
+      onTextSubmit={(text) => onDeny(text)}
       onCancel={onDeny}
     />
   );

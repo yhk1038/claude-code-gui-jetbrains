@@ -59,7 +59,7 @@ interface UsePendingPermissionsReturn {
   pending: PendingPermission | null;
   approve: (controlRequestId: string) => void;
   approveForSession: (controlRequestId: string) => void;
-  deny: (controlRequestId: string) => void;
+  deny: (controlRequestId: string, reason?: string) => void;
 }
 
 export function usePendingPermissions(): UsePendingPermissionsReturn {
@@ -138,12 +138,12 @@ export function usePendingPermissions(): UsePendingPermissionsReturn {
     setRequests(prev => prev.filter(r => r.controlRequestId !== controlRequestId));
   }, [requests, api.tools]);
 
-  const deny = useCallback((controlRequestId: string) => {
+  const deny = useCallback((controlRequestId: string, reason?: string) => {
     const req = requests.find(r => r.controlRequestId === controlRequestId);
     if (!req) return;
 
     processedIdsRef.current.add(controlRequestId);
-    api.tools.deny(req.toolUseId, controlRequestId);
+    api.tools.deny(req.toolUseId, controlRequestId, reason);
     setRequests(prev => prev.filter(r => r.controlRequestId !== controlRequestId));
   }, [requests, api.tools]);
 

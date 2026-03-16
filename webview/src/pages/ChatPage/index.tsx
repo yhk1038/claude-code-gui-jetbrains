@@ -82,7 +82,7 @@ export function ChatPage() {
             permission={pendingPermission}
             onApprove={() => approvePermission(pendingPermission.controlRequestId)}
             onApproveForSession={() => approveForSession(pendingPermission.controlRequestId)}
-            onDeny={() => denyPermission(pendingPermission.controlRequestId)}
+            onDeny={(reason) => denyPermission(pendingPermission.controlRequestId, reason)}
           />
         ) : (
           <ChatInput />
