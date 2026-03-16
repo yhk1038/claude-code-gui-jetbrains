@@ -106,10 +106,13 @@ intellijPlatform {
             untilBuild = "261.*"
         }
         changeNotes = """
-            <h3>0.11.3 - Plugin Verifier Compliance</h3>
+            <h3>0.11.4 - Tunnel & Permission Fixes</h3>
             <ul>
-                <li>Replaced internal StartupManager API with public DumbService API</li>
-                <li>Replaced deprecated URL constructor with URI(...).toURL() pattern</li>
+                <li>Added LaTeX math syntax support (\(...\) and \[...\])</li>
+                <li>Fixed tunnel spinner reset by using immediate ACK with background startup</li>
+                <li>Fixed deny reason passthrough in permission pipeline</li>
+                <li>Fixed tunnel URL resolution and response access pattern</li>
+                <li>Fixed tool permission approve to pass updatedInput for CLI Zod schema</li>
             </ul>
         """.trimIndent()
     }

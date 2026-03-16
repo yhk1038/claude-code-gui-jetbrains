@@ -1,7 +1,7 @@
 {
   "name": "claude-code-backend",
   "private": true,
-  "version": "0.11.3",
+  "version": "0.11.4",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
