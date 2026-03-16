@@ -41,6 +41,9 @@ export function useTunnelStatus(): TunnelStatus {
       setTunnelEnabled(p.enabled as boolean);
       setTunnelUrl(p.url as string | null);
       setTunnelLoading(false);
+      if (p.error) {
+        setError(p.error as string);
+      }
     });
     const unsubSleep = subscribe('SLEEP_GUARD_STATUS', (msg) => {
       const p = msg.payload as Record<string, unknown>;

@@ -258,9 +258,9 @@ export function startTunnel(port: number): Promise<string> {
           const foundUrl = match[0];
           tunnelUrl = foundUrl;
           if (proc.pid) savePidFile(proc.pid);
-          resolvePromise(foundUrl);
-          // Fire-and-forget: wait for Cloudflare edge readiness in background
-          waitForTunnelReady(foundUrl).catch(() => {});
+          waitForTunnelReady(foundUrl)
+            .then(() => resolvePromise(foundUrl))
+            .catch(() => resolvePromise(foundUrl));
         }
       } catch {
         // file not ready yet
@@ -314,6 +314,36 @@ export function stopTunnel(): void {
   }
   tunnelUrl = null;
   removePidFile();
+}
+
+/**
+ * Verify tunnel process is still alive. If it died without
+ * notification (e.g. restored-from-PID-file session), clean up
+ * stale state so callers get accurate status.
+ *
+ * @returns true if state was corrected (was stale → now cleaned up)
+ */
+export function validateTunnelStatus(): boolean {
+  if (tunnelUrl === null) return false;
+
+  // ChildProcess reference exists — Node's 'exit' event handles cleanup
+  if (tunnelProcess) return false;
+
+  // Restored state: check PID file
+  try {
+    if (existsSync(TUNNEL_PID_FILE)) {
+      const pid = parseInt(readFileSync(TUNNEL_PID_FILE, 'utf-8').trim(), 10);
+      if (!isNaN(pid) && isProcessAlive(pid)) return false;
+    }
+  } catch {
+    // read error — treat as dead
+  }
+
+  // Process is gone — clean up stale state
+  console.error('[node-backend]', 'Tunnel process no longer alive, cleaning up stale state');
+  tunnelUrl = null;
+  removePidFile();
+  return true;
 }
 
 export function getTunnelStatus(): TunnelStatus {

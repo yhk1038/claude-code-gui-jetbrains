@@ -77,7 +77,7 @@ export function TunnelSettings() {
               </svg>
               <span>Establishing tunnel connection... ({elapsedSec}s)</span>
             </div>
-            <p className="text-xs text-zinc-600">This typically takes 15–30 seconds (If installation is required, it takes about 3 mins.)</p>
+            <p className="text-xs text-zinc-600">This typically takes ~1 min (If installation is required, it takes about 3 mins.)</p>
           </div>
         )}
 

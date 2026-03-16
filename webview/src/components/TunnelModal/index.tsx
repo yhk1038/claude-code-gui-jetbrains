@@ -119,7 +119,7 @@ export function TunnelModal(props: Props) {
                 </svg>
                 <span>Connecting... ({elapsedSec}s)</span>
               </div>
-              <p className="text-xs text-zinc-600">Typically 15–30s (install: ~3 min)</p>
+              <p className="text-xs text-zinc-600">Typically ~1 min (install: ~3 min)</p>
             </div>
           )}
 
