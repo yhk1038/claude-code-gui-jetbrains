@@ -320,8 +320,7 @@ class ClaudeCodePanel(
         } ?: ""
 
         val pathSegment = initialPath ?: "/sessions/new"
-        val envParam = if (workingDirParam.isNotEmpty()) "&env=jcef" else "?env=jcef"
-        val url = "http://localhost:$port$pathSegment$workingDirParam$envParam"
+        val url = "http://localhost:$port$pathSegment$workingDirParam"
         System.err.println("[ClaudeCodePanel] Loading URL: $url")
         logger.info("Loading WebView from Node.js backend: $url")
 

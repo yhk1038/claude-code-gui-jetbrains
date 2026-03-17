@@ -57,23 +57,27 @@ describe('ChatMessageArea', () => {
     vi.clearAllMocks();
     // Mock scrollIntoView
     Element.prototype.scrollIntoView = vi.fn();
-    // Clear kotlinBridge and runtime cache
-    delete (window as any).kotlinBridge;
+    // Clear JCEF detection and runtime cache
+    delete (window as any).cefQuery_test_1;
     _resetRuntimeCache();
     // Reset context defaults
     mockSessionContext.workingDirectory = null;
     mockChatStreamContext.messages = [];
   });
 
-  it('shows ProjectSelector when no working directory and no kotlinBridge', () => {
+  it('shows ProjectSelector when no working directory in browser environment', () => {
     renderWithScrollContainer(<ChatMessageArea isStreaming={false} scrollContainerRef={scrollContainerRef} />);
 
     expect(screen.getByTestId('project-selector')).toBeInTheDocument();
     expect(screen.getByText('Select Project')).toBeInTheDocument();
   });
 
-  it('shows loading message when no working directory with kotlinBridge', () => {
-    (window as any).kotlinBridge = {};
+  it('shows loading message when no working directory in JCEF environment', () => {
+    // JCEF 환경 시뮬레이션: cefQuery_* non-enumerable 함수 존재
+    Object.defineProperty(window, 'cefQuery_test_1', {
+      value: () => {},
+      configurable: true,
+    });
 
     renderWithScrollContainer(<ChatMessageArea isStreaming={false} scrollContainerRef={scrollContainerRef} />);
 

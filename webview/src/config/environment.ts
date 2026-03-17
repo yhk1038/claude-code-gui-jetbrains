@@ -1,28 +1,23 @@
-import { IdeAdapterType } from '../adapters/IdeAdapter';
+import {IdeAdapterType} from '../adapters/IdeAdapter';
 
 // ── 빌드 환경 ──────────────────────────────────────────
 export const isDev = () => import.meta.env.DEV;
 export const isProd = () => import.meta.env.PROD;
 
 // ── 실행 환경 ──────────────────────────────────────────
-// 캐시: React Router 내부 네비게이션 시 URL 쿼리 파라미터(env=jcef)가 유실되므로,
+// 캐시: getOwnPropertyNames(window) 순회는 비용이 있으므로
 // 최초 감지 결과를 캐시하여 세션 중 환경이 바뀌지 않도록 보장
 let _cachedRuntime: IdeAdapterType | null = null;
 
 export function detectRuntime(): IdeAdapterType {
-  if (_cachedRuntime !== null) return _cachedRuntime;
+  if (_cachedRuntime) return _cachedRuntime;
 
   let result = IdeAdapterType.BROWSER;
   if (typeof window !== 'undefined') {
-    // Legacy: window.kotlinBridge 직접 통신
-    if (window.kotlinBridge) {
-      result = IdeAdapterType.JETBRAINS;
-    }
-    // v4: JCEF 환경은 URL 파라미터로 감지 (WebSocket 통신 사용)
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('env') === 'jcef') {
-      result = IdeAdapterType.JETBRAINS;
-    }
+    // JCEF 환경: JBCefJSQuery 등록 시 window에 cefQuery_* non-enumerable 함수가 자동 주입됨
+    // Object.keys()는 non-enumerable을 포함하지 않으므로 getOwnPropertyNames() 사용
+    const isJcef = Object.getOwnPropertyNames(window).some(key => key.startsWith('cefQuery_'));
+    result = isJcef ? IdeAdapterType.JETBRAINS : IdeAdapterType.BROWSER;
   }
   _cachedRuntime = result;
   return result;

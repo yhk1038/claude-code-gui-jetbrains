@@ -168,8 +168,7 @@ export function ChatMessageArea(props: Props) {
 
   // No working directory: show ProjectSelector or loading
   if (!workingDirectory) {
-    // JetBrains에서는 URL에 ?workingDir= 파라미터가 포함되므로 이 분기에 도달하지 않음
-    // kotlinBridge가 존재하면 로딩 상태 표시 (방어적 처리)
+    // JetBrains JCEF 환경에서는 workingDir이 항상 제공되므로 이 분기에 도달하지 않음 (방어적 처리)
     if (isJetBrains()) {
       return (
         <div className="h-full flex items-center justify-center">
