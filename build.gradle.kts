@@ -106,6 +106,15 @@ intellijPlatform {
             untilBuild = "261.*"
         }
         changeNotes = """
+            <h3>0.11.5 - Mobile Layout & Session Improvements</h3>
+            <ul>
+                <li>Stabilized mobile layout when virtual keyboard opens with CSS zoom</li>
+                <li>Applied 125% zoom on mobile devices for better readability</li>
+                <li>Made session header responsive on narrow screens</li>
+                <li>Fixed first user message being lost when creating a new session</li>
+                <li>Truncated long session titles in editor tab</li>
+                <li>Detect JCEF via window property instead of URL param</li>
+            </ul>
             <h3>0.11.4 - Tunnel & Permission Fixes</h3>
             <ul>
                 <li>Added LaTeX math syntax support (\(...\) and \[...\])</li>
@@ -113,6 +122,34 @@ intellijPlatform {
                 <li>Fixed deny reason passthrough in permission pipeline</li>
                 <li>Fixed tunnel URL resolution and response access pattern</li>
                 <li>Fixed tool permission approve to pass updatedInput for CLI Zod schema</li>
+            </ul>
+            <h3>0.11.3 - Internal API Fixes</h3>
+            <ul>
+                <li>Replaced internal StartupManager API with public DumbService fallback</li>
+                <li>Replaced deprecated URL(String) constructor with URI().toURL() pattern</li>
+            </ul>
+            <h3>0.11.2 - LaTeX, RPC Migration & Settings</h3>
+            <ul>
+                <li>Added LaTeX math rendering support via KaTeX</li>
+                <li>Migrated RPC from stdio to WebSocket with auto-recovery</li>
+                <li>Added project-scoped settings with Global/Project tabs</li>
+                <li>Fixed Windows ENOENT and login timeout for Claude CLI</li>
+                <li>Added Windows support for killProcessOnPort</li>
+                <li>Fixed infinite thinking when opening new editor tab</li>
+                <li>Fixed first user message being wiped in new sessions</li>
+                <li>Improved tunnel QR URL with current path and query params</li>
+            </ul>
+            <h3>0.11.1 - JCEF Popup & Performance</h3>
+            <ul>
+                <li>Fixed JCEF popup interception to prevent unwanted browser windows</li>
+                <li>Cached runtime detection for improved startup performance</li>
+            </ul>
+            <h3>0.11.0 - Remote Tunnel Support</h3>
+            <ul>
+                <li>Added remote tunnel support via cloudflared with auto-install, QR code, and URL copy</li>
+                <li>Added sleep prevention to keep machine awake while tunnel is active</li>
+                <li>Added tunnel button in session header with quick-access modal</li>
+                <li>Added connection lost banner with automatic disconnect detection</li>
             </ul>
         """.trimIndent()
     }
