@@ -82,7 +82,11 @@ function SessionLoader({ children }: { children: ReactNode }) {
     });
 
     // Clear previous session state (messages, streaming, tools, diffs)
-    resetForSessionSwitch();
+    // Skip reset for newly created sessions — their first user message was just
+    // added by sendMessage and must be preserved; the state is already clean.
+    if (!(currentSessionId && isNewlyCreatedSession(currentSessionId))) {
+      resetForSessionSwitch();
+    }
     setSessionState(SessionState.Idle);
 
     // Load session messages (skip for new/empty sessions and newly created sessions)
