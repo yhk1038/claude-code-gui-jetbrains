@@ -42,6 +42,7 @@ import { tunnelStopHandler } from './tunnelStop';
 import { getTunnelStatusHandler } from './getTunnelStatus';
 import { sleepGuardEnableHandler } from './sleepGuardEnable';
 import { sleepGuardDisableHandler } from './sleepGuardDisable';
+import { listProjectFilesHandler } from './listProjectFiles';
 
 export async function handleMessage(
   connectionId: string,
@@ -174,6 +175,9 @@ export async function handleMessage(
       break;
     case 'SLEEP_GUARD_DISABLE':
       await sleepGuardDisableHandler(connectionId, message, connections, bridge);
+      break;
+    case 'LIST_PROJECT_FILES':
+      await listProjectFilesHandler(connectionId, message, connections, bridge);
       break;
     default:
       console.error('[node-backend]', `Unknown message type: ${message.type}`);

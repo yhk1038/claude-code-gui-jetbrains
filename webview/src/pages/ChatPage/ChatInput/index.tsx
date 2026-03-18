@@ -22,6 +22,8 @@ import { EFFORT_CYCLE_EVENT } from '@/commandPalette/sections/model/EffortItem';
 import { THINKING_TOGGLE_EVENT } from '@/commandPalette/sections/model/ThinkingItem';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 import { EffortLevel, nextEffortLevel, parseEffortLevel } from '@/types/effort';
+import { useMention } from './hooks/useMention';
+import { MentionDropdown } from './MentionDropdown';
 
 export function ChatInput() {
   const { textareaRef } = useChatInputFocus();
@@ -112,6 +114,14 @@ export function ChatInput() {
   const modeConfig = INPUT_MODES[mode];
 
   const palette = useCommandPalette({ onChange, textareaRef });
+
+  const mention = useMention({
+    workingDirectory,
+    addFileAttachment,
+    addFolderAttachment,
+    value,
+    onChange,
+  });
 
   const handleCompact = useCallback(() => {
     const slashSection = palette.sections.find(s => s.id === PanelSectionId.SlashCommands);
@@ -255,6 +265,9 @@ export function ChatInput() {
       return;
     }
 
+    // Mention interaction (must precede slash command handling)
+    if (mention.isActive && mention.handleKeyDown(e)) return;
+
     // Slash command interaction
     if (palette.handleSlashKeyDown(e, value)) return;
 
@@ -287,13 +300,14 @@ export function ChatInput() {
       e.preventDefault();
       onChange(historyValue);
     }
-  }, [disabled, value, attachments.length, onSubmit, inputHistory, onChange, palette, cycleMode, clearAttachments]);
+  }, [disabled, value, attachments.length, onSubmit, inputHistory, onChange, palette, mention, cycleMode, clearAttachments]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
     onChange(newValue);
     palette.detectSlashCommand(newValue);
-  }, [onChange, palette]);
+    mention.detectMention(newValue, e.target.selectionStart ?? newValue.length);
+  }, [onChange, palette, mention]);
 
   const hasValue = !!value.trim() || attachments.length > 0;
 
@@ -310,6 +324,19 @@ export function ChatInput() {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
+        {/* Mention dropdown */}
+        {mention.isActive && !palette.showSlashCommands && (
+          <div className="absolute bottom-full left-0 w-full z-20">
+            <MentionDropdown
+              results={mention.results}
+              selectedIndex={mention.selectedIndex}
+              isLoading={mention.isLoading}
+              onSelect={mention.selectResult}
+              onClose={mention.close}
+            />
+          </div>
+        )}
+
         {/* Slash command panel */}
         {palette.showSlashCommands && (
           <div className="absolute bottom-full left-0 w-full z-20">
