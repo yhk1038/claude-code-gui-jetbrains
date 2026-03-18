@@ -44,7 +44,11 @@ export function initializeAdapter(): IdeAdapter {
 
 /**
  * Get the current adapter instance
- * Initializes one if not already done
+ * Initializes one if not already done.
+ *
+ * If the adapter was initially set to BrowserAdapter but JCEF is now detected
+ * (e.g., __JCEF__ marker injected after first detection), automatically switches
+ * to JetBrainsAdapter.
  *
  * @returns The current adapter instance
  */
@@ -52,6 +56,14 @@ export function getAdapter(): IdeAdapter {
   if (!adapterInstance) {
     return initializeAdapter();
   }
+
+  // BrowserAdapter 상태에서 JCEF가 감지되면 JetBrainsAdapter로 전환
+  if (adapterInstance.type === IdeAdapterType.BROWSER && detectEnvironment() === IdeAdapterType.JETBRAINS) {
+    console.log('[IdeAdapter] JCEF detected after initial BrowserAdapter, switching to JetBrains adapter');
+    resetAdapter();
+    return initializeAdapter();
+  }
+
   return adapterInstance;
 }
 

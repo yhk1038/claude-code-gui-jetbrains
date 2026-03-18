@@ -10,17 +10,25 @@ export const isProd = () => import.meta.env.PROD;
 let _cachedRuntime: IdeAdapterType | null = null;
 
 export function detectRuntime(): IdeAdapterType {
-  if (_cachedRuntime) return _cachedRuntime;
+  // JETBRAINS 확정 시 캐시 재사용 (확정적 양성 결과만 캐시)
+  if (_cachedRuntime === IdeAdapterType.JETBRAINS) return _cachedRuntime;
 
-  let result = IdeAdapterType.BROWSER;
   if (typeof window !== 'undefined') {
-    // JCEF 환경: JBCefJSQuery 등록 시 window에 cefQuery_* non-enumerable 함수가 자동 주입됨
-    // Object.keys()는 non-enumerable을 포함하지 않으므로 getOwnPropertyNames() 사용
-    const isJcef = Object.getOwnPropertyNames(window).some(key => key.startsWith('cefQuery_'));
-    result = isJcef ? IdeAdapterType.JETBRAINS : IdeAdapterType.BROWSER;
+    // Signal 1: Kotlin이 onLoadStart에서 페이지 JS 실행 전에 주입하는 마커
+    if (window.__JCEF__ === true) {
+      _cachedRuntime = IdeAdapterType.JETBRAINS;
+      return IdeAdapterType.JETBRAINS;
+    }
+    // Signal 2: JBCefJSQuery 등록 시 window에 cefQuery_* non-enumerable 함수가 자동 주입됨
+    const hasCefQuery = Object.getOwnPropertyNames(window).some(key => key.startsWith('cefQuery_'));
+    if (hasCefQuery) {
+      _cachedRuntime = IdeAdapterType.JETBRAINS;
+      return IdeAdapterType.JETBRAINS;
+    }
   }
-  _cachedRuntime = result;
-  return result;
+
+  // BROWSER는 캐시하지 않음 — JCEF 마커가 나중에 주입될 수 있으므로 재감지 허용
+  return IdeAdapterType.BROWSER;
 }
 
 export const isJetBrains = () => detectRuntime() === IdeAdapterType.JETBRAINS;

@@ -4,6 +4,12 @@
 
 interface Window {
   /**
+   * JCEF environment marker.
+   * Injected by ClaudeCodePanel.kt onLoadStart before page JS runs.
+   */
+  __JCEF__?: boolean;
+
+  /**
    * Bridge to send messages from WebView to Kotlin
    * Injected by ClaudeCodePanel.kt via JBCefJSQuery
    */

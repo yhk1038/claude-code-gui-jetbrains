@@ -126,6 +126,11 @@ class ClaudeCodePanel(
         browser.jbCefClient.addLoadHandler(object : CefLoadHandlerAdapter() {
             override fun onLoadEnd(browser: CefBrowser, frame: CefFrame, httpStatusCode: Int) {
                 if (frame.isMain) {
+                    // Mark JCEF environment so detectRuntime() in environment.ts can detect
+                    // the JetBrains environment and select JetBrainsAdapter over BrowserAdapter.
+                    // Even though this runs after page JS, getAdapter() in adapters/index.ts
+                    // re-checks on every call and auto-switches from BrowserAdapter to JetBrainsAdapter.
+                    frame.executeJavaScript("window.__JCEF__ = true;", frame.url, 0)
                     injectCursorTracking(frame)
                     installImeWorkaround()
                     logger.info("WebView loaded successfully")
