@@ -106,6 +106,10 @@ intellijPlatform {
             untilBuild = "261.*"
         }
         changeNotes = """
+            <h3>0.12.3 - Unread badge on editor tab icon</h3>
+            <ul>
+                <li>Added unread badge to editor tab icon when streaming completes on a hidden tab</li>
+            </ul>
             <h3>0.12.2 - UI polish and rendering fixes</h3>
             <ul>
                 <li>Fixed message reset on reconnect that caused full re-render flicker</li>
