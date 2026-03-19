@@ -12,7 +12,7 @@ export function TunnelButton() {
     <>
       <button
         onClick={(e) => {
-            if (e.metaKey) {
+            if (e.metaKey || e.ctrlKey) {
                 getAdapter().openUrl(window.location.href);
             } else {
                 setModalOpen(true);
