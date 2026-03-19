@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Portal } from '@/components/Portal';
 import type { ImageBlockDto } from '../../../../dto/message/ContentBlockDto';
 
 interface ImageAttachmentsProps {
@@ -37,6 +38,7 @@ export const ImageAttachments: React.FC<ImageAttachmentsProps> = ({ images }) =>
 
       {/* Lightbox for full-size image */}
       {selectedImage && (
+        <Portal>
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
           onClick={() => setSelectedImage(null)}
@@ -56,6 +58,7 @@ export const ImageAttachments: React.FC<ImageAttachmentsProps> = ({ images }) =>
             </button>
           </div>
         </div>
+        </Portal>
       )}
     </>
   );

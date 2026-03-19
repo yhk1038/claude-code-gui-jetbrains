@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { XMarkIcon, ClipboardDocumentIcon, ClipboardDocumentCheckIcon } from '@heroicons/react/24/outline';
 import { QRCodeSVG } from 'qrcode.react';
 import { ToggleSwitch } from '@/components/ToggleSwitch';
+import { Portal } from '@/components/Portal';
 import { useTunnelStatus } from '@/hooks';
 
 interface Props {
@@ -70,6 +71,7 @@ export function TunnelModal(props: Props) {
   };
 
   return (
+    <Portal>
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
       onClick={(e) => {
@@ -158,5 +160,6 @@ export function TunnelModal(props: Props) {
         </div>
       </div>
     </div>
+    </Portal>
   );
 }

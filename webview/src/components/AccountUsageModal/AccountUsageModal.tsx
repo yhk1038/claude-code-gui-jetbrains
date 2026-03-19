@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { Portal } from '@/components/Portal';
 import { useAccountData } from './useAccountData';
 import { SectionLabel } from './SectionLabel';
 import { InfoRow, InfoRowSkeleton } from './InfoRow';
@@ -24,6 +25,7 @@ export function AccountUsageModal({ onClose }: AccountUsageModalProps) {
   }, [onClose]);
 
   return (
+    <Portal>
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
       onClick={(e) => {
@@ -67,5 +69,6 @@ export function AccountUsageModal({ onClose }: AccountUsageModalProps) {
         </div>
       </div>
     </div>
+    </Portal>
   );
 }

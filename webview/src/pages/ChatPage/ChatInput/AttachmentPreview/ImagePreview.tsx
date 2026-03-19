@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Portal } from '@/components/Portal';
 import type { ImageAttachment } from '../../../../types';
 
 interface Props {
@@ -34,6 +35,7 @@ export function ImagePreview(props: Props) {
       </div>
 
       {showLightbox && (
+        <Portal>
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
           onClick={() => setShowLightbox(false)}
@@ -53,6 +55,7 @@ export function ImagePreview(props: Props) {
             </button>
           </div>
         </div>
+        </Portal>
       )}
     </>
   );
