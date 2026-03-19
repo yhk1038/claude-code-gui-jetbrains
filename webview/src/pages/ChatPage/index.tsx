@@ -79,7 +79,7 @@ export function ChatPage() {
   }, [textareaRef, focusInput]);
 
   return (
-    <div className="w-full h-screen bg-neutral-900 text-zinc-100 fixed left-0 top-0" onMouseDown={handleContainerMouseDown}>
+    <div className="flex flex-col w-full h-screen bg-neutral-900 text-zinc-100 fixed left-0 top-0" onMouseDown={handleContainerMouseDown}>
       {/* Header - Minimal */}
       <div className="fixed w-full top-0 bg-blend-darken bg-neutral-900 z-10">
         <SessionHeader />
@@ -91,32 +91,32 @@ export function ChatPage() {
       </BannerArea>
 
       {/* Messages Area */}
-      <div ref={scrollContainerRef} className={`flex-1 overflow-y-auto w-full h-screen pt-10 ${isMobile() ? 'pb-80' : 'pb-32'} bg-neutral-900 z-0`}>
+      <div ref={scrollContainerRef} className={`flex-1 overflow-y-auto w-full h-screen pt-10 ${isMobile() ? 'pb-52' : ''} bg-neutral-900 z-0`}>
         <ChatMessageArea isStreaming={isStreaming && !pendingUserAnswer && !pendingPlan && !pendingPermission} scrollContainerRef={scrollContainerRef} />
-      </div>
 
-      {/* Input Area */}
-      <div ref={bottomPanelRef} className="fixed w-full left-0 bottom-0 z-10">
-        {pendingUserAnswer ? (
-          <AskUserQuestionInputPanel
-            toolUse={pendingUserAnswer.toolUse}
-            controlRequestId={pendingUserAnswer.controlRequestId}
-            onDismiss={() => dismiss(pendingUserAnswer.toolUse.id)}
-          />
-        ) : pendingPlan ? (
-          <AcceptPlanPanel />
-        ) : pendingPermission ? (
-          <PermissionBanner
-            permission={pendingPermission}
-            onApprove={() => approvePermission(pendingPermission.controlRequestId)}
-            onApproveForSession={() => approveForSession(pendingPermission.controlRequestId)}
-            onDeny={(reason) => denyPermission(pendingPermission.controlRequestId, reason)}
-          />
-        ) : (
-          <ChatInput />
-        )}
-      </div>
+        {/* Input Area */}
+        <div ref={bottomPanelRef} className="sticky w-full left-0 bottom-0 z-10">
+          {pendingUserAnswer ? (
+            <AskUserQuestionInputPanel
+              toolUse={pendingUserAnswer.toolUse}
+              controlRequestId={pendingUserAnswer.controlRequestId}
+              onDismiss={() => dismiss(pendingUserAnswer.toolUse.id)}
+            />
+          ) : pendingPlan ? (
+            <AcceptPlanPanel />
+          ) : pendingPermission ? (
+            <PermissionBanner
+              permission={pendingPermission}
+              onApprove={() => approvePermission(pendingPermission.controlRequestId)}
+              onApproveForSession={() => approveForSession(pendingPermission.controlRequestId)}
+              onDeny={(reason) => denyPermission(pendingPermission.controlRequestId, reason)}
+            />
+          ) : (
+            <ChatInput />
+          )}
+        </div>
 
+      </div>
     </div>
   );
 }
