@@ -56,11 +56,11 @@ case "${1:-}" in
   wv-test-watch)  pnpm -C "$ROOT/webview" test:watch ;;
 
   # --- Plugin (Gradle) ---
-  build)          "$ROOT/gradlew" -p "$ROOT" build ;;
-  run-ide)        CLAUDE_DEV_MODE=true "$ROOT/gradlew" -p "$ROOT" runIde ;;
-  build-plugin)   "$ROOT/gradlew" -p "$ROOT" buildPlugin ;;
-  clean)          "$ROOT/gradlew" -p "$ROOT" clean ;;
-  test)           "$ROOT/gradlew" -p "$ROOT" test ;;
+  build)          bash "$ROOT/gradlew" -p "$ROOT" build ;;
+  run-ide)        CLAUDE_DEV_MODE=true bash "$ROOT/gradlew" -p "$ROOT" runIde ;;
+  build-plugin)   bash "$ROOT/gradlew" -p "$ROOT" buildPlugin ;;
+  clean)          bash "$ROOT/gradlew" -p "$ROOT" clean ;;
+  test)           bash "$ROOT/gradlew" -p "$ROOT" test ;;
 
   # --- Combined ---
   full-build)
@@ -69,7 +69,7 @@ case "${1:-}" in
     echo "=== WebView build ==="
     pnpm -C "$ROOT/webview" build
     echo "=== Plugin build ==="
-    "$ROOT/gradlew" -p "$ROOT" build
+    bash "$ROOT/gradlew" -p "$ROOT" build
     ;;
   dist)
     echo "=== Backend build ==="
@@ -77,7 +77,7 @@ case "${1:-}" in
     echo "=== WebView build ==="
     pnpm -C "$ROOT/webview" build
     echo "=== Plugin buildPlugin ==="
-    "$ROOT/gradlew" -p "$ROOT" buildPlugin
+    bash "$ROOT/gradlew" -p "$ROOT" buildPlugin
     ;;
   all)
     echo "=== Backend build ==="
@@ -85,12 +85,12 @@ case "${1:-}" in
     echo "=== WebView build ==="
     pnpm -C "$ROOT/webview" build
     echo "=== Plugin build ==="
-    "$ROOT/gradlew" -p "$ROOT" build
+    bash "$ROOT/gradlew" -p "$ROOT" build
     echo "=== RunIde ==="
-    CLAUDE_DEV_MODE=true "$ROOT/gradlew" -p "$ROOT" runIde
+    CLAUDE_DEV_MODE=true bash "$ROOT/gradlew" -p "$ROOT" runIde
     ;;
   clear-cache)
-    "$ROOT/clear-cache.sh"
+    bash "$ROOT/clear-cache.sh"
     ;;
 
   # --- Help ---

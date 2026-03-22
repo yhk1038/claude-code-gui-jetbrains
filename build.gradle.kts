@@ -106,6 +106,13 @@ intellijPlatform {
             untilBuild = "261.*"
         }
         changeNotes = """
+            <h3>0.12.6 - Slash command tooltips & stability fixes</h3>
+            <ul>
+                <li>Show slash command description as tooltip in command palette</li>
+                <li>Fixed ghost sessions appearing from CLI config loading</li>
+                <li>Fixed CLI config process not terminating properly on Windows</li>
+                <li>Fixed duplicate slash command entries in command palette</li>
+            </ul>
             <h3>0.12.5 - Fix chat message area layout</h3>
             <ul>
                 <li>Fixed chat message area layout with proper flex sizing</li>
