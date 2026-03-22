@@ -45,6 +45,10 @@ html, body, #root {
   padding: 0;
 }
 
+html, body {
+  overscroll-behavior-x: none;
+}
+
 body {
   font-family: var(--ide-font-ui);
   background-color: var(--ide-bg);
