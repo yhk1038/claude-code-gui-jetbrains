@@ -69,8 +69,9 @@ export class SessionsApi {
    * Delete a session
    * DELETE /sessions/:id
    */
-  async destroy(sessionId: string): Promise<void> {
-    await this.bridge.request('DELETE_SESSION', { sessionId });
+  async destroy(sessionId: string, workingDir?: string): Promise<void> {
+    const dir = workingDir ?? this.getConfig().workingDir;
+    await this.bridge.request('DELETE_SESSION', { sessionId, workingDir: dir });
   }
 
   /**

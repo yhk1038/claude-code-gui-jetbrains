@@ -229,7 +229,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
 
   const deleteSession = useCallback(async (sessionId: string) => {
     try {
-      await api.sessions.destroy(sessionId);
+      await api.sessions.destroy(sessionId, workingDirectory ?? undefined);
       setSessions(prev => prev.filter(s => s.id !== sessionId));
       if (currentSessionId === sessionId) {
         setSessionState(SessionState.Idle);
@@ -238,7 +238,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
     } catch (error) {
       console.error('[SessionContext] Failed to delete session:', error);
     }
-  }, [currentSessionId, api.sessions, navigateToNewSession]);
+  }, [currentSessionId, api.sessions, navigateToNewSession, workingDirectory]);
 
   const renameSession = useCallback((sessionId: string, title: string) => {
     setSessions(prev => prev.map(s =>

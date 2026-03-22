@@ -186,13 +186,25 @@ describe('SessionsApi', () => {
   });
 
   describe('destroy()', () => {
-    it('should send DELETE_SESSION request', async () => {
+    it('should send DELETE_SESSION request with workingDir from config', async () => {
       mockBridge.request.mockResolvedValueOnce(undefined);
 
       await api.destroy('session-1');
 
       expect(mockBridge.request).toHaveBeenCalledWith('DELETE_SESSION', {
         sessionId: 'session-1',
+        workingDir: '/test/path',
+      });
+    });
+
+    it('should use explicit workingDir when provided', async () => {
+      mockBridge.request.mockResolvedValueOnce(undefined);
+
+      await api.destroy('session-2', '/explicit/path');
+
+      expect(mockBridge.request).toHaveBeenCalledWith('DELETE_SESSION', {
+        sessionId: 'session-2',
+        workingDir: '/explicit/path',
       });
     });
   });
