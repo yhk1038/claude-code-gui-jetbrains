@@ -39,6 +39,9 @@ export class CommandPaletteRegistry {
       .map((sectionDef) => {
         const commands = this.sectionCommands.get(sectionDef.id) ?? [];
         const sortedCommands = [...commands].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        const uniqueCommands = sortedCommands.filter((cmd, index, arr) =>
+          arr.findIndex(c => c.id === cmd.id) === index
+        );
 
         return {
           id: sectionDef.id,
@@ -46,7 +49,7 @@ export class CommandPaletteRegistry {
           showDividerAbove: sectionDef.showDividerAbove,
           scrollable: sectionDef.scrollable,
           maxHeight: sectionDef.maxHeight,
-          items: sortedCommands.map(commandToItem),
+          items: uniqueCommands.map(commandToItem),
         } as PanelSection;
       })
       .filter((section) => section.items.length > 0 || this.sections.has(section.id));
