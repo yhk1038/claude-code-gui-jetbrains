@@ -1,11 +1,13 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { groupSessionsByDate } from './utils';
 import { DropdownToggle } from './DropdownToggle';
 import { DropdownMenu } from './DropdownMenu';
 import { useSessionContext } from '@/contexts/SessionContext';
+import { useConfirmDialog } from '@/components/ConfirmDialog/useConfirmDialog';
 
 export function SessionDropdown() {
-  const { sessions, currentSessionId, currentSession, switchSession } = useSessionContext();
+  const { sessions, currentSessionId, currentSession, switchSession, deleteSession } = useSessionContext();
+  const { confirmDialog, confirm } = useConfirmDialog();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -50,6 +52,20 @@ export function SessionDropdown() {
     setSearchQuery('');
   };
 
+  const handleDeleteSession = useCallback(async (sessionId: string) => {
+    const session = sessions.find(s => s.id === sessionId);
+    const confirmed = await confirm({
+      title: 'Delete Session',
+      message: `Are you sure you want to delete "${session?.title ?? sessionId}"?`,
+      confirmLabel: 'Delete',
+      cancelLabel: 'Cancel',
+      variant: 'danger',
+    });
+    if (confirmed) {
+      await deleteSession(sessionId);
+    }
+  }, [sessions, confirm, deleteSession]);
+
   return (
     <div className="relative min-w-0" ref={dropdownRef}>
       <DropdownToggle
@@ -66,8 +82,11 @@ export function SessionDropdown() {
           filteredSessionsCount={filteredSessions.length}
           currentSessionId={currentSessionId}
           onSelectSession={handleSelectSession}
+          onDeleteSession={handleDeleteSession}
         />
       )}
+
+      {confirmDialog}
     </div>
   );
 }

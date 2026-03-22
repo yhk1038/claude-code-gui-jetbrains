@@ -1,13 +1,16 @@
 import { GroupedSessions, GROUP_ORDER, GROUP_LABELS } from './utils';
 import { SessionItem } from './SessionItem';
 
-interface SessionListProps {
+interface Props {
   groupedSessions: GroupedSessions;
   currentSessionId: string | null;
   onSelectSession: (sessionId: string) => void;
+  onDeleteSession: (sessionId: string) => void;
 }
 
-export function SessionList({ groupedSessions, currentSessionId, onSelectSession }: SessionListProps) {
+export function SessionList(props: Props) {
+  const { groupedSessions, currentSessionId, onSelectSession, onDeleteSession } = props;
+
   return (
     <div className="max-h-80 overflow-y-auto p-1.5 pt-0 flex flex-col gap-0.5">
       {GROUP_ORDER.map((groupKey) => {
@@ -25,6 +28,7 @@ export function SessionList({ groupedSessions, currentSessionId, onSelectSession
                 session={session}
                 isSelected={session.id === currentSessionId}
                 onSelect={() => onSelectSession(session.id)}
+                onDelete={() => onDeleteSession(session.id)}
               />
             ))}
           </div>
