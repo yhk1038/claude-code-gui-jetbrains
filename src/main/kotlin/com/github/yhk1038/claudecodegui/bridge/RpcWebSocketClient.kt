@@ -194,11 +194,13 @@ class RpcWebSocketClient(
             }
             "OPEN_NEW_TAB" -> {
                 val workingDir = params["workingDir"]?.jsonPrimitive?.content ?: ""
+                logger.info("[DEBUG:RpcWS] OPEN_NEW_TAB received, params=$params, resolved workingDir='$workingDir'")
                 rpcHandler.openNewTab(workingDir)
                 buildJsonObject {}
             }
             "OPEN_SETTINGS" -> {
                 val workingDir = params["workingDir"]?.jsonPrimitive?.content ?: ""
+                logger.info("[DEBUG:RpcWS] OPEN_SETTINGS received, params=$params, resolved workingDir='$workingDir'")
                 rpcHandler.openSettings(workingDir)
                 buildJsonObject {}
             }

@@ -1,4 +1,5 @@
-import { IdeAdapterType, type IdeAdapter } from './IdeAdapter';
+import { ClientEnv } from '../shared';
+import type { IdeAdapter } from './IdeAdapter';
 import { JetBrainsAdapter } from './JetBrainsAdapter';
 import { BrowserAdapter } from './BrowserAdapter';
 import { detectRuntime } from '../config/environment';
@@ -15,7 +16,7 @@ let adapterInstance: IdeAdapter | null = null;
 /**
  * Detect the current environment and return the appropriate adapter type
  */
-export function detectEnvironment(): IdeAdapterType {
+export function detectEnvironment(): ClientEnv {
   return detectRuntime();
 }
 
@@ -31,7 +32,7 @@ export function initializeAdapter(): IdeAdapter {
 
   const environment = detectEnvironment();
 
-  if (environment === IdeAdapterType.JETBRAINS) {
+  if (environment === ClientEnv.JETBRAINS) {
     console.log('[IdeAdapter] Initializing JetBrains adapter');
     adapterInstance = new JetBrainsAdapter();
   } else {
@@ -58,7 +59,7 @@ export function getAdapter(): IdeAdapter {
   }
 
   // BrowserAdapter 상태에서 JCEF가 감지되면 JetBrainsAdapter로 전환
-  if (adapterInstance.type === IdeAdapterType.BROWSER && detectEnvironment() === IdeAdapterType.JETBRAINS) {
+  if (adapterInstance.type === ClientEnv.BROWSER && detectEnvironment() === ClientEnv.JETBRAINS) {
     console.log('[IdeAdapter] JCEF detected after initial BrowserAdapter, switching to JetBrains adapter');
     resetAdapter();
     return initializeAdapter();
@@ -82,8 +83,8 @@ export function onBridgeReady(): void {
   const currentType = adapterInstance?.type;
 
   // If we were using browser adapter but now have Kotlin bridge or JCEF env, switch
-  if (currentType === IdeAdapterType.BROWSER) {
-    if (detectRuntime() === IdeAdapterType.JETBRAINS) {
+  if (currentType === ClientEnv.BROWSER) {
+    if (detectRuntime() === ClientEnv.JETBRAINS) {
       console.log('[IdeAdapter] JetBrains environment detected, switching to JetBrains adapter');
       resetAdapter();
       initializeAdapter();

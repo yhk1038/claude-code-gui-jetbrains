@@ -54,9 +54,12 @@ class NodeBackendService : Disposable {
         }
 
         private fun handlerForWorkingDir(workingDir: String?): NodeProcessManager.RpcHandler? {
+            logger.info("[DEBUG:handlerForWorkingDir] workingDir='$workingDir', isNullOrBlank=${workingDir.isNullOrBlank()}, rpcHandlers.keys=${rpcHandlers.keys}")
             if (workingDir == null) return rpcHandlers.values.firstOrNull()?.second
-            return rpcHandlers.values
+            val matched = rpcHandlers.values
                 .filter { (basePath, _) -> workingDir.startsWith(basePath) }
+            logger.info("[DEBUG:handlerForWorkingDir] matched=${matched.size}, basePaths=${rpcHandlers.values.map { it.first }}")
+            return matched
                 .maxByOrNull { (basePath, _) -> basePath.length }
                 ?.second
                 ?: rpcHandlers.values.firstOrNull()?.second

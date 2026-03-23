@@ -12,7 +12,8 @@ export async function openNewTabHandler(
     const workingDir = message.payload?.workingDir as string | undefined;
     await bridge.openNewTab(workingDir);
   } catch (err) {
-    console.error('[node-backend]', 'bridge.openNewTab() failed:', err);
+    const msg = err instanceof Error ? err.message : JSON.stringify(err);
+    console.error('[node-backend]', `bridge.openNewTab() failed: ${msg}`);
   }
 
   connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });

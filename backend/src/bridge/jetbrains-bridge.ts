@@ -84,6 +84,7 @@ export class JetBrainsBridge implements Bridge {
   private request(method: string, params: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
     return new Promise<Record<string, unknown>>((resolve, reject) => {
       const client = this.getRpcClient();
+      console.error('[node-backend]', `[DEBUG:bridge.request] method=${method}, rpcClients.size=${this.rpcClients.size}, client=${client ? `readyState=${client.readyState}` : 'null'}`);
       if (!client) {
         reject(new Error(`No RPC client connected — cannot send JSON-RPC request "${method}"`));
         return;
@@ -105,6 +106,7 @@ export class JetBrainsBridge implements Bridge {
         params,
       };
 
+      console.error('[node-backend]', `[DEBUG:bridge.request] sending: ${JSON.stringify(request)}`);
       client.send(JSON.stringify(request) + '\n');
     });
   }

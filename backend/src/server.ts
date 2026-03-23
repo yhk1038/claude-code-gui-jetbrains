@@ -1,5 +1,5 @@
 import { execFileSync, execSync } from 'child_process';
-import { startWebSocketServer } from './ws/ws-server';
+import { startWebSocketServer, type BridgeMap } from './ws/ws-server';
 import { BrowserBridge } from './bridge/browser-bridge';
 import { JetBrainsBridge } from './bridge/jetbrains-bridge';
 import { handleMessage } from './core/handlers/index';
@@ -10,6 +10,7 @@ import { isJetBrainsMode, serverPort, webviewDir } from './config/environment';
 import { initLogger, getLogger } from './logging';
 import { LogWebSocketServer } from './logging/log-ws';
 import { Claude } from './core/claude';
+import { ClientEnv } from './shared';
 
 /**
  * JetBrains 모드: JETBRAINS_MODE=true 환경변수로 감지
@@ -77,11 +78,11 @@ function killProcessOnPort(port: number): void {
 }
 
 async function startServerWithRetry(
-  bridge: InstanceType<typeof BrowserBridge> | InstanceType<typeof JetBrainsBridge>,
+  bridges: BridgeMap,
   logWs?: LogWebSocketServer,
 ): Promise<Awaited<ReturnType<typeof startWebSocketServer>>> {
   try {
-    return await startWebSocketServer(serverPort, bridge, handleMessage, webviewDir, logWs);
+    return await startWebSocketServer(serverPort, bridges, handleMessage, webviewDir, logWs);
   } catch (err: unknown) {
     const nodeErr = err as NodeJS.ErrnoException;
     if (nodeErr.code !== 'EADDRINUSE') throw err;
@@ -91,7 +92,7 @@ async function startServerWithRetry(
 
     await new Promise((resolve) => setTimeout(resolve, 200));
 
-    return await startWebSocketServer(serverPort, bridge, handleMessage, webviewDir, logWs);
+    return await startWebSocketServer(serverPort, bridges, handleMessage, webviewDir, logWs);
   }
 }
 
@@ -111,9 +112,10 @@ async function main() {
   // Load CLI path from settings before any handler can spawn claude
   await Claude.refresh();
 
-  const bridge = isJetBrainsMode
-    ? new JetBrainsBridge()
-    : new BrowserBridge();
+  const bridges: BridgeMap = {
+    [ClientEnv.BROWSER]: new BrowserBridge(),
+    [ClientEnv.JETBRAINS]: new JetBrainsBridge(),
+  };
 
   // 2. LogWebSocketServer 생성
   const logWs = new LogWebSocketServer((entries) => {
@@ -121,7 +123,7 @@ async function main() {
   });
 
   // 3. 서버 시작 (logWs 전달)
-  const { port, close, connections } = await startServerWithRetry(bridge, logWs);
+  const { port, close, connections } = await startServerWithRetry(bridges, logWs);
 
   // 4. Logger에 LogWS 참조 설정
   logger.setLogWs(logWs);
@@ -133,7 +135,8 @@ async function main() {
 
   console.error(
     '[node-backend]',
-    `Server started in ${isJetBrainsMode ? 'JetBrains' : 'browser'} mode on port ${port}`,
+    `Server started on port ${port}`,
+    `(mode: ${isJetBrainsMode ? 'JetBrains' : 'browser'})`,
     webviewDir ? `(webviewDir: ${webviewDir})` : '',
   );
 

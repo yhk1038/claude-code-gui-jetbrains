@@ -1,7 +1,10 @@
-export enum IdeAdapterType {
-  JETBRAINS = 'jetbrains',
-  BROWSER = 'browser',
-}
+import { ClientEnv } from '../shared';
+
+/**
+ * @deprecated Use ClientEnv from shared instead
+ */
+export const IdeAdapterType = ClientEnv;
+export type IdeAdapterType = ClientEnv;
 
 /**
  * IDE Adapter Interface
@@ -13,7 +16,7 @@ export interface IdeAdapter {
   /**
    * The type of environment this adapter handles
    */
-  readonly type: IdeAdapterType;
+  readonly type: ClientEnv;
 
   /**
    * Open a new tab/window

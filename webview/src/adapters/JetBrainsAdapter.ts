@@ -1,4 +1,5 @@
-import { IdeAdapterType, type IdeAdapter } from './IdeAdapter';
+import { ClientEnv } from '../shared';
+import type { IdeAdapter } from './IdeAdapter';
 import { getBridge } from '../api/bridge/Bridge';
 
 /**
@@ -8,7 +9,7 @@ import { getBridge } from '../api/bridge/Bridge';
  * Opens new editor tabs, settings, and files within the IDE.
  */
 export class JetBrainsAdapter implements IdeAdapter {
-  readonly type = IdeAdapterType.JETBRAINS;
+  readonly type = ClientEnv.JETBRAINS;
 
   isReady(): boolean {
     return getBridge().isConnected;

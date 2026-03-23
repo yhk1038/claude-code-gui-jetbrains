@@ -1,4 +1,5 @@
-import { IdeAdapterType, type IdeAdapter } from './IdeAdapter';
+import { ClientEnv } from '../shared';
+import type { IdeAdapter } from './IdeAdapter';
 import { getBridge } from '../api/bridge/Bridge';
 
 /**
@@ -8,7 +9,7 @@ import { getBridge } from '../api/bridge/Bridge';
  * Opens new browser tabs using window.open().
  */
 export class BrowserAdapter implements IdeAdapter {
-  readonly type = IdeAdapterType.BROWSER;
+  readonly type = ClientEnv.BROWSER;
 
   isReady(): boolean {
     return true; // Browser is always ready

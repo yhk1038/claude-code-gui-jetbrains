@@ -12,7 +12,8 @@ export async function openSettingsHandler(
     const workingDir = message.payload?.workingDir as string | undefined;
     await bridge.openSettings(workingDir);
   } catch (err) {
-    console.error('[node-backend]', 'bridge.openSettings() failed:', err);
+    const msg = err instanceof Error ? err.message : JSON.stringify(err);
+    console.error('[node-backend]', `bridge.openSettings() failed: ${msg}`);
   }
   connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
 }

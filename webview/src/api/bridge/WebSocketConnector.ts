@@ -1,6 +1,7 @@
 // webview/src/api/bridge/WebSocketConnector.ts
 
 import type { Connector, RawMessageHandler, ConnectionChangeHandler } from './Connector';
+import { detectRuntime } from '../../config/environment';
 
 export class WebSocketConnector implements Connector {
   private ws: WebSocket | null = null;
@@ -32,7 +33,8 @@ export class WebSocketConnector implements Connector {
     this.isConnecting = true;
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const env = detectRuntime();
+    const wsUrl = `${protocol}//${window.location.host}/ws?env=${env}`;
     console.log('[WebSocketConnector] Connecting to:', wsUrl);
 
     const ws = new WebSocket(wsUrl);

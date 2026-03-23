@@ -1,6 +1,7 @@
 import type { WebSocket } from 'ws';
 import type { ChildProcess } from 'child_process';
 import type { IPCMessage } from '../core/types';
+import { ClientEnv } from '../shared';
 
 const SESSION_CLEANUP_GRACE_MS = 30_000;
 const IDLE_SHUTDOWN_GRACE_MS = 60_000;
@@ -15,6 +16,7 @@ interface SessionRecord {
 
 interface ClientRecord {
   subscribedSessionId: string | null;
+  env: ClientEnv;
 }
 
 export class ConnectionManager {
@@ -27,12 +29,12 @@ export class ConnectionManager {
 
   // ─── Connection lifecycle ───────────────────────────────────────────────────
 
-  addConnection(ws: WebSocket): string {
+  addConnection(ws: WebSocket, env: ClientEnv = ClientEnv.BROWSER): string {
     const connectionId = `conn-${++this.nextId}-${Date.now()}`;
     this.connectionMap.set(connectionId, ws);
-    this.clientMap.set(connectionId, { subscribedSessionId: null });
+    this.clientMap.set(connectionId, { subscribedSessionId: null, env });
     this.cancelIdleShutdown();
-    console.error('[node-backend]', `Connection added: ${connectionId}`);
+    console.error('[node-backend]', `Connection added: ${connectionId} (env: ${env})`);
     return connectionId;
   }
 
@@ -191,6 +193,10 @@ export class ConnectionManager {
 
   getClient(connectionId: string): ClientRecord | undefined {
     return this.clientMap.get(connectionId);
+  }
+
+  getClientEnv(connectionId: string): ClientEnv {
+    return this.clientMap.get(connectionId)?.env ?? ClientEnv.BROWSER;
   }
 
   getSession(sessionId: string): SessionRecord | undefined {
