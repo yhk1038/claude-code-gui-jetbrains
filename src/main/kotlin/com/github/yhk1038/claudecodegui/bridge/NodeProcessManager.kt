@@ -435,6 +435,7 @@ class NodeProcessManager(
                     val resources = listOf(
                         "index.html",
                         "favicon.svg",
+                        "favicon-unread.svg",
                         "welcome-art-dark.svg",
                         "welcome-art-light.svg"
                     )
