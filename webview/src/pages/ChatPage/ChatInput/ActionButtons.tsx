@@ -3,28 +3,24 @@ import { InputMode, INPUT_MODES } from '../../../types/chatInput';
 interface Props {
   mode: InputMode;
   isActive: boolean;
-  isStopped: boolean;
   disabled: boolean;
   hasValue: boolean;
   onAttach?: () => void;
   onSlashCommand?: () => void;
   onSubmit: () => void;
   onStop?: () => void;
-  onContinue?: () => void;
 }
 
 export function ActionButtons(props: Props) {
   const {
     mode,
     isActive,
-    isStopped,
     disabled,
     hasValue,
     onAttach,
     onSlashCommand,
     onSubmit,
     onStop,
-    onContinue,
   } = props;
   const config = INPUT_MODES[mode];
 
@@ -54,7 +50,7 @@ export function ActionButtons(props: Props) {
         </button>
       </div>
 
-      {/* 전송/정지/계속 버튼 */}
+      {/* 전송/정지 버튼 */}
       {isActive && !hasValue && onStop ? (
         <button
           type="button"
@@ -64,17 +60,6 @@ export function ActionButtons(props: Props) {
         >
           <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
             <rect x="4" y="4" width="8" height="8" rx="1" />
-          </svg>
-        </button>
-      ) : isStopped && !isActive && onContinue ? (
-        <button
-          type="button"
-          onClick={onContinue}
-          className="flex items-center justify-center w-[26px] h-[26px] rounded-md bg-blue-500 hover:bg-blue-400 text-white transition-colors"
-          title="Continue generating"
-        >
-          <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M5 3l8 5-8 5V3z" />
           </svg>
         </button>
       ) : (

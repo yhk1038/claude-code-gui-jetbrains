@@ -124,25 +124,6 @@ describe('useChatStream', () => {
       expect(result.current.messages.length).toBe(0);
     });
 
-    it('스트리밍 중에는 새 메시지 추가 불가', () => {
-      const { bridge } = createMockBridge();
-      const { result } = renderHook(() => useChatStream({ bridge }));
-
-      act(() => {
-        result.current.addUserMessage('First message');
-      });
-
-      expect(result.current.isStreaming).toBe(true);
-
-      act(() => {
-        result.current.addUserMessage('Second message');
-      });
-
-      // Should still have only first user message + placeholder
-      expect(result.current.messages.length).toBe(2);
-      expect(result.current.messages.filter(m => m.type === 'user').length).toBe(1);
-    });
-
     it('context가 올바르게 저장된다', () => {
       const { bridge } = createMockBridge();
       const { result } = renderHook(() => useChatStream({ bridge }));
@@ -159,15 +140,16 @@ describe('useChatStream', () => {
     });
   });
 
-  describe('STREAM_EVENT 구독', () => {
+  describe('stream_event 처리', () => {
     it('text_delta 수신 시 streamingMessageId가 없으면 assistant placeholder 자동 생성', () => {
       const { bridge, emit } = createMockBridge();
       const { result } = renderHook(() => useChatStream({ bridge }));
 
       // Emit text_delta without prior message
       act(() => {
-        emit('STREAM_EVENT', {
-          delta: { type: 'text_delta', text: 'Hello' },
+        emit('CLI_EVENT', {
+          type: 'stream_event',
+          event: { delta: { type: 'text_delta', text: 'Hello' } },
         });
       });
 
@@ -183,17 +165,17 @@ describe('useChatStream', () => {
       const { result } = renderHook(() => useChatStream({ bridge }));
 
       act(() => {
-        emit('STREAM_EVENT', { delta: { type: 'text_delta', text: 'Hello' } });
+        emit('CLI_EVENT', { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'Hello' } } });
         flushRAF();
       });
 
       act(() => {
-        emit('STREAM_EVENT', { delta: { type: 'text_delta', text: ' world' } });
+        emit('CLI_EVENT', { type: 'stream_event', event: { delta: { type: 'text_delta', text: ' world' } } });
         flushRAF();
       });
 
       act(() => {
-        emit('STREAM_EVENT', { delta: { type: 'text_delta', text: '!' } });
+        emit('CLI_EVENT', { type: 'stream_event', event: { delta: { type: 'text_delta', text: '!' } } });
         flushRAF();
       });
 
@@ -207,27 +189,29 @@ describe('useChatStream', () => {
       expect(result.current.isStreaming).toBe(false);
 
       act(() => {
-        emit('STREAM_EVENT', { delta: { type: 'text_delta', text: 'Test' } });
+        emit('CLI_EVENT', { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'Test' } } });
       });
 
       expect(result.current.isStreaming).toBe(true);
     });
 
-    it('시스템 메시지(eventType=system) 수신 시 onSystemMessage 콜백 호출', () => {
+    it('system 이벤트 수신 시 onSystemMessage 콜백 호출', () => {
       const { bridge, emit } = createMockBridge();
       const onSystemMessage = vi.fn();
       renderHook(() => useChatStream({ bridge, onSystemMessage }));
 
       act(() => {
-        emit('STREAM_EVENT', {
-          eventType: 'system',
+        emit('CLI_EVENT', {
+          type: 'system',
+          subtype: 'init',
           sessionId: 'session-123',
           content: { type: 'status', message: 'Processing' },
         });
       });
 
       expect(onSystemMessage).toHaveBeenCalledWith({
-        eventType: 'system',
+        type: 'system',
+        subtype: 'init',
         sessionId: 'session-123',
         content: { type: 'status', message: 'Processing' },
       });
@@ -238,8 +222,9 @@ describe('useChatStream', () => {
       const { result } = renderHook(() => useChatStream({ bridge }));
 
       act(() => {
-        emit('STREAM_EVENT', {
-          eventType: 'system',
+        emit('CLI_EVENT', {
+          type: 'system',
+          subtype: 'init',
           sessionId: 'session-123',
           content: 'System message',
         });
@@ -251,21 +236,21 @@ describe('useChatStream', () => {
     });
   });
 
-  describe('RESULT_MESSAGE 구독', () => {
+  describe('result 처리', () => {
     it('수신 시 isStreaming이 false로 전환된다', () => {
       const { bridge, emit } = createMockBridge();
       const { result } = renderHook(() => useChatStream({ bridge }));
 
       // Start streaming
       act(() => {
-        emit('STREAM_EVENT', { delta: { type: 'text_delta', text: 'Hello' } });
+        emit('CLI_EVENT', { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'Hello' } } });
       });
 
       expect(result.current.isStreaming).toBe(true);
 
       // End streaming
       act(() => {
-        emit('RESULT_MESSAGE', { status: 'success' });
+        emit('CLI_EVENT', { type: 'result' });
       });
 
       expect(result.current.isStreaming).toBe(false);
@@ -276,13 +261,13 @@ describe('useChatStream', () => {
       const { result } = renderHook(() => useChatStream({ bridge }));
 
       act(() => {
-        emit('STREAM_EVENT', { delta: { type: 'text_delta', text: 'Hello' } });
+        emit('CLI_EVENT', { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'Hello' } } });
       });
 
       expect(result.current.streamingMessageId).not.toBeNull();
 
       act(() => {
-        emit('RESULT_MESSAGE', { status: 'success' });
+        emit('CLI_EVENT', { type: 'result' });
       });
 
       expect(result.current.streamingMessageId).toBeNull();
@@ -294,12 +279,12 @@ describe('useChatStream', () => {
       const { result } = renderHook(() => useChatStream({ bridge, onError }));
 
       act(() => {
-        emit('STREAM_EVENT', { delta: { type: 'text_delta', text: 'Hello' } });
+        emit('CLI_EVENT', { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'Hello' } } });
       });
 
       act(() => {
-        emit('RESULT_MESSAGE', {
-          status: 'error',
+        emit('CLI_EVENT', {
+          type: 'result',
           error: { code: 'ERR_001', message: 'Test error', details: 'Details' },
         });
       });
@@ -321,14 +306,14 @@ describe('useChatStream', () => {
       const streamingId = result.current.streamingMessageId;
 
       act(() => {
-        emit('RESULT_MESSAGE', { status: 'success' });
+        emit('CLI_EVENT', { type: 'result' });
       });
 
       expect(onStreamEnd).toHaveBeenCalledWith(streamingId);
     });
   });
 
-  describe('ASSISTANT_MESSAGE 구독', () => {
+  describe('assistant 처리', () => {
     it('완성된 content가 처리된다', () => {
       const { bridge, emit } = createMockBridge();
       const { result } = renderHook(() => useChatStream({ bridge }));
@@ -342,11 +327,14 @@ describe('useChatStream', () => {
 
       // Receive complete assistant message
       act(() => {
-        emit('ASSISTANT_MESSAGE', {
-          messageId: 'msg_123',
-          content: [
-            { type: 'text', text: 'Hello world' },
-          ],
+        emit('CLI_EVENT', {
+          type: 'assistant',
+          message: {
+            id: 'msg_123',
+            content: [
+              { type: 'text', text: 'Hello world' },
+            ],
+          },
         });
       });
 
@@ -376,9 +364,12 @@ describe('useChatStream', () => {
       ];
 
       act(() => {
-        emit('ASSISTANT_MESSAGE', {
-          messageId: 'msg_123',
-          content: expectedContent,
+        emit('CLI_EVENT', {
+          type: 'assistant',
+          message: {
+            id: 'msg_123',
+            content: expectedContent,
+          },
         });
       });
 
@@ -401,9 +392,12 @@ describe('useChatStream', () => {
       ];
 
       act(() => {
-        emit('ASSISTANT_MESSAGE', {
-          messageId: 'msg_123',
-          content: expectedContent,
+        emit('CLI_EVENT', {
+          type: 'assistant',
+          message: {
+            id: 'msg_123',
+            content: expectedContent,
+          },
         });
       });
 
@@ -417,11 +411,14 @@ describe('useChatStream', () => {
 
       // Emit without prior streaming
       act(() => {
-        emit('ASSISTANT_MESSAGE', {
-          messageId: 'msg_123',
-          content: [
-            { type: 'text', text: 'Direct message' },
-          ],
+        emit('CLI_EVENT', {
+          type: 'assistant',
+          message: {
+            id: 'msg_123',
+            content: [
+              { type: 'text', text: 'Direct message' },
+            ],
+          },
         });
       });
 
@@ -652,44 +649,6 @@ describe('useChatStream', () => {
     });
   });
 
-  describe('stop / continue', () => {
-    it('stop 호출 시 isStopped=true, isStreaming=false', () => {
-      const { bridge } = createMockBridge();
-      const { result } = renderHook(() => useChatStream({ bridge }));
-
-      act(() => {
-        result.current.addUserMessage('Test');
-      });
-
-      expect(result.current.isStreaming).toBe(true);
-      expect(result.current.isStopped).toBe(false);
-
-      act(() => {
-        result.current.stop();
-      });
-
-      expect(result.current.isStopped).toBe(true);
-      expect(result.current.isStreaming).toBe(false);
-    });
-
-    it('continue 호출 시 isStopped=false', () => {
-      const { bridge } = createMockBridge();
-      const { result } = renderHook(() => useChatStream({ bridge }));
-
-      act(() => {
-        result.current.stop();
-      });
-
-      expect(result.current.isStopped).toBe(true);
-
-      act(() => {
-        result.current.continue();
-      });
-
-      expect(result.current.isStopped).toBe(false);
-    });
-  });
-
   describe('retry', () => {
     it('실패한 메시지를 재시도할 수 있다', () => {
       const { bridge } = createMockBridge();
@@ -777,7 +736,7 @@ describe('useChatStream', () => {
       const streamingId = result.current.streamingMessageId;
 
       act(() => {
-        emit('RESULT_MESSAGE', { status: 'success' });
+        emit('CLI_EVENT', { type: 'result' });
       });
 
       expect(onStreamEnd).toHaveBeenCalledWith(streamingId);
@@ -790,9 +749,9 @@ describe('useChatStream', () => {
       const { result } = renderHook(() => useChatStream({ bridge }));
 
       act(() => {
-        emit('STREAM_EVENT', { delta: { type: 'text_delta', text: 'A' } });
-        emit('STREAM_EVENT', { delta: { type: 'text_delta', text: 'B' } });
-        emit('STREAM_EVENT', { delta: { type: 'text_delta', text: 'C' } });
+        emit('CLI_EVENT', { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'A' } } });
+        emit('CLI_EVENT', { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'B' } } });
+        emit('CLI_EVENT', { type: 'stream_event', event: { delta: { type: 'text_delta', text: 'C' } } });
       });
 
       // Before RAF flush, content should not be updated yet

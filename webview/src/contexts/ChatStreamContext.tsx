@@ -23,7 +23,6 @@ interface ChatStreamContextType {
   // From useChatStream
   messages: LoadedMessageDto[];
   isStreaming: boolean;
-  isStopped: boolean;
   streamingMessageId: string | null;
   error: Error | null;
 
@@ -293,16 +292,13 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
     });
   }, [bridge]);
 
-  // continue: reset isStopped + send auto-continue message via --resume
+  // continue: send auto-continue message via --resume
   const continueGeneration = useCallback(() => {
     console.log('[ChatStreamContext] Continuing generation via sendMessage');
 
-    // Reset isStopped state
-    chatStream.continue();
-
     // Auto-send continue message — triggers ensureClaudeProcess(--resume) in backend
     sendMessage('Please continue from where you left off.', sessionRef.current.inputMode);
-  }, [chatStream, sendMessage]);
+  }, [sendMessage]);
 
   // retry: delegate to chatStream
   const retry = useCallback(
@@ -317,7 +313,6 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
     // From useChatStream
     messages: chatStream.messages,
     isStreaming: chatStream.isStreaming,
-    isStopped: chatStream.isStopped,
     streamingMessageId: chatStream.streamingMessageId,
     error: chatStream.error,
 

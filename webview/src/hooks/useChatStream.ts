@@ -30,7 +30,6 @@ export interface UseChatStreamOptions {
 export interface UseChatStreamReturn {
   messages: LoadedMessageDto[];
   isStreaming: boolean;
-  isStopped: boolean;
   streamingMessageId: string | null;
   error: Error | null;
 
@@ -45,10 +44,8 @@ export interface UseChatStreamReturn {
   retry: (messageId: string) => void;
 
   // 스트리밍 제어
-  /** isStopped = true, isStreaming = false 설정. bridge 전송은 ChatStreamContext가 담당. */
+  /** isStreaming = false 설정. bridge 전송은 ChatStreamContext가 담당. */
   stop: () => void;
-  /** isStopped = false 설정. bridge 전송은 ChatStreamContext가 담당. */
-  continue: () => void;
   /** 스트림 관련 모든 내부 상태를 초기화 (clear conversation 등에서 사용) */
   resetStreamState: () => void;
   systemInit: Record<string, unknown> | null;
@@ -113,7 +110,6 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
 
   const [messages, setMessages] = useState<LoadedMessageDto[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [isStopped, setIsStopped] = useState(false);
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [systemInit, setSystemInit] = useState<Record<string, unknown> | null>(null);
@@ -305,7 +301,6 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
     if (!content.trim() && (!attachments || attachments.length === 0)) return;
 
     setError(null);
-    setIsStopped(false);
 
     // 파일/폴더 첨부를 context로 변환
     const fileContexts: Context[] = (attachments ?? [])
@@ -474,14 +469,8 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
     endStreaming();
   }, [endStreaming]);
 
-  // Continue
-  const continueGeneration = useCallback(() => {
-    setIsStopped(false);
-  }, []);
-
   // Reset all stream-related internal state (for clear conversation)
   const resetStreamState = useCallback(() => {
-    setIsStopped(false);
     // NOTE: systemInit is NOT reset here — it is process-level state,
     // not session-level. system/init fires only once per CLI spawn.
     setContextWindowUsage(null);
@@ -899,7 +888,6 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
   return {
     messages,
     isStreaming,
-    isStopped,
     streamingMessageId,
     error,
     addUserMessage,
@@ -909,7 +897,6 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
     updateMessage,
     retry,
     stop,
-    continue: continueGeneration,
     resetStreamState,
     systemInit,
     contextWindowUsage,

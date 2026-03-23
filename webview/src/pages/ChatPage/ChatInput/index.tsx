@@ -35,9 +35,7 @@ export function ChatInput() {
     setInput: onChange,
     handleSubmit: onSubmit,
     isStreaming,
-    isStopped,
     stop: onStop,
-    continue: onContinue,
   } = useChatStreamContext();
   const inputHistory = useInputHistory();
   const [isFocused, setIsFocused] = useState(false);
@@ -436,7 +434,6 @@ export function ChatInput() {
             <ActionButtons
               mode={mode}
               isActive={isActive}
-              isStopped={isStopped}
               disabled={disabled}
               hasValue={hasValue}
               onAttach={() => setShowAttachMenu(prev => !prev)}
@@ -446,7 +443,6 @@ export function ChatInput() {
                 clearAttachments();
               }}
               onStop={onStop}
-              onContinue={onContinue}
             />
           </div>
         </div>

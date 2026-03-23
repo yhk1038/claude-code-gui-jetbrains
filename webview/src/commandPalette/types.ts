@@ -14,7 +14,6 @@ export interface CommandPaletteServices {
   chatStream: {
     messages: any[];
     isStreaming: boolean;
-    isStopped: boolean;
     input: string;
     setInput: (input: string) => void;
     sendMessage: (content: string, inputMode: InputMode, context?: Context[]) => void;

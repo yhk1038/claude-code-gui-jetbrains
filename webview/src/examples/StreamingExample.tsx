@@ -10,13 +10,11 @@ export const StreamingExample: React.FC = () => {
   const {
     messages,
     isStreaming,
-    isStopped,
     streamingMessageId,
     input,
     setInput,
     handleSubmit,
     stop,
-    continue: continueGeneration,
     error,
   } = useChatStreamContext();
 
@@ -28,9 +26,6 @@ export const StreamingExample: React.FC = () => {
           <div>
             <strong>Streaming:</strong> {isStreaming ? 'Yes' : 'No'}
           </div>
-          <div>
-            <strong>Stopped:</strong> {isStopped ? 'Yes' : 'No'}
-          </div>
           {streamingMessageId && (
             <div>
               <strong>Current Message:</strong> {streamingMessageId}
@@ -39,11 +34,6 @@ export const StreamingExample: React.FC = () => {
           {isStreaming && (
             <button onClick={stop} style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>
               Stop
-            </button>
-          )}
-          {isStopped && (
-            <button onClick={continueGeneration} style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>
-              Continue
             </button>
           )}
         </div>

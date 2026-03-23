@@ -54,7 +54,6 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
     chatStream: {
       messages: chatStream.messages,
       isStreaming: chatStream.isStreaming,
-      isStopped: chatStream.isStopped,
       input: chatStream.input,
       setInput: chatStream.setInput,
       sendMessage: chatStream.sendMessage,
@@ -84,7 +83,6 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
     chatStream: {
       messages: chatStream.messages,
       isStreaming: chatStream.isStreaming,
-      isStopped: chatStream.isStopped,
       input: chatStream.input,
       setInput: chatStream.setInput,
       sendMessage: chatStream.sendMessage,
