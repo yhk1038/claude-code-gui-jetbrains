@@ -22,7 +22,7 @@ export function ChatPage() {
   const { messages, isStreaming } = useChatStreamContext();
   const { pending: pendingUserAnswer, dismiss } = usePendingAskUserQuestion(messages, isStreaming);
   const { pending: pendingPermission, approve: approvePermission, approveForSession, deny: denyPermission } = usePendingPermissions();
-  const { pending: pendingPlan } = usePendingPlanApproval();
+  const { pending: pendingPlan, approve: approvePlan, deny: denyPlan } = usePendingPlanApproval();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const bottomPanelRef = useRef<HTMLDivElement>(null);
 
@@ -103,7 +103,11 @@ export function ChatPage() {
               onDismiss={() => dismiss(pendingUserAnswer.toolUse.id)}
             />
           ) : pendingPlan ? (
-            <AcceptPlanPanel />
+            <AcceptPlanPanel
+              pending={pendingPlan}
+              onApprove={approvePlan}
+              onDeny={denyPlan}
+            />
           ) : pendingPermission ? (
             <PermissionBanner
               permission={pendingPermission}

@@ -3,8 +3,8 @@ import { OptionItem } from '../ApprovalPanel/OptionButton';
 import { ApprovalPanel } from '../ApprovalPanel';
 import { useChatStreamContext } from '../../../contexts/ChatStreamContext';
 import { useSessionContext } from '../../../contexts/SessionContext';
-import { usePendingPlanApproval } from '../../../hooks/usePendingPlanApproval';
 import { InputModeValues } from '../../../types/chatInput';
+import type { PendingPlanApproval } from '../../../hooks/usePendingPlanApproval';
 
 const options: OptionItem[] = [
   { key: '1', label: 'Yes, and auto-accept' },
@@ -12,37 +12,38 @@ const options: OptionItem[] = [
   { key: '3', label: 'No, keep planning' },
 ];
 
-export function AcceptPlanPanel() {
+interface Props {
+  pending: PendingPlanApproval;
+  onApprove: (controlRequestId: string) => void;
+  onDeny: (controlRequestId: string, reason?: string) => void;
+}
+
+export function AcceptPlanPanel(props: Props) {
+  const { pending, onApprove, onDeny } = props;
   const { stop } = useChatStreamContext();
   const { setInputMode } = useSessionContext();
-  const { pending: pendingPlan, approve: approvePlan, deny: denyPlan } = usePendingPlanApproval();
 
   const handleOptionSelect = useCallback((index: number) => {
-    if (!pendingPlan) return;
     if (index === 0) {
-      approvePlan(pendingPlan.controlRequestId);
+      onApprove(pending.controlRequestId);
       setInputMode(InputModeValues.AUTO_EDIT);
     } else if (index === 1) {
-      approvePlan(pendingPlan.controlRequestId);
+      onApprove(pending.controlRequestId);
       setInputMode(InputModeValues.ASK_BEFORE_EDIT);
     } else if (index === 2) {
-      denyPlan(pendingPlan.controlRequestId);
+      onDeny(pending.controlRequestId);
       stop();
     }
-  }, [pendingPlan, approvePlan, denyPlan, setInputMode, stop]);
+  }, [pending, onApprove, onDeny, setInputMode, stop]);
 
   const handleTextSubmit = useCallback((text: string) => {
-    if (!pendingPlan) return;
-    denyPlan(pendingPlan.controlRequestId, text);
-  }, [pendingPlan, denyPlan]);
+    onDeny(pending.controlRequestId, text);
+  }, [pending, onDeny]);
 
   const handleCancel = useCallback(() => {
-    if (!pendingPlan) return;
-    denyPlan(pendingPlan.controlRequestId);
+    onDeny(pending.controlRequestId);
     stop();
-  }, [pendingPlan, denyPlan, stop]);
-
-  if (!pendingPlan) return null;
+  }, [pending, onDeny, stop]);
 
   return (
     <ApprovalPanel
