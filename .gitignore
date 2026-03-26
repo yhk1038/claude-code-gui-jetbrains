@@ -43,8 +43,10 @@ webview/vite.config.js
 # Test coverage & reports
 webview/coverage/
 webview/html/
+backend/coverage/
 
 # Claude Code / OMC
+.claude.json
 .claude/
 .claude-code-gui/
 .omc/
