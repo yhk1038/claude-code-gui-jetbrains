@@ -10,7 +10,6 @@ import {
   ArrowsRightLeftIcon,
   ArrowUpCircleIcon,
   ComputerDesktopIcon,
-  KeyIcon,
 } from '@heroicons/react/24/outline';
 import type { ComponentType, SVGProps } from 'react';
 
@@ -30,7 +29,6 @@ export enum IconName {
   ARROWS_RIGHT_LEFT = 'ArrowsRightLeftIcon',
   ARROW_UP_CIRCLE = 'ArrowUpCircleIcon',
   COMPUTER_DESKTOP = 'ComputerDesktopIcon',
-  KEY = 'KeyIcon',
 }
 
 /**
@@ -152,8 +150,8 @@ export const ROUTE_META: Record<Route, RouteMeta> = {
   [Route.SETTINGS_ACCOUNT]: {
     path: '/settings/account',
     label: 'Account',
-    icon: IconName.KEY,
-    description: 'API tokens and authentication',
+    icon: IconName.SHIELD_CHECK,
+    description: 'Profile and authentication',
     scopeSupport: 'none',
   },
   [Route.SETTINGS_ABOUT]: {
@@ -180,7 +178,6 @@ export const ICON_COMPONENTS: Record<IconName, ComponentType<SVGProps<SVGSVGElem
   [IconName.ARROWS_RIGHT_LEFT]: ArrowsRightLeftIcon,
   [IconName.ARROW_UP_CIRCLE]: ArrowUpCircleIcon,
   [IconName.COMPUTER_DESKTOP]: ComputerDesktopIcon,
-  [IconName.KEY]: KeyIcon,
 };
 
 /**

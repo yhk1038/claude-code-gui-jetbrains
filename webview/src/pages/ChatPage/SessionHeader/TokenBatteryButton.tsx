@@ -1,8 +1,5 @@
-import Tippy from '@tippyjs/react/headless';
 import { useUsageData } from '@/pages/SettingsPage/Usage/useUsageData';
 import { formatTimeUntil } from '@/components/AccountUsageModal/formatters';
-import { useRouter } from '@/router/useRouter';
-import { Route } from '@/router/routes';
 
 interface Props {
   className?: string;
@@ -17,64 +14,9 @@ function getBatteryColor(remaining: number): string {
 export function TokenBatteryButton(props: Props) {
   const { className } = props;
   const { data, isLoading, error } = useUsageData();
-  const { navigate } = useRouter();
 
   if (!data && !isLoading && error) {
-    const disabledColor = '#71717a';
-    return (
-      <Tippy
-        placement="bottom"
-        render={(attrs) => (
-          <div
-            className="bg-zinc-800 border border-zinc-700 rounded-md px-1.5 py-1 text-[10px] text-zinc-400 shadow-lg max-w-[240px]"
-            {...attrs}
-          >
-            <p>Set an OAuth token in Settings &gt; Account to enable usage tracking.</p>
-          </div>
-        )}
-      >
-        <span
-          className="inline-flex cursor-pointer"
-          onClick={() => navigate(Route.SETTINGS_ACCOUNT)}
-        >
-          <span
-            className={`flex items-center gap-1 px-1.5 py-1 rounded text-zinc-500 opacity-60 hover:opacity-100 hover:bg-zinc-800 transition-opacity ${className ?? ''}`}
-          >
-            <span>
-              <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <rect
-                x="1"
-                y="4"
-                width="12"
-                height="8"
-                rx="1.5"
-                ry="1.5"
-                stroke={disabledColor}
-                strokeWidth="1.2"
-                fill="none"
-              />
-              <rect
-                x="13"
-                y="6.5"
-                width="1.5"
-                height="3"
-                rx="0.5"
-                ry="0.5"
-                fill={disabledColor}
-              />
-            </svg>
-          </span>
-          <span className="text-xs text-zinc-500">--</span>
-          </span>
-        </span>
-      </Tippy>
-    );
+    return null;
   }
 
   if (!data) return null;
