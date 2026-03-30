@@ -7,6 +7,7 @@ import { AccountUsageModal } from './components/AccountUsageModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { OPEN_ACCOUNT_USAGE_EVENT } from './commandPalette/sections/model/AccountUsageItem';
+import { isDev } from './config/environment';
 import 'katex/dist/katex.min.css';
 
 function AppContent() {
@@ -21,6 +22,7 @@ function AppContent() {
 
   return (
     <>
+      {isDev() && <div className="sticky top-0 border-t-2 border-t-fuchsia-500 z-50" />}
       <Routes>
         <Route path="/" element={<ProjectSelectorPage />} />
         <Route path="/sessions/new" element={<ChatPage />} />
