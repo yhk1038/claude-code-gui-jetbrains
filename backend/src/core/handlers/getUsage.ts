@@ -26,6 +26,22 @@ interface CcbUsageResponse {
   extra_usage: ExtraUsage | null;
 }
 
+function extractErrorMessage(raw: string): string {
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (parsed.error?.message) return parsed.error.message;
+    } catch { /* not JSON, fall through */ }
+  }
+  const cleaned = raw
+    .split('\n')
+    .filter((line) => !/^npm (warn|WARN)\b/.test(line))
+    .join('\n')
+    .trim();
+  return cleaned || raw;
+}
+
 function execFileAsync(cmd: string, args: string[], opts: { timeout: number }): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     execFile(cmd, args, opts, (err, stdout, stderr) => {
@@ -80,7 +96,7 @@ export async function getUsageHandler(
     connections.sendTo(connectionId, 'ACK', {
       requestId: message.requestId,
       status: 'error',
-      error: err instanceof Error ? err.message : String(err),
+      error: extractErrorMessage(err instanceof Error ? err.message : String(err)),
     });
   }
 }
