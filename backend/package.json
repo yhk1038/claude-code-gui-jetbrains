@@ -12,6 +12,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "claude-code-battery": "^0.2.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {

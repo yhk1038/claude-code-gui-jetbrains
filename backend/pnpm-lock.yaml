@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      claude-code-battery:
+        specifier: ^0.2.0
+        version: 0.2.0
       ws:
         specifier: ^8.18.0
         version: 8.19.0
@@ -561,6 +564,11 @@ packages:
   chai@6.2.2:
     resolution: {integrity: sha512-NUPRluOfOiTKBKvWPtSD4PhFvWCqOi0BGStNWs57X9js7XGTprSmFoz5F0tWhR4WPjNeR9jXqdC7/UpSJTnlRg==}
     engines: {node: '>=18'}
+
+  claude-code-battery@0.2.0:
+    resolution: {integrity: sha512-u8x+2UePOVH5pXnygwGPERBmqqU9IIle9ZTY2GQX+VV3sPoO/kjP2yNavjSw8oofWVKfD3AHjVjW7Vkipx6PKw==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
@@ -1241,6 +1249,8 @@ snapshots:
       js-tokens: 10.0.0
 
   chai@6.2.2: {}
+
+  claude-code-battery@0.2.0: {}
 
   convert-source-map@2.0.0: {}
 
