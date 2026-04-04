@@ -17,6 +17,17 @@ export function ProjectSelectorPage() {
   const { send, isConnected, subscribe } = useBridgeContext();
   const { setWorkingDirectory } = useWorkingDir();
 
+  const handleOpenFolderDialog = () => {
+    const unsubscribe = subscribe('FOLDER_SELECTED', (message) => {
+      const selectedPath = message.payload?.path as string | null;
+      unsubscribe();
+      if (selectedPath) {
+        setWorkingDirectory(selectedPath, { replace: false });
+      }
+    });
+    send('OPEN_FOLDER_DIALOG', {});
+  };
+
   useEffect(() => {
     if (!isConnected) {
       return;
@@ -76,16 +87,19 @@ export function ProjectSelectorPage() {
   if (projects.length === 0) {
     return (
       <div className="h-full flex items-center justify-center bg-[#1a1a1a]">
-        <div className="text-center max-w-md px-4">
+        <div className="text-center max-w-md px-4 w-full">
           <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
             <svg className="w-6 h-6 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
           </div>
-          <p className="text-zinc-400 text-sm mb-1">No projects available</p>
-          <p className="text-zinc-500 text-xs">
-            Add <code className="bg-zinc-800 px-1.5 py-0.5 rounded">?workingDir=/path/to/project</code> to URL to get started
-          </p>
+          <p className="text-zinc-400 text-sm mb-4">No projects available</p>
+          <button
+            onClick={handleOpenFolderDialog}
+            className="w-full border border-dashed border-zinc-700 hover:border-zinc-500 rounded-lg py-2.5 text-zinc-500 hover:text-zinc-300 text-sm transition-colors"
+          >
+            + Add Project
+          </button>
         </div>
       </div>
     );
@@ -133,10 +147,13 @@ export function ProjectSelectorPage() {
           ))}
         </div>
 
-        {/* Footer hint */}
-        <p className="text-center text-zinc-600 text-xs mt-4">
-          Or add ?workingDir=/path parameter to URL
-        </p>
+        {/* Add Project */}
+        <button
+          onClick={handleOpenFolderDialog}
+          className="w-full mt-3 border border-dashed border-zinc-800 hover:border-zinc-600 rounded-lg py-2.5 text-zinc-600 hover:text-zinc-300 text-sm transition-colors"
+        >
+          + Add Project
+        </button>
       </div>
     </div>
   );

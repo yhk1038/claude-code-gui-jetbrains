@@ -43,6 +43,7 @@ import { sleepGuardEnableHandler } from './sleepGuardEnable';
 import { sleepGuardDisableHandler } from './sleepGuardDisable';
 import { listProjectFilesHandler } from './listProjectFiles';
 import { getCliConfigHandler } from './getCliConfig';
+import { openFolderDialogHandler } from './openFolderDialog';
 
 export async function handleMessage(
   connectionId: string,
@@ -178,6 +179,9 @@ export async function handleMessage(
       break;
     case 'GET_CLI_CONFIG':
       await getCliConfigHandler(connectionId, message, connections, bridge);
+      break;
+    case 'OPEN_FOLDER_DIALOG':
+      await openFolderDialogHandler(connectionId, message, connections, bridge);
       break;
     default:
       console.error('[node-backend]', `Unknown message type: ${message.type}`);
