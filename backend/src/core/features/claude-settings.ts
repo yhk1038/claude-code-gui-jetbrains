@@ -191,6 +191,32 @@ export async function saveClaudeSettingToScope(
   return saveClaudeSetting(key, value);
 }
 
+// ─── API Key Detection ─────────────────────────────────────────────────────
+
+// API 키 패턴 — env 값의 키 이름이 이 패턴에 매칭되면 API 키로 간주
+const API_KEY_PATTERNS = [
+  /^ANTHROPIC_API_KEY$/i,
+  /^CLAUDE_API_KEY$/i,
+  /^ANTHROPIC_AUTH_TOKEN$/i,
+  /API_KEY$/i,
+  /API_TOKEN$/i,
+  /AUTH_TOKEN$/i,
+];
+
+/**
+ * Read env from Claude settings and return API key names found.
+ * Checks both ~/.claude/settings.json and settings.local.json.
+ */
+export async function getEnvApiKeys(): Promise<string[]> {
+  const settings = await readClaudeSettings();
+  const env = settings.env as Record<string, string> | undefined;
+  if (!env || typeof env !== 'object' || Array.isArray(env)) return [];
+
+  return Object.keys(env).filter((key) =>
+    API_KEY_PATTERNS.some((pattern) => pattern.test(key)),
+  );
+}
+
 // ─── File Watcher ──────────────────────────────────────────────────────────
 
 let watcherInstance: ReturnType<typeof watch> | null = null;

@@ -1,5 +1,6 @@
 import type { ConnectionManager } from '../ws/connection-manager';
 import { Claude } from './claude';
+import { diagnoseAuthError } from './features/auth-diagnosis';
 
 // InputMode -> CLI --permission-mode flag mapping
 const INPUT_MODE_TO_CLI_FLAG: Record<string, string> = {
@@ -177,6 +178,8 @@ export async function ensureClaudeProcess(
         error: errorMessage,
         exitCode: code,
       });
+      // 인증 에러 진단
+      diagnoseAuthError(targetSessionId, errorMessage, connections).catch(() => {});
     }
 
     // 추적 정리
@@ -383,6 +386,12 @@ function handleStreamEvent(
         sessionId: event.session_id ?? targetSessionId,
       },
     });
+
+    // 인증 에러 진단 (비동기, 실패해도 무시)
+    const errorData = event.error as { message?: string } | null;
+    if (errorData?.message) {
+      diagnoseAuthError(targetSessionId, errorData.message, connections).catch(() => {});
+    }
   }
 
   // 모든 CLI 이벤트를 있는 그대로 전달 — 타입별 분기/가공 없음

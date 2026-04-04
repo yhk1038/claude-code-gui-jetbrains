@@ -32,6 +32,7 @@ export interface UseChatStreamReturn {
   isStreaming: boolean;
   streamingMessageId: string | null;
   error: Error | null;
+  authDiagnosis: { envApiKeys: string[]; message: string } | null;
 
   // 로컬 메시지 조작 (전송은 하지 않음)
   addUserMessage: (content: string, context?: Context[], attachments?: Attachment[]) => void;
@@ -112,6 +113,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const [error, setError] = useState<Error | null>(null);
+  const [authDiagnosis, setAuthDiagnosis] = useState<{ envApiKeys: string[]; message: string } | null>(null);
   const [systemInit, setSystemInit] = useState<Record<string, unknown> | null>(null);
   const [contextWindowUsage, setContextWindowUsage] = useState<{
     totalTokens: number;
@@ -324,6 +326,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
     if (!content.trim() && (!attachments || attachments.length === 0)) return;
 
     setError(null);
+    setAuthDiagnosis(null);
 
     // 파일/폴더 첨부를 context로 변환
     const fileContexts: Context[] = (attachments ?? [])
@@ -414,6 +417,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
   const clearMessages = useCallback(() => {
     setMessages([]);
     setError(null);
+    setAuthDiagnosis(null);
   }, []);
 
   // Load messages from raw JSONL entries.
@@ -428,6 +432,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
 
     setMessages(activeMessages);
     setError(null);
+    setAuthDiagnosis(null);
     console.log('[useChatStream] Loaded messages:', convertedMessages.length, '→ active chain:', activeMessages.length);
 
     // 마지막 assistant 메시지에서 usage 복원
@@ -883,6 +888,14 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
       endStreaming();
     });
 
+    // AUTH_ERROR_DIAGNOSIS handler — 인증 에러 시 env API 키 진단 정보
+    const unsubscribeAuthDiagnosis = bridge.subscribe('AUTH_ERROR_DIAGNOSIS', (message) => {
+      const payload = message.payload as { envApiKeys: string[]; message: string } | undefined;
+      if (payload?.envApiKeys?.length) {
+        setAuthDiagnosis(payload);
+      }
+    });
+
     // USER_MESSAGE_BROADCAST handler — 다른 탭에서 보낸 사용자 메시지 수신
     const unsubscribeUserBroadcast = bridge.subscribe('USER_MESSAGE_BROADCAST', (message: IPCMessage) => {
       const content = message.payload?.content as string;
@@ -910,6 +923,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
     return () => {
       unsubscribeCliEvent();
       unsubscribeServiceError();
+      unsubscribeAuthDiagnosis();
       unsubscribeUserBroadcast();
       unsubscribeStreamEnd();
     };
@@ -938,6 +952,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
     isStreaming,
     streamingMessageId,
     error,
+    authDiagnosis,
     addUserMessage,
     clearMessages,
     loadMessages,

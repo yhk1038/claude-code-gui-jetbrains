@@ -25,6 +25,7 @@ interface ChatStreamContextType {
   isStreaming: boolean;
   streamingMessageId: string | null;
   error: Error | null;
+  authDiagnosis: { envApiKeys: string[]; message: string } | null;
 
   // Local input state
   input: string;
@@ -315,6 +316,7 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
     isStreaming: chatStream.isStreaming,
     streamingMessageId: chatStream.streamingMessageId,
     error: chatStream.error,
+    authDiagnosis: chatStream.authDiagnosis,
 
     // Local input state
     input,
