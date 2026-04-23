@@ -21,7 +21,8 @@ import { ModelSwitchOverlay, SWITCH_MODEL_EVENT } from '@/pages/ChatPage/ModelSw
 import { EFFORT_CYCLE_EVENT } from '@/commandPalette/sections/model/EffortItem';
 import { THINKING_TOGGLE_EVENT } from '@/commandPalette/sections/model/ThinkingItem';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
-import { EffortLevel, nextEffortLevel, parseEffortLevel } from '@/types/effort';
+import { getModelEffortConfig, nextEffortLevel } from '@/types/effort';
+import { useCliConfig } from '@/contexts/CliConfigContext';
 import { useMention } from './hooks/useMention';
 import { MentionDropdown } from './MentionDropdown';
 import { isMobile } from '@/config/environment';
@@ -57,6 +58,7 @@ export function ChatInput() {
   } = useAttachments();
 
   const { settings: claudeSettings, updateSetting: updateClaudeSetting } = useClaudeSettings();
+  const { controlResponse } = useCliConfig();
   const lastMetaArrowTime = useRef<number>(0);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showModelSwitch, setShowModelSwitch] = useState(false);
@@ -80,14 +82,14 @@ export function ChatInput() {
   // 커맨드 팔레트 "Effort" 항목 연동: 클릭 시 레벨 순환
   useEffect(() => {
     const handler = () => {
-      const current = parseEffortLevel(claudeSettings.effortLevel);
-      const next = nextEffortLevel(current);
-      const value = next === EffortLevel.AUTO ? null : next;
-      void updateClaudeSetting('effortLevel', value);
+      const { supportsEffort, levels } = getModelEffortConfig(controlResponse, claudeSettings.model);
+      if (!supportsEffort) return;
+      const next = nextEffortLevel(claudeSettings.effortLevel, levels);
+      void updateClaudeSetting('effortLevel', next);
     };
     window.addEventListener(EFFORT_CYCLE_EVENT, handler);
     return () => window.removeEventListener(EFFORT_CYCLE_EVENT, handler);
-  }, [claudeSettings.effortLevel, updateClaudeSetting]);
+  }, [claudeSettings.effortLevel, claudeSettings.model, controlResponse, updateClaudeSetting]);
 
   // 커맨드 팔레트 "Thinking" 항목 연동: 라벨 클릭 시 토글
   useEffect(() => {

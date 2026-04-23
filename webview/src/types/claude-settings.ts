@@ -21,7 +21,7 @@ export interface PermissionsConfig {
 export interface ClaudeSettingsState {
   model: string | null; // full model ID like 'claude-opus-4-6' or null for default
   language: string | null; // Claude's preferred response language (e.g., "korean", "japanese")
-  effortLevel: string | null; // CLI effort level: 'low' | 'medium' | 'high' | null (auto)
+  effortLevel: string | null; // CLI effort level — values sourced from ModelInfo.supportedEffortLevels; null = auto
   alwaysThinkingEnabled: boolean; // extended thinking always on
   preferFastMode: boolean; // fast output mode (Opus 4.6 only)
   permissions?: PermissionsConfig;
