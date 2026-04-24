@@ -123,7 +123,7 @@ export function useCommandPalette({ onChange, textareaRef }: UseCommandPaletteOp
 
   const handleSlashKeyDown = useCallback((
     e: KeyboardEvent<HTMLTextAreaElement>,
-    _currentValue: string,
+    currentValue: string,
   ): boolean => {
     if (!showSlashCommands) return false;
 
@@ -137,6 +137,18 @@ export function useCommandPalette({ onChange, textareaRef }: UseCommandPaletteOp
       // No matching command — close panel, let normal submit handle it
       closePanel();
       return false;
+    }
+    if (e.key === 'Tab' && !e.shiftKey) {
+      e.preventDefault();
+      const section = filteredSections[selectedSectionIndex];
+      const item = section?.items[selectedItemIndex];
+      if (item && item.type === PanelItemType.Command) {
+        const firstSpaceIdx = currentValue.indexOf(' ');
+        const rest = firstSpaceIdx === -1 ? ' ' : currentValue.slice(firstSpaceIdx);
+        onChange(`${(item as CommandItem).name}${rest}`);
+        closePanel();
+      }
+      return true;
     }
     if (e.key === 'ArrowUp') {
       e.preventDefault();
@@ -155,7 +167,7 @@ export function useCommandPalette({ onChange, textareaRef }: UseCommandPaletteOp
     }
 
     return false;
-  }, [showSlashCommands, filteredSections, executeAndClear, closePanel, moveSelection]);
+  }, [showSlashCommands, filteredSections, selectedSectionIndex, selectedItemIndex, executeAndClear, closePanel, moveSelection, onChange]);
 
   const detectSlashCommand = useCallback((newValue: string) => {
     if (newValue.startsWith('/')) {

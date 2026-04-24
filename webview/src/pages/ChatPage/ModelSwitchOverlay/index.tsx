@@ -3,29 +3,12 @@ import { CheckIcon } from '@heroicons/react/24/outline';
 import { useChatStreamContext } from '@/contexts/ChatStreamContext';
 import { useBridge } from '@/hooks/useBridge';
 import { useSessionContext } from '@/contexts/SessionContext';
-import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
-import { ClaudeModel, LoadedMessageType } from '@/types';
-import { CLAUDE_MODELS, getModelDef, parseClaudeModel } from '@/types/models';
+import { useCliConfig } from '@/contexts/CliConfigContext';
+import { LoadedMessageType } from '@/types';
+import { DEFAULT_MODEL_ALIAS } from '@/types/models';
+import type { ModelInfo } from '@/types/slashCommand';
 
 export const SWITCH_MODEL_EVENT = 'switch-model';
-
-interface ModelOption {
-  value: ClaudeModel;
-  label: string;
-  sublabel: string;
-}
-
-function buildDefaultSublabel(modelValue: string | null | undefined): string {
-  if (!modelValue) {
-    return 'Claude Code default · Most capable for complex work';
-  }
-  const parsed = parseClaudeModel(modelValue);
-  if (parsed && parsed !== ClaudeModel.DEFAULT) {
-    const def = getModelDef(parsed);
-    return def.id ? `${def.label} (${def.id})` : def.label;
-  }
-  return modelValue;
-}
 
 interface ModelSwitchOverlayProps {
   onClose: () => void;
@@ -35,17 +18,11 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
   const { sessionModel, setSessionModel, appendMessage } = useChatStreamContext();
   const { send } = useBridge();
   const { currentSessionId } = useSessionContext();
-  const { settings } = useClaudeSettings();
+  const { controlResponse } = useCliConfig();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const currentModel = sessionModel ?? ClaudeModel.DEFAULT;
-  const defaultSublabel = buildDefaultSublabel(settings.model);
-
-  const modelOptions: ModelOption[] = CLAUDE_MODELS.map((m) => ({
-    value: m.key,
-    label: m.label,
-    sublabel: m.key === ClaudeModel.DEFAULT ? defaultSublabel : m.description,
-  }));
+  const models: ModelInfo[] = controlResponse?.response?.response?.models ?? [];
+  const currentModel = sessionModel ?? DEFAULT_MODEL_ALIAS;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -67,13 +44,13 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
     };
   }, [onClose]);
 
-  const handleSelect = async (value: ClaudeModel) => {
+  const handleSelect = async (value: string) => {
     setSessionModel(value);
 
-    const def = getModelDef(value);
-    const notificationText = def.id
-      ? `Set model to ${def.label.toLowerCase()} (${def.id})`
-      : `Set model to ${def.label}`;
+    const info = models.find((m) => m.value === value);
+    const notificationText = info
+      ? `Set model to ${info.displayName}`
+      : `Set model to ${value}`;
 
     appendMessage({
       type: LoadedMessageType.Notification,
@@ -87,10 +64,6 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
     }
 
     onClose();
-  };
-
-  const isSelected = (option: ModelOption): boolean => {
-    return currentModel === option.value;
   };
 
   return (
@@ -116,22 +89,24 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
 
       {/* Model list */}
       <div className="pb-1.5 px-1">
-        {modelOptions.map((opt) => {
-          const selected = isSelected(opt);
+        {models.length === 0 ? (
+          <div className="px-2 py-1 text-[12px] text-zinc-500">Loading models…</div>
+        ) : models.map((m) => {
+          const selected = currentModel === m.value;
           return (
             <button
-              key={opt.value}
-              onClick={() => void handleSelect(opt.value)}
+              key={m.value}
+              onClick={() => void handleSelect(m.value)}
               className={`w-full relative flex items-center justify-between px-2 py-1 rounded-md text-left transition-colors ${
                 selected ? 'bg-white/10' : 'hover:bg-white/5'
               }`}
             >
               <span className="flex flex-col min-w-0">
                 <span className={`leading-tight text-[13px] truncate ${selected ? 'text-zinc-100' : 'text-zinc-200'}`}>
-                  {opt.label}
+                  {m.displayName}
                 </span>
                 <span className="leading-normal text-[11px] truncate text-zinc-400/80">
-                  {opt.sublabel}
+                  {m.description}
                 </span>
               </span>
               {selected && (
