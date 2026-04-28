@@ -119,6 +119,12 @@ intellijPlatform {
             untilBuild = "261.*"
         }
         changeNotes = """
+            <h3>0.13.4 - Per-model effort levels &amp; auth stability</h3>
+            <ul>
+                <li>Effort levels are now derived from the Claude CLI per model, so the available options match each model accurately</li>
+                <li>Account lookup now uses the Claude CLI instead of direct credential access, improving stability across login methods</li>
+                <li>Added a dev-only border indicator to make development builds visually distinct from production</li>
+            </ul>
             <h3>0.13.3 - Account settings &amp; streaming fixes</h3>
             <ul>
                 <li>Added Account settings page with OAuth token and API key management</li>
