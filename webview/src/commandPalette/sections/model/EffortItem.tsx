@@ -1,22 +1,16 @@
 import { StaticItem } from '../../types';
-import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
-import {
-  TOTAL_DOTS,
-  getEffortDef,
-  parseEffortLevel,
-} from '@/types/effort';
+import { useEffort } from '@/hooks/useEffort';
 
 export const EFFORT_CYCLE_EVENT = 'effort-cycle';
 
 const EffortDots = () => {
-  const { settings } = useClaudeSettings();
-  const level = parseEffortLevel(settings.effortLevel);
-  const def = getEffortDef(level);
+  const { supportsEffort, def } = useEffort();
+  if (!supportsEffort) return null;
 
   return (
     <span className="text-zinc-400 flex items-center gap-1">
       <span className="text-[16px] font-bold tracking-tighter pb-[1px] flex">
-        {Array.from({ length: TOTAL_DOTS }, (_, i) => (
+        {Array.from({ length: def.totalDots }, (_, i) => (
           <span
             key={i}
             className={i < def.filledDots ? 'text-zinc-300' : 'text-zinc-600'}
