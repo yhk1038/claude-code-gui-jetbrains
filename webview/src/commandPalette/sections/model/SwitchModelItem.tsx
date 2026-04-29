@@ -1,11 +1,14 @@
 import { StaticItem } from '../../types';
 import { SWITCH_MODEL_EVENT } from '@/pages/ChatPage/ModelSwitchOverlay';
 import { useChatStreamContext } from '@/contexts/ChatStreamContext';
-import { getModelDef } from '@/types/models';
+import { useCliConfig } from '@/contexts/CliConfigContext';
 
 const SwitchModelValue = () => {
   const { sessionModel } = useChatStreamContext();
-  const text = sessionModel ? getModelDef(sessionModel).label : 'Default';
+  const { controlResponse } = useCliConfig();
+  const models = controlResponse?.response?.response?.models ?? [];
+  const info = sessionModel ? models.find((m) => m.value === sessionModel) : null;
+  const text = info?.displayName ?? (sessionModel ?? 'Default');
   return (
     <span className="text-[11px] text-zinc-400 whitespace-nowrap">
       {text}

@@ -8,6 +8,41 @@ import { parsePartialJson } from '../utils/parsePartialJson';
 /** Re-export for backwards compatibility */
 export type { LoadedMessageDto as LoadedMessage } from '../types';
 
+interface ModelUsageEntry {
+  contextWindow?: number;
+  maxOutputTokens?: number;
+}
+
+/**
+ * Resolve modelUsage entry for the currently running model.
+ * The CLI's modelUsage dict may be keyed by a form that differs slightly
+ * from the `model` string in the same result event (e.g. `claude-opus-4-7`
+ * vs `claude-opus-4-7[1m]`), so we try direct match, variant-suffix strip,
+ * alias contains, and a single-key fallback before giving up.
+ */
+function pickModelUsage(
+  modelUsage: Record<string, ModelUsageEntry> | null | undefined,
+  model: string | null | undefined,
+): ModelUsageEntry | null {
+  if (!modelUsage) return null;
+  if (model && modelUsage[model]) return modelUsage[model];
+  if (model) {
+    const stripped = model.replace(/\[.*\]$/, '');
+    if (stripped !== model && modelUsage[stripped]) return modelUsage[stripped];
+    const lowered = model.toLowerCase();
+    for (const alias of ['opus', 'sonnet', 'haiku']) {
+      if (lowered.includes(alias) && modelUsage[alias]) return modelUsage[alias];
+    }
+    // Last chance: any key of modelUsage that shares a common stem with model
+    for (const key of Object.keys(modelUsage)) {
+      if (key && (model.startsWith(key) || key.startsWith(stripped))) return modelUsage[key];
+    }
+  }
+  const keys = Object.keys(modelUsage);
+  if (keys.length === 1) return modelUsage[keys[0]];
+  return null;
+}
+
 export interface UseChatStreamOptions {
   /** BridgeContext에서 가져온 bridge. subscribe/send/isConnected 포함. */
   bridge: {
@@ -770,18 +805,20 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
           onErrorRef.current?.(err);
         }
 
-        // result 이벤트에서 modelUsage를 통해 contextWindow/maxOutputTokens 업데이트
+        // result 이벤트에서 modelUsage를 통해 contextWindow/maxOutputTokens 업데이트.
+        // CLI 의 modelUsage 키와 model 문자열이 정확히 같지 않을 수 있어
+        // (예: `claude-opus-4-7[1m]` vs `claude-opus-4-7`) 퍼지 매칭을 시도한다.
         const modelUsage = cliEvent.modelUsage as Record<string, { contextWindow?: number; maxOutputTokens?: number }> | null;
         const currentModel = cliEvent.model as string | null;
-        if (modelUsage && currentModel) {
-          const modelData = modelUsage[currentModel];
-          if (modelData) {
-            setContextWindowUsage(prev => ({
-              totalTokens: prev?.totalTokens ?? 0,
-              contextWindow: modelData.contextWindow ?? prev?.contextWindow ?? 200_000,
-              maxOutputTokens: modelData.maxOutputTokens ?? prev?.maxOutputTokens ?? 0,
-            }));
-          }
+        const modelData = pickModelUsage(modelUsage, currentModel);
+        if (modelData) {
+          setContextWindowUsage(prev => ({
+            totalTokens: prev?.totalTokens ?? 0,
+            contextWindow: modelData.contextWindow ?? prev?.contextWindow ?? 200_000,
+            maxOutputTokens: modelData.maxOutputTokens ?? prev?.maxOutputTokens ?? 0,
+          }));
+        } else if (modelUsage && currentModel) {
+          console.warn('[useChatStream] modelUsage key miss for', currentModel, 'keys:', Object.keys(modelUsage));
         }
 
         // 스트리밍 종료

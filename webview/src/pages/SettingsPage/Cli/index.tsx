@@ -6,7 +6,8 @@ import { useBridge } from '@/hooks/useBridge';
 import { SettingKey } from '@/types/settings';
 import { ROUTE_META, Route } from '@/router/routes';
 import { isJetBrains } from '@/config/environment';
-import { CLAUDE_MODELS } from '@/types/models';
+import { useCliConfig } from '@/contexts/CliConfigContext';
+import { toModelAlias } from '@/types/models';
 
 interface TerminalInfo {
   id: string;
@@ -28,6 +29,8 @@ export function CliSettings() {
   const { send } = useBridge();
   const isJetBrainsEnv = isJetBrains();
   const { settings: claudeSettings, updateSetting: updateClaudeSetting } = useClaudeSettings();
+  const { controlResponse } = useCliConfig();
+  const availableModels = controlResponse?.response?.response?.models ?? [];
 
   const [terminals, setTerminals] = useState<TerminalInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,13 +126,15 @@ export function CliSettings() {
           description="Default model for new sessions"
         >
           <select
-            value={claudeSettings.model ?? ''}
+            value={claudeSettings.model ? toModelAlias(claudeSettings.model) : ''}
             onChange={(e) => void updateClaudeSetting('model', e.target.value || null)}
             className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-zinc-100"
           >
-            {CLAUDE_MODELS.map((m) => (
-              <option key={m.key} value={m.id ?? ''}>
-                {m.label}
+            {availableModels.length === 0 ? (
+              <option value="">Default (recommended)</option>
+            ) : availableModels.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.displayName}
               </option>
             ))}
           </select>

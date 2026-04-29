@@ -10,7 +10,7 @@
  * `auto` is a plugin-side sentinel meaning "use the CLI default" — it is
  * persisted to `~/.claude/settings.json` as `effortLevel: null`.
  */
-import { parseClaudeModel, ClaudeModel } from './models';
+import { toModelAlias, DEFAULT_MODEL_ALIAS } from './models';
 import type { CliConfigControlResponse, ModelInfo } from './slashCommand';
 
 export const EFFORT_AUTO = 'auto';
@@ -86,8 +86,8 @@ export function getModelEffortConfig(
   settingsModel: string | null | undefined,
 ): ModelEffortConfig {
   const models: ModelInfo[] = controlResponse?.response?.response?.models ?? [];
-  const modelKey = parseClaudeModel(settingsModel) ?? ClaudeModel.DEFAULT;
-  const info = models.find((m) => m.value === modelKey);
+  const alias = settingsModel ? toModelAlias(settingsModel) : DEFAULT_MODEL_ALIAS;
+  const info = models.find((m) => m.value === alias);
   if (!info?.supportsEffort) return { supportsEffort: false, levels: [] };
   return { supportsEffort: true, levels: info.supportedEffortLevels ?? [] };
 }
