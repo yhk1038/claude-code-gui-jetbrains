@@ -170,10 +170,12 @@ export function useCommandPalette({ onChange, textareaRef }: UseCommandPaletteOp
   }, [showSlashCommands, filteredSections, selectedSectionIndex, selectedItemIndex, executeAndClear, closePanel, moveSelection, onChange]);
 
   const detectSlashCommand = useCallback((newValue: string) => {
-    if (newValue.startsWith('/')) {
-      const query = newValue.substring(1).split(' ')[0];
+    // Show panel only while typing the command name itself. As soon as
+    // whitespace appears the user is typing arguments — keep the panel
+    // hidden so a stray match doesn't override what they typed.
+    if (newValue.startsWith('/') && !/\s/.test(newValue)) {
       setShowSlashCommands(true);
-      setFilterQuery(query);
+      setFilterQuery(newValue.substring(1));
       setSelectedSectionIndex(0);
       setSelectedItemIndex(0);
     } else {
