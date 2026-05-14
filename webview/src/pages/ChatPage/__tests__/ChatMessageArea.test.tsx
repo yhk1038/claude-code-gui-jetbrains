@@ -15,6 +15,8 @@ const mockSessionContext = {
 const mockChatStreamContext = {
   messages: [] as LoadedMessageDto[],
   retry: vi.fn(),
+  error: null as Error | null,
+  authDiagnosis: null as { envApiKeys: string[] } | null,
 };
 
 vi.mock('../../../contexts/SessionContext', () => ({
@@ -63,6 +65,8 @@ describe('ChatMessageArea', () => {
     // Reset context defaults
     mockSessionContext.workingDirectory = null;
     mockChatStreamContext.messages = [];
+    mockChatStreamContext.error = null;
+    mockChatStreamContext.authDiagnosis = null;
   });
 
   it('shows ProjectSelector when no working directory in browser environment', () => {
@@ -175,6 +179,58 @@ describe('ChatMessageArea', () => {
     expect(screen.getByText('user: First message')).toBeInTheDocument();
     expect(screen.getByText('assistant: Second message')).toBeInTheDocument();
     expect(screen.getByText('user: Third message')).toBeInTheDocument();
+  });
+
+  it('makes top-level user prompts sticky while scrolling through a turn', () => {
+    const now = new Date().toISOString();
+    mockSessionContext.workingDirectory = '/test/path';
+    mockChatStreamContext.messages = [
+      {
+        uuid: 'user-1',
+        type: LoadedMessageType.User,
+        message: { role: MessageRole.User, content: 'First prompt' },
+        timestamp: now,
+      },
+      {
+        uuid: 'assistant-1',
+        type: LoadedMessageType.Assistant,
+        message: { role: MessageRole.Assistant, content: 'Long answer' },
+        timestamp: now,
+      },
+      {
+        uuid: 'user-2',
+        type: LoadedMessageType.User,
+        message: { role: MessageRole.User, content: 'Second prompt' },
+        timestamp: now,
+      },
+    ];
+
+    renderWithScrollContainer(<ChatMessageArea isStreaming={false} scrollContainerRef={scrollContainerRef} />);
+
+    expect(screen.getByTestId('message-row-user-1')).toHaveClass('sticky', 'chat-sticky-user-prompt');
+    expect(screen.getByTestId('message-row-assistant-1')).not.toHaveClass('sticky');
+    expect(screen.getByTestId('message-row-user-2')).toHaveClass('sticky', 'chat-sticky-user-prompt');
+  });
+
+  it('keeps the stream error inside the last user turn so the prompt remains sticky over errors', () => {
+    const now = new Date().toISOString();
+    mockSessionContext.workingDirectory = '/test/path';
+    mockChatStreamContext.error = new Error('Service error: CLI EXIT ERROR');
+    mockChatStreamContext.messages = [
+      {
+        uuid: 'user-error',
+        type: LoadedMessageType.User,
+        message: { role: MessageRole.User, content: 'hello' },
+        timestamp: now,
+      },
+    ];
+
+    renderWithScrollContainer(<ChatMessageArea isStreaming={false} scrollContainerRef={scrollContainerRef} />);
+
+    expect(screen.getByTestId('message-row-user-error')).toHaveClass('sticky', 'chat-sticky-user-prompt');
+    expect(screen.getByTestId('message-group-user-error')).toContainElement(
+      screen.getByText('Service error: CLI EXIT ERROR'),
+    );
   });
 
   it('renders multiple tool uses for a single message', () => {

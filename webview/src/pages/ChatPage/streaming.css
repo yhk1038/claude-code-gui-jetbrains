@@ -1,3 +1,8 @@
+/* Sticky `top` only: MessageBox-aligned offset (ChatPage: clearance − pt-2 − STICKY_USER_PROMPT_EXTRA_UP_PX). */
+.chat-sticky-user-prompt {
+  top: var(--chat-session-header-offset, 2.25rem);
+}
+
 .thinking-message {
   color: var(--ide-text-secondary) !important;
 }

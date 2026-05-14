@@ -74,22 +74,16 @@ export class JetBrainsBridge implements Bridge {
     });
   }
 
-  private getRpcClient(): WebSocket | null {
-    for (const client of this.rpcClients) {
-      if (client.readyState === 1) return client;
-    }
-    return null;
+  private getReadyRpcClients(): WebSocket[] {
+    return Array.from(this.rpcClients).filter((client) => client.readyState === 1);
   }
 
-  private request(method: string, params: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
+  private requestWithClient(
+    client: WebSocket,
+    method: string,
+    params: Record<string, unknown> = {},
+  ): Promise<Record<string, unknown>> {
     return new Promise<Record<string, unknown>>((resolve, reject) => {
-      const client = this.getRpcClient();
-      console.error('[node-backend]', `[DEBUG:bridge.request] method=${method}, rpcClients.size=${this.rpcClients.size}, client=${client ? `readyState=${client.readyState}` : 'null'}`);
-      if (!client) {
-        reject(new Error(`No RPC client connected — cannot send JSON-RPC request "${method}"`));
-        return;
-      }
-
       const id = `rpc-${++this.idCounter}`;
 
       const timer = setTimeout(() => {
@@ -109,6 +103,35 @@ export class JetBrainsBridge implements Bridge {
       console.error('[node-backend]', `[DEBUG:bridge.request] sending: ${JSON.stringify(request)}`);
       client.send(JSON.stringify(request) + '\n');
     });
+  }
+
+  private request(method: string, params: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
+    const client = this.getReadyRpcClients()[0];
+    console.error('[node-backend]', `[DEBUG:bridge.request] method=${method}, rpcClients.size=${this.rpcClients.size}, client=${client ? `readyState=${client.readyState}` : 'null'}`);
+    if (!client) {
+      return Promise.reject(new Error(`No RPC client connected — cannot send JSON-RPC request "${method}"`));
+    }
+    return this.requestWithClient(client, method, params);
+  }
+
+  private async requestAny(method: string, params: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
+    const clients = this.getReadyRpcClients();
+    console.error('[node-backend]', `[DEBUG:bridge.requestAny] method=${method}, rpcClients.size=${this.rpcClients.size}, readyClients=${clients.length}`);
+    if (clients.length === 0) {
+      throw new Error(`No RPC client connected — cannot send JSON-RPC request "${method}"`);
+    }
+
+    let lastError: Error | null = null;
+    for (const client of clients) {
+      try {
+        return await this.requestWithClient(client, method, params);
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        console.error('[node-backend]', `JSON-RPC request ${method} failed on one client: ${lastError.message}`);
+      }
+    }
+
+    throw lastError ?? new Error(`JSON-RPC request "${method}" failed on all clients`);
   }
 
   async openFile(path: string): Promise<void> {
@@ -138,19 +161,22 @@ export class JetBrainsBridge implements Bridge {
   }
 
   async createSession(workingDir?: string): Promise<void> {
-    await this.request('CREATE_SESSION', workingDir ? { workingDir } : {});
+    const params = workingDir ? { workingDir } : {};
+    await (workingDir ? this.requestAny('CREATE_SESSION', params) : this.request('CREATE_SESSION', params));
   }
 
   async openNewTab(workingDir?: string): Promise<void> {
-    await this.request('OPEN_NEW_TAB', workingDir ? { workingDir } : {});
+    const params = workingDir ? { workingDir } : {};
+    await (workingDir ? this.requestAny('OPEN_NEW_TAB', params) : this.request('OPEN_NEW_TAB', params));
   }
 
   async openSettings(workingDir?: string): Promise<void> {
-    await this.request('OPEN_SETTINGS', workingDir ? { workingDir } : {});
+    const params = workingDir ? { workingDir } : {};
+    await (workingDir ? this.requestAny('OPEN_SETTINGS', params) : this.request('OPEN_SETTINGS', params));
   }
 
   async openTerminal(workingDir: string): Promise<void> {
-    await this.request('OPEN_TERMINAL', { workingDir });
+    await this.requestAny('OPEN_TERMINAL', { workingDir });
   }
 
   async openUrl(url: string): Promise<void> {

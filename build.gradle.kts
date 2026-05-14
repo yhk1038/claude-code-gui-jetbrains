@@ -119,6 +119,11 @@ intellijPlatform {
             untilBuild = "261.*"
         }
         changeNotes = """
+            <h3>0.13.9 - Multi-project routing &amp; chat navigation</h3>
+            <ul>
+                <li>Fixed new Claude Code sessions opening in the wrong JetBrains project when multiple IDE windows are connected</li>
+                <li>Added sticky user prompts while scrolling through multi-turn conversations</li>
+            </ul>
             <h3>0.13.8 - Patch release</h3>
             <ul>
                 <li>Maintenance and stability updates</li>
