@@ -23,13 +23,13 @@ const DEFAULT_HEADER_SCROLL_CLEARANCE_PX = 40;
  * UserMessageRenderer wraps content in `pt-2` (`0.5rem` = 8px). Sticky is on the outer row, so
  * `top` subtracts this so the bordered MessageBox aligns with the SessionHeader bottom edge.
  */
-const USER_PROMPT_ROW_PADDING_TOP_PX = 8;
+// const USER_PROMPT_ROW_PADDING_TOP_PX = 8;
 
 /**
  * Extra offset to pull the sticky user row closer to the fixed header (JCEF / blended header / subpixel).
  * Only affects `--chat-session-header-offset`, not the spacer height.
  */
-const STICKY_USER_PROMPT_EXTRA_UP_PX = 16;
+// const STICKY_USER_PROMPT_EXTRA_UP_PX = 16;
 
 export function ChatPage() {
   const { textareaRef, focus: focusInput } = useChatInputFocus();
@@ -45,10 +45,7 @@ export function ChatPage() {
   /** Vertical space under fixed SessionHeader reserved in the scroll stream (spacer height). */
   const [headerScrollClearancePx, setHeaderScrollClearancePx] = useState(DEFAULT_HEADER_SCROLL_CLEARANCE_PX);
 
-  const stickyUserPromptTopPx = Math.max(
-    0,
-    headerScrollClearancePx - USER_PROMPT_ROW_PADDING_TOP_PX - STICKY_USER_PROMPT_EXTRA_UP_PX,
-  );
+  const stickyUserPromptTopPx = 0
 
   useLayoutEffect(() => {
     let raf = 0;
