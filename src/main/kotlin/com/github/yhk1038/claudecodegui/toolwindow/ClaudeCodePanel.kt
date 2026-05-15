@@ -3,19 +3,28 @@ package com.github.yhk1038.claudecodegui.toolwindow
 import com.github.yhk1038.claudecodegui.actions.OpenClaudeCodeAction
 import com.github.yhk1038.claudecodegui.bridge.NodeProcessManager
 import com.github.yhk1038.claudecodegui.services.ClaudeCodeBrowserService
+import com.github.yhk1038.claudecodegui.services.ClaudeWebViewInjector
 import com.github.yhk1038.claudecodegui.services.DiffService
 import com.github.yhk1038.claudecodegui.services.NodeBackendService
+import com.intellij.ide.dnd.DnDEvent
+import com.intellij.ide.dnd.DnDManager
+import com.intellij.ide.dnd.DnDTarget
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.fileChooser.FileChooser
+import com.intellij.openapi.fileChooser.FileChooserDescriptor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.jcef.JBCefBrowser
 import com.intellij.ui.jcef.JBCefJSQuery
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -25,9 +34,23 @@ import org.cef.browser.CefFrame
 import org.cef.handler.CefDisplayHandlerAdapter
 import org.cef.handler.CefLifeSpanHandlerAdapter
 import org.cef.handler.CefLoadHandlerAdapter
+import org.cef.network.CefRequest
 import java.awt.BorderLayout
+import java.awt.Component
+import java.awt.Image
+import java.awt.Point
+import java.awt.datatransfer.DataFlavor
+import java.awt.datatransfer.Transferable
+import java.awt.dnd.DnDConstants
+import java.awt.dnd.DropTarget
+import java.awt.dnd.DropTargetAdapter
+import java.awt.dnd.DropTargetDragEvent
+import java.awt.dnd.DropTargetDropEvent
+import java.io.File
 import java.util.UUID
+import javax.swing.JComponent
 import javax.swing.JPanel
+import javax.swing.SwingUtilities
 
 /**
  * JCEF browser panel that hosts the WebView UI.
@@ -109,6 +132,7 @@ class ClaudeCodePanel(
             setupBrowserHandlers()
             holder.handlersInstalled = true
         }
+        setupNativeDropBridge()
 
         // Register RPC handler for this panel
         backendService.ensureStarted(project.basePath ?: "", panelId, createRpcHandler())
@@ -130,6 +154,245 @@ class ClaudeCodePanel(
     }
 
     // ─── Browser handlers (JCEF) ────────────────────────────────────
+
+    private fun setupNativeDropBridge() {
+        val dropTarget = object : DropTargetAdapter() {
+            override fun dragEnter(event: DropTargetDragEvent) {
+                event.acceptDrag(DnDConstants.ACTION_COPY)
+            }
+
+            override fun drop(event: DropTargetDropEvent) {
+                try {
+                    event.acceptDrop(DnDConstants.ACTION_COPY)
+                    val droppedFiles = extractDroppedFiles(event.transferable)
+                    if (droppedFiles.isEmpty()) {
+                        event.dropComplete(false)
+                        return
+                    }
+                    dispatchNativeDrop(droppedFiles)
+                    event.dropComplete(true)
+                } catch (e: Exception) {
+                    event.dropComplete(false)
+                }
+            }
+        }
+        installDropTarget(this, dropTarget)
+        installDropTarget(browser.component, dropTarget)
+        installIdeaDnDTarget(this)
+        installIdeaDnDTarget(browser.component)
+    }
+
+    private fun installDropTarget(component: Component, dropTarget: DropTargetAdapter) {
+        try {
+            DropTarget(component, DnDConstants.ACTION_COPY, dropTarget, true)
+            if (component is JComponent) {
+                component.components.forEach { child -> installDropTarget(child, dropTarget) }
+            }
+        } catch (_: Exception) {}
+    }
+
+    private fun installIdeaDnDTarget(component: JComponent) {
+        val target = object : DnDTarget {
+            override fun update(event: DnDEvent): Boolean {
+                val droppedFiles = extractDroppedFiles(event.attachedObject)
+                val canDrop = droppedFiles.isNotEmpty()
+                event.setDropPossible(canDrop, if (canDrop) "" else "Drop files or folders")
+                return false
+            }
+
+            override fun drop(event: DnDEvent) {
+                val droppedFiles = extractDroppedFiles(event.attachedObject)
+                dispatchNativeDrop(droppedFiles)
+            }
+
+            override fun cleanUpOnLeave() {}
+
+            override fun updateDraggedImage(image: Image?, dropPoint: Point?, imageOffset: Point?) {}
+        }
+
+        try {
+            DnDManager.getInstance().registerTarget(target, component)
+            Disposer.register(this, Disposable {
+                runCatching { DnDManager.getInstance().unregisterTarget(target, component) }
+            })
+        } catch (_: Exception) {}
+    }
+
+    private data class DroppedFile(val path: String, val isDirectory: Boolean)
+
+    private fun extractDroppedFiles(transferable: Transferable): List<DroppedFile> {
+        val result = linkedMapOf<String, DroppedFile>()
+
+        fun add(path: String?, isDirectory: Boolean?) {
+            if (path.isNullOrBlank()) return
+            val file = File(path)
+            val normalizedPath = file.absolutePath
+            result[normalizedPath] = DroppedFile(
+                normalizedPath,
+                isDirectory ?: file.isDirectory,
+            )
+        }
+
+        fun addFromValue(value: Any?) {
+            when (value) {
+                null -> return
+                is File -> add(value.absolutePath, value.isDirectory)
+                is VirtualFile -> add(value.path, value.isDirectory)
+                is Array<*> -> value.forEach(::addFromValue)
+                is Iterable<*> -> value.forEach(::addFromValue)
+                is String -> parseDroppedText(value).forEach { add(it, null) }
+                else -> {
+                    val path = runCatching {
+                        val method = value.javaClass.methods.firstOrNull {
+                            it.name == "getPath" && it.parameterCount == 0 && it.returnType == String::class.java
+                        }
+                        method?.invoke(value) as? String
+                    }.getOrNull()
+                    val isDirectory = runCatching {
+                        val method = value.javaClass.methods.firstOrNull {
+                            it.name == "isDirectory" && it.parameterCount == 0 && it.returnType == Boolean::class.javaPrimitiveType
+                        }
+                        method?.invoke(value) as? Boolean
+                    }.getOrNull()
+                    add(path, isDirectory)
+                }
+            }
+        }
+
+        if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+            addFromValue(transferable.getTransferData(DataFlavor.javaFileListFlavor))
+        }
+
+        runCatching {
+            val util = Class.forName("com.intellij.ide.dnd.FileCopyPasteUtil")
+            val method = util.methods.firstOrNull {
+                it.name == "getFileList" && it.parameterTypes.size == 1 && it.parameterTypes[0] == Transferable::class.java
+            }
+            addFromValue(method?.invoke(null, transferable))
+        }
+
+        for (flavor in transferable.transferDataFlavors) {
+            runCatching {
+                addFromValue(transferable.getTransferData(flavor))
+            }
+        }
+
+        return result.values.toList()
+    }
+
+    private fun extractDroppedFiles(attachedObject: Any?): List<DroppedFile> {
+        val result = linkedMapOf<String, DroppedFile>()
+
+        fun add(path: String?, isDirectory: Boolean?) {
+            if (path.isNullOrBlank()) return
+            val file = File(path)
+            val normalizedPath = file.absolutePath
+            result[normalizedPath] = DroppedFile(
+                normalizedPath,
+                isDirectory ?: file.isDirectory,
+            )
+        }
+
+        fun addFromPsiElement(value: Any): Boolean {
+            val virtualFile = runCatching {
+                val containingFile = value.javaClass.methods.firstOrNull {
+                    it.name == "getContainingFile" && it.parameterCount == 0
+                }?.invoke(value)
+                containingFile?.javaClass?.methods?.firstOrNull {
+                    it.name == "getVirtualFile" && it.parameterCount == 0
+                }?.invoke(containingFile) as? VirtualFile
+            }.getOrNull()
+            if (virtualFile != null) {
+                add(virtualFile.path, virtualFile.isDirectory)
+                return true
+            }
+
+            val file = runCatching {
+                value.javaClass.methods.firstOrNull {
+                    it.name == "getVirtualFile" && it.parameterCount == 0
+                }?.invoke(value) as? VirtualFile
+            }.getOrNull()
+            if (file != null) {
+                add(file.path, file.isDirectory)
+                return true
+            }
+            return false
+        }
+
+        fun addFromValue(value: Any?) {
+            when (value) {
+                null -> return
+                is File -> add(value.absolutePath, value.isDirectory)
+                is VirtualFile -> add(value.path, value.isDirectory)
+                is Transferable -> extractDroppedFiles(value).forEach { add(it.path, it.isDirectory) }
+                is Array<*> -> value.forEach(::addFromValue)
+                is Iterable<*> -> value.forEach(::addFromValue)
+                is String -> parseDroppedText(value).forEach { add(it, null) }
+                else -> {
+                    if (addFromPsiElement(value)) return
+
+                    listOf("asFileList", "getPsiElements", "getVirtualFiles", "getFiles", "getTreeNodes").forEach { methodName ->
+                        runCatching {
+                            value.javaClass.methods.firstOrNull {
+                                it.name == methodName && it.parameterCount == 0
+                            }?.invoke(value)
+                        }.onSuccess { methodResult ->
+                            if (methodResult != null) {
+                                addFromValue(methodResult)
+                            }
+                        }
+                    }
+
+                    val path = runCatching {
+                        value.javaClass.methods.firstOrNull {
+                            it.name == "getPath" && it.parameterCount == 0 && it.returnType == String::class.java
+                        }?.invoke(value) as? String
+                    }.getOrNull()
+                    val isDirectory = runCatching {
+                        value.javaClass.methods.firstOrNull {
+                            it.name == "isDirectory" && it.parameterCount == 0 && it.returnType == Boolean::class.javaPrimitiveType
+                        }?.invoke(value) as? Boolean
+                    }.getOrNull()
+                    add(path, isDirectory)
+                }
+            }
+        }
+
+        addFromValue(attachedObject)
+        return result.values.toList()
+    }
+
+    private fun parseDroppedText(text: String): List<String> {
+        return text
+            .lineSequence()
+            .map { it.trim() }
+            .filter { it.isNotBlank() && !it.startsWith("#") }
+            .mapNotNull { raw ->
+                if (raw.startsWith("file://")) {
+                    runCatching { java.net.URI(raw).path }.getOrNull()
+                } else if (
+                    raw.startsWith("/") ||
+                    raw.startsWith("\\\\") ||
+                    raw.matches(Regex("^[A-Za-z]:[\\\\/].*"))
+                ) {
+                    raw
+                } else {
+                    null
+                }
+            }
+            .toList()
+    }
+
+    private fun dispatchNativeDrop(files: List<DroppedFile>) {
+        if (files.isEmpty()) {
+            return
+        }
+        ClaudeWebViewInjector.injectNativeDropEntries(
+            project,
+            sessionId,
+            files.map { ClaudeWebViewInjector.NativeDropEntry(it.path, it.isDirectory) },
+        )
+    }
 
     private fun setupBrowserHandlers() {
         // Handle CSS cursor changes from WebView
@@ -162,6 +425,12 @@ class ClaudeCodePanel(
 
         // Inject scripts on page load
         browser.jbCefClient.addLoadHandler(object : CefLoadHandlerAdapter() {
+            override fun onLoadStart(browser: CefBrowser?, frame: CefFrame?, transitionType: CefRequest.TransitionType?) {
+                if (frame?.isMain == true) {
+                    holder.markMainDocumentNavigating()
+                }
+            }
+
             override fun onLoadEnd(browser: CefBrowser, frame: CefFrame, httpStatusCode: Int) {
                 if (frame.isMain) {
                     // Mark JCEF environment so detectRuntime() in environment.ts can detect
@@ -170,10 +439,11 @@ class ClaudeCodePanel(
                     injectCursorTracking(frame)
                     injectStreamingStateBridge(frame)
                     installImeWorkaround()
+                    // IDE context-menu injections queued before the first navigation must run only now,
+                    // otherwise executeJavaScript on about:blank / pre-ready document breaks the load (blank panel).
+                    holder.flushPendingIdeInjectionScripts(frame)
                     logger.info("WebView loaded successfully")
-                    javax.swing.SwingUtilities.invokeLater {
-                        this@ClaudeCodePanel.browser.component.requestFocusInWindow()
-                    }
+                    // Do not request focus here: sidebar chat should not steal focus from the code editor (Copilot-style UX).
                 }
             }
         }, browser.cefBrowser)
@@ -538,6 +808,21 @@ class ClaudeCodePanel(
                 logger.info("Opened URL in browser: $url")
             }
 
+            override suspend fun pickFiles(mode: String, multiple: Boolean): List<String> {
+                val result = CompletableDeferred<List<String>>()
+                ApplicationManager.getApplication().invokeLater {
+                    try {
+                        val descriptor = createFileChooserDescriptor(mode, multiple)
+                        val files = FileChooser.chooseFiles(descriptor, project, null)
+                        result.complete(files.map { it.path })
+                    } catch (e: Exception) {
+                        logger.warn("Failed to pick files (mode=$mode, multiple=$multiple)", e)
+                        result.complete(emptyList())
+                    }
+                }
+                return result.await()
+            }
+
             override suspend fun updatePlugin() {
                 ApplicationManager.getApplication().invokeLater {
                     try {
@@ -567,6 +852,25 @@ class ClaudeCodePanel(
     }
 
     // ─── Project Helpers ─────────────────────────────────────────────
+
+    private fun createFileChooserDescriptor(mode: String, multiple: Boolean): FileChooserDescriptor {
+        val chooseFiles = mode != "folders"
+        val chooseFolders = mode == "folders" || mode == "both"
+        return FileChooserDescriptor(
+            chooseFiles,
+            chooseFolders,
+            false,
+            false,
+            false,
+            multiple,
+        ).apply {
+            title = when (mode) {
+                "folders" -> "Select Folder"
+                "both" -> "Select File or Folder"
+                else -> "Select File"
+            }
+        }
+    }
 
     private fun findProjectByBasePath(basePath: String): Project? {
         if (basePath.isBlank()) return null
@@ -658,7 +962,7 @@ class ClaudeCodePanel(
         scope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
         backendService.releasePanel(project.basePath ?: "", panelId)
         // NOTE: Do NOT call Disposer.dispose(cursorQuery) or Disposer.dispose(browser).
-        // They are managed by ClaudeCodeBrowserService and released in fileClosed().
+        // They are managed by ClaudeCodeBrowserService and released when the tool window session tab closes.
         logger.info("ClaudeCodePanel disposed (browser retained in pool)")
     }
 }

@@ -41,7 +41,7 @@ interface SessionContextValue {
   openSettings: () => void;
   switchSession: (sessionId: string) => void;
   deleteSession: (sessionId: string) => Promise<void>;
-  renameSession: (sessionId: string, title: string) => void;
+  renameSession: (sessionId: string, title: string) => Promise<void>;
   addNewSession: (sessionId: string, firstPrompt: string) => void;
   setSessionState: (state: SessionState) => void;
   setWorkingDirectory: (dir: string | null) => void;
@@ -179,7 +179,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
   // Subscribe to SESSIONS_UPDATED for cross-tab session list sync
   useEffect(() => {
     const unsubscribe = subscribe('SESSIONS_UPDATED', (message) => {
-      const { action, session } = message.payload as { action: string; session: { sessionId: string } };
+      const { action, session } = message.payload as { action: string; session: { sessionId: string; title?: string } };
       if (action === 'upsert' && session?.sessionId) {
         setSessions(prev => {
           const exists = prev.find(s => s.id === session.sessionId);
@@ -196,6 +196,12 @@ export function SessionProvider({ children }: SessionProviderProps) {
         });
       } else if (action === 'delete' && session?.sessionId) {
         setSessions(prev => prev.filter(s => s.id !== session.sessionId));
+      } else if (action === 'rename' && session?.sessionId && session.title) {
+        setSessions(prev => prev.map(s =>
+          s.id === session.sessionId
+            ? { ...s, title: session.title! }
+            : s
+        ));
       }
     });
     return unsubscribe;
@@ -246,13 +252,17 @@ export function SessionProvider({ children }: SessionProviderProps) {
     }
   }, [currentSessionId, api.sessions, navigateToNewSession, workingDirectory]);
 
-  const renameSession = useCallback((sessionId: string, title: string) => {
+  const renameSession = useCallback(async (sessionId: string, title: string) => {
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) return;
+
+    await api.sessions.rename(sessionId, trimmedTitle, workingDirectory ?? undefined);
     setSessions(prev => prev.map(s =>
       s.id === sessionId
-        ? { ...s, title, updatedAt: new Date() }
+        ? { ...s, title: trimmedTitle }
         : s
     ));
-  }, []);
+  }, [api.sessions, workingDirectory]);
 
   const addNewSession = useCallback((sessionId: string, firstPrompt: string) => {
     const now = new Date();

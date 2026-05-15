@@ -3,6 +3,7 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import { extractSessionInfo, type SessionInfo } from './extractSessionInfo';
 import { getProjectSessionsPath } from './getProjectSessionsPath';
+import { readSessionTitleOverrides } from './sessionTitleOverrides';
 
 export type SessionListEntry = SessionInfo & { sessionId: string };
 
@@ -21,6 +22,7 @@ export async function getSessionsList(workingDir: string): Promise<SessionListEn
     // Scan all .jsonl files in directory (Cursor approach)
     const files = await readdir(sessionsPath);
     const jsonlFiles = files.filter((f) => f.endsWith('.jsonl'));
+    const titleOverrides = await readSessionTitleOverrides(sessionsPath);
 
     console.error('[node-backend]', 'Found .jsonl files:', jsonlFiles.length);
 
@@ -35,6 +37,7 @@ export async function getSessionsList(workingDir: string): Promise<SessionListEn
         sessions.push({
           sessionId,
           ...sessionInfo,
+          title: titleOverrides[sessionId] ?? sessionInfo.title,
         });
       } catch (err) {
         console.error('[node-backend]', 'Failed to parse session file:', file, err);

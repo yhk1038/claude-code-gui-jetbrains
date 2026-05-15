@@ -8,7 +8,7 @@ interface ContextChipProps {
 
 export function ContextChip({ context, onRemove }: ContextChipProps) {
   const getFileIcon = (path: string) => {
-    const ext = path.split('.').pop()?.toLowerCase();
+    const ext = path.replace(/\\/g, '/').split('.').pop()?.toLowerCase();
     const iconColor = getIconColor(ext || '');
 
     return (
@@ -50,7 +50,8 @@ export function ContextChip({ context, onRemove }: ContextChipProps) {
   };
 
   const getContextLabel = () => {
-    const fileName = context.path.split('/').pop() || context.path;
+    const normalizedPath = context.path.replace(/\\/g, '/');
+    const fileName = normalizedPath.split('/').pop() || context.path;
 
     if (context.type === ContextType.Selection && context.startLine !== undefined && context.endLine !== undefined) {
       return `${fileName}:${context.startLine}-${context.endLine}`;

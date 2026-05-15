@@ -1,6 +1,12 @@
 import { ClientEnv } from '../shared';
 import type { IdeAdapter } from './IdeAdapter';
 import { getBridge } from '../api/bridge/Bridge';
+import { WORKING_DIR_PARAM_KEY } from '@/contexts/WorkingDirContext';
+
+function getCurrentWorkingDir(): string | undefined {
+  const workingDir = new URLSearchParams(window.location.search).get(WORKING_DIR_PARAM_KEY);
+  return workingDir || undefined;
+}
 
 /**
  * JetBrains IDE Adapter
@@ -16,12 +22,12 @@ export class JetBrainsAdapter implements IdeAdapter {
   }
 
   async openNewTab(): Promise<void> {
-    await getBridge().request('OPEN_NEW_TAB');
+    await getBridge().request('OPEN_NEW_TAB', { workingDir: getCurrentWorkingDir() });
     console.log('[JetBrainsAdapter] Sent OPEN_NEW_TAB via WebSocket bridge');
   }
 
   async openSettings(): Promise<void> {
-    await getBridge().request('OPEN_SETTINGS');
+    await getBridge().request('OPEN_SETTINGS', { workingDir: getCurrentWorkingDir() });
     console.log('[JetBrainsAdapter] Sent OPEN_SETTINGS via WebSocket bridge');
   }
 

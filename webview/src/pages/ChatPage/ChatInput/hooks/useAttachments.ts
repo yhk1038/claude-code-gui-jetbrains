@@ -1,6 +1,13 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Attachment, ImageAttachment, FileAttachment, FolderAttachment, ATTACHMENT_LIMITS } from '../../../../types';
 
+type DroppedPathKind = 'file' | 'folder';
+
+interface DroppedPath {
+  path: string;
+  kind: DroppedPathKind;
+}
+
 export interface UseAttachmentsReturn {
   attachments: Attachment[];
   addImageAttachment: (file: File) => Promise<void>;
@@ -15,6 +22,68 @@ export interface UseAttachmentsReturn {
   handleDragOver: (e: React.DragEvent) => void;
   handleDragLeave: (e: React.DragEvent) => void;
   handleDrop: (e: React.DragEvent) => void;
+}
+
+function basename(path: string): string {
+  return path.replace(/[\\/]+$/, '').split(/[\\/]/).pop() || path;
+}
+
+function normalizeDroppedPath(rawPath: string): string | null {
+  const trimmed = rawPath.trim();
+  if (!trimmed || trimmed.startsWith('#')) return null;
+  try {
+    if (trimmed.startsWith('file://')) {
+      return decodeURIComponent(new URL(trimmed).pathname)
+        .replace(/^\/([A-Za-z]:\/)/, '$1')
+        .replace(/\//g, navigator.platform.toLowerCase().includes('win') ? '\\' : '/');
+    }
+  } catch {
+    // Fall through and treat it as a plain local path.
+  }
+  if (/^[A-Za-z]:[\\/]/.test(trimmed) || trimmed.startsWith('/') || trimmed.startsWith('\\\\')) {
+    return trimmed;
+  }
+  return null;
+}
+
+function extractPathsFromText(value: string): string[] {
+  return value
+    .split(/\r?\n/)
+    .map(normalizeDroppedPath)
+    .filter((path): path is string => Boolean(path));
+}
+
+function getEntryKinds(items: DataTransferItemList): Map<string, DroppedPathKind> {
+  const kinds = new Map<string, DroppedPathKind>();
+  for (const item of Array.from(items)) {
+    const entry = item.webkitGetAsEntry?.();
+    if (!entry) continue;
+    kinds.set(entry.name, entry.isDirectory ? 'folder' : 'file');
+  }
+  return kinds;
+}
+
+function extractDroppedPaths(dataTransfer: DataTransfer): DroppedPath[] {
+  const paths = new Set<string>();
+  const uriList = dataTransfer.getData('text/uri-list');
+  const plainText = dataTransfer.getData('text/plain');
+  for (const path of [...extractPathsFromText(uriList), ...extractPathsFromText(plainText)]) {
+    paths.add(path);
+  }
+
+  for (const file of Array.from(dataTransfer.files)) {
+    const path = (file as File & { path?: string }).path || normalizeDroppedPath(file.name);
+    if (path) paths.add(path);
+  }
+
+  const entryKinds = getEntryKinds(dataTransfer.items);
+  return Array.from(paths).map((path) => {
+    const name = basename(path);
+    const kind = path.endsWith('/') || path.endsWith('\\')
+      ? 'folder'
+      : entryKinds.get(name) ?? 'file';
+    return { path, kind };
+  });
 }
 
 export function useAttachments(): UseAttachmentsReturn {
@@ -66,12 +135,22 @@ export function useAttachments(): UseAttachmentsReturn {
 
   const addFileAttachment = useCallback((absolutePath: string, fileName: string, size?: number) => {
     const attachment = new FileAttachment({ fileName, absolutePath, size });
-    setAttachments((prev) => [...prev, attachment]);
+    setAttachments((prev) => {
+      if (prev.some((att) => att instanceof FileAttachment && att.absolutePath === attachment.absolutePath)) {
+        return prev;
+      }
+      return [...prev, attachment];
+    });
   }, []);
 
   const addFolderAttachment = useCallback((absolutePath: string, folderName: string) => {
     const attachment = new FolderAttachment({ folderName, absolutePath });
-    setAttachments((prev) => [...prev, attachment]);
+    setAttachments((prev) => {
+      if (prev.some((att) => att instanceof FolderAttachment && att.absolutePath === attachment.absolutePath)) {
+        return prev;
+      }
+      return [...prev, attachment];
+    });
   }, []);
 
   const removeAttachment = useCallback((id: string) => {
@@ -125,7 +204,15 @@ export function useAttachments(): UseAttachmentsReturn {
         await addImageAttachment(file);
       }
     }
-  }, [addImageAttachment, setIsDragOver]);
+    const droppedPaths = extractDroppedPaths(e.dataTransfer);
+    for (const dropped of droppedPaths) {
+      if (dropped.kind === 'folder') {
+        addFolderAttachment(dropped.path, basename(dropped.path));
+      } else {
+        addFileAttachment(dropped.path, basename(dropped.path));
+      }
+    }
+  }, [addImageAttachment, addFileAttachment, addFolderAttachment, setIsDragOver]);
 
   return useMemo(() => ({
     attachments,

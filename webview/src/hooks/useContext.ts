@@ -31,20 +31,27 @@ export function useContext(): UseContextReturn {
     startLine?: number,
     endLine?: number
   ) => {
-    // Check if context already exists
+    const newContext: AttachedContext = {
+      id: generateContextId(),
+      type,
+      path,
+      content,
+      startLine,
+      endLine,
+    };
+    const key =
+      type === 'selection'
+        ? `selection:${path}:${startLine ?? ''}:${endLine ?? ''}:${content ?? ''}`
+        : `${type}:${path}`;
+
     setAttachedContexts(prev => {
-      const exists = prev.some(ctx => ctx.path === path && ctx.type === type);
-      if (exists) return prev;
-
-      const newContext: AttachedContext = {
-        id: generateContextId(),
-        type,
-        path,
-        content,
-        startLine,
-        endLine,
-      };
-
+      if (prev.some(ctx =>
+        (ctx.type === 'selection'
+          ? `selection:${ctx.path}:${ctx.startLine ?? ''}:${ctx.endLine ?? ''}:${ctx.content ?? ''}`
+          : `${ctx.type}:${ctx.path}`) === key
+      )) {
+        return prev;
+      }
       return [...prev, newContext];
     });
   }, [generateContextId]);

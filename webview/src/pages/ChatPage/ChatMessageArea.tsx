@@ -39,6 +39,11 @@ function buildSubAgentMessages(progressEntries: LoadedMessageDto[]): SubAgentMes
 
 const SCROLL_THRESHOLD = 200;
 
+interface MessageGroup {
+  id: string;
+  messages: LoadedMessageDto[];
+}
+
 interface Props {
   isStreaming: boolean;
   scrollContainerRef: RefObject<HTMLDivElement | null>;
@@ -166,6 +171,22 @@ export function ChatMessageArea(props: Props) {
 
   const isEmpty = mergedMessages.length === 0;
 
+  const messageGroups = useMemo<MessageGroup[]>(() => {
+    const groups: MessageGroup[] = [];
+
+    mergedMessages.forEach((message, index) => {
+      const startsUserTurn = message.type === LoadedMessageType.User;
+      if (startsUserTurn || groups.length === 0) {
+        groups.push({ id: message.uuid ?? `message-group-${index}`, messages: [message] });
+        return;
+      }
+
+      groups[groups.length - 1]?.messages.push(message);
+    });
+
+    return groups;
+  }, [mergedMessages]);
+
   // No working directory: show ProjectSelector or loading
   if (!workingDirectory) {
     // JetBrains JCEF 환경에서는 workingDir이 항상 제공되므로 이 분기에 도달하지 않음 (방어적 처리)
@@ -192,13 +213,34 @@ export function ChatMessageArea(props: Props) {
   // Render messages with widgets
   return (
     <div ref={containerRef} className="flex-1 text-xs" onClick={log}>
-      {mergedMessages.map((message) => (
-        <div key={message.uuid} onClick={() => console.log('message', message.uuid, message)}>
-          <MessageBubble message={message} onRetry={onRetry} />
-        </div>
-      ))}
-      {isStreaming && <StreamingIndicator />}
-      <StreamErrorBanner />
+      {messageGroups.map((group, groupIndex) => {
+        const isLastGroup = groupIndex === messageGroups.length - 1;
+
+        return (
+          <div key={group.id} data-testid={`message-group-${group.id}`} className="relative">
+            {group.messages.map((message) => (
+              <div
+                key={message.uuid}
+                data-testid={`message-row-${message.uuid}`}
+                className={
+                  message.type === LoadedMessageType.User
+                    ? 'sticky chat-sticky-user-prompt z-[6] bg-neutral-900/95 backdrop-blur-sm shadow-[0_10px_18px_rgba(23,23,23,0.72)]'
+                    : undefined
+                }
+                onClick={() => console.log('message', message.uuid, message)}
+              >
+                <MessageBubble message={message} onRetry={onRetry} />
+              </div>
+            ))}
+            {isLastGroup && (
+              <>
+                {isStreaming && <StreamingIndicator />}
+                <StreamErrorBanner />
+              </>
+            )}
+          </div>
+        );
+      })}
       <div ref={messagesEndRef} />
     </div>
   );

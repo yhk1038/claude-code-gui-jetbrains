@@ -5,11 +5,11 @@ import React from 'react';
 import { ChatStreamProvider, useChatStreamContext } from '../contexts/ChatStreamContext';
 
 // Mock requestAnimationFrame/cancelAnimationFrame
-global.requestAnimationFrame = vi.fn((cb) => {
+globalThis.requestAnimationFrame = vi.fn((cb) => {
   cb(0);
   return 0;
-});
-global.cancelAnimationFrame = vi.fn();
+}) as typeof requestAnimationFrame;
+globalThis.cancelAnimationFrame = vi.fn() as typeof cancelAnimationFrame;
 
 // Mock scrollIntoView
 Element.prototype.scrollIntoView = vi.fn();

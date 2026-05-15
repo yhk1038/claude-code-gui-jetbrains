@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, KeyboardEvent, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, KeyboardEvent, useState } from 'react';
 import { CommandPalettePanel } from '@/commandPalette/ui/CommandPalettePanel';
 import { useCommandPalette } from '@/commandPalette/hooks/useCommandPalette';
 import { PanelSectionId, PanelItemType, CommandItem } from '@/types/commandPalette';
@@ -10,7 +10,9 @@ import { useInputHistory } from './hooks/useInputHistory';
 import { useTextareaAutoResize } from './hooks/useTextareaAutoResize';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useChatStreamContext } from '@/contexts/ChatStreamContext';
-import { getTextContent, SessionState } from '@/types';
+import { ContextChip } from '@/components/ContextChip';
+import { AttachedContext } from '@/hooks/useContext';
+import { ContextType, getTextContent, SessionState } from '@/types';
 import { LoadedMessageType } from '@/dto';
 import { useAttachments } from './hooks/useAttachments';
 import { AttachmentPreview } from './AttachmentPreview';
@@ -25,6 +27,31 @@ import { useEffort } from '@/hooks/useEffort';
 import { useMention } from './hooks/useMention';
 import { MentionDropdown } from './MentionDropdown';
 import { isMobile } from '@/config/environment';
+import { canSubmitComposer } from '@/utils/composerContextMerge';
+import type { ComposerContextEntry } from '@/utils/composerContextMerge';
+
+interface NativeDropEntry {
+  path: string;
+  type: 'file' | 'folder';
+}
+
+function composerEntryToAttached(entry: ComposerContextEntry): AttachedContext {
+  const c = entry.context;
+  const type: AttachedContext['type'] =
+    c.type === ContextType.Selection ? 'selection' : 'file';
+  return {
+    id: entry.id,
+    type,
+    path: c.path ?? '',
+    content: c.content,
+    startLine: c.startLine,
+    endLine: c.endLine,
+  };
+}
+
+function basename(path: string): string {
+  return path.replace(/[\\/]+$/, '').split(/[\\/]/).pop() || path;
+}
 
 export function ChatInput() {
   const { textareaRef } = useChatInputFocus();
@@ -34,6 +61,8 @@ export function ChatInput() {
     input: value,
     setInput: onChange,
     handleSubmit: onSubmit,
+    composerContextEntries,
+    removeComposerContext,
     isStreaming,
     stop: onStop,
   } = useChatStreamContext();
@@ -56,11 +85,52 @@ export function ChatInput() {
     handleDrop,
   } = useAttachments();
 
+  const composerContexts = useMemo(
+    () => composerContextEntries.map(e => e.context),
+    [composerContextEntries],
+  );
+
   const { settings: claudeSettings, updateSetting: updateClaudeSetting } = useClaudeSettings();
   const { cycle: cycleEffort } = useEffort();
   const lastMetaArrowTime = useRef<number>(0);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showModelSwitch, setShowModelSwitch] = useState(false);
+
+  useEffect(() => {
+    const consumeEntries = (entries: NativeDropEntry[] | undefined) => {
+      if (!entries) return;
+      for (const entry of entries) {
+        if (!entry.path) continue;
+        if (entry.type === 'folder') {
+          addFolderAttachment(entry.path, basename(entry.path));
+        } else {
+          addFileAttachment(entry.path, basename(entry.path));
+        }
+      }
+    };
+
+    const handleNativeDrop = (event: Event) => {
+      const entries = (event as CustomEvent<{ entries?: NativeDropEntry[] }>).detail?.entries;
+      consumeEntries(entries);
+    };
+    window.addEventListener('claude-code:native-drop-paths', handleNativeDrop);
+
+    if (window.__CLAUDE_CODE_PENDING_DROP_ENTRIES__?.length) {
+      consumeEntries(window.__CLAUDE_CODE_PENDING_DROP_ENTRIES__);
+      window.__CLAUDE_CODE_PENDING_DROP_ENTRIES__ = [];
+    }
+
+    const interval = window.setInterval(() => {
+      if (!window.__CLAUDE_CODE_PENDING_DROP_ENTRIES__?.length) return;
+      consumeEntries(window.__CLAUDE_CODE_PENDING_DROP_ENTRIES__);
+      window.__CLAUDE_CODE_PENDING_DROP_ENTRIES__ = [];
+    }, 500);
+
+    return () => {
+      window.removeEventListener('claude-code:native-drop-paths', handleNativeDrop);
+      window.clearInterval(interval);
+    };
+  }, [addFileAttachment, addFolderAttachment]);
 
   // 커맨드 팔레트 "Attach file..." 항목 연동
   useEffect(() => {
@@ -291,7 +361,7 @@ export function ChatInput() {
     // Enter: submit (IME 조합 중에는 무시)
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && !isMobile()) {
       e.preventDefault();
-      if (!disabled && (value.trim() || attachments.length > 0)) {
+      if (!disabled && canSubmitComposer(value.trim(), composerContexts, attachments)) {
         inputHistory.pushToHistory(value);
         onSubmit(undefined, mode, attachments.length > 0 ? attachments : undefined);
         clearAttachments();
@@ -317,7 +387,7 @@ export function ChatInput() {
       e.preventDefault();
       onChange(historyValue);
     }
-  }, [disabled, value, attachments.length, onSubmit, inputHistory, onChange, palette, mention, cycleMode, clearAttachments]);
+  }, [disabled, value, attachments, composerContexts, onSubmit, inputHistory, onChange, palette, mention, cycleMode, clearAttachments, mode]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
@@ -326,7 +396,7 @@ export function ChatInput() {
     mention.detectMention(newValue, e.target.selectionStart ?? newValue.length);
   }, [onChange, palette, mention]);
 
-  const hasValue = !!value.trim() || attachments.length > 0;
+  const hasValue = canSubmitComposer(value.trim(), composerContexts, attachments);
 
   return (
     <div className="max-w-[44rem] mx-auto px-4 pb-[14px] pt-2">
@@ -394,6 +464,18 @@ export function ChatInput() {
           />
         </div>
 
+        {composerContextEntries.length > 0 && (
+          <div className="px-3 pb-1 flex flex-wrap gap-1.5">
+            {composerContextEntries.map(entry => (
+              <ContextChip
+                key={entry.id}
+                context={composerEntryToAttached(entry)}
+                onRemove={removeComposerContext}
+              />
+            ))}
+          </div>
+        )}
+
         {/* 첨부 미리보기 */}
         <AttachmentPreview
           attachments={attachments}
@@ -435,6 +517,7 @@ export function ChatInput() {
               onAttach={() => setShowAttachMenu(prev => !prev)}
               onSlashCommand={palette.handleSlashButtonClick}
               onSubmit={() => {
+                if (!canSubmitComposer(value.trim(), composerContexts, attachments)) return;
                 onSubmit(undefined, mode, attachments.length > 0 ? attachments : undefined);
                 clearAttachments();
               }}

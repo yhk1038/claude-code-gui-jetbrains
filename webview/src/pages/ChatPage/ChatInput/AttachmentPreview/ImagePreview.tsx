@@ -25,9 +25,10 @@ export function ImagePreview(props: Props) {
         <button
           type="button"
           onClick={() => onRemove(attachment.id)}
-          className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center rounded-full bg-zinc-700 hover:bg-red-500 text-zinc-300 text-[10px] transition-colors opacity-0 group-hover:opacity-100"
+          className="absolute -top-2 -right-2 w-5 h-5 flex items-center justify-center rounded bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 text-sm leading-none transition-colors opacity-0 group-hover:opacity-100"
+          aria-label={`Remove ${attachment.displayLabel}`}
         >
-          ×
+          ✕
         </button>
         <div className="text-[10px] text-zinc-500 truncate max-w-[64px] mt-0.5 text-center">
           {attachment.displayLabel}

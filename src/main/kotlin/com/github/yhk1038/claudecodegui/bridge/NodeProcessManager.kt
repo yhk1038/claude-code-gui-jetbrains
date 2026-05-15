@@ -51,6 +51,7 @@ class NodeProcessManager(
         suspend fun openSettings(workingDir: String)
         suspend fun openTerminal(workingDir: String)
         suspend fun openUrl(url: String)
+        suspend fun pickFiles(mode: String, multiple: Boolean): List<String>
         suspend fun updatePlugin()
         suspend fun requiresRestart(): Boolean
     }

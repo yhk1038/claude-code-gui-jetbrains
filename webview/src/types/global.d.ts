@@ -22,6 +22,12 @@ interface Window {
    * Implemented by useBridge.ts
    */
   dispatchKotlinMessage?: (message: IPCMessage) => void;
+
+  /** Queued native file/folder paths from Kotlin drag-and-drop or context-menu actions */
+  __CLAUDE_CODE_PENDING_DROP_ENTRIES__?: Array<{ path: string; type: 'file' | 'folder' }>;
+
+  /** Queued IDE composer contexts before React subscribes */
+  __CLAUDE_CODE_PENDING_COMPOSER_CONTEXTS__?: unknown[];
 }
 
 /**

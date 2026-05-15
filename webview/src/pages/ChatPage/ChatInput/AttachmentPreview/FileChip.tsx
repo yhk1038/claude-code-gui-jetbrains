@@ -20,9 +20,10 @@ export function FileChip(props: Props) {
       <button
         type="button"
         onClick={() => onRemove(attachment.id)}
-        className="w-3.5 h-3.5 flex items-center justify-center rounded-full text-zinc-500 hover:text-red-400 text-[10px] shrink-0"
+        className="w-5 h-5 flex items-center justify-center rounded text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700 text-sm leading-none shrink-0 transition-colors"
+        aria-label={`Remove ${attachment.displayLabel}`}
       >
-        ×
+        ✕
       </button>
     </div>
   );

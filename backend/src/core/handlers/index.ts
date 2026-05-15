@@ -10,6 +10,7 @@ import { toolResponseHandler } from './toolResponse';
 import { getSessionsHandler } from './getSessions';
 import { loadSessionHandler } from './loadSession';
 import { deleteSessionHandler } from './deleteSession';
+import { renameSessionHandler } from './renameSession';
 import { getSettingsHandler } from './getSettings';
 import { saveSettingsHandler } from './saveSettings';
 import { getProjectsHandler } from './getProjects';
@@ -80,6 +81,9 @@ export async function handleMessage(
       break;
     case 'DELETE_SESSION':
       await deleteSessionHandler(connectionId, message, connections, bridge);
+      break;
+    case 'RENAME_SESSION':
+      await renameSessionHandler(connectionId, message, connections, bridge);
       break;
     case 'GET_SETTINGS':
       await getSettingsHandler(connectionId, message, connections, bridge);

@@ -2,14 +2,16 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { groupSessionsByDate } from './utils';
 import { DropdownToggle } from './DropdownToggle';
 import { DropdownMenu } from './DropdownMenu';
+import { RenameSessionDialog } from './RenameSessionDialog';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useConfirmDialog } from '@/components/ConfirmDialog/useConfirmDialog';
 
 export function SessionDropdown() {
-  const { sessions, currentSessionId, currentSession, switchSession, deleteSession } = useSessionContext();
+  const { sessions, currentSessionId, currentSession, switchSession, deleteSession, renameSession } = useSessionContext();
   const { confirmDialog, confirm } = useConfirmDialog();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [renamingSessionId, setRenamingSessionId] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const sessionTitle = currentSession?.title || 'Past Conversations';
@@ -66,6 +68,23 @@ export function SessionDropdown() {
     }
   }, [sessions, confirm, deleteSession]);
 
+  const handleRenameSession = useCallback(async (sessionId: string) => {
+    setRenamingSessionId(sessionId);
+  }, []);
+
+  const renamingSession = useMemo(() => {
+    return sessions.find(s => s.id === renamingSessionId) ?? null;
+  }, [sessions, renamingSessionId]);
+
+  const handleConfirmRename = useCallback(async (title: string) => {
+    if (!renamingSession) return;
+
+    if (title !== renamingSession.title) {
+      await renameSession(renamingSession.id, title);
+    }
+    setRenamingSessionId(null);
+  }, [renamingSession, renameSession]);
+
   return (
     <div className="relative min-w-0" ref={dropdownRef}>
       <DropdownToggle
@@ -83,10 +102,18 @@ export function SessionDropdown() {
           currentSessionId={currentSessionId}
           onSelectSession={handleSelectSession}
           onDeleteSession={handleDeleteSession}
+          onRenameSession={handleRenameSession}
         />
       )}
 
       {confirmDialog}
+      {renamingSession && (
+        <RenameSessionDialog
+          initialTitle={renamingSession.title}
+          onConfirm={handleConfirmRename}
+          onCancel={() => setRenamingSessionId(null)}
+        />
+      )}
     </div>
   );
 }

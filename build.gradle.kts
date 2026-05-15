@@ -119,6 +119,20 @@ intellijPlatform {
             untilBuild = "261.*"
         }
         changeNotes = """
+            <h3>0.13.11 - IDE context menu → chat</h3>
+            <ul>
+                <li>Add File to Chat from Project view for files and folders</li>
+                <li>Add to Chat from editor selection</li>
+            </ul>
+            <h3>0.13.9 - Multi-project routing &amp; chat navigation</h3>
+            <ul>
+                <li>Fixed new Claude Code sessions opening in the wrong JetBrains project when multiple IDE windows are connected</li>
+                <li>Added sticky user prompts while scrolling through multi-turn conversations</li>
+            </ul>
+            <h3>0.13.8 - Patch release</h3>
+            <ul>
+                <li>Maintenance and stability updates</li>
+            </ul>
             <h3>0.13.6 - CLI credential delegation &amp; usage caching</h3>
             <ul>
                 <li>Replaced direct API credential access with Claude Code CLI delegation for usage queries</li>
@@ -181,6 +195,13 @@ intellijPlatform {
 }
 
 tasks {
+    val pnpmExecutable =
+        if (System.getProperty("os.name").lowercase().contains("windows")) {
+            "pnpm.cmd"
+        } else {
+            "pnpm"
+        }
+
     wrapper {
         gradleVersion = "8.13"
     }
@@ -223,7 +244,7 @@ tasks {
         description = "Install webview npm dependencies via pnpm"
         dependsOn("syncVersions")
         workingDir = file("webview")
-        commandLine("pnpm", "install", "--frozen-lockfile")
+        commandLine(pnpmExecutable, "install", "--frozen-lockfile")
         inputs.files(file("webview/package.json"), file("webview/pnpm-lock.yaml"))
         outputs.dir(file("webview/node_modules"))
     }
@@ -232,7 +253,7 @@ tasks {
         description = "Install backend npm dependencies via pnpm"
         dependsOn("syncVersions")
         workingDir = file("backend")
-        commandLine("pnpm", "install")
+        commandLine(pnpmExecutable, "install")
         inputs.files(fileTree("backend").include("package.json"))
         outputs.dir(file("backend/node_modules"))
     }
@@ -241,7 +262,7 @@ tasks {
         description = "Build the WebView frontend (Vite)"
         dependsOn("pnpmInstallWebview")
         workingDir = file("webview")
-        commandLine("pnpm", "run", "build")
+        commandLine(pnpmExecutable, "run", "build")
         inputs.dir(file("webview/src"))
         inputs.files(file("webview/package.json"), file("webview/vite.config.ts"))
         outputs.dir(file("webview/dist"))
@@ -261,7 +282,7 @@ tasks {
         description = "Build the Node.js backend bundle (esbuild)"
         dependsOn("pnpmInstallBackend")
         workingDir = file("backend")
-        commandLine("pnpm", "run", "build")
+        commandLine(pnpmExecutable, "run", "build")
         inputs.dir(file("backend/src"))
         inputs.files(file("backend/esbuild.mjs"), file("backend/package.json"))
         outputs.file(file("backend/dist/backend.mjs"))

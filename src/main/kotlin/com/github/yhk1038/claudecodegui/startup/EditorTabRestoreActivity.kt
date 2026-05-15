@@ -16,27 +16,35 @@ class EditorTabRestoreActivity : ProjectActivity {
         val sessionIds = stateService.getOpenSessionIds()
 
         if (sessionIds.isEmpty()) {
-            logger.info("No saved editor tabs to restore")
+            logger.info("No saved Claude Code sessions to restore")
             return
         }
 
-        logger.info("Restoring ${sessionIds.size} editor tab(s): $sessionIds")
+        logger.info("Restoring ${sessionIds.size} Claude Code session(s) in tool window: $sessionIds")
 
         val activeSessionId = stateService.getActiveSessionId()
 
         ApplicationManager.getApplication().invokeLater {
-            // 비활성 탭 먼저 복원
             for (sessionId in sessionIds) {
                 if (sessionId != activeSessionId) {
-                    OpenClaudeCodeAction.openSession(project, sessionId, "/sessions/$sessionId")
+                    OpenClaudeCodeAction.openSession(
+                        project,
+                        sessionId,
+                        "/sessions/$sessionId",
+                        activateToolWindow = false,
+                    )
                 }
             }
-            // 활성 탭은 마지막에 열어서 포커스 획득
             if (activeSessionId != null && activeSessionId in sessionIds) {
-                OpenClaudeCodeAction.openSession(project, activeSessionId, "/sessions/$activeSessionId")
+                OpenClaudeCodeAction.openSession(
+                    project,
+                    activeSessionId,
+                    "/sessions/$activeSessionId",
+                    activateToolWindow = false,
+                )
             }
 
-            logger.info("Editor tabs restored successfully")
+            logger.info("Claude Code sessions restored in tool window")
         }
     }
 }

@@ -1,19 +1,13 @@
 package com.github.yhk1038.claudecodegui.actions
 
-import com.github.yhk1038.claudecodegui.editor.ClaudeCodeFileEditor
+import com.github.yhk1038.claudecodegui.toolwindow.ClaudeCodeToolWindowSessionManager
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.fileEditor.FileEditorManager
 import java.util.UUID
 
 /**
- * Action to open a new Claude Code editor tab.
- *
- * Only enabled when a Claude Code editor is currently focused.
- * Keyboard shortcuts:
- * - Mac: Cmd+N
- * - Windows/Linux: Ctrl+N
+ * Opens a new Claude Code chat as an additional tab inside the **Claude Code** tool window.
  */
 class NewClaudeCodeTabAction : AnAction() {
 
@@ -28,10 +22,7 @@ class NewClaudeCodeTabAction : AnAction() {
             e.presentation.isEnabledAndVisible = false
             return
         }
-
-        // Only enable when Claude Code editor is focused
-        val editor = FileEditorManager.getInstance(project).selectedEditor
-        e.presentation.isEnabledAndVisible = editor is ClaudeCodeFileEditor
+        e.presentation.isEnabledAndVisible = ClaudeCodeToolWindowSessionManager.getInstance(project).hasOpenSessions()
     }
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT

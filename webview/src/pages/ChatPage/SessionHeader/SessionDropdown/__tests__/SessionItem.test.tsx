@@ -18,10 +18,12 @@ const createMockSession = (overrides: Partial<SessionMetaDto> = {}): SessionMeta
 describe('SessionItem', () => {
   let onSelect: ReturnType<typeof vi.fn>;
   let onDelete: ReturnType<typeof vi.fn>;
+  let onRename: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     onSelect = vi.fn();
     onDelete = vi.fn();
+    onRename = vi.fn();
   });
 
   it('renders the session title', () => {
@@ -33,6 +35,7 @@ describe('SessionItem', () => {
         isSelected={false}
         onSelect={onSelect}
         onDelete={onDelete}
+        onRename={onRename}
       />
     );
 
@@ -48,6 +51,7 @@ describe('SessionItem', () => {
         isSelected={false}
         onSelect={onSelect}
         onDelete={onDelete}
+        onRename={onRename}
       />
     );
 
@@ -65,6 +69,7 @@ describe('SessionItem', () => {
         isSelected={false}
         onSelect={onSelect}
         onDelete={onDelete}
+        onRename={onRename}
       />
     );
 
@@ -84,6 +89,7 @@ describe('SessionItem', () => {
         isSelected={false}
         onSelect={onSelect}
         onDelete={onDelete}
+        onRename={onRename}
       />
     );
 
@@ -102,6 +108,7 @@ describe('SessionItem', () => {
         isSelected={false}
         onSelect={onSelect}
         onDelete={onDelete}
+        onRename={onRename}
       />
     );
 

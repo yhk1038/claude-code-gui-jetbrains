@@ -16,6 +16,11 @@ interface GetSessionsResponse {
   }[];
 }
 
+interface MutationResponse {
+  status?: string;
+  error?: string;
+}
+
 /**
  * Sessions API module
  * RESTful CRUD operations for sessions
@@ -72,6 +77,18 @@ export class SessionsApi {
   async destroy(sessionId: string, workingDir?: string): Promise<void> {
     const dir = workingDir ?? this.getConfig().workingDir;
     await this.bridge.request('DELETE_SESSION', { sessionId, workingDir: dir });
+  }
+
+  /**
+   * Rename a session display title without changing the original JSONL transcript.
+   * PATCH /sessions/:id
+   */
+  async rename(sessionId: string, title: string, workingDir?: string): Promise<void> {
+    const dir = workingDir ?? this.getConfig().workingDir;
+    const response = await this.bridge.request<MutationResponse>('RENAME_SESSION', { sessionId, title, workingDir: dir });
+    if (response?.status === 'error') {
+      throw new Error(response.error ?? 'Failed to rename session');
+    }
   }
 
   /**

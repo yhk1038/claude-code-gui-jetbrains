@@ -1,28 +1,22 @@
 package com.github.yhk1038.claudecodegui.actions
 
-import com.github.yhk1038.claudecodegui.editor.ClaudeCodeFileEditor
+import com.github.yhk1038.claudecodegui.toolwindow.ClaudeCodeToolWindowSessionManager
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.fileEditor.FileEditorManager
 import java.util.UUID
 
 /**
- * Action to open Claude Code settings in a new editor tab.
+ * Opens Claude Code settings inside the tool window (new session tab on the settings route).
  *
- * Only enabled when a Claude Code editor is currently focused.
- * This overrides IntelliJ's default ShowSettings action (Cmd+,) in that context.
- *
- * Keyboard shortcuts:
- * - Mac: Cmd+,
- * - Windows/Linux: Ctrl+,
+ * Intended to mirror Cmd+, / Ctrl+, when the **Claude Code** tool window is active.
  */
 class OpenClaudeCodeSettingsAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val settingsSessionId = "settings-${UUID.randomUUID()}"
-        OpenClaudeCodeAction.openSession(project, settingsSessionId, "#/settings/general")
+        OpenClaudeCodeAction.openSession(project, settingsSessionId, "/settings/general")
     }
 
     override fun update(e: AnActionEvent) {
@@ -31,10 +25,8 @@ class OpenClaudeCodeSettingsAction : AnAction() {
             e.presentation.isEnabledAndVisible = false
             return
         }
-
-        // Only enable when Claude Code editor is focused
-        val editor = FileEditorManager.getInstance(project).selectedEditor
-        e.presentation.isEnabledAndVisible = editor is ClaudeCodeFileEditor
+        val mgr = ClaudeCodeToolWindowSessionManager.getInstance(project)
+        e.presentation.isEnabledAndVisible = mgr.isToolWindowActive() && mgr.hasOpenSessions()
     }
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT

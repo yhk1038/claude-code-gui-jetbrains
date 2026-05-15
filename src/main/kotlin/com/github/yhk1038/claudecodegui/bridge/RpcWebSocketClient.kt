@@ -218,6 +218,16 @@ class RpcWebSocketClient(
                 rpcHandler.openUrl(url)
                 buildJsonObject {}
             }
+            "PICK_FILES" -> {
+                val mode = params["mode"]?.jsonPrimitive?.content ?: "files"
+                val multiple = params["multiple"]?.jsonPrimitive?.booleanOrNull ?: true
+                val paths = rpcHandler.pickFiles(mode, multiple)
+                buildJsonObject {
+                    putJsonArray("paths") {
+                        paths.forEach { path -> add(path) }
+                    }
+                }
+            }
             "UPDATE_PLUGIN" -> {
                 rpcHandler.updatePlugin()
                 buildJsonObject {}

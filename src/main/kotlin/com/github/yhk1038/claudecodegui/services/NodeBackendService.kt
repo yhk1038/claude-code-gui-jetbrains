@@ -53,16 +53,31 @@ class NodeBackendService : Disposable {
                 ?: rpcHandlers.values.firstOrNull()?.second
         }
 
+        private fun normalizePath(path: String): String {
+            val normalized = path.replace('\\', '/').trimEnd('/')
+            return if (System.getProperty("os.name").contains("win", ignoreCase = true)) {
+                normalized.lowercase()
+            } else {
+                normalized
+            }
+        }
+
+        private fun containsWorkingDir(basePath: String, workingDir: String): Boolean {
+            val base = normalizePath(basePath)
+            val dir = normalizePath(workingDir)
+            return dir == base || dir.startsWith("$base/")
+        }
+
         private fun handlerForWorkingDir(workingDir: String?): NodeProcessManager.RpcHandler? {
             logger.info("[DEBUG:handlerForWorkingDir] workingDir='$workingDir', isNullOrBlank=${workingDir.isNullOrBlank()}, rpcHandlers.keys=${rpcHandlers.keys}")
             if (workingDir == null) return rpcHandlers.values.firstOrNull()?.second
+            if (workingDir.isBlank()) return rpcHandlers.values.firstOrNull()?.second
             val matched = rpcHandlers.values
-                .filter { (basePath, _) -> workingDir.startsWith(basePath) }
+                .filter { (basePath, _) -> containsWorkingDir(basePath, workingDir) }
             logger.info("[DEBUG:handlerForWorkingDir] matched=${matched.size}, basePaths=${rpcHandlers.values.map { it.first }}")
             return matched
                 .maxByOrNull { (basePath, _) -> basePath.length }
                 ?.second
-                ?: rpcHandlers.values.firstOrNull()?.second
         }
 
         override suspend fun openFile(path: String) {
@@ -86,28 +101,40 @@ class NodeBackendService : Disposable {
         }
 
         override suspend fun createSession(workingDir: String) {
-            handlerForWorkingDir(workingDir)?.createSession(workingDir)
-                ?: logger.warn("No handler for createSession: $workingDir")
+            val handler = handlerForWorkingDir(workingDir)
+                ?: throw IllegalStateException("No handler for createSession: $workingDir")
+            handler.createSession(workingDir)
         }
 
         override suspend fun openNewTab(workingDir: String) {
-            handlerForWorkingDir(workingDir)?.openNewTab(workingDir)
-                ?: logger.warn("No handler for openNewTab: $workingDir")
+            val handler = handlerForWorkingDir(workingDir)
+                ?: throw IllegalStateException("No handler for openNewTab: $workingDir")
+            handler.openNewTab(workingDir)
         }
 
         override suspend fun openSettings(workingDir: String) {
-            handlerForWorkingDir(workingDir)?.openSettings(workingDir)
-                ?: logger.warn("No handler for openSettings: $workingDir")
+            val handler = handlerForWorkingDir(workingDir)
+                ?: throw IllegalStateException("No handler for openSettings: $workingDir")
+            handler.openSettings(workingDir)
         }
 
         override suspend fun openTerminal(workingDir: String) {
-            handlerForWorkingDir(workingDir)?.openTerminal(workingDir)
-                ?: logger.warn("No handler for openTerminal: $workingDir")
+            val handler = handlerForWorkingDir(workingDir)
+                ?: throw IllegalStateException("No handler for openTerminal: $workingDir")
+            handler.openTerminal(workingDir)
         }
 
         override suspend fun openUrl(url: String) {
             rpcHandlers.values.firstOrNull()?.second?.openUrl(url)
                 ?: logger.warn("No active panel handler for openUrl")
+        }
+
+        override suspend fun pickFiles(mode: String, multiple: Boolean): List<String> {
+            return rpcHandlers.values.firstOrNull()?.second?.pickFiles(mode, multiple)
+                ?: run {
+                    logger.warn("No active panel handler for pickFiles")
+                    emptyList()
+                }
         }
 
         override suspend fun updatePlugin() {

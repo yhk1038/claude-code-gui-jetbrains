@@ -6,10 +6,11 @@ interface Props {
   currentSessionId: string | null;
   onSelectSession: (sessionId: string) => void;
   onDeleteSession: (sessionId: string) => void;
+  onRenameSession: (sessionId: string) => void;
 }
 
 export function SessionList(props: Props) {
-  const { groupedSessions, currentSessionId, onSelectSession, onDeleteSession } = props;
+  const { groupedSessions, currentSessionId, onSelectSession, onDeleteSession, onRenameSession } = props;
 
   return (
     <div className="max-h-80 overflow-y-auto p-1.5 pt-0 flex flex-col gap-0.5">
@@ -29,6 +30,7 @@ export function SessionList(props: Props) {
                 isSelected={session.id === currentSessionId}
                 onSelect={() => onSelectSession(session.id)}
                 onDelete={() => onDeleteSession(session.id)}
+                onRename={() => onRenameSession(session.id)}
               />
             ))}
           </div>

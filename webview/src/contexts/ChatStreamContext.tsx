@@ -4,7 +4,22 @@ import { useDiffs } from '../hooks/useDiffs';
 import { useTools } from '../hooks/useTools';
 import { useBridgeContext } from './BridgeContext';
 import { useSessionContext } from './SessionContext';
-import { LoadedMessageDto, Context, Attachment, SessionState, ClaudeModel, parseClaudeModel } from '../types';
+import {
+  LoadedMessageDto,
+  Context,
+  Attachment,
+  SessionState,
+  ClaudeModel,
+  parseClaudeModel,
+  ContextType,
+} from '../types';
+import {
+  appendComposerSelectionsToContent,
+  canSubmitComposer,
+  ComposerContextEntry,
+  mergeIdeContextsIntoEntries,
+  normalizeIdeComposerContexts,
+} from '../utils/composerContextMerge';
 import { InputMode, InputModeValues } from '../types/chatInput';
 
 /** 스트리밍 중 큐잉된 메시지의 bridge payload */
@@ -30,6 +45,10 @@ interface ChatStreamContextType {
   // Local input state
   input: string;
   setInput: (input: string) => void;
+
+  /** Pending IDE / composer contexts shown as chips and merged into the next outgoing message */
+  composerContextEntries: ComposerContextEntry[];
+  removeComposerContext: (id: string) => void;
 
   // Actions
   sendMessage: (content: string, inputMode: InputMode, context?: Context[], attachments?: Attachment[]) => void;
@@ -87,6 +106,9 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
   const toggleThinkingExpanded = useCallback(() => setIsThinkingExpanded(prev => !prev), []);
   const [sessionModel, setSessionModel] = useState<ClaudeModel | null>(null);
+  const [composerContextEntries, setComposerContextEntries] = useState<ComposerContextEntry[]>([]);
+  const composerContextEntriesRef = useRef<ComposerContextEntry[]>([]);
+  composerContextEntriesRef.current = composerContextEntries;
 
   // Save input draft to localStorage for tab move/split restoration.
   // Skip the first mount to prevent the initial empty input from clearing
@@ -171,7 +193,41 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
     diffs.clearDiffs();
     queuedMessageRef.current = null;
     prePlanModeRef.current = null;
+    setComposerContextEntries([]);
   }, [chatStream.clearMessages, chatStream.resetStreamState, tools.clearToolUses, diffs.clearDiffs, session.currentSessionId]);
+
+  const removeComposerContext = useCallback((id: string) => {
+    setComposerContextEntries(prev => prev.filter(e => e.id !== id));
+  }, []);
+
+  // IDE-injected selection contexts (Kotlin JCEF inject → CustomEvent + pending queue)
+  useEffect(() => {
+    const consumePending = () => {
+      const pending = window.__CLAUDE_CODE_PENDING_COMPOSER_CONTEXTS__;
+      if (!pending?.length) return;
+      const normalized = normalizeIdeComposerContexts(pending);
+      window.__CLAUDE_CODE_PENDING_COMPOSER_CONTEXTS__ = [];
+      if (normalized.length) {
+        setComposerContextEntries(prev => mergeIdeContextsIntoEntries(prev, normalized));
+      }
+    };
+
+    const onIdeContext = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ contexts?: unknown }>).detail;
+      const normalized = normalizeIdeComposerContexts(detail?.contexts);
+      if (normalized.length) {
+        setComposerContextEntries(prev => mergeIdeContextsIntoEntries(prev, normalized));
+      }
+    };
+
+    window.addEventListener('claude-code:ide-composer-context', onIdeContext);
+    consumePending();
+    const interval = window.setInterval(consumePending, 500);
+    return () => {
+      window.removeEventListener('claude-code:ide-composer-context', onIdeContext);
+      window.clearInterval(interval);
+    };
+  }, []);
 
   // resetForSessionSwitch is called directly by SessionLoader
   // when currentSessionId changes (URL-driven reactive pattern)
@@ -209,7 +265,7 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
 
   // sendMessage: add to local state + send to backend (or queue if streaming)
   const sendMessage = useCallback(
-    (content: string, inputMode: InputMode, context?: Context[], attachments?: Attachment[]) => {
+    (content: string, inputMode: InputMode, extraContext?: Context[], attachments?: Attachment[]) => {
       // Resolve session ID: use existing or generate new one
       let sessionId = session.currentSessionId;
       const isNewSession = !sessionId;
@@ -219,18 +275,26 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
         console.log('[ChatStreamContext] New session created:', sessionId);
       }
 
-      // Add to local chat state (항상 — UI에는 즉시 표시)
-      chatStream.addUserMessage(content, context, attachments);
+      const entriesSnapshot = composerContextEntriesRef.current;
+      const composerCtx = entriesSnapshot.map(e => e.context);
+      const mergedContext = [...composerCtx, ...(extraContext ?? [])];
+      const selections = mergedContext.filter(c => c.type === ContextType.Selection);
+      const effectiveContent = appendComposerSelectionsToContent(content, selections);
+
+      // Add to local chat state (항상 — UI에는 즉시 표시). Stored text matches CLI payload.
+      chatStream.addUserMessage(effectiveContent, mergedContext, attachments);
 
       const payload: QueuedMessage = {
         sessionId,
         isNewSession,
-        content,
+        content: effectiveContent,
         attachments: attachments?.map(a => ({ ...a.toPayload() })),
-        context: context || [],
+        context: mergedContext,
         workingDir: session.workingDirectory ?? '',
         inputMode,
       };
+
+      setComposerContextEntries([]);
 
       // 스트리밍 중이면 큐잉. stdin에 즉시 write하지 않는다.
       // 현재 턴이 자연스럽게 완료(result)된 후 useEffect에서 자동 flush.
@@ -274,7 +338,8 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
     (e: React.FormEvent | undefined, inputMode: InputMode, attachments?: Attachment[]) => {
       if (e) e.preventDefault();
       const trimmedInput = input.trim();
-      if (!trimmedInput && (!attachments || attachments.length === 0)) return;
+      const contexts = composerContextEntriesRef.current.map(en => en.context);
+      if (!canSubmitComposer(trimmedInput, contexts, attachments)) return;
       sendMessage(trimmedInput, inputMode, undefined, attachments);
       setInput('');
     },
@@ -321,6 +386,9 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
     // Local input state
     input,
     setInput,
+
+    composerContextEntries,
+    removeComposerContext,
 
     // Actions
     sendMessage,

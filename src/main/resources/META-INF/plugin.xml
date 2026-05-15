@@ -7,16 +7,13 @@
     <depends>org.jetbrains.plugins.terminal</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <!-- Sidebar button that opens Editor Tab -->
+        <!-- Chat UI in the right tool window (sidebar), not in editor tabs -->
         <toolWindow
             id="Claude Code"
             anchor="right"
             icon="/icons/claudeCode.svg"
+            canCloseContents="true"
             factoryClass="com.github.yhk1038.claudecodegui.toolwindow.ClaudeCodeToolWindowFactory"/>
-
-        <!-- Editor Tab -->
-        <fileEditorProvider
-            implementation="com.github.yhk1038.claudecodegui.editor.ClaudeCodeEditorProvider"/>
 
         <!-- Project service for session management -->
         <projectService
@@ -25,6 +22,10 @@
         <!-- Project service for session broadcast (Pub/Sub) -->
         <projectService
             serviceImplementation="com.github.yhk1038.claudecodegui.services.SessionBroadcastService"/>
+
+        <!-- Tool window session tabs (sidebar chat) -->
+        <projectService
+            serviceImplementation="com.github.yhk1038.claudecodegui.toolwindow.ClaudeCodeToolWindowSessionManager"/>
 
         <!-- Application service for Node.js backend process management (singleton per computer) -->
         <applicationService
@@ -45,33 +46,18 @@
         <applicationService
             serviceImplementation="com.github.yhk1038.claudecodegui.settings.SettingsManager"/>
 
-        <!-- Project service for editor tab state persistence -->
+        <!-- Project service for tool window session tab state persistence -->
         <projectService
             serviceImplementation="com.github.yhk1038.claudecodegui.services.EditorTabStateService"/>
 
-        <!-- Project service for JCEF browser pooling (tab move/split preservation) -->
+        <!-- Project service for JCEF browser pooling (session tab close / reopen) -->
         <projectService
             serviceImplementation="com.github.yhk1038.claudecodegui.services.ClaudeCodeBrowserService"/>
-
-        <!-- Restore editor tabs on project open -->
-        <postStartupActivity
-            implementation="com.github.yhk1038.claudecodegui.startup.EditorTabRestoreActivity"/>
 
         <!-- WebView resource server -->
         <httpRequestHandler
             implementation="com.github.yhk1038.claudecodegui.toolwindow.WebViewRequestHandler"/>
-
-        <!-- Tab icon badge for unread streaming completions -->
-        <fileIconPatcher
-            implementation="com.github.yhk1038.claudecodegui.editor.ClaudeCodeFileIconPatcher"/>
     </extensions>
-
-    <!-- Clean up session state only on real tab close (not on tab move/split) -->
-    <projectListeners>
-        <listener
-            class="com.github.yhk1038.claudecodegui.editor.ClaudeCodeEditorManagerListener"
-            topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
-    </projectListeners>
 
     <actions>
         <!-- Action to open Claude Code panel -->
@@ -79,27 +65,48 @@
             id="ClaudeCode.Open"
             class="com.github.yhk1038.claudecodegui.actions.OpenClaudeCodeAction"
             text="Open Claude Code"
-            description="Open Claude Code chat panel"
+            description="Open Claude Code in the tool window sidebar"
             icon="AllIcons.Actions.Execute">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift C"/>
         </action>
 
-        <!-- New Tab action (only when Claude Code editor is focused) -->
+        <!-- New Tab action (when Claude Code tool window has sessions) -->
         <action
             id="ClaudeCode.NewTab"
             class="com.github.yhk1038.claudecodegui.actions.NewClaudeCodeTabAction"
             text="New Claude Code Tab"
-            description="Open a new Claude Code editor tab">
+            description="Open a new Claude Code chat tab in the tool window">
             <keyboard-shortcut keymap="$default" first-keystroke="meta N"/>
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl N"/>
         </action>
 
-        <!-- Open Settings action (only when Claude Code editor is focused) -->
+        <!-- Open Settings action (when Claude Code tool window is active) -->
         <action
             id="ClaudeCode.OpenSettings"
             class="com.github.yhk1038.claudecodegui.actions.OpenClaudeCodeSettingsAction"
             text="Open Claude Code Settings"
-            description="Open Claude Code settings in a new editor tab"/>
+            description="Open Claude Code settings in the tool window"/>
+
+        <!-- Project view: attach paths to chat -->
+        <action
+            id="ClaudeCode.AddFileToChat"
+            class="com.github.yhk1038.claudecodegui.actions.AddFileToChatAction"
+            text="Add File to Chat"
+            description="Attach selected files or folders to the Claude Code chat">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </action>
+
+        <!-- Editor: add selection to chat composer -->
+        <action
+            id="ClaudeCode.AddSelectionToChat"
+            class="com.github.yhk1038.claudecodegui.actions.AddSelectionToChatAction"
+            text="Add to Chat"
+            description="Add the current editor selection to the Claude Code chat">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl L"/>
+            <keyboard-shortcut keymap="Mac OS X" first-keystroke="meta L"/>
+            <keyboard-shortcut keymap="Mac OS X 10.5+" first-keystroke="meta L"/>
+        </action>
     </actions>
 </idea-plugin>
