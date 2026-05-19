@@ -10,11 +10,13 @@ export async function getCliConfigHandler(
   _bridge: Bridge,
 ): Promise<void> {
   try {
-    const workingDir = (message.payload as Record<string, unknown>)?.workingDir as string | undefined;
+    const payload = (message.payload as Record<string, unknown>) ?? {};
+    const workingDir = payload.workingDir as string | undefined;
+    const refresh = payload.refresh === true;
     const cwd = workingDir || process.cwd();
 
-    console.error('[node-backend]', `Loading CLI config for cwd: ${cwd}`);
-    const controlResponse = await loadCliConfig(cwd);
+    console.error('[node-backend]', `Loading CLI config for cwd: ${cwd}${refresh ? ' (refresh)' : ''}`);
+    const controlResponse = await loadCliConfig(cwd, { refresh });
 
     if (controlResponse) {
       console.error('[node-backend]', 'CLI config loaded');

@@ -4,7 +4,8 @@ import { useDiffs } from '../hooks/useDiffs';
 import { useTools } from '../hooks/useTools';
 import { useBridgeContext } from './BridgeContext';
 import { useSessionContext } from './SessionContext';
-import { LoadedMessageDto, Context, Attachment, SessionState, ClaudeModel, parseClaudeModel } from '../types';
+import { LoadedMessageDto, Context, Attachment, SessionState } from '../types';
+import { toModelAlias } from '@/types/models';
 import { InputMode, InputModeValues } from '../types/chatInput';
 
 /** 스트리밍 중 큐잉된 메시지의 bridge payload */
@@ -55,8 +56,8 @@ interface ChatStreamContextType {
 
   // Session lifecycle
   systemInit: Record<string, unknown> | null;
-  sessionModel: ClaudeModel | null;
-  setSessionModel: (model: ClaudeModel | null) => void;
+  sessionModel: string | null;
+  setSessionModel: (model: string | null) => void;
   resetForSessionSwitch: () => void;
 
   // Context window usage
@@ -86,7 +87,7 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
   const [input, setInput] = useState('');
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
   const toggleThinkingExpanded = useCallback(() => setIsThinkingExpanded(prev => !prev), []);
-  const [sessionModel, setSessionModel] = useState<ClaudeModel | null>(null);
+  const [sessionModel, setSessionModel] = useState<string | null>(null);
 
   // Save input draft to localStorage for tab move/split restoration.
   // Skip the first mount to prevent the initial empty input from clearing
@@ -152,7 +153,7 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
   useEffect(() => {
     if (chatStream.systemInit) {
       const rawModel = (chatStream.systemInit as Record<string, unknown>).model as string | null ?? null;
-      setSessionModel(parseClaudeModel(rawModel));
+      setSessionModel(rawModel ? toModelAlias(rawModel) : null);
     }
   }, [chatStream.systemInit]);
 

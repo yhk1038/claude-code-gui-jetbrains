@@ -1,7 +1,96 @@
-import { describe, it, expect } from 'vitest';
-import { parseCliConfigResponse } from '../loadCliConfig';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { EventEmitter } from 'events';
+import { Readable, Writable } from 'stream';
+import type { ChildProcess } from 'child_process';
+
+vi.mock('../../claude', () => ({
+  Claude: {
+    spawn: vi.fn(),
+  },
+}));
+
+import { Claude } from '../../claude';
+import { loadCliConfig, parseCliConfigResponse, _resetCliConfigCache } from '../loadCliConfig';
+
+function makeFakeProc(stdoutPayload: string): ChildProcess {
+  const proc = new EventEmitter() as unknown as ChildProcess;
+  const stdout = new Readable({ read() {} });
+  const stderr = new Readable({ read() {} });
+  const stdin = new Writable({ write(_c, _e, cb) { cb(); } });
+  (proc as unknown as { stdout: Readable }).stdout = stdout;
+  (proc as unknown as { stderr: Readable }).stderr = stderr;
+  (proc as unknown as { stdin: Writable }).stdin = stdin;
+  (proc as unknown as { pid: number }).pid = 1234;
+  (proc as unknown as { kill: () => void }).kill = () => {};
+  setImmediate(() => {
+    proc.emit('spawn');
+    stdout.push(stdoutPayload);
+  });
+  return proc;
+}
+
+function controlResponse(commandName: string): string {
+  return JSON.stringify({
+    type: 'control_response',
+    response: {
+      subtype: 'success',
+      request_id: 'config_init',
+      response: {
+        commands: [{ name: commandName, description: '', argumentHint: '' }],
+        agents: [],
+        output_style: 'default',
+        available_output_styles: [],
+        models: [],
+        account: { email: '', subscriptionType: '' },
+        pid: 1,
+      },
+    },
+  }) + '\n';
+}
 
 describe('loadCliConfig', () => {
+  beforeEach(() => {
+    _resetCliConfigCache();
+    vi.mocked(Claude.spawn).mockReset();
+  });
+
+  describe('cache', () => {
+    it('caches per workingDir — different projects get different configs', async () => {
+      vi.mocked(Claude.spawn).mockImplementation((_args, options) => {
+        const cwd = options?.cwd as string;
+        const cmdName = cwd === '/project/a' ? 'skill-a' : 'skill-b';
+        return makeFakeProc(controlResponse(cmdName));
+      });
+
+      const configA = await loadCliConfig('/project/a');
+      const configB = await loadCliConfig('/project/b');
+
+      expect(configA?.response.response.commands[0].name).toBe('skill-a');
+      expect(configB?.response.response.commands[0].name).toBe('skill-b');
+    });
+
+    it('returns the cached config for the same workingDir without respawning', async () => {
+      vi.mocked(Claude.spawn).mockImplementation(() => makeFakeProc(controlResponse('skill-a')));
+
+      await loadCliConfig('/project/a');
+      await loadCliConfig('/project/a');
+
+      expect(vi.mocked(Claude.spawn)).toHaveBeenCalledTimes(1);
+    });
+
+    it('refresh:true bypasses the cache and re-spawns', async () => {
+      vi.mocked(Claude.spawn).mockImplementationOnce(() => makeFakeProc(controlResponse('first')));
+      const first = await loadCliConfig('/project/a');
+
+      vi.mocked(Claude.spawn).mockImplementationOnce(() => makeFakeProc(controlResponse('second')));
+      const second = await loadCliConfig('/project/a', { refresh: true });
+
+      expect(first?.response.response.commands[0].name).toBe('first');
+      expect(second?.response.response.commands[0].name).toBe('second');
+      expect(vi.mocked(Claude.spawn)).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe('parseCliConfigResponse', () => {
     it('should return control_response as-is', () => {
       const controlResponse = {

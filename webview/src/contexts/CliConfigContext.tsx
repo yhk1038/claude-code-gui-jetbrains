@@ -6,6 +6,7 @@ import type { CliConfigControlResponse } from '@/types/slashCommand';
 interface CliConfigContextValue {
   controlResponse: CliConfigControlResponse | null;
   isLoading: boolean;
+  refresh: () => Promise<void>;
 }
 
 const CliConfigContext = createContext<CliConfigContextValue | null>(null);
@@ -21,11 +22,14 @@ export function CliConfigProvider(props: Props) {
   const [controlResponse, setControlResponse] = useState<CliConfigControlResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchCliConfig = useCallback(async () => {
+  const fetchCliConfig = useCallback(async (refresh = false) => {
     if (!isConnected) return;
 
     try {
-      const response = await send('GET_CLI_CONFIG', { workingDir: workingDirectory ?? undefined });
+      const response = await send('GET_CLI_CONFIG', {
+        workingDir: workingDirectory ?? undefined,
+        refresh,
+      });
       const cr = (response as Record<string, unknown>)?.controlResponse as CliConfigControlResponse | undefined;
       if (cr) {
         setControlResponse(cr);
@@ -43,8 +47,10 @@ export function CliConfigProvider(props: Props) {
     fetchCliConfig();
   }, [fetchCliConfig]);
 
+  const refresh = useCallback(() => fetchCliConfig(true), [fetchCliConfig]);
+
   return (
-    <CliConfigContext.Provider value={{ controlResponse, isLoading }}>
+    <CliConfigContext.Provider value={{ controlResponse, isLoading, refresh }}>
       {children}
     </CliConfigContext.Provider>
   );

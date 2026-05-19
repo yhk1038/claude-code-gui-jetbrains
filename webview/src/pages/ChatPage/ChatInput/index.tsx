@@ -317,7 +317,7 @@ export function ChatInput() {
       e.preventDefault();
       onChange(historyValue);
     }
-  }, [disabled, value, attachments.length, onSubmit, inputHistory, onChange, palette, mention, cycleMode, clearAttachments]);
+  }, [disabled, value, attachments.length, onSubmit, inputHistory, onChange, palette, mention, cycleMode, clearAttachments, mode]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;

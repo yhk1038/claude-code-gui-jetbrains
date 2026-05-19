@@ -1,6 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { PanelSection, PanelItem } from '@/types/commandPalette';
 import { useVersionInfo } from '@/hooks/useVersionInfo';
+import { useCliConfig } from '@/contexts/CliConfigContext';
 import { PanelSectionComponent } from './PanelSectionComponent';
 
 interface CommandPalettePanelProps {
@@ -23,6 +24,20 @@ export const CommandPalettePanel: React.FC<CommandPalettePanelProps> = ({
   const panelRef = useRef<HTMLDivElement>(null);
   const selectedItemRef = useRef<HTMLDivElement>(null);
   const { pluginVersion, cliVersion } = useVersionInfo();
+  const { refresh } = useCliConfig();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      await refresh();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Auto-scroll selected item into view
   useEffect(() => {
@@ -80,9 +95,19 @@ export const CommandPalettePanel: React.FC<CommandPalettePanelProps> = ({
       ))}
 
       <div className="text-[11px] flex items-center justify-between px-3 pt-2 pb-3 -mt-2.5">
-        <a className="text-zinc-500 underline hover:text-zinc-300" href="https://github.com/anthropics/claude-code/issues" target="_blank">
-          Report a problem
-        </a>
+        <div className="flex items-center gap-3">
+          <a className="text-zinc-500 underline hover:text-zinc-300" href="https://github.com/anthropics/claude-code/issues" target="_blank">
+            Report a problem
+          </a>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="text-zinc-500 underline hover:text-zinc-300 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {refreshing ? 'Reloading…' : 'Reload commands'}
+          </button>
+        </div>
         <div className="text-zinc-400/80">
           {cliVersion ? `v${pluginVersion} · Claude Code ${cliVersion}` : `v${pluginVersion}`}
         </div>

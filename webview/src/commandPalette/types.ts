@@ -27,6 +27,7 @@ export interface CommandPaletteServices {
     currentSessionId: string | null;
     sessionState: SessionState;
     workingDirectory: string | null;
+    inputMode: InputMode;
     setSessionState: (state: SessionState) => void;
     resetToNewSession: () => void;
   };

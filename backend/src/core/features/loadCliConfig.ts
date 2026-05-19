@@ -78,32 +78,56 @@ export function parseCliConfigResponse(stdout: string): CliConfigControlResponse
   return cliConfigResponse;
 }
 
-// Singleton: cache result + dedup concurrent requests
-let cachedConfig: CliConfigControlResponse | null = null;
-let pendingPromise: Promise<CliConfigControlResponse | null> | null = null;
+// Cache + dedup per workingDir. The Node backend is shared across all IDE
+// projects (NodeBackendService is @Service(Service.Level.APP)), so a single
+// global cache would leak commands/skills from the first project to every
+// other project.
+const cacheByWorkingDir = new Map<string, CliConfigControlResponse>();
+const pendingByWorkingDir = new Map<string, Promise<CliConfigControlResponse | null>>();
+
+export interface LoadCliConfigOptions {
+  /** Skip the cache and respawn the CLI (used by UI-triggered refresh). */
+  refresh?: boolean;
+}
 
 /**
- * Spawn a config-only CLI process to load CLI config.
+ * Spawn a config-only CLI process to load CLI config for a given workingDir.
  * Sends an `initialize` control_request to get control_response.
- * Results are cached — subsequent calls return the cached result immediately.
+ * Results are cached per workingDir; pass `{ refresh: true }` to bypass.
  */
-export async function loadCliConfig(workingDir: string): Promise<CliConfigControlResponse | null> {
-  if (cachedConfig) {
-    console.error('[loadCliConfig] returning cached config');
-    return cachedConfig;
+export async function loadCliConfig(
+  workingDir: string,
+  options: LoadCliConfigOptions = {},
+): Promise<CliConfigControlResponse | null> {
+  if (options.refresh) {
+    cacheByWorkingDir.delete(workingDir);
+    pendingByWorkingDir.delete(workingDir);
   }
-  if (pendingPromise) {
-    console.error('[loadCliConfig] dedup — waiting for pending request');
-    return pendingPromise;
+  const cached = cacheByWorkingDir.get(workingDir);
+  if (cached) {
+    console.error('[loadCliConfig] returning cached config for', workingDir);
+    return cached;
   }
-  pendingPromise = loadCliConfigInternal(workingDir);
+  const pending = pendingByWorkingDir.get(workingDir);
+  if (pending) {
+    console.error('[loadCliConfig] dedup — waiting for pending request for', workingDir);
+    return pending;
+  }
+  const promise = loadCliConfigInternal(workingDir);
+  pendingByWorkingDir.set(workingDir, promise);
   try {
-    const config = await pendingPromise;
-    if (config) cachedConfig = config;
+    const config = await promise;
+    if (config) cacheByWorkingDir.set(workingDir, config);
     return config;
   } finally {
-    pendingPromise = null;
+    pendingByWorkingDir.delete(workingDir);
   }
+}
+
+/** Test-only: clear the workingDir cache between test cases. */
+export function _resetCliConfigCache(): void {
+  cacheByWorkingDir.clear();
+  pendingByWorkingDir.clear();
 }
 
 function killProcess(proc: ChildProcess): void {
