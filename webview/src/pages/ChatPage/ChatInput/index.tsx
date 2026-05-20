@@ -404,7 +404,7 @@ export function ChatInput() {
             placeholder={isStreaming ? "Queue another message..." : "⌘ Esc to focus or unfocus Claude"}
             disabled={disabled}
             rows={1}
-            className="w-full px-3 cursor-text resize-none bg-transparent text-sm text-text-secondary placeholder-text-disabled focus:outline-none disabled:opacity-50"
+            className="w-full px-3 cursor-text resize-none bg-transparent text-base text-text-primary placeholder-text-disabled focus:outline-none disabled:opacity-50"
             style={{ minHeight: '20px', maxHeight: '200px' }}
           />
         </div>

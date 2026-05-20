@@ -22,7 +22,7 @@ export function TunnelButton() {
         title="Remote Tunnel (Unofficial)"
       >
         <ComputerDesktopIcon
-          className={`w-4 h-4 ${tunnelEnabled ? 'text-state-success-fg' : 'text-text-secondary hover:text-text-primary'}`}
+          className={`w-5 h-5 ${tunnelEnabled ? 'text-state-success-fg' : 'text-text-secondary hover:text-text-primary'}`}
         />
       </button>
       {modalOpen && <TunnelModal onClose={() => setModalOpen(false)} />}

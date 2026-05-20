@@ -73,7 +73,7 @@ export const StreamingIndicator: React.FC = () => {
 
                     {/* 스크램블 텍스트 */}
                     <div className="flex-1 min-w-0">
-                        <span className="text-text-tertiary text-xs font-mono">
+                        <span className="text-text-tertiary text-base font-mono">
                             {displayText}...
                         </span>
                     </div>

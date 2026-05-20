@@ -25,11 +25,11 @@ export function TokenBatteryButton(props: Props) {
         title="Click to set up usage tracking"
         className={`flex items-center gap-1 px-1.5 py-1 rounded transition-colors text-text-tertiary hover:text-text-primary hover:bg-surface-hover ${className ?? ''}`}
       >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="1" y="4" width="12" height="8" rx="1.5" ry="1.5" stroke="currentColor" strokeWidth="1.2" fill="none" />
           <rect x="13" y="6.5" width="1.5" height="3" rx="0.5" ry="0.5" fill="currentColor" />
         </svg>
-        <span className="text-xs">Setup</span>
+        <span className="text-sm">Setup</span>
       </button>
     );
   }
@@ -60,8 +60,8 @@ export function TokenBatteryButton(props: Props) {
     >
       <span className={isLoading ? 'opacity-50' : undefined}>
         <svg
-          width="16"
-          height="16"
+          width="20"
+          height="20"
           viewBox="0 0 16 16"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -101,7 +101,7 @@ export function TokenBatteryButton(props: Props) {
           />
         </svg>
       </span>
-      <span className="text-xs" style={{ color }}>
+      <span className="text-sm" style={{ color }}>
         {Math.round(remaining)}%
       </span>
     </button>

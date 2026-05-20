@@ -30,7 +30,7 @@ export function ProjectButton() {
       ].join(' ')}
       title={isSessionActive ? 'Cannot switch project while session is active' : 'Switch Project'}
     >
-      <FolderIcon className="w-4 h-4" />
+      <FolderIcon className="w-5 h-5" />
     </button>
   );
 }
