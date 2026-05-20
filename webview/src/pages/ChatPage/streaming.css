@@ -169,39 +169,30 @@
 
 /* Code block */
 [data-streamdown="code-block"] {
+  position: relative;
   border-radius: 8px;
   overflow: hidden;
   margin: 0.75em 0;
   border: none;
 }
 
+/* Float copy/download buttons in top-right corner; language label is hidden below */
 [data-streamdown="code-block-header"] {
-  display: none !important;
-
-  background: rgba(255, 255, 255, 0.03);
-  padding: 0.5em 0.85em;
-  font-size: 0.75em;
-  color: var(--ide-text-secondary, rgba(255, 255, 255, 0.5));
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-}
-
-/* Hide header styling when no language is specified (header contains only copy button) */
-[data-streamdown="code-block-header"]:empty,
-[data-streamdown="code-block-header"]:has(> *:first-child:last-child[data-streamdown="code-block-copy-button"]) {
+  gap: 0.25em;
   background: transparent;
-  border-bottom: none;
   padding: 0.35em 0.5em;
   position: absolute;
+  top: 0;
   right: 0;
   z-index: 1;
 }
 
-[data-streamdown="code-block"]:has([data-streamdown="code-block-header"]:empty),
-[data-streamdown="code-block"]:has([data-streamdown="code-block-header"] > *:first-child:last-child[data-streamdown="code-block-copy-button"]) {
-  position: relative;
+/* Hide the language label span (keep buttons visible) */
+[data-streamdown="code-block-header"] > span.font-mono.lowercase {
+  display: none;
 }
 
 [data-streamdown="code-block-body"] {
@@ -220,19 +211,35 @@
 }
 
 [data-streamdown="code-block-copy-button"] {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.18);
   border: none;
-  color: var(--ide-text-secondary, rgba(255, 255, 255, 0.5));
+  color: #fff;
   border-radius: 4px;
   padding: 0.3em 0.6em;
   cursor: pointer;
   font-size: 0.8em;
   transition: all 0.15s ease;
-  opacity: 0.7;
+  opacity: 0;
 }
 
 [data-streamdown="code-block-copy-button"]:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.32);
+  opacity: 1;
+}
+
+/* Hide download button (not needed) */
+[data-streamdown="code-block-download-button"] {
+  display: none;
+}
+
+/* Copy button icon size — 14px equivalent in rem */
+[data-streamdown="code-block-copy-button"] svg {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+}
+
+/* Reveal copy button only when hovering the message bubble (ToolWrapper .group) */
+.group:hover [data-streamdown="code-block-copy-button"] {
   opacity: 1;
 }
 
