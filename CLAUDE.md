@@ -129,6 +129,7 @@ Idle → Streaming → Waiting Permission → Has Diff → Error
 | `/deploy` | `.claude/skills/deploy.md` | "배포", "deploy", "릴리즈", "release", "publish", "마켓플레이스 발행" |
 | `/build` | `.claude/skills/build.md` | "빌드", "build", "컴파일", "compile" |
 | `/precheck` | `.claude/skills/precheck.md` | "프리체크", "precheck", "배포 전 검수" |
+| `/release-monitor` | `.claude/skills/release-monitor.md` | "릴리즈 모니터링", "release-monitor", "마켓플레이스 모니터링", "approval 확인" |
 
 ## JetBrains SDK API 사용 주의사항
 
