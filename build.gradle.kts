@@ -119,6 +119,13 @@ intellijPlatform {
             untilBuild = "261.*"
         }
         changeNotes = """
+            <h3>0.14.1 - Theme system and usage panel fixes</h3>
+            <ul>
+                <li>Added a full light/dark theme system with semantic color tokens, so the chat UI, dropdowns, and settings panels follow your IDE theme consistently.</li>
+                <li>The font size setting now actually applies to the chat UI, and the range has been expanded to 8–32 (issue #38).</li>
+                <li>Account usage panel now invokes <code>ccb</code> through your user shell, so freshly installed CLIs (via nvm/volta and similar version managers) are picked up without restarting the IDE.</li>
+                <li>Fixed account usage spawn failure for users whose default shell is fish — the plugin now falls back to <code>/bin/sh</code> when a non-POSIX login shell is detected.</li>
+            </ul>
             <h3>0.14.0 - Android Studio support</h3>
             <ul>
                 <li>Claude Code GUI now runs on Android Studio. When the IDE is launched without JCEF — the default state on Android Studio's bundled JetBrains Runtime — the plugin shows a guidance panel and a sticky notification with a one-click <b>Install JCEF Runtime</b> action that opens the IDE's built-in <i>Choose Boot Java Runtime for the IDE…</i> dialog. After picking a JCEF-enabled runtime and restarting, the chat UI works normally (issue #34).</li>
