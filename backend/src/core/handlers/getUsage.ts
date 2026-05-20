@@ -38,7 +38,7 @@ function classifyError(raw: string): UsageErrorInfo {
     return { kind: 'npm_missing', message: 'Node.js / npm not found in PATH' };
   }
 
-  if (/could not determine executable to run/i.test(raw) || /command not found.*ccb|ccb.*not found|ccb.*not recognized/i.test(raw)) {
+  if (/spawn .*ENOENT|ENOENT/i.test(raw) || /could not determine executable to run/i.test(raw) || /command not found.*ccb|ccb.*not found|ccb.*not recognized/i.test(raw)) {
     return { kind: 'ccb_missing', message: 'claude-code-battery CLI is not installed' };
   }
 
@@ -66,11 +66,24 @@ function classifyError(raw: string): UsageErrorInfo {
 
 function execFileAsync(cmd: string, args: string[], opts: { timeout: number }): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
-    execFile(cmd, args, { ...opts, shell: true }, (err, stdout, stderr) => {
+    execFile(cmd, args, opts, (err, stdout, stderr) => {
       if (err) return reject(err);
       resolve({ stdout: stdout?.toString() ?? '', stderr: stderr?.toString() ?? '' });
     });
   });
+}
+
+function shellInvocation(command: string): { shell: string; args: string[] } {
+  if (process.platform === 'win32') {
+    return {
+      shell: process.env.ComSpec || 'cmd.exe',
+      args: ['/c', command],
+    };
+  }
+  return {
+    shell: process.env.SHELL || '/bin/sh',
+    args: ['-l', '-i', '-c', command],
+  };
 }
 
 const CACHE_TTL_MS = 90_000;
@@ -86,7 +99,8 @@ export function resetUsageCache(): void {
 }
 
 async function runCcbUsage(): Promise<CcbUsageResponse> {
-  const { stdout } = await execFileAsync('npx', ['ccb', 'oauth', 'usage', '--json'], { timeout: 15000 });
+  const { shell, args } = shellInvocation('ccb oauth usage --json');
+  const { stdout } = await execFileAsync(shell, args, { timeout: 15000 });
   const trimmed = stdout.trim();
   if (!trimmed) throw new Error('Empty response from ccb');
   return JSON.parse(trimmed);

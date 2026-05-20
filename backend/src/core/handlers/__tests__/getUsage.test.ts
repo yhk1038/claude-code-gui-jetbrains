@@ -32,22 +32,24 @@ const SAMPLE_USAGE = {
   extra_usage: { is_enabled: false, monthly_limit: null, used_credits: null, utilization: null },
 };
 
+type ExecFileCallback = (error: Error | null, stdout: string, stderr: string) => void;
+
 function setupExecFileSuccess(data: unknown) {
-  mockExecFile.mockImplementation((_cmd: string, _args: string[], _opts: unknown, callback: Function) => {
+  mockExecFile.mockImplementation(((_cmd: string, _args: readonly string[] | null | undefined, _opts: unknown, callback: ExecFileCallback) => {
     callback(null, JSON.stringify(data), '');
-  });
+  }) as unknown as typeof execFile);
 }
 
 function setupExecFileError(err: Error) {
-  mockExecFile.mockImplementation((_cmd: string, _args: string[], _opts: unknown, callback: Function) => {
-    callback(err);
-  });
+  mockExecFile.mockImplementation(((_cmd: string, _args: readonly string[] | null | undefined, _opts: unknown, callback: ExecFileCallback) => {
+    callback(err, '', '');
+  }) as unknown as typeof execFile);
 }
 
 function setupExecFileStdout(stdout: string) {
-  mockExecFile.mockImplementation((_cmd: string, _args: string[], _opts: unknown, callback: Function) => {
+  mockExecFile.mockImplementation(((_cmd: string, _args: readonly string[] | null | undefined, _opts: unknown, callback: ExecFileCallback) => {
     callback(null, stdout, '');
-  });
+  }) as unknown as typeof execFile);
 }
 
 describe('getUsageHandler', () => {
@@ -63,9 +65,12 @@ describe('getUsageHandler', () => {
 
     await getUsageHandler('conn-1', message, connections, mockBridge);
 
+    const expectedShellArgs = process.platform === 'win32'
+      ? ['/c', 'ccb oauth usage --json']
+      : ['-l', '-i', '-c', 'ccb oauth usage --json'];
     expect(mockExecFile).toHaveBeenCalledWith(
-      'npx',
-      ['ccb', 'oauth', 'usage', '--json'],
+      expect.any(String),
+      expectedShellArgs,
       expect.objectContaining({ timeout: 15000 }),
       expect.any(Function),
     );
@@ -110,6 +115,22 @@ describe('getUsageHandler', () => {
       const connections = createMockConnections();
       const message: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
       setupExecFileError(new Error('ccb: command not found'));
+
+      await getUsageHandler('conn-1', message, connections, mockBridge);
+
+      expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', expect.objectContaining({
+        requestId: 'req-1',
+        status: 'error',
+        error_kind: 'ccb_missing',
+        error: 'claude-code-battery CLI is not installed',
+      }));
+    });
+
+    it('should classify ENOENT (spawn failure) as ccb_missing', async () => {
+      const connections = createMockConnections();
+      const message: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
+      const enoentErr = Object.assign(new Error('spawn ccb ENOENT'), { code: 'ENOENT' });
+      setupExecFileError(enoentErr);
 
       await getUsageHandler('conn-1', message, connections, mockBridge);
 
