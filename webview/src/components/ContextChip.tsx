@@ -1,5 +1,6 @@
 import { AttachedContext } from '../hooks/useContext';
 import { ContextType } from '../types';
+import { Tooltip } from './Tooltip';
 
 interface ContextChipProps {
   context: AttachedContext;
@@ -79,7 +80,8 @@ export function ContextChip({ context, onRemove }: ContextChipProps) {
   };
 
   return (
-    <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-zinc-800/80 border border-zinc-700/50 rounded-lg hover:border-zinc-600/50 transition-colors group">
+    <Tooltip content={context.path}>
+      <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-zinc-800/80 border border-zinc-700/50 rounded-lg hover:border-zinc-600/50 transition-colors group">
       <div className="flex items-center gap-1.5">
         {getContextTypeIcon()}
         {getFileIcon(context.path)}
@@ -96,6 +98,7 @@ export function ContextChip({ context, onRemove }: ContextChipProps) {
           <path d="M4 4l8 8M12 4l-8 8" />
         </svg>
       </button>
-    </div>
+      </div>
+    </Tooltip>
   );
 }

@@ -119,6 +119,11 @@ intellijPlatform {
             untilBuild = "261.*"
         }
         changeNotes = """
+            <h3>0.13.12 - File path tooltip</h3>
+            <ul>
+                <li>Show full file path on hover for file reference pills in chat</li>
+                <li>Fix Windows path display in context pills (show filename instead of truncated full path)</li>
+            </ul>
             <h3>0.13.11 - IDE context menu → chat</h3>
             <ul>
                 <li>Add File to Chat from Project view for files and folders</li>

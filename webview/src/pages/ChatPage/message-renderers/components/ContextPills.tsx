@@ -1,6 +1,7 @@
 import React from 'react';
 import { Context, ContextType } from '../../../../types';
 import { getAdapter } from '../../../../adapters';
+import { Tooltip } from '../../../../components/Tooltip';
 
 interface ContextPillsProps {
   context: Context[];
@@ -8,14 +9,12 @@ interface ContextPillsProps {
 
 function getDisplayName(ctx: Context): string {
   if (!ctx.path) return ctx.type;
-  // trailing slash 제거 후 마지막 세그먼트 추출
-  const trimmedPath = ctx.path.replace(/\/+$/, '');
-  const name = trimmedPath.split('/').pop() || ctx.path;
+  const trimmedPath = ctx.path.replace(/[/\\]+$/, '');
+  const name = trimmedPath.split(/[/\\]/).pop() || ctx.path;
   if (ctx.type === ContextType.Selection && ctx.startLine != null && ctx.endLine != null) {
     return `${name}:${ctx.startLine}-${ctx.endLine}`;
   }
-  // 폴더인 경우 trailing slash 복원
-  if (ctx.path.endsWith('/')) {
+  if (ctx.path.endsWith('/') || ctx.path.endsWith('\\')) {
     return name + '/';
   }
   return name;
@@ -29,7 +28,7 @@ function handleOpenFile(filePath: string | undefined) {
 }
 
 function isFolder(ctx: Context): boolean {
-  return !!ctx.path && ctx.path.endsWith('/');
+  return !!ctx.path && (ctx.path.endsWith('/') || ctx.path.endsWith('\\'));
 }
 
 const FolderIcon = () => (
@@ -53,17 +52,17 @@ export const ContextPills: React.FC<ContextPillsProps> = ({ context }) => {
   return (
     <div className="flex flex-wrap gap-2">
       {context.map((ctx, idx) => (
-        <div
-          key={ctx.path ? `${ctx.type}-${ctx.path}` : `ctx-${idx}`}
-          className="flex items-center gap-1.5 rounded-md bg-zinc-800 border border-zinc-700 px-2 py-1 cursor-pointer hover:bg-zinc-700/50 hover:border-zinc-600 transition-colors"
-          title={ctx.path}
-          onClick={() => handleOpenFile(ctx.path)}
-        >
-          {isFolder(ctx) ? <FolderIcon /> : <FileIcon />}
-          <span className="text-[11px] text-zinc-300 truncate max-w-[160px]">
-            {getDisplayName(ctx)}
-          </span>
-        </div>
+        <Tooltip key={ctx.path ? `${ctx.type}-${ctx.path}` : `ctx-${idx}`} content={ctx.path}>
+          <div
+            className="flex items-center gap-1.5 rounded-md bg-zinc-800 border border-zinc-700 px-2 py-1 cursor-pointer hover:bg-zinc-700/50 hover:border-zinc-600 transition-colors"
+            onClick={() => handleOpenFile(ctx.path)}
+          >
+            {isFolder(ctx) ? <FolderIcon /> : <FileIcon />}
+            <span className="text-[11px] text-zinc-300 truncate max-w-[160px]">
+              {getDisplayName(ctx)}
+            </span>
+          </div>
+        </Tooltip>
       ))}
     </div>
   );
