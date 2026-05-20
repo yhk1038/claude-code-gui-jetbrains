@@ -18,6 +18,10 @@ import {SkillRenderer} from "./SkillRenderer.tsx";
 import {ToolSearchRenderer} from "./ToolSearchRenderer.tsx";
 import {TaskOutputRenderer} from "./TaskOutputRenderer.tsx";
 import {TaskStopRenderer} from "./TaskStopRenderer.tsx";
+import {TaskCreateRenderer} from "./TaskCreateRenderer.tsx";
+import {TaskGetRenderer} from "./TaskGetRenderer.tsx";
+import {TaskListRenderer} from "./TaskListRenderer.tsx";
+import {TaskUpdateRenderer} from "./TaskUpdateRenderer.tsx";
 
 interface ToolRendererProps {
     toolUse: ToolUseBlockDto;
@@ -30,6 +34,10 @@ export const ToolRendererMap = new Map<string, FC<ToolRendererProps>>([
     ['TodoWrite', TodoWriteRenderer],
     ['Task', TaskRenderer],
     ['Agent', TaskRenderer],
+    ['TaskCreate', TaskCreateRenderer],
+    ['TaskGet', TaskGetRenderer],
+    ['TaskList', TaskListRenderer],
+    ['TaskUpdate', TaskUpdateRenderer],
     ['Read', ReadRenderer],
     ['Grep', GrepRenderer],
     ['Glob', GlobRenderer],
