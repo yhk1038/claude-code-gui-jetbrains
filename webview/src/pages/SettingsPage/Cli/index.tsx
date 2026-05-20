@@ -7,7 +7,7 @@ import { SettingKey } from '@/types/settings';
 import { ROUTE_META, Route } from '@/router/routes';
 import { isJetBrains } from '@/config/environment';
 import { useCliConfig } from '@/contexts/CliConfigContext';
-import { toModelAlias } from '@/types/models';
+import { DEFAULT_MODEL_ALIAS, toModelAlias } from '@/types/models';
 
 interface TerminalInfo {
   id: string;
@@ -133,7 +133,10 @@ export function CliSettings() {
             {availableModels.length === 0 ? (
               <option value="">Default (recommended)</option>
             ) : availableModels.map((m) => (
-              <option key={m.value} value={m.value}>
+              <option
+                key={m.value}
+                value={m.value === DEFAULT_MODEL_ALIAS ? '' : m.value}
+              >
                 {m.displayName}
               </option>
             ))}
