@@ -47,6 +47,10 @@ API_URL="https://plugins.jetbrains.com/api/plugins/${PLUGIN_ID}/updates?size=20"
 ts() { date -u +"%Y-%m-%dT%H:%M:%SZ"; }
 log() { echo "[$(ts)] $*"; }
 
+# Tracks whether a terminal Slack notification has already been sent, so the
+# EXIT trap below does not double-notify on the normal accepted/timeout paths.
+NOTIFIED=0
+
 send_slack() {
   local status="$1"
   local headline links_line emoji
@@ -59,6 +63,10 @@ send_slack() {
     timeout)
       emoji=":hourglass_flowing_sand:"
       headline="*Marketplace approval still pending* after 15 min — v${VERSION}"
+      ;;
+    error:*)
+      emoji=":x:"
+      headline="*Marketplace monitor crashed* v${VERSION} — ${status#error:}"
       ;;
     *)
       emoji=":information_source:"
@@ -86,16 +94,32 @@ send_slack() {
   resp=$(curl -sS -X POST https://slack.com/api/chat.postMessage \
     -H "Authorization: Bearer ${SLACK_BOT_TOKEN}" \
     -H "Content-Type: application/json; charset=utf-8" \
-    --data "$payload")
+    --data "$payload" || true)
 
   local ok
-  ok=$(echo "$resp" | jq -r '.ok // false')
+  ok=$(echo "$resp" | jq -r '.ok // false' 2>/dev/null || echo "false")
   if [[ "$ok" != "true" ]]; then
     log "Slack send failed: $resp"
     return 1
   fi
   log "Slack notified: $status"
+  NOTIFIED=1
 }
+
+# Always notify Slack on exit — covers set -e trips, network errors, and
+# external termination (SIGTERM/SIGINT from pkill). Without this, the
+# backgrounded monitor could die silently and leave the operator hanging.
+on_exit() {
+  local code=$?
+  trap - EXIT INT TERM
+  if [[ "$NOTIFIED" -eq 0 ]]; then
+    set +e
+    log "unexpected exit code=${code}; sending crash notice"
+    send_slack "error: exit code ${code}" || log "crash notice send failed"
+  fi
+  exit "$code"
+}
+trap on_exit EXIT INT TERM
 
 log "monitor started v${VERSION} (poll=${POLL_INTERVAL}s, timeout=${TIMEOUT_SEC}s, channel=${SLACK_RELEASE_CHANNEL})"
 
