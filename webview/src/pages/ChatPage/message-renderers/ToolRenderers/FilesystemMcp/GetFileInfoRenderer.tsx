@@ -1,0 +1,52 @@
+import {ToolUseBlockDto} from "@/dto";
+import {getAdapter} from "@/adapters";
+import {cn} from "@/utils/cn";
+import {RendererProps, ToolHeader, ToolWrapper} from "../common";
+import {McpToolBody, McpToolRow} from "./_common";
+
+class GetFileInfoToolUseDto extends ToolUseBlockDto {
+    declare input: {
+        path: string;
+    };
+}
+
+export function GetFileInfoRenderer(props: RendererProps) {
+    const {toolUse: rawToolUse, toolResult} = props;
+    const toolUse = rawToolUse as unknown as GetFileInfoToolUseDto;
+    const name = toolUse.name;
+    const path = toolUse.input?.path ?? '';
+    const fileName = path.split('/').reverse()[0];
+    const input = toolUse.input ?? {};
+
+    const rawContent = toolResult?.message?.content?.[0];
+    const outputText = (rawContent && typeof (rawContent as {content?: unknown}).content === 'string')
+        ? (rawContent as {content: string}).content
+        : '';
+
+    return (
+        <ToolWrapper message={props.message} groupClassName="pb-2.5">
+            <ToolHeader name={name}>
+                <div
+                    className={cn(
+                        "text-text-link text-[0.9230rem] font-mono",
+                        path && "cursor-pointer hover:underline"
+                    )}
+                    onClick={path ? () => getAdapter().openFile(path) : undefined}
+                >
+                    {fileName}
+                </div>
+            </ToolHeader>
+
+            <McpToolBody>
+                <McpToolRow label="IN">
+                    {JSON.stringify(input, null, 2)}
+                </McpToolRow>
+                {outputText && (
+                    <McpToolRow label="OUT">
+                        {outputText}
+                    </McpToolRow>
+                )}
+            </McpToolBody>
+        </ToolWrapper>
+    );
+}
