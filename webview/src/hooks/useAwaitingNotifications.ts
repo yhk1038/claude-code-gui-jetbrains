@@ -8,6 +8,8 @@ import {
 interface AwaitingSignals {
   /** Becomes truthy while the user has a pending tool-permission request. */
   pendingPermission: boolean;
+  /** Becomes truthy while the agent is waiting on a plan approval/rejection. */
+  pendingPlanApproval: boolean;
 }
 
 /**
@@ -47,4 +49,17 @@ export function useAwaitingNotifications(
     }
     wasPendingPermissionRef.current = isPending;
   }, [signals.pendingPermission]);
+
+  const wasPendingPlanRef = useRef(false);
+  useEffect(() => {
+    const isPending = signals.pendingPlanApproval;
+    if (isPending && !wasPendingPlanRef.current && document.hidden) {
+      notify(
+        NotificationKind.AWAITING_PLAN_APPROVAL,
+        { sessionTitle: sessionTitleRef.current },
+        soundSelectionRef.current,
+      );
+    }
+    wasPendingPlanRef.current = isPending;
+  }, [signals.pendingPlanApproval]);
 }

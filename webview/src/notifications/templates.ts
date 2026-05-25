@@ -21,4 +21,9 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationKind, NotificationTempla
     body: 'Permission requested',
     icon: '/favicon.svg',
   },
+  [NotificationKind.AWAITING_PLAN_APPROVAL]: {
+    title: (ctx: NotificationContext) => ctx.sessionTitle ?? APP_NAME,
+    body: 'Plan ready for review',
+    icon: '/favicon.svg',
+  },
 };

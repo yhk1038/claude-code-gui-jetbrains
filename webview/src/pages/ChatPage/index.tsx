@@ -32,6 +32,7 @@ export function ChatPage() {
 
   useAwaitingNotifications(currentSession?.title ?? null, soundSelection, {
     pendingPermission: pendingPermission !== null,
+    pendingPlanApproval: pendingPlan !== null,
   });
 
   // Save scroll position to localStorage (debounced via scroll event)

@@ -34,8 +34,50 @@ describe('useAwaitingNotifications', () => {
   it('does not notify when nothing is pending', () => {
     setHidden(true);
     renderHook(() =>
-      useAwaitingNotifications('S', SOUND_OFF, { pendingPermission: false }),
+      useAwaitingNotifications('S', SOUND_OFF, {
+        pendingPermission: false,
+        pendingPlanApproval: false,
+      }),
     );
+    expect(notifyMock).not.toHaveBeenCalled();
+  });
+
+  it('fires AWAITING_PLAN_APPROVAL when a plan becomes pending while hidden', () => {
+    setHidden(true);
+    const { rerender } = renderHook(
+      ({ pending }) =>
+        useAwaitingNotifications('Session A', SOUND_OFF, {
+          pendingPermission: false,
+          pendingPlanApproval: pending,
+        }),
+      { initialProps: { pending: false } },
+    );
+
+    notifyMock.mockReset();
+    rerender({ pending: true });
+
+    expect(notifyMock).toHaveBeenCalledTimes(1);
+    expect(notifyMock).toHaveBeenCalledWith(
+      NotificationKind.AWAITING_PLAN_APPROVAL,
+      { sessionTitle: 'Session A' },
+      SOUND_OFF,
+    );
+  });
+
+  it('does NOT fire AWAITING_PLAN_APPROVAL while tab is visible', () => {
+    setHidden(false);
+    const { rerender } = renderHook(
+      ({ pending }) =>
+        useAwaitingNotifications('Session A', SOUND_OFF, {
+          pendingPermission: false,
+          pendingPlanApproval: pending,
+        }),
+      { initialProps: { pending: false } },
+    );
+
+    notifyMock.mockReset();
+    rerender({ pending: true });
+
     expect(notifyMock).not.toHaveBeenCalled();
   });
 
@@ -43,7 +85,7 @@ describe('useAwaitingNotifications', () => {
     setHidden(true);
     const { rerender } = renderHook(
       ({ pending }) =>
-        useAwaitingNotifications('Session A', SOUND_OFF, { pendingPermission: pending }),
+        useAwaitingNotifications('Session A', SOUND_OFF, { pendingPermission: pending, pendingPlanApproval: false }),
       { initialProps: { pending: false } },
     );
 
@@ -62,7 +104,7 @@ describe('useAwaitingNotifications', () => {
     setHidden(false);
     const { rerender } = renderHook(
       ({ pending }) =>
-        useAwaitingNotifications('Session A', SOUND_OFF, { pendingPermission: pending }),
+        useAwaitingNotifications('Session A', SOUND_OFF, { pendingPermission: pending, pendingPlanApproval: false }),
       { initialProps: { pending: false } },
     );
 
@@ -76,7 +118,7 @@ describe('useAwaitingNotifications', () => {
     setHidden(true);
     const { rerender } = renderHook(
       ({ pending }) =>
-        useAwaitingNotifications('Session A', SOUND_OFF, { pendingPermission: pending }),
+        useAwaitingNotifications('Session A', SOUND_OFF, { pendingPermission: pending, pendingPlanApproval: false }),
       { initialProps: { pending: false } },
     );
 
@@ -91,7 +133,7 @@ describe('useAwaitingNotifications', () => {
     setHidden(true);
     const { rerender } = renderHook(
       ({ pending }) =>
-        useAwaitingNotifications('Session A', SOUND_OFF, { pendingPermission: pending }),
+        useAwaitingNotifications('Session A', SOUND_OFF, { pendingPermission: pending, pendingPlanApproval: false }),
       { initialProps: { pending: false } },
     );
 
@@ -107,7 +149,7 @@ describe('useAwaitingNotifications', () => {
     setHidden(true);
     const { rerender } = renderHook(
       ({ title, sound, pending }) =>
-        useAwaitingNotifications(title, sound, { pendingPermission: pending }),
+        useAwaitingNotifications(title, sound, { pendingPermission: pending, pendingPlanApproval: false }),
       { initialProps: { title: 'A', sound: SOUND_OFF as string, pending: false } },
     );
 
