@@ -26,4 +26,9 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationKind, NotificationTempla
     body: 'Plan ready for review',
     icon: '/favicon.svg',
   },
+  [NotificationKind.AWAITING_USER_INPUT]: {
+    title: (ctx: NotificationContext) => ctx.sessionTitle ?? APP_NAME,
+    body: 'Waiting for your answer',
+    icon: '/favicon.svg',
+  },
 };

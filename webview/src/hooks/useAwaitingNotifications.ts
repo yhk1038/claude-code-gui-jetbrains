@@ -10,6 +10,8 @@ interface AwaitingSignals {
   pendingPermission: boolean;
   /** Becomes truthy while the agent is waiting on a plan approval/rejection. */
   pendingPlanApproval: boolean;
+  /** Becomes truthy while AskUserQuestion is waiting on the user's answer. */
+  pendingUserAnswer: boolean;
 }
 
 /**
@@ -62,4 +64,17 @@ export function useAwaitingNotifications(
     }
     wasPendingPlanRef.current = isPending;
   }, [signals.pendingPlanApproval]);
+
+  const wasPendingUserAnswerRef = useRef(false);
+  useEffect(() => {
+    const isPending = signals.pendingUserAnswer;
+    if (isPending && !wasPendingUserAnswerRef.current && document.hidden) {
+      notify(
+        NotificationKind.AWAITING_USER_INPUT,
+        { sessionTitle: sessionTitleRef.current },
+        soundSelectionRef.current,
+      );
+    }
+    wasPendingUserAnswerRef.current = isPending;
+  }, [signals.pendingUserAnswer]);
 }

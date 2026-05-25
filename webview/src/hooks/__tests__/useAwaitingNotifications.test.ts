@@ -37,6 +37,7 @@ describe('useAwaitingNotifications', () => {
       useAwaitingNotifications('S', SOUND_OFF, {
         pendingPermission: false,
         pendingPlanApproval: false,
+        pendingUserAnswer: false,
       }),
     );
     expect(notifyMock).not.toHaveBeenCalled();
@@ -49,6 +50,7 @@ describe('useAwaitingNotifications', () => {
         useAwaitingNotifications('Session A', SOUND_OFF, {
           pendingPermission: false,
           pendingPlanApproval: pending,
+          pendingUserAnswer: false,
         }),
       { initialProps: { pending: false } },
     );
@@ -71,6 +73,7 @@ describe('useAwaitingNotifications', () => {
         useAwaitingNotifications('Session A', SOUND_OFF, {
           pendingPermission: false,
           pendingPlanApproval: pending,
+          pendingUserAnswer: false,
         }),
       { initialProps: { pending: false } },
     );
@@ -85,7 +88,7 @@ describe('useAwaitingNotifications', () => {
     setHidden(true);
     const { rerender } = renderHook(
       ({ pending }) =>
-        useAwaitingNotifications('Session A', SOUND_OFF, { pendingPermission: pending, pendingPlanApproval: false }),
+        useAwaitingNotifications('Session A', SOUND_OFF, { pendingPermission: pending, pendingPlanApproval: false, pendingUserAnswer: false }),
       { initialProps: { pending: false } },
     );
 
@@ -104,7 +107,7 @@ describe('useAwaitingNotifications', () => {
     setHidden(false);
     const { rerender } = renderHook(
       ({ pending }) =>
-        useAwaitingNotifications('Session A', SOUND_OFF, { pendingPermission: pending, pendingPlanApproval: false }),
+        useAwaitingNotifications('Session A', SOUND_OFF, { pendingPermission: pending, pendingPlanApproval: false, pendingUserAnswer: false }),
       { initialProps: { pending: false } },
     );
 
@@ -118,7 +121,7 @@ describe('useAwaitingNotifications', () => {
     setHidden(true);
     const { rerender } = renderHook(
       ({ pending }) =>
-        useAwaitingNotifications('Session A', SOUND_OFF, { pendingPermission: pending, pendingPlanApproval: false }),
+        useAwaitingNotifications('Session A', SOUND_OFF, { pendingPermission: pending, pendingPlanApproval: false, pendingUserAnswer: false }),
       { initialProps: { pending: false } },
     );
 
@@ -133,7 +136,7 @@ describe('useAwaitingNotifications', () => {
     setHidden(true);
     const { rerender } = renderHook(
       ({ pending }) =>
-        useAwaitingNotifications('Session A', SOUND_OFF, { pendingPermission: pending, pendingPlanApproval: false }),
+        useAwaitingNotifications('Session A', SOUND_OFF, { pendingPermission: pending, pendingPlanApproval: false, pendingUserAnswer: false }),
       { initialProps: { pending: false } },
     );
 
@@ -149,7 +152,7 @@ describe('useAwaitingNotifications', () => {
     setHidden(true);
     const { rerender } = renderHook(
       ({ title, sound, pending }) =>
-        useAwaitingNotifications(title, sound, { pendingPermission: pending, pendingPlanApproval: false }),
+        useAwaitingNotifications(title, sound, { pendingPermission: pending, pendingPlanApproval: false, pendingUserAnswer: false }),
       { initialProps: { title: 'A', sound: SOUND_OFF as string, pending: false } },
     );
 
@@ -162,5 +165,46 @@ describe('useAwaitingNotifications', () => {
       { sessionTitle: 'B' },
       'Glass',
     );
+  });
+
+  it('fires AWAITING_USER_INPUT when a user-question becomes pending while hidden', () => {
+    setHidden(true);
+    const { rerender } = renderHook(
+      ({ pending }) =>
+        useAwaitingNotifications('Session A', SOUND_OFF, {
+          pendingPermission: false,
+          pendingPlanApproval: false,
+          pendingUserAnswer: pending,
+        }),
+      { initialProps: { pending: false } },
+    );
+
+    notifyMock.mockReset();
+    rerender({ pending: true });
+
+    expect(notifyMock).toHaveBeenCalledTimes(1);
+    expect(notifyMock).toHaveBeenCalledWith(
+      NotificationKind.AWAITING_USER_INPUT,
+      { sessionTitle: 'Session A' },
+      SOUND_OFF,
+    );
+  });
+
+  it('does NOT fire AWAITING_USER_INPUT while tab is visible', () => {
+    setHidden(false);
+    const { rerender } = renderHook(
+      ({ pending }) =>
+        useAwaitingNotifications('Session A', SOUND_OFF, {
+          pendingPermission: false,
+          pendingPlanApproval: false,
+          pendingUserAnswer: pending,
+        }),
+      { initialProps: { pending: false } },
+    );
+
+    notifyMock.mockReset();
+    rerender({ pending: true });
+
+    expect(notifyMock).not.toHaveBeenCalled();
   });
 });
