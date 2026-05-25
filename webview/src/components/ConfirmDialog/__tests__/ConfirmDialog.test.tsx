@@ -80,8 +80,7 @@ describe('ConfirmDialog', () => {
 
     const confirmButton = screen.getByRole('button', { name: 'Confirm' });
 
-    // The confirm button should have a red-related Tailwind class
-    expect(confirmButton.className).toMatch(/red/);
+    expect(confirmButton).toHaveClass('bg-state-error-fg');
   });
 
   it('does not apply danger style classes to the Confirm button when variant is default', () => {
@@ -89,7 +88,7 @@ describe('ConfirmDialog', () => {
 
     const confirmButton = screen.getByRole('button', { name: 'Confirm' });
 
-    expect(confirmButton.className).not.toMatch(/red/);
+    expect(confirmButton).not.toHaveClass('bg-state-error-fg');
   });
 
   it('renders into document.body via Portal', () => {
