@@ -64,12 +64,15 @@ say "Installing claude-code-gui (ccg) v${version}..."
 if [[ -f "$CCG_HOME/.ccg-version" ]]; then
   existing=$(cat "$CCG_HOME/.ccg-version" 2>/dev/null || printf 'unknown')
   printf 'Existing installation v%s detected. Overwrite? (Y/n): ' "$existing"
-  if [[ -t 0 ]]; then
-    read -r answer
+  # `curl | bash` makes stdin a pipe (not a TTY), so [[ -t 0 ]] is false even
+  # when a human is at the keyboard. Read from /dev/tty so the prompt is
+  # honored. Only when /dev/tty is unreadable (true non-interactive env like
+  # CI) do we default to Y.
+  if [[ -r /dev/tty ]]; then
+    read -r answer < /dev/tty
   else
-    # stdin not a TTY (e.g. piped from curl); default to Y
     answer="Y"
-    say "(non-interactive; proceeding with Y)"
+    say "(no TTY available; proceeding with Y)"
   fi
   case "${answer:-Y}" in
     n|N|no|NO) say "Aborted."; exit 0 ;;

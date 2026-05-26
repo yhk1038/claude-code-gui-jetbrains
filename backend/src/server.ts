@@ -128,10 +128,10 @@ async function main() {
   // 4. Logger에 LogWS 참조 설정
   logger.setLogWs(logWs);
 
-  if (isJetBrainsMode) {
-    // PORT를 stdout 첫 줄에 출력 — Kotlin이 이를 읽고 /rpc WebSocket 연결 + JCEF 로드
-    process.stdout.write(`PORT:${port}\n`);
-  }
+  // PORT를 stdout 첫 줄에 출력. Wrapper(JetBrains 플러그인 또는 ccg standalone
+  // 런처)가 이를 읽고 후속 연결을 시작한다. 사용자가 직접 `node backend.mjs`로
+  // 실행하더라도 한 줄 noise일 뿐 부작용 없음.
+  process.stdout.write(`PORT:${port}\n`);
 
   console.error(
     '[node-backend]',

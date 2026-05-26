@@ -90,6 +90,71 @@ setup() {
   [ "$output" = "http://localhost:19836/?workingDir=/path%20with%20space" ]
 }
 
+# ─── _spawn_backend_and_open_browser integration ──────────────
+# Fake `node` to simulate a backend that emits PORT:n then exits.
+
+@test "_spawn_backend_and_open_browser: PORT line triggers Backend-ready + browser open" {
+  export CCG_LANG=en
+  export CCG_HOME="$BATS_TEST_TMPDIR/ccg-home"
+
+  # Fake node binary: emit PORT, then sleep briefly so reader has time to
+  # process the line before the fifo writer closes.
+  cat > "$MOCK_BIN/node" <<'EOF'
+#!/usr/bin/env bash
+printf 'PORT:19836\n'
+sleep 0.4
+EOF
+  chmod +x "$MOCK_BIN/node"
+
+  # Fake cache directory matching the layout extract creates
+  local cache="$CCG_HOME/runtimes/0.15.0"
+  mkdir -p "$cache/webview"
+  : > "$cache/backend.mjs"
+  : > "$cache/webview/index.html"
+
+  # Override _open_browser to record what URL it would open
+  _open_browser() {
+    printf 'BROWSER:%s\n' "$1" >> "$BATS_TEST_TMPDIR/browser.log"
+  }
+
+  # Run spawn — must complete when fake node exits (~400ms)
+  _spawn_backend_and_open_browser "$cache" >"$BATS_TEST_TMPDIR/spawn.out" 2>&1
+  local rc=$?
+
+  local out
+  out=$(cat "$BATS_TEST_TMPDIR/spawn.out")
+
+  [ "$rc" -eq 0 ]
+  [[ "$out" == *"Backend ready on port 19836"* ]]
+  [[ "$out" == *"Opening http://localhost:19836/?workingDir="* ]]
+  [ -f "$BATS_TEST_TMPDIR/browser.log" ]
+  grep -q 'BROWSER:http://localhost:19836/?workingDir=' "$BATS_TEST_TMPDIR/browser.log"
+}
+
+@test "_spawn_backend_and_open_browser: forwards backend log lines to stdout" {
+  export CCG_LANG=en
+  export CCG_HOME="$BATS_TEST_TMPDIR/ccg-home"
+
+  cat > "$MOCK_BIN/node" <<'EOF'
+#!/usr/bin/env bash
+printf 'PORT:19836\n'
+printf '[node-backend] hello from fake backend\n'
+sleep 0.3
+EOF
+  chmod +x "$MOCK_BIN/node"
+
+  local cache="$CCG_HOME/runtimes/0.15.0"
+  mkdir -p "$cache/webview"
+  : > "$cache/backend.mjs"
+  : > "$cache/webview/index.html"
+
+  _open_browser() { :; }
+
+  _spawn_backend_and_open_browser "$cache" >"$BATS_TEST_TMPDIR/spawn.out" 2>&1
+  [ "$?" -eq 0 ]
+  grep -q 'hello from fake backend' "$BATS_TEST_TMPDIR/spawn.out"
+}
+
 # ─── dispatcher: subcommand routing ───────────────────────────
 
 @test "dispatcher: unknown command exits nonzero with i18n message" {

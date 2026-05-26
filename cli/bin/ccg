@@ -325,8 +325,8 @@ _ensure_runtime_and_spawn() {
   _spawn_backend_and_open_browser "$cache_dir"
 }
 
-# Spawn node backend.mjs, wait for "PORT:n" handshake, open browser, then
-# pass through stdout/stderr until node exits.
+# Spawn node backend.mjs, wait for "PORT:n" handshake, print URL + open
+# browser, then pass through stdout/stderr until node exits.
 _spawn_backend_and_open_browser() {
   local cache_dir=$1
   local backend="$cache_dir/backend.mjs"
@@ -340,13 +340,13 @@ _spawn_backend_and_open_browser() {
   rm -f "$fifo"
   mkfifo "$fifo"
 
-  # Start node with WEBVIEW_DIR set, redirect stdout through the FIFO.
-  (
-    WEBVIEW_DIR="$webview" node "$backend"
-  ) >"$fifo" 2>&1 &
+  # Start node directly (no wrapping subshell) so $! is node's actual PID.
+  # Wrapping in a subshell made $pid the subshell's id, so kill -TERM never
+  # reached node, leaving the backend alive and the reader blocked on fifo EOF.
+  WEBVIEW_DIR="$webview" node "$backend" >"$fifo" 2>&1 &
   local pid=$!
 
-  # Background: read FIFO, watch for PORT:n line, open browser on first match.
+  # Background reader: forward log lines, detect PORT:n, print URL + open browser.
   (
     local line port_seen=0
     while IFS= read -r line; do
@@ -354,23 +354,25 @@ _spawn_backend_and_open_browser() {
         local port=${line#PORT:}
         port=${port%%[![:digit:]]*}
         port_seen=1
+        local url="${cwd_url/localhost:19836/localhost:$port}"
         printf '%s\n' "$(t backend_started "$port")"
-        # cwd_url already includes the encoded workingDir; swap host port in.
-        _open_browser "${cwd_url/localhost:19836/localhost:$port}"
+        printf '%s\n' "$(t opening_browser "$url")"
+        _open_browser "$url"
       fi
-      # Echo through to our stdout so user sees logs
       printf '%s\n' "$line"
     done <"$fifo"
   ) &
   local reader_pid=$!
 
-  # Trap Ctrl+C → forward TERM to node, clean up reader + fifo
+  # On Ctrl+C: TERM node (it has its own SIGTERM handler), KILL reader
+  # (it may be blocked on fifo read since node hasn't closed stdout yet),
+  # clean up fifo, exit with the standard SIGINT code (130).
   # shellcheck disable=SC2064
   trap "_kill_pid -TERM '$pid' 2>/dev/null || true; \
-        wait '$reader_pid' 2>/dev/null || true; \
-        rm -f '$fifo'; exit 0" INT TERM
+        _kill_pid -KILL '$reader_pid' 2>/dev/null || true; \
+        rm -f '$fifo'; exit 130" INT TERM
 
-  # Wait for node to exit, then drain the reader.
+  # Wait for node to exit normally, then drain remaining reader output.
   wait "$pid"
   local rc=$?
   wait "$reader_pid" 2>/dev/null || true
