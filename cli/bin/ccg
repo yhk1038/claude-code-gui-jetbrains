@@ -375,6 +375,14 @@ _spawn_backend_and_open_browser() {
   ) &
   local reader_pid=$!
 
+  # Reset any inherited disposition before installing our handler. If ccg
+  # was launched in a context where SIGINT/SIGTERM came in as SIG_IGN
+  # (e.g. via a background pipeline, under `set +m`, or in some launcher
+  # scenarios), a plain `trap "…" INT` would silently no-op because bash
+  # refuses to install a trap on a signal that's already SIG_IGN. Reset
+  # disposition first, then install — handler fires reliably either way.
+  trap - INT TERM
+
   # On Ctrl+C: SIGKILL both node and the reader immediately.
   # SIGTERM would trigger node's own shutdown handler, which waits up to 5
   # seconds for logger flush — feels like a hang to the user. ccg's lifecycle
