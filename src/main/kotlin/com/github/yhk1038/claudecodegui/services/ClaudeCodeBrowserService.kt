@@ -66,7 +66,14 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
         }
         return holders.getOrPut(sessionId) {
             logger.info("Creating new JCEF browser for session: $sessionId")
-            val browser = JBCefBrowser()
+            // Disable JCEF off-screen rendering so the browser renders natively.
+            // OSR (default since 2023.2) fails to forward HiDPI scale to Chromium on
+            // macOS Retina, producing pixelated output (issue #23, JBR-3526). Our
+            // panel has no other Swing widgets that need to overlay the browser, so
+            // the z-order trade-off does not apply.
+            val browser = JBCefBrowser.createBuilder()
+                .setOffScreenRendering(false)
+                .build()
             val cursorQuery = JBCefJSQuery.create(browser as JBCefBrowserBase)
             val streamingQuery = JBCefJSQuery.create(browser as JBCefBrowserBase)
             BrowserHolder(browser, cursorQuery, streamingQuery)
