@@ -24,7 +24,7 @@ export const McpToolRow = (props: {label: string; children?: ReactNode}) => {
 
     return (
         <div className="flex items-start gap-2 p-2 border-b border-border-subtle last:border-b-0">
-            <span className="text-text-primary/50 uppercase text-[0.7692rem] min-w-[28px] pt-[1px]">
+            <span className="text-tool-label-fg uppercase text-[0.7692rem] min-w-[28px] pt-[1px]">
                 {label}
             </span>
             <div

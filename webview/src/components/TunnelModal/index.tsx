@@ -93,7 +93,7 @@ export function TunnelModal(props: Props) {
         {/* Body */}
         <div className="px-4 py-4 space-y-4">
           {error && (
-            <div className="py-2 px-3 text-sm text-state-error-fg bg-state-error-fg/10 rounded">
+            <div className="py-2 px-3 text-sm text-state-error-fg bg-state-error-bg rounded">
               {error}
             </div>
           )}

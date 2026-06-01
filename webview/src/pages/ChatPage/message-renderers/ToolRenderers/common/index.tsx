@@ -96,7 +96,7 @@ export const LabelValue = (props: {
 }
 
 export const Label = ({name}: { name: string }) => {
-    return <div className="text-text-primary/40 min-w-[40px]">{name}</div>
+    return <div className="text-tool-label-fg min-w-[40px]">{name}</div>
 }
 
 export const Value = (props: {

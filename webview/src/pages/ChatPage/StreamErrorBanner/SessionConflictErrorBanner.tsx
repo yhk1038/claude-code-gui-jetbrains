@@ -27,12 +27,12 @@ export const SessionConflictErrorBanner = () => {
     };
 
     return (
-        <div className="mx-4 my-2 px-3 py-2 rounded-md bg-state-error-fg/10 border border-state-error-border text-state-error-fg text-xs flex items-center justify-between gap-2">
+        <div className="mx-4 my-2 px-3 py-2 rounded-md bg-state-error-bg border border-state-error-border text-state-error-fg text-xs flex items-center justify-between gap-2">
             <span>Error: This session is already in use.</span>
             <button
                 onClick={handleReclaim}
                 disabled={isReclaiming}
-                className="shrink-0 px-2 py-0.5 rounded bg-state-error-fg/20 hover:bg-state-error-fg/30 text-state-error-fg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="shrink-0 px-2 py-0.5 rounded bg-state-error-bg hover:bg-state-error-border text-state-error-fg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
                 {isReclaiming ? (
                     <span className="inline-flex items-center gap-1">

@@ -82,6 +82,11 @@ export default {
           scrim: 'var(--overlay-scrim)',
           dim: 'var(--overlay-dim)',
         },
+
+        // Tool call rows (usage: text-tool-label-fg)
+        tool: {
+          'label-fg': 'var(--tool-label-fg)',
+        },
       },
       boxShadow: {
         'token-sm': 'var(--shadow-sm)',
