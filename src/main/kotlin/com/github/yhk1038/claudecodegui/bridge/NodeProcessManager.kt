@@ -310,7 +310,15 @@ class NodeProcessManager(
             return cwd
         }
 
-        // Heuristic 2: Check environment variable
+        // Heuristic 2: Check system property (set by runIde task in build.gradle.kts)
+        System.getProperty("plugin.project.root")?.let { root ->
+            val rootFile = File(root)
+            if (rootFile.exists() && File(rootFile, "backend/dist/backend.mjs").exists()) {
+                return rootFile
+            }
+        }
+
+        // Heuristic 3: Check environment variable (manual override)
         System.getenv("PLUGIN_PROJECT_ROOT")?.let { root ->
             val rootFile = File(root)
             if (rootFile.exists() && File(rootFile, "backend/dist/backend.mjs").exists()) {
@@ -318,7 +326,7 @@ class NodeProcessManager(
             }
         }
 
-        // Heuristic 3: Walk up from class location
+        // Heuristic 4: Walk up from class location
         try {
             val classUrl = javaClass.protectionDomain.codeSource?.location?.toURI()
             if (classUrl != null) {

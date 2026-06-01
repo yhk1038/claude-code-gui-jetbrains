@@ -159,7 +159,11 @@ tasks {
         jvmArgumentProviders += CommandLineArgumentProvider {
             listOf(
                 "-Dclaude.dev.mode=${System.getenv("CLAUDE_DEV_MODE") ?: "true"}",
-                "-Dclaude.simulate.no.jcef=${System.getenv("CLAUDE_SIMULATE_NO_JCEF") ?: "false"}"
+                "-Dclaude.simulate.no.jcef=${System.getenv("CLAUDE_SIMULATE_NO_JCEF") ?: "false"}",
+                // Pin the project root so NodeProcessManager.findPluginProjectRoot() can
+                // resolve webview/dist directly instead of falling back to the JAR-extracted
+                // temp directory (which serves stale assets after a wv-build).
+                "-Dplugin.project.root=${projectDir.absolutePath}"
             )
         }
     }
