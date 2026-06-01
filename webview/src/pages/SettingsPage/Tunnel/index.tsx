@@ -53,7 +53,7 @@ export function TunnelSettings() {
 
       <SettingSection title="Connection">
         {error && (
-          <div className="py-2 px-3 text-sm text-state-error-fg bg-state-error-fg/10 rounded">
+          <div className="py-2 px-3 text-sm text-state-error-fg bg-state-error-bg rounded">
             {error}
           </div>
         )}

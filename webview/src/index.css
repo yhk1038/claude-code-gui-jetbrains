@@ -100,6 +100,19 @@
 
   --ide-font-ui:   -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --ide-font-code: 'JetBrains Mono', Consolas, Monaco, monospace;
+
+  /* Markdown */
+  --md-inline-code-bg: rgba(175, 184, 193, 0.2);
+  --md-inline-code-fg: rgba(36, 41, 47, 0.7);
+  --md-code-block-bg: rgba(0, 0, 0, 0.06);
+  --md-code-copy-btn-bg: rgba(0, 0, 0, 0.08);
+  --md-code-copy-btn-bg-hover: rgba(0, 0, 0, 0.16);
+  --md-code-copy-btn-fg: #1e1e1e;
+  --md-blockquote-bg: rgba(0, 0, 0, 0.03);
+  --md-table-border: rgba(0, 0, 0, 0.15);
+
+  /* Tool call rows (IN/OUT labels) */
+  --tool-label-fg: rgba(30, 30, 30, 0.45);
 }
 
 /* ============================================
@@ -163,6 +176,19 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.40);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.50);
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.60);
+
+  /* Markdown */
+  --md-inline-code-bg: rgba(127, 251, 255, 0.17);
+  --md-inline-code-fg: rgba(127, 251, 255, 0.8);
+  --md-code-block-bg: rgba(0, 0, 0, 0.15);
+  --md-code-copy-btn-bg: rgba(255, 255, 255, 0.18);
+  --md-code-copy-btn-bg-hover: rgba(255, 255, 255, 0.32);
+  --md-code-copy-btn-fg: #ffffff;
+  --md-blockquote-bg: rgba(255, 255, 255, 0.03);
+  --md-table-border: rgba(255, 255, 255, 0.3);
+
+  /* Tool call rows (IN/OUT labels) */
+  --tool-label-fg: rgba(228, 228, 231, 0.45);
 }
 
 html, body, #root {

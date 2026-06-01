@@ -55,8 +55,8 @@ function fromDiffText(diffText: string): DiffLine[] {
 }
 
 const lineStyles: Record<DiffLineType, string> = {
-    [DiffLineType.Add]: 'bg-state-success-fg/15 text-state-success-fg',
-    [DiffLineType.Delete]: 'bg-state-error-fg/15 text-state-error-fg',
+    [DiffLineType.Add]: 'bg-state-success-bg text-state-success-fg',
+    [DiffLineType.Delete]: 'bg-state-error-bg text-state-error-fg',
     [DiffLineType.Context]: 'text-text-secondary',
 };
 
