@@ -92,12 +92,21 @@ async function serveStaticFile(
     return;
   }
 
+  // Hashed bundle assets are content-addressed and safe to cache forever.
+  // Anything else (index.html, SPA fallback) must revalidate so a plugin update
+  // never leaves JCEF pinned to a stale bundle.
+  const isHashedAsset = normalized.startsWith('assets/');
+  const cacheControl = isHashedAsset
+    ? 'public, max-age=31536000, immutable'
+    : 'no-cache, must-revalidate';
+
   try {
     const data = await readFile(filePath);
     const ext = extname(filePath).toLowerCase();
     const contentType = MIME_TYPES[ext] ?? 'application/octet-stream';
     res.writeHead(200, {
       'Content-Type': contentType,
+      'Cache-Control': cacheControl,
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'SAMEORIGIN',
     });
@@ -116,6 +125,7 @@ async function serveStaticFile(
       const indexData = await readFile(join(webviewDir, 'index.html'));
       res.writeHead(200, {
         'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-cache, must-revalidate',
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'SAMEORIGIN',
       });
