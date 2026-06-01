@@ -119,11 +119,17 @@ intellijPlatform {
             untilBuild = "261.*"
         }
         changeNotes = """
-            <h3>0.15.0 - Tool cards for filesystem MCP server and NotebookEdit</h3>
+            <h3>0.16.0 - System theme follows IDE, desktop notifications, ccg launcher</h3>
             <ul>
-                <li>Added dedicated chat widgets for the official <code>@modelcontextprotocol/server-filesystem</code> MCP tools — <code>read_file</code>, <code>read_multiple_files</code>, <code>read_media_file</code>, <code>write_file</code>, <code>edit_file</code>, <code>create_directory</code>, <code>list_directory</code>, <code>directory_tree</code>, <code>move_file</code>, <code>search_files</code>, <code>get_file_info</code>, and <code>list_allowed_directories</code> — which previously rendered as the generic 'unknown' placeholder.</li>
-                <li>Added a dedicated chat widget for the <code>NotebookEdit</code> tool, so Jupyter notebook edits show a proper card instead of the generic placeholder.</li>
-                <li>Closes issue #42 — built-in Claude Code tools now render as VS Code-style tool cards across the board.</li>
+                <li>System theme now follows the IDE's Look-and-Feel in JetBrains mode and reacts to LAF changes without a restart; standalone (browser) mode continues to follow the OS preference. The dropdown is labeled "System (IDE)" or "System (OS)" accordingly (closes #45).</li>
+                <li>Light theme legibility fixed for inline code, code blocks, blockquotes, table borders, and tool labels — the previous cyan-on-cyan rendering is gone (closes #46).</li>
+                <li>Desktop notifications for stream errors and for awaiting permission / plan approval / user input, with OS sounds and an unread favicon indicator.</li>
+                <li>New <code>ccg</code> terminal launcher for Standalone mode: install with <code>curl | bash</code>, browser auto-opens, Ctrl+C exits immediately, <code>ccg update</code> always re-downloads the runtime.</li>
+                <li>Streaming UX: auto-scroll respects manual scroll-up and shows a jump-to-bottom pill; the auto-scroll threshold is configurable under Appearance.</li>
+                <li>JCEF embedded browser now renders at full HiDPI (no more pixelation on Retina/4K displays).</li>
+                <li>Plugin updates refresh the WebView correctly thanks to <code>Cache-Control</code> on the SPA shell with immutable hashed assets.</li>
+                <li>QR code in the Tunnel modal stays readable on dark themes (forced white background).</li>
+                <li>Browser auto-translate is disabled on the UI, and the update banner is hidden in standalone mode where it does not apply.</li>
             </ul>
         """.trimIndent()
     }
