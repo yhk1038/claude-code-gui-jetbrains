@@ -2,6 +2,7 @@ import { SettingSection, SettingRow } from '../common';
 import { useSettings } from '@/contexts/SettingsContext';
 import { SettingKey, ThemeMode } from '@/types/settings';
 import { ROUTE_META, Route } from '@/router/routes';
+import { isJetBrains } from '@/config/environment';
 
 const NOT_SET_VALUE = '__NOT_SET__';
 
@@ -49,7 +50,7 @@ export function AppearanceSettings() {
                 Not set (use global)
               </option>
             )}
-            <option value={ThemeMode.SYSTEM}>System</option>
+            <option value={ThemeMode.SYSTEM}>{isJetBrains() ? 'System (IDE)' : 'System (OS)'}</option>
             <option value={ThemeMode.LIGHT}>Light</option>
             <option value={ThemeMode.DARK}>Dark</option>
           </select>

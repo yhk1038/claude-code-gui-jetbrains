@@ -43,3 +43,21 @@ export function isMobile(): boolean {
   const userAgent = navigator.userAgent.toLowerCase();
   return /android|iphone|ipad|ipod/.test(userAgent);
 }
+
+// ── IDE 테마 ─────────────────────────────────────────
+// JetBrains JCEF 환경에서만 의미 있음. Kotlin이 페이지 로드 시점에 LAF 값을
+// window.__IDE_THEME__ 에 주입하고, LAF가 바뀌면 'ide-theme-changed' 이벤트를 dispatch한다.
+
+/** Returns the IDE LAF theme hint if available, otherwise null. */
+export function getIdeTheme(): 'dark' | 'light' | null {
+  if (typeof window === 'undefined') return null;
+  const v = window.__IDE_THEME__;
+  return v === 'dark' || v === 'light' ? v : null;
+}
+
+/** Subscribe to IDE LAF changes. Returns an unsubscribe function. */
+export function subscribeIdeTheme(cb: () => void): () => void {
+  if (typeof window === 'undefined') return () => { /* no-op */ };
+  window.addEventListener('ide-theme-changed', cb);
+  return () => window.removeEventListener('ide-theme-changed', cb);
+}

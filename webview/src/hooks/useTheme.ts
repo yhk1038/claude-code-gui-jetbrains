@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ThemeMode } from '../types';
 import { SettingKey } from '@/types/settings';
 import { useSettings } from '@/contexts/SettingsContext';
+import { isJetBrains, getIdeTheme, subscribeIdeTheme } from '@/config/environment';
 
 interface UseThemeReturn {
   /** User-facing setting value (SYSTEM | LIGHT | DARK). */
@@ -29,7 +30,14 @@ export function useTheme(): UseThemeReturn {
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (theme === ThemeMode.DARK) return true;
     if (theme === ThemeMode.LIGHT) return false;
-    return typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (typeof window === 'undefined') return false;
+    // SYSTEM: prefer IDE LAF hint when running inside JetBrains.
+    if (isJetBrains()) {
+      const ide = getIdeTheme();
+      if (ide === 'dark') return true;
+      if (ide === 'light') return false;
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
   useEffect(() => {
@@ -41,7 +49,30 @@ export function useTheme(): UseThemeReturn {
       setIsDark(false);
       return;
     }
+
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
+
+    if (isJetBrains()) {
+      const resolve = () => {
+        const ide = getIdeTheme();
+        if (ide === 'dark') return setIsDark(true);
+        if (ide === 'light') return setIsDark(false);
+        return setIsDark(mq.matches);
+      };
+      resolve();
+      const mqHandler = (e: MediaQueryListEvent) => {
+        // Only react to matchMedia when IDE hint is unavailable.
+        if (getIdeTheme() !== null) return;
+        setIsDark(e.matches);
+      };
+      mq.addEventListener('change', mqHandler);
+      const unsubscribeIde = subscribeIdeTheme(resolve);
+      return () => {
+        mq.removeEventListener('change', mqHandler);
+        unsubscribeIde();
+      };
+    }
+
     setIsDark(mq.matches);
     const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
     mq.addEventListener('change', handler);

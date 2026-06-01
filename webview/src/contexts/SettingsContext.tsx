@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import { SettingsState, DEFAULT_SETTINGS, SettingKey, ThemeMode } from '@/types/settings';
 import { useBridgeContext } from '@/contexts/BridgeContext';
 import { useWorkingDir } from '@/contexts/WorkingDirContext';
+import { isJetBrains, getIdeTheme, subscribeIdeTheme } from '@/config/environment';
 
 interface SettingsContextValue {
   settings: SettingsState;
@@ -117,7 +118,10 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   // Apply theme to <html> element. Toggles `.dark` class based on theme setting.
   // - LIGHT: explicit light, no `.dark` class
   // - DARK: explicit dark, `.dark` class on
-  // - SYSTEM: follow prefers-color-scheme and subscribe to changes
+  // - SYSTEM:
+  //     * JetBrains: follow IDE LAF (window.__IDE_THEME__) and 'ide-theme-changed' event.
+  //       Fall back to matchMedia when LAF hint is missing (e.g. before Kotlin injects it).
+  //     * Standalone: follow prefers-color-scheme as before.
   useEffect(() => {
     const theme = settings[SettingKey.THEME];
     const applyDark = () => document.documentElement.classList.add('dark');
@@ -131,8 +135,33 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
       applyLight();
       return;
     }
-    // SYSTEM: detect prefers-color-scheme and subscribe to changes
+
+    // SYSTEM mode
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
+
+    if (isJetBrains()) {
+      // JetBrains: prefer IDE LAF hint, fall back to matchMedia when missing.
+      const resolve = () => {
+        const ide = getIdeTheme();
+        if (ide === 'dark') return applyDark();
+        if (ide === 'light') return applyLight();
+        return mq.matches ? applyDark() : applyLight();
+      };
+      resolve();
+      const mqHandler = (e: MediaQueryListEvent) => {
+        // Only react to matchMedia when IDE hint is unavailable.
+        if (getIdeTheme() !== null) return;
+        e.matches ? applyDark() : applyLight();
+      };
+      mq.addEventListener('change', mqHandler);
+      const unsubscribeIde = subscribeIdeTheme(resolve);
+      return () => {
+        mq.removeEventListener('change', mqHandler);
+        unsubscribeIde();
+      };
+    }
+
+    // Standalone: detect prefers-color-scheme and subscribe to changes
     if (mq.matches) applyDark(); else applyLight();
     const handler = (e: MediaQueryListEvent) => (e.matches ? applyDark() : applyLight());
     mq.addEventListener('change', handler);

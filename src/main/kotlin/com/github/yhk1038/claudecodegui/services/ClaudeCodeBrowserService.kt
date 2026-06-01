@@ -48,6 +48,17 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
 
         /** Whether the IME NPE workaround has been applied. */
         var imeWorkaroundInstalled: Boolean = false
+
+        /** Whether the LAF (IDE theme) change listener has been installed. */
+        var lafListenerInstalled: Boolean = false
+
+        /**
+         * Parent Disposable for the LAF listener. Disposing this removes the listener
+         * from LafManager. Tied to the browser holder lifecycle (NOT the panel) so
+         * the listener survives tab move/split. Set when the listener is installed,
+         * disposed in [release] and the service's [dispose].
+         */
+        var lafListenerDisposable: Disposable? = null
     }
 
     private val holders = ConcurrentHashMap<String, BrowserHolder>()
@@ -87,6 +98,7 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
     fun release(sessionId: String) {
         holders.remove(sessionId)?.let { holder ->
             logger.info("Releasing JCEF browser for session: $sessionId")
+            try { holder.lafListenerDisposable?.let { Disposer.dispose(it) } } catch (_: Exception) {}
             try { Disposer.dispose(holder.streamingQuery) } catch (_: Exception) {}
             try { Disposer.dispose(holder.cursorQuery) } catch (_: Exception) {}
             try { Disposer.dispose(holder.browser) } catch (_: Exception) {}
@@ -95,6 +107,7 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
 
     override fun dispose() {
         holders.values.forEach { holder ->
+            try { holder.lafListenerDisposable?.let { Disposer.dispose(it) } } catch (_: Exception) {}
             try { Disposer.dispose(holder.streamingQuery) } catch (_: Exception) {}
             try { Disposer.dispose(holder.cursorQuery) } catch (_: Exception) {}
             try { Disposer.dispose(holder.browser) } catch (_: Exception) {}

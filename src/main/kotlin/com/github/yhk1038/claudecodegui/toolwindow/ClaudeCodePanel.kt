@@ -14,6 +14,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.ui.jcef.JBCefBrowser
 import com.intellij.ui.jcef.JBCefJSQuery
@@ -187,6 +188,10 @@ class ClaudeCodePanel(
                     // Mark JCEF environment so detectRuntime() in environment.ts can detect
                     // the JetBrains environment and select JetBrainsAdapter over BrowserAdapter.
                     frame.executeJavaScript("window.__JCEF__ = true;", frame.url, 0)
+                    // Inject the current IDE LAF theme so SettingsContext can resolve
+                    // SYSTEM mode against the IDE rather than the OS prefers-color-scheme.
+                    val ideTheme = if (com.intellij.ui.JBColor.isBright()) "light" else "dark"
+                    frame.executeJavaScript("window.__IDE_THEME__ = '$ideTheme';", frame.url, 0)
                     injectCursorTracking(frame)
                     injectStreamingStateBridge(frame)
                     installImeWorkaround()
@@ -197,6 +202,11 @@ class ClaudeCodePanel(
                 }
             }
         }, b.cefBrowser)
+
+        // Install LAF (IDE theme) change listener — once per browser holder.
+        // The listener lifetime is tied to the holder (not the panel) so it
+        // survives tab move/split. Removed in ClaudeCodeBrowserService.release().
+        installLafListener()
 
         // Title change detection, address change tracking, and console log capture
         b.jbCefClient.addDisplayHandler(object : CefDisplayHandlerAdapter() {
@@ -372,6 +382,53 @@ class ClaudeCodePanel(
             traverseAndWrap(browser!!.component)
             holder.imeWorkaroundInstalled = true
             logger.info("JCEF IME NPE workaround installed")
+        }
+    }
+
+    /**
+     * Subscribe to IDE Look-and-Feel changes and propagate them to the WebView
+     * by updating window.__IDE_THEME__ and dispatching the 'ide-theme-changed'
+     * event. Idempotent per browser holder.
+     *
+     * Lifetime: the LafManager listener is owned by a child Disposable stored on
+     * the [ClaudeCodeBrowserService.BrowserHolder]. The holder (and thus the
+     * listener) survives tab move/split. Disposal happens in
+     * [ClaudeCodeBrowserService.release].
+     */
+    // Called only from setupBrowserHandlers() which is only called from initWithJcef() — holder and browser are non-null.
+    private fun installLafListener() {
+        val h = holder!!
+        if (h.lafListenerInstalled) return
+
+        try {
+            // Use the application message bus with a child Disposable so the
+            // subscription lifetime matches the browser holder (tab move/split
+            // safe). This avoids the deprecated LafManager.addLafManagerListener
+            // overloads while still providing automatic unregistration via Disposer.
+            val parent = Disposer.newDisposable("ClaudeCodePanel.lafListener.$sessionId")
+            val connection = ApplicationManager.getApplication().messageBus.connect(parent)
+            connection.subscribe(
+                com.intellij.ide.ui.LafManagerListener.TOPIC,
+                com.intellij.ide.ui.LafManagerListener {
+                    val b = browser ?: return@LafManagerListener
+                    ApplicationManager.getApplication().invokeLater {
+                        val newTheme = if (com.intellij.ui.JBColor.isBright()) "light" else "dark"
+                        val js = "window.__IDE_THEME__ = '$newTheme'; " +
+                            "window.dispatchEvent(new Event('ide-theme-changed'));"
+                        try {
+                            val cef = b.cefBrowser
+                            cef.executeJavaScript(js, cef.url, 0)
+                        } catch (e: Exception) {
+                            logger.warn("Failed to propagate LAF change to WebView", e)
+                        }
+                    }
+                },
+            )
+            h.lafListenerDisposable = parent
+            h.lafListenerInstalled = true
+            logger.info("LafManager listener installed for session: $sessionId")
+        } catch (e: Exception) {
+            logger.warn("Failed to install LafManager listener", e)
         }
     }
 

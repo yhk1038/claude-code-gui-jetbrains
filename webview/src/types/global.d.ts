@@ -10,6 +10,17 @@ interface Window {
   __JCEF__?: boolean;
 
   /**
+   * IDE Look-and-Feel theme hint.
+   * Injected by ClaudeCodePanel.kt at page load and updated whenever the
+   * IDE LAF changes at runtime. Consumers should listen for the
+   * 'ide-theme-changed' event on window to react to changes.
+   *
+   * Only meaningful when __JCEF__ === true. In standalone (browser) mode
+   * this is always undefined and consumers fall back to matchMedia.
+   */
+  __IDE_THEME__?: 'dark' | 'light';
+
+  /**
    * Bridge to send messages from WebView to Kotlin
    * Injected by ClaudeCodePanel.kt via JBCefJSQuery
    */

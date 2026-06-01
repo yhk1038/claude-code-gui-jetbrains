@@ -1,0 +1,274 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, act, waitFor } from '@testing-library/react';
+import { SettingsProvider } from '../SettingsContext';
+import { SettingKey, ThemeMode } from '@/types/settings';
+import { _resetRuntimeCache } from '@/config/environment';
+
+// ---------------------------------------------------------------------------
+// Bridge / WorkingDir mocks (minimal — enough for SettingsProvider to mount)
+// ---------------------------------------------------------------------------
+
+// Use a never-resolving send() so the theme effect runs against DEFAULT_SETTINGS
+// (which is ThemeMode.SYSTEM) and is not overwritten by a bridge response.
+const mockSend = vi.fn(() => new Promise(() => { /* never resolves */ }));
+const mockSubscribe = vi.fn(() => () => { /* unsubscribe noop */ });
+
+vi.mock('../BridgeContext', () => ({
+  useBridgeContext: () => ({
+    isConnected: false,
+    send: mockSend,
+    subscribe: mockSubscribe,
+  }),
+}));
+
+vi.mock('../WorkingDirContext', () => ({
+  useWorkingDir: () => ({
+    workingDirectory: '/test/workspace',
+    setWorkingDirectory: vi.fn(),
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// matchMedia mock (jsdom does not provide this)
+// ---------------------------------------------------------------------------
+
+interface MatchMediaState {
+  matches: boolean;
+  listeners: Array<(e: MediaQueryListEvent) => void>;
+}
+
+const matchMediaState: MatchMediaState = {
+  matches: false,
+  listeners: [],
+};
+
+function installMatchMediaMock(initialMatches: boolean) {
+  matchMediaState.matches = initialMatches;
+  matchMediaState.listeners = [];
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: (query: string) => ({
+      matches: matchMediaState.matches,
+      media: query,
+      onchange: null,
+      addEventListener: (_event: string, listener: (e: MediaQueryListEvent) => void) => {
+        matchMediaState.listeners.push(listener);
+      },
+      removeEventListener: (_event: string, listener: (e: MediaQueryListEvent) => void) => {
+        matchMediaState.listeners = matchMediaState.listeners.filter(l => l !== listener);
+      },
+      addListener: () => { /* legacy, unused */ },
+      removeListener: () => { /* legacy, unused */ },
+      dispatchEvent: () => false,
+    }),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// JCEF / IDE theme helpers
+// ---------------------------------------------------------------------------
+
+function setJcefEnv(enabled: boolean) {
+  if (enabled) {
+    (window as unknown as { __JCEF__?: boolean }).__JCEF__ = true;
+  } else {
+    delete (window as unknown as { __JCEF__?: boolean }).__JCEF__;
+  }
+  _resetRuntimeCache();
+}
+
+function setIdeTheme(value: 'dark' | 'light' | null) {
+  const w = window as unknown as { __IDE_THEME__?: string };
+  if (value === null) {
+    delete w.__IDE_THEME__;
+  } else {
+    w.__IDE_THEME__ = value;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Test harness — render SettingsProvider with a given initial theme.
+// We pre-seed localStorage so the initial render uses the desired theme
+// (SettingsProvider loads from localStorage immediately on mount).
+// ---------------------------------------------------------------------------
+
+const STORAGE_KEY = 'claude-code-settings';
+
+function seedTheme(theme: ThemeMode) {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ [SettingKey.THEME]: theme }),
+    );
+  } catch {
+    // ignore
+  }
+}
+
+function renderWithTheme(theme: ThemeMode) {
+  seedTheme(theme);
+  return render(
+    <SettingsProvider>
+      <div data-testid="child">child</div>
+    </SettingsProvider>,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Setup / teardown
+// ---------------------------------------------------------------------------
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  try {
+    localStorage.clear();
+  } catch {
+    // ignore
+  }
+  document.documentElement.classList.remove('dark');
+  setJcefEnv(false);
+  setIdeTheme(null);
+  installMatchMediaMock(false);
+});
+
+afterEach(() => {
+  document.documentElement.classList.remove('dark');
+  setJcefEnv(false);
+  setIdeTheme(null);
+});
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+describe('SettingsContext theme — SYSTEM mode in JetBrains', () => {
+  it('resolves to dark when __IDE_THEME__ is "dark"', async () => {
+    setJcefEnv(true);
+    setIdeTheme('dark');
+
+    renderWithTheme(ThemeMode.SYSTEM);
+
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('dark')).toBe(true);
+    });
+  });
+
+  it('resolves to light when __IDE_THEME__ is "light"', async () => {
+    setJcefEnv(true);
+    setIdeTheme('light');
+
+    renderWithTheme(ThemeMode.SYSTEM);
+
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('dark')).toBe(false);
+    });
+  });
+
+  it('reacts to ide-theme-changed events (light -> dark)', async () => {
+    setJcefEnv(true);
+    setIdeTheme('light');
+
+    renderWithTheme(ThemeMode.SYSTEM);
+
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('dark')).toBe(false);
+    });
+
+    // Simulate IDE switching to dark mode at runtime
+    act(() => {
+      setIdeTheme('dark');
+      window.dispatchEvent(new Event('ide-theme-changed'));
+    });
+
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('dark')).toBe(true);
+    });
+  });
+
+  it('falls back to matchMedia when __IDE_THEME__ is missing', async () => {
+    setJcefEnv(true);
+    setIdeTheme(null);
+    installMatchMediaMock(true); // OS prefers dark
+
+    renderWithTheme(ThemeMode.SYSTEM);
+
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('dark')).toBe(true);
+    });
+  });
+});
+
+describe('SettingsContext theme — SYSTEM mode in Standalone (browser)', () => {
+  it('uses matchMedia (prefers-color-scheme: dark) to resolve to dark', async () => {
+    setJcefEnv(false);
+    installMatchMediaMock(true);
+
+    renderWithTheme(ThemeMode.SYSTEM);
+
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('dark')).toBe(true);
+    });
+  });
+
+  it('uses matchMedia to resolve to light when OS prefers light', async () => {
+    setJcefEnv(false);
+    installMatchMediaMock(false);
+
+    renderWithTheme(ThemeMode.SYSTEM);
+
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('dark')).toBe(false);
+    });
+  });
+});
+
+describe('SettingsContext theme — explicit modes', () => {
+  it('DARK applies .dark regardless of JetBrains env', async () => {
+    setJcefEnv(true);
+    setIdeTheme('light'); // IDE is light, but explicit DARK must win
+    installMatchMediaMock(false);
+
+    renderWithTheme(ThemeMode.DARK);
+
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('dark')).toBe(true);
+    });
+  });
+
+  it('DARK applies .dark in Standalone env', async () => {
+    setJcefEnv(false);
+    installMatchMediaMock(false);
+
+    renderWithTheme(ThemeMode.DARK);
+
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('dark')).toBe(true);
+    });
+  });
+
+  it('LIGHT removes .dark regardless of JetBrains env', async () => {
+    setJcefEnv(true);
+    setIdeTheme('dark'); // IDE is dark, but explicit LIGHT must win
+    installMatchMediaMock(true);
+    document.documentElement.classList.add('dark'); // start with .dark
+
+    renderWithTheme(ThemeMode.LIGHT);
+
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('dark')).toBe(false);
+    });
+  });
+
+  it('LIGHT removes .dark in Standalone env', async () => {
+    setJcefEnv(false);
+    installMatchMediaMock(true);
+    document.documentElement.classList.add('dark');
+
+    renderWithTheme(ThemeMode.LIGHT);
+
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('dark')).toBe(false);
+    });
+  });
+});
