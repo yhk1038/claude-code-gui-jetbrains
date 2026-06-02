@@ -143,6 +143,11 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
+            <h3>0.16.4 - Service stability hotfix</h3>
+            <ul>
+                <li>Allow IDE EAP versions: future IDE builds are no longer restricted at install time. (fix #50, #53)</li>
+                <li>Blank Panel fix: resolved an issue where an empty panel opened at startup and the WebView frontend failed to render. (fix #52, PR #54)</li>
+            </ul>
             <h3>0.16.1 - Restore WebView panel on IntelliJ 2026.1+</h3>
             <ul>
                 <li>Fixed a regression where the WebView panel rendered as a black/blank rectangle on IntelliJ Platform 2026.1+, which runs JCEF in out-of-process (remote) mode. The plugin now detects remote-mode at runtime and skips the windowed-rendering flag that was introduced in v0.16.0 for HiDPI sharpness — that flag is unsupported in remote-mode and silently ignored by the platform, leaving the browser unable to paint (closes #51).</li>
