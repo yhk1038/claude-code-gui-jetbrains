@@ -409,10 +409,17 @@ class NodeProcessManager(
             }
             tempDir.mkdirs()
 
-            val webviewUrl = javaClass.getResource("/webview/")
-            if (webviewUrl != null && webviewUrl.protocol == "jar") {
-                extractFromJar(tempDir)
+            // Production: locate the plugin JAR that ships /webview/ and extract it
+            // recursively. Do NOT gate this on getResource("/webview/"): IntelliJ's
+            // PluginClassLoader does not reliably resolve *directory* resource URLs, so
+            // that check silently fell through to the dev/runtime fallback below and left
+            // assets/ unextracted — every asset 404s and the panel renders blank (#52).
+            val webviewJar = locateWebviewJar()
+            if (webviewJar != null) {
+                extractFromJar(tempDir, webviewJar)
             } else {
+                // Dev / IDE runtime: resources live on the filesystem, not in a JAR.
+                val webviewUrl = javaClass.getResource("/webview/")
                 // IDE runtime — try dynamic scanning of /webview/ directory first
                 var dynamicScanSucceeded = false
                 if (webviewUrl != null && webviewUrl.protocol == "file") {
@@ -476,35 +483,45 @@ class NodeProcessManager(
     }
 
     /**
-     * Extract webview/ resources from the JAR that actually contains them.
+     * Locate the plugin JAR that ships the bundled `/webview/` resources.
      *
-     * The previous implementation used javaClass.protectionDomain.codeSource.location
-     * to locate the JAR. Under IntelliJ's PluginClassLoader, that property can resolve
-     * to an unrelated dependency JAR (e.g. kotlin-stdlib), iterating which yields zero
-     * webview/ entries and produces a silent empty extraction — manifesting as a
-     * 404 storm for every webview asset request, i.e. a blank panel.
+     * Anchored on a *file* resource (`index.html`) rather than the `/webview/`
+     * directory. IntelliJ's PluginClassLoader reliably resolves file resources to
+     * `jar:` URLs, but does NOT reliably return a URL for *directory* resources, so
+     * `getResource("/webview/")` could be null/non-jar and silently skip the recursive
+     * extraction below — leaving assets/ unextracted and the panel blank (#52).
      *
-     * Derive the JAR path from the webview/ resource URL itself, which is guaranteed
-     * to point at the JAR that ships those resources. Verify a sentinel asset after
-     * copying and throw on a zero-file extraction so the caller can react instead of
-     * silently serving a broken sandbox to the user.
+     * The containing JAR is resolved via [java.net.JarURLConnection], which parses the
+     * `jar:` URL with the JDK rather than hand-munging the URL path — correct across
+     * platforms (Windows drive letters, percent-encoded spaces).
+     *
+     * Returns the JAR file containing webview/index.html, or null when the resources
+     * live on the filesystem (dev / IDE runtime) instead of a packaged JAR.
      */
-    private fun extractFromJar(targetDir: File) {
-        val resourceUrl = javaClass.getResource("/webview/")
-            ?: throw IllegalStateException("/webview/ resource not found in plugin classpath")
+    private fun locateWebviewJar(): File? {
+        val fileUrl = javaClass.getResource("/webview/index.html") ?: return null
+        if (fileUrl.protocol != "jar") return null
 
-        if (resourceUrl.protocol != "jar") {
-            throw IllegalStateException("Expected jar:// URL for /webview/, got ${resourceUrl.protocol}: $resourceUrl")
+        return try {
+            val connection = fileUrl.openConnection() as? java.net.JarURLConnection ?: return null
+            // jarFileURL is the file: URL of the containing JAR, parsed by the JDK.
+            val jar = File(connection.jarFileURL.toURI())
+            if (jar.isFile) jar else null
+        } catch (e: Exception) {
+            logger.debug("Could not resolve webview JAR from $fileUrl: ${e.message}")
+            null
         }
+    }
 
-        // jar:file:/path/to/plugin.jar!/webview/  →  /path/to/plugin.jar
-        val jarPath = java.net.URLDecoder.decode(
-            resourceUrl.path.substringBefore("!/").removePrefix("file:"),
-            Charsets.UTF_8,
-        )
-
+    /**
+     * Recursively extract every `webview/` entry from [jarFile] into [targetDir],
+     * recreating subdirectories (notably `assets/`). Verify the hashed JS bundle landed
+     * and throw on an incomplete extraction, so the caller surfaces a real error instead
+     * of silently serving a broken sandbox to the user (blank panel).
+     */
+    private fun extractFromJar(targetDir: File, jarFile: File) {
         var extractedCount = 0
-        java.util.jar.JarFile(jarPath).use { jar ->
+        java.util.jar.JarFile(jarFile).use { jar ->
             val entries = jar.entries()
             while (entries.hasMoreElements()) {
                 val entry = entries.nextElement()
@@ -533,10 +550,10 @@ class NodeProcessManager(
         if (extractedCount == 0 || !hasHashedBundle) {
             throw IllegalStateException(
                 "JAR extraction produced incomplete webview resources " +
-                    "(files=$extractedCount, hashedBundle=$hasHashedBundle, jar=$jarPath)"
+                    "(files=$extractedCount, hashedBundle=$hasHashedBundle, jar=${jarFile.absolutePath})"
             )
         }
-        logger.info("Extracted $extractedCount webview entries from JAR: $jarPath")
+        logger.info("Extracted $extractedCount webview entries from JAR: ${jarFile.absolutePath}")
     }
 
     /**
