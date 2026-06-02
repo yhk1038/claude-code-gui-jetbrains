@@ -98,6 +98,45 @@ gh release create "$TAG" \
 echo "--- Upload tgz assets to release ---"
 gh release upload "$TAG" "$STANDALONE_TGZ" "$CCG_CLI_TGZ"
 
+# --- Step 6.6: Plugin Verifier gate (zero-warnings policy) ---
+# Hard rule: publishPlugin must NEVER run while Verifier reports any
+# deprecated/internal/experimental API usage on any configured IDE.
+# v0.16.1 shipped with Warnings because this gate did not exist; restored after.
+echo ""
+echo "--- Plugin Verifier gate (zero-warnings policy) ---"
+bash "$ROOT/gradlew" -p "$ROOT" verifyPlugin
+
+verifier_root="$ROOT/build/reports/pluginVerifier"
+if [[ ! -d "$verifier_root" ]]; then
+  echo "ERROR: Verifier reports directory missing: $verifier_root" >&2
+  exit 1
+fi
+
+warning_total=0
+while IFS= read -r usage_file; do
+  if [[ -s "$usage_file" ]]; then
+    lines=$(wc -l < "$usage_file" | tr -d ' ')
+    if [[ "$lines" -gt 0 ]]; then
+      rel=${usage_file#"$verifier_root"/}
+      echo "  ! ${rel} (${lines} lines)" >&2
+      warning_total=$((warning_total + lines))
+    fi
+  fi
+done < <(find "$verifier_root" -type f \
+  \( -name 'deprecated-usages.txt' \
+     -o -name 'internal-api-usages.txt' \
+     -o -name 'experimental-api-usages.txt' \) 2>/dev/null)
+
+if [[ "$warning_total" -gt 0 ]]; then
+  echo "" >&2
+  echo "ABORT: Verifier reported ${warning_total} deprecated/internal/experimental API usages." >&2
+  echo "Marketplace publish blocked by zero-warnings policy." >&2
+  echo "Fix the warnings and re-run, or inspect: $verifier_root" >&2
+  exit 1
+fi
+
+echo "OK: zero deprecated/internal/experimental API usages across all verified IDEs."
+
 # --- Step 7: Publish to Marketplace ---
 echo ""
 echo "--- Publish to JetBrains Marketplace ---"
