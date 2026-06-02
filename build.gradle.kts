@@ -41,6 +41,14 @@ dependencies {
 
 kotlin {
     jvmToolchain(21)
+    // Kotlin 2.2+ changed default-method ABI: implementing classes get bridge methods
+    // that Plugin Verifier flags as "overrides of deprecated/internal API" even when
+    // the source has no override. Compile interface default methods as standard JVM
+    // default methods instead, so implementing classes do not carry the bridge bytecode.
+    // (v0.16.0 with Kotlin 2.1.0 had zero warnings on every IDE; this restores that.)
+    compilerOptions {
+        freeCompilerArgs.add("-Xjvm-default=all")
+    }
 }
 
 kover {
