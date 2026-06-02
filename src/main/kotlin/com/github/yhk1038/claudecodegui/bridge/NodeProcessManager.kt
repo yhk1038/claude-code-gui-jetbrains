@@ -475,32 +475,68 @@ class NodeProcessManager(
         }
     }
 
+    /**
+     * Extract webview/ resources from the JAR that actually contains them.
+     *
+     * The previous implementation used javaClass.protectionDomain.codeSource.location
+     * to locate the JAR. Under IntelliJ's PluginClassLoader, that property can resolve
+     * to an unrelated dependency JAR (e.g. kotlin-stdlib), iterating which yields zero
+     * webview/ entries and produces a silent empty extraction — manifesting as a
+     * 404 storm for every webview asset request, i.e. a blank panel.
+     *
+     * Derive the JAR path from the webview/ resource URL itself, which is guaranteed
+     * to point at the JAR that ships those resources. Verify a sentinel asset after
+     * copying and throw on a zero-file extraction so the caller can react instead of
+     * silently serving a broken sandbox to the user.
+     */
     private fun extractFromJar(targetDir: File) {
-        try {
-            val jarPath = javaClass.protectionDomain.codeSource.location.toURI().path
-            val jarFile = java.util.jar.JarFile(jarPath)
+        val resourceUrl = javaClass.getResource("/webview/")
+            ?: throw IllegalStateException("/webview/ resource not found in plugin classpath")
 
-            jarFile.use { jar ->
-                val entries = jar.entries()
-                while (entries.hasMoreElements()) {
-                    val entry = entries.nextElement()
-                    if (entry.name.startsWith("webview/") && !entry.isDirectory) {
-                        val relativePath = entry.name.removePrefix("webview/")
-                        val targetFile = File(targetDir, relativePath)
-                        targetFile.parentFile?.mkdirs()
+        if (resourceUrl.protocol != "jar") {
+            throw IllegalStateException("Expected jar:// URL for /webview/, got ${resourceUrl.protocol}: $resourceUrl")
+        }
 
-                        jar.getInputStream(entry).use { input ->
-                            targetFile.outputStream().use { output ->
-                                input.copyTo(output)
-                            }
-                        }
-                        logger.debug("Extracted from JAR: ${entry.name}")
+        // jar:file:/path/to/plugin.jar!/webview/  →  /path/to/plugin.jar
+        val jarPath = java.net.URLDecoder.decode(
+            resourceUrl.path.substringBefore("!/").removePrefix("file:"),
+            Charsets.UTF_8,
+        )
+
+        var extractedCount = 0
+        java.util.jar.JarFile(jarPath).use { jar ->
+            val entries = jar.entries()
+            while (entries.hasMoreElements()) {
+                val entry = entries.nextElement()
+                if (!entry.name.startsWith("webview/") || entry.isDirectory) continue
+
+                val relativePath = entry.name.removePrefix("webview/")
+                val targetFile = File(targetDir, relativePath)
+                targetFile.parentFile?.mkdirs()
+
+                jar.getInputStream(entry).use { input ->
+                    targetFile.outputStream().use { output ->
+                        input.copyTo(output)
                     }
                 }
+                extractedCount++
             }
-        } catch (e: Exception) {
-            logger.warn("Failed to extract from JAR, trying classpath fallback", e)
         }
+
+        // Hard verification: a real production build must have an assets/ directory
+        // with at least the hashed JS bundle. An empty extraction means the WebView
+        // would 404 on every page load — fail loudly so the user gets a real error
+        // instead of a blank panel.
+        val assetsDir = File(targetDir, "assets")
+        val hasHashedBundle = assetsDir.isDirectory &&
+            assetsDir.listFiles()?.any { it.name.startsWith("index-") && it.name.endsWith(".js") } == true
+        if (extractedCount == 0 || !hasHashedBundle) {
+            throw IllegalStateException(
+                "JAR extraction produced incomplete webview resources " +
+                    "(files=$extractedCount, hashedBundle=$hasHashedBundle, jar=$jarPath)"
+            )
+        }
+        logger.info("Extracted $extractedCount webview entries from JAR: $jarPath")
     }
 
     /**
