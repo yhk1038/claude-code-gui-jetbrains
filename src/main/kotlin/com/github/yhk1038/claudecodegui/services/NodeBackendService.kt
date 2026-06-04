@@ -8,6 +8,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import kotlinx.coroutines.*
+import kotlinx.serialization.json.JsonObject
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -149,6 +150,16 @@ class NodeBackendService : Disposable {
      * Await the backend port. Suspends until the Node.js process prints PORT:{n}.
      */
     suspend fun awaitPort(): Int = portDeferred.await()
+
+    /**
+     * Send a JSON-RPC notification to the Node.js backend. Used by IDE-originated events
+     * (e.g. native DnD) that should be routed to the webview through the backend rather
+     * than injected into JCEF directly.
+     */
+    fun sendNotification(method: String, params: JsonObject) {
+        rpcClient?.sendNotification(method, params)
+            ?: logger.warn("Cannot send notification '$method' — RPC client not initialized")
+    }
 
     /**
      * Restart the backend. Disposes the current process and starts a new one.

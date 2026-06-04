@@ -15,6 +15,14 @@ interface JsonRpcResponse {
   error?: { code: number; message: string };
 }
 
+interface JsonRpcNotification {
+  jsonrpc: '2.0';
+  method: string;
+  params: Record<string, unknown>;
+}
+
+export type NotificationHandler = (method: string, params: Record<string, unknown>) => void;
+
 interface PendingRequest {
   resolve: (value: Record<string, unknown>) => void;
   reject: (error: Error) => void;
@@ -36,6 +44,11 @@ export class JetBrainsBridge implements Bridge {
   private idCounter = 0;
   private pendingRequests = new Map<string, PendingRequest>();
   private rpcClients = new Set<WebSocket>();
+  private notificationHandlers = new Map<string, NotificationHandler>();
+
+  onNotification(method: string, handler: NotificationHandler): void {
+    this.notificationHandlers.set(method, handler);
+  }
 
   addRpcClient(ws: WebSocket): void {
     this.rpcClients.add(ws);
@@ -45,16 +58,28 @@ export class JetBrainsBridge implements Bridge {
       const trimmed = data.toString().trim();
       if (!trimmed) return;
 
-      let response: JsonRpcResponse;
+      let parsed: JsonRpcResponse | JsonRpcNotification;
       try {
-        response = JSON.parse(trimmed) as JsonRpcResponse;
+        parsed = JSON.parse(trimmed) as JsonRpcResponse | JsonRpcNotification;
       } catch {
-        console.error('[node-backend]', 'Failed to parse JSON-RPC response:', trimmed);
+        console.error('[node-backend]', 'Failed to parse JSON-RPC message:', trimmed);
         return;
       }
 
-      if (!response.id) return;
+      // Notification (Kotlin → Node, no id): dispatch to registered handler.
+      if (!('id' in parsed) || !parsed.id) {
+        const notification = parsed as JsonRpcNotification;
+        const handler = this.notificationHandlers.get(notification.method);
+        if (handler) {
+          handler(notification.method, notification.params ?? {});
+        } else {
+          console.error('[node-backend]', `No handler for JSON-RPC notification: ${notification.method}`);
+        }
+        return;
+      }
 
+      // Response to one of our outgoing requests.
+      const response = parsed as JsonRpcResponse;
       const pending = this.pendingRequests.get(response.id);
       if (!pending) return;
 

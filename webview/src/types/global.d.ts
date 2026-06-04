@@ -33,13 +33,6 @@ interface Window {
    * Implemented by useBridge.ts
    */
   dispatchKotlinMessage?: (message: IPCMessage) => void;
-
-  /**
-   * Queued native file/folder paths from Kotlin drag-and-drop.
-   * Populated by ClaudeWebViewInjector before React subscribes;
-   * ChatInput drains it on mount and on every 'claude-code:native-drop-paths' event.
-   */
-  __CLAUDE_CODE_PENDING_DROP_ENTRIES__?: Array<{ path: string; type: 'file' | 'folder' }>;
 }
 
 /**

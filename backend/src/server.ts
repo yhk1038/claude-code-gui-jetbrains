@@ -125,6 +125,15 @@ async function main() {
   // 3. 서버 시작 (logWs 전달)
   const { port, close, connections } = await startServerWithRetry(bridges, logWs);
 
+  // Route Kotlin-originated NATIVE_DROP notifications to the subscribed webview.
+  // Kotlin → /rpc WebSocket notification → here → /ipc broadcast to the panel's session.
+  (bridges[ClientEnv.JETBRAINS] as JetBrainsBridge).onNotification('NATIVE_DROP', (_method, params) => {
+    const sessionId = typeof params.sessionId === 'string' ? params.sessionId : '';
+    const entries = Array.isArray(params.entries) ? params.entries : [];
+    if (!sessionId || entries.length === 0) return;
+    connections.broadcastToSession(sessionId, 'NATIVE_DROP_ENTRIES', { entries });
+  });
+
   // 4. Logger에 LogWS 참조 설정
   logger.setLogWs(logWs);
 

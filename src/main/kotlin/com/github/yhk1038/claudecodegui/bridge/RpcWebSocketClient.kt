@@ -44,6 +44,26 @@ class RpcWebSocketClient(
         connectInternal(port)
     }
 
+    /**
+     * Send a JSON-RPC notification (no id, no response expected) to the Node.js backend.
+     * Used for IDE-originated events such as native drag-and-drop that the backend then
+     * routes to the appropriate webview connection.
+     */
+    fun sendNotification(method: String, params: JsonObject) {
+        val ws = webSocket
+        if (ws == null) {
+            logger.warn("RPC WebSocket not connected; dropping notification: $method")
+            return
+        }
+        val message = buildJsonObject {
+            put("jsonrpc", "2.0")
+            put("method", method)
+            put("params", params)
+        }
+        val text = json.encodeToString(JsonObject.serializer(), message)
+        ws.sendText(text, true)
+    }
+
     private fun connectInternal(port: Int) {
         if (disposed) return
 

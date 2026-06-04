@@ -4,7 +4,6 @@ import com.github.yhk1038.claudecodegui.actions.OpenClaudeCodeAction
 import com.github.yhk1038.claudecodegui.bridge.NodeProcessManager
 import com.github.yhk1038.claudecodegui.notifications.JcefRuntimeNotifier
 import com.github.yhk1038.claudecodegui.services.ClaudeCodeBrowserService
-import com.github.yhk1038.claudecodegui.services.ClaudeWebViewInjector
 import com.github.yhk1038.claudecodegui.services.DiffService
 import com.github.yhk1038.claudecodegui.services.NodeBackendService
 import com.intellij.ide.BrowserUtil
@@ -30,12 +29,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import org.cef.browser.CefBrowser
 import org.cef.browser.CefFrame
 import org.cef.handler.CefDisplayHandlerAdapter
 import org.cef.handler.CefLifeSpanHandlerAdapter
 import org.cef.handler.CefLoadHandlerAdapter
-import org.cef.network.CefRequest
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Image
@@ -211,16 +214,6 @@ class ClaudeCodePanel(
 
         // Inject scripts on page load
         b.jbCefClient.addLoadHandler(object : CefLoadHandlerAdapter() {
-            override fun onLoadStart(
-                browser: CefBrowser?,
-                frame: CefFrame?,
-                transitionType: CefRequest.TransitionType?
-            ) {
-                if (frame?.isMain == true) {
-                    holder!!.markMainDocumentNavigating()
-                }
-            }
-
             override fun onLoadEnd(browser: CefBrowser, frame: CefFrame, httpStatusCode: Int) {
                 if (frame.isMain) {
                     // Mark JCEF environment so detectRuntime() in environment.ts can detect
@@ -233,9 +226,6 @@ class ClaudeCodePanel(
                     injectCursorTracking(frame)
                     injectStreamingStateBridge(frame)
                     installImeWorkaround()
-                    // Native-drop injections queued before the first navigation must only run now,
-                    // otherwise executeJavaScript on about:blank breaks the load (blank panel).
-                    holder!!.flushPendingIdeInjectionScripts(frame)
                     logger.info("WebView loaded successfully")
                     javax.swing.SwingUtilities.invokeLater {
                         b.component.requestFocusInWindow()
@@ -720,11 +710,18 @@ class ClaudeCodePanel(
 
     private fun dispatchNativeDrop(files: List<DroppedFile>) {
         if (files.isEmpty()) return
-        ClaudeWebViewInjector.injectNativeDropEntries(
-            project,
-            sessionId,
-            files.map { ClaudeWebViewInjector.NativeDropEntry(it.path, it.isDirectory) },
-        )
+        val params = buildJsonObject {
+            put("sessionId", JsonPrimitive(sessionId))
+            putJsonArray("entries") {
+                files.forEach { file ->
+                    add(buildJsonObject {
+                        put("path", JsonPrimitive(file.path))
+                        put("type", JsonPrimitive(if (file.isDirectory) "folder" else "file"))
+                    })
+                }
+            }
+        }
+        backendService.sendNotification("NATIVE_DROP", params)
     }
 
     // ─── WebView loading ────────────────────────────────────────────

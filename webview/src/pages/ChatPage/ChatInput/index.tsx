@@ -10,6 +10,7 @@ import { useInputHistory } from './hooks/useInputHistory';
 import { useTextareaAutoResize } from './hooks/useTextareaAutoResize';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useChatStreamContext } from '@/contexts/ChatStreamContext';
+import { useBridgeContext } from '@/contexts/BridgeContext';
 import { getTextContent, SessionState } from '@/types';
 import { LoadedMessageType } from '@/dto';
 import { useAttachments } from './hooks/useAttachments';
@@ -48,6 +49,7 @@ export function ChatInput() {
     stop: onStop,
   } = useChatStreamContext();
   const inputHistory = useInputHistory();
+  const { subscribe } = useBridgeContext();
   const [isFocused, setIsFocused] = useState(false);
   const lastInitSessionRef = useRef<string | undefined>(undefined);
 
@@ -72,12 +74,10 @@ export function ChatInput() {
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showModelSwitch, setShowModelSwitch] = useState(false);
 
-  // Native (IDE/Swing) drag-and-drop bridge — entries arrive via JCEF injection.
-  // Holder.flushPendingIdeInjectionScripts already gates the injection until the page
-  // is ready, so a single listener + initial drain is enough (no polling needed).
+  // Native (IDE/Swing) drag-and-drop bridge: Kotlin → Node backend → IPC NATIVE_DROP_ENTRIES.
   useEffect(() => {
-    const consumeEntries = (entries: NativeDropEntry[] | undefined) => {
-      if (!entries) return;
+    return subscribe('NATIVE_DROP_ENTRIES', (message) => {
+      const entries = (message.payload?.entries as NativeDropEntry[] | undefined) ?? [];
       for (const entry of entries) {
         if (!entry.path) continue;
         if (entry.type === 'folder') {
@@ -86,23 +86,8 @@ export function ChatInput() {
           addFileAttachment(entry.path, basename(entry.path));
         }
       }
-    };
-
-    const handleNativeDrop = (event: Event) => {
-      const entries = (event as CustomEvent<{ entries?: NativeDropEntry[] }>).detail?.entries;
-      consumeEntries(entries);
-    };
-    window.addEventListener('claude-code:native-drop-paths', handleNativeDrop);
-
-    if (window.__CLAUDE_CODE_PENDING_DROP_ENTRIES__?.length) {
-      consumeEntries(window.__CLAUDE_CODE_PENDING_DROP_ENTRIES__);
-      window.__CLAUDE_CODE_PENDING_DROP_ENTRIES__ = [];
-    }
-
-    return () => {
-      window.removeEventListener('claude-code:native-drop-paths', handleNativeDrop);
-    };
-  }, [addFileAttachment, addFolderAttachment]);
+    });
+  }, [subscribe, addFileAttachment, addFolderAttachment]);
 
   // 커맨드 팔레트 "Attach file..." 항목 연동
   useEffect(() => {
