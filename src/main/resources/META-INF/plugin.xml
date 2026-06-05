@@ -108,5 +108,15 @@
             class="com.github.yhk1038.claudecodegui.actions.OpenClaudeCodeSettingsAction"
             text="Open Claude Code Settings"
             description="Open Claude Code settings in a new editor tab"/>
+
+        <!-- Send current file path (and selected line range) to the Claude Code chat input -->
+        <action
+            id="ClaudeCode.SendSelection"
+            class="com.github.yhk1038.claudecodegui.actions.SendSelectionToClaudeAction"
+            text="Send to Claude Code"
+            description="Send the current file path (and selected line range) to the Claude Code chat input">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="alt K"/>
+        </action>
     </actions>
 </idea-plugin>
