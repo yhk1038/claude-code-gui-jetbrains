@@ -1,5 +1,5 @@
 import { getEnvApiKeys } from './claude-settings';
-import type { ConnectionManager } from '../ws/connection-manager';
+import type { ConnectionManager } from '../../ws/connection-manager';
 
 const AUTH_ERROR_PATTERNS = [
   /invalid.?api.?key/i,
