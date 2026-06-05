@@ -189,12 +189,13 @@ export function ChatInput() {
 
   // Backend pushes EDITOR_CONTEXT (the file the user is viewing + selection)
   // → insert `relativePath[#L..]` at the composer caret.
-  // shouldFocus defaults to true; wiring it to a user setting is step 4.
+  // shouldFocus is controlled by the focusInputOnEditorContext user setting (default true).
   useEditorContext({
     value,
     onChange,
     textareaRef,
     currentWorkingDir: workingDirectory ?? '',
+    shouldFocus: claudeSettings.focusInputOnEditorContext ?? true,
   });
 
   const handleCompact = useCallback(() => {

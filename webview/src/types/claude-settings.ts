@@ -25,6 +25,7 @@ export interface ClaudeSettingsState {
   alwaysThinkingEnabled: boolean; // extended thinking always on
   preferFastMode: boolean; // fast output mode (Opus 4.6 only)
   useCtrlEnterToSend: boolean; // when true, Ctrl/Cmd+Enter sends; plain Enter inserts a newline
+  focusInputOnEditorContext: boolean; // when true, move focus to chat input after inserting file path via Alt+K
   permissions?: PermissionsConfig;
   [key: string]: unknown; // extensible for future settings
 }
@@ -36,4 +37,5 @@ export const DEFAULT_CLAUDE_SETTINGS: ClaudeSettingsState = {
   alwaysThinkingEnabled: true,
   preferFastMode: false,
   useCtrlEnterToSend: false,
+  focusInputOnEditorContext: true,
 };

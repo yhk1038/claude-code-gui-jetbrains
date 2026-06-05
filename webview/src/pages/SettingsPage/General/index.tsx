@@ -27,6 +27,7 @@ export function GeneralSettings() {
   const currentLanguage = isNotSet ? NOT_SET_VALUE : ((rawLanguage as string) ?? '');
 
   const useCtrlEnterToSend = (scopeSettings.useCtrlEnterToSend as boolean | undefined) ?? false;
+  const focusInputOnEditorContext = (scopeSettings.focusInputOnEditorContext as boolean | undefined) ?? true;
 
   return (
     <div>
@@ -72,6 +73,17 @@ export function GeneralSettings() {
             checked={useCtrlEnterToSend}
             onChange={(checked) => updateSetting('useCtrlEnterToSend', checked)}
             ariaLabel="Use Ctrl Enter To Send"
+          />
+        </SettingRow>
+
+        <SettingRow
+          label="Focus chat input after attaching file path"
+          description="When you press Alt+K in the editor, move focus to the chat input after inserting the file path."
+        >
+          <ToggleSwitch
+            checked={focusInputOnEditorContext}
+            onChange={(checked) => updateSetting('focusInputOnEditorContext', checked)}
+            ariaLabel="Focus chat input after attaching file path"
           />
         </SettingRow>
       </SettingSection>
