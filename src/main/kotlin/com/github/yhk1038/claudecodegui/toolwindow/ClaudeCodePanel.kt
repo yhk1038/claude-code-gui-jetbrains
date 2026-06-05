@@ -604,47 +604,66 @@ class ClaudeCodePanel(
 
     private data class DroppedFile(val path: String, val isDirectory: Boolean)
 
+    private fun addDroppedPath(
+        result: MutableMap<String, DroppedFile>,
+        path: String?,
+        isDirectory: Boolean?,
+    ) {
+        if (path.isNullOrBlank()) return
+        val file = File(path)
+        val normalizedPath = file.absolutePath
+        result[normalizedPath] = DroppedFile(
+            normalizedPath,
+            isDirectory ?: file.isDirectory,
+        )
+    }
+
+    /**
+     * Walk a DnD payload and append every file/folder path we can recognize into
+     * [result]. Handles both raw clipboard values (File, VirtualFile, PsiElement,
+     * String paths) and IDE-internal containers (TransferableWrapper for project-
+     * tree drags, nested Transferable / arrays / iterables). Unknown payloads log
+     * at debug rather than silently disappear.
+     */
+    private fun addDroppedValue(result: MutableMap<String, DroppedFile>, value: Any?) {
+        when (value) {
+            null -> return
+            is File -> addDroppedPath(result, value.absolutePath, value.isDirectory)
+            is VirtualFile -> addDroppedPath(result, value.path, value.isDirectory)
+            is PsiElement -> value.containingFile?.virtualFile
+                ?.let { addDroppedPath(result, it.path, it.isDirectory) }
+            is Transferable -> extractDroppedFiles(value)
+                .forEach { addDroppedPath(result, it.path, it.isDirectory) }
+            // IDE DnD payloads (project tree, "Find Usages", etc.) implement TransferableWrapper.
+            is TransferableWrapper -> {
+                value.asFileList()?.forEach { addDroppedValue(result, it) }
+                value.psiElements?.forEach { addDroppedValue(result, it) }
+            }
+            is Array<*> -> value.forEach { addDroppedValue(result, it) }
+            is Iterable<*> -> value.forEach { addDroppedValue(result, it) }
+            is String -> parseDroppedText(value).forEach { addDroppedPath(result, it, null) }
+            else -> logger.debug(
+                "extractDroppedFiles: ignoring unknown payload of type ${value.javaClass.name}"
+            )
+        }
+    }
+
     private fun extractDroppedFiles(transferable: Transferable): List<DroppedFile> {
         val result = linkedMapOf<String, DroppedFile>()
 
-        fun add(path: String?, isDirectory: Boolean?) {
-            if (path.isNullOrBlank()) return
-            val file = File(path)
-            val normalizedPath = file.absolutePath
-            result[normalizedPath] = DroppedFile(
-                normalizedPath,
-                isDirectory ?: file.isDirectory,
-            )
-        }
-
-        fun addFromValue(value: Any?) {
-            when (value) {
-                null -> return
-                is File -> add(value.absolutePath, value.isDirectory)
-                is VirtualFile -> add(value.path, value.isDirectory)
-                is PsiElement -> value.containingFile?.virtualFile?.let { add(it.path, it.isDirectory) }
-                is Array<*> -> value.forEach(::addFromValue)
-                is Iterable<*> -> value.forEach(::addFromValue)
-                is String -> parseDroppedText(value).forEach { add(it, null) }
-                else -> logger.debug(
-                    "extractDroppedFiles(transferable): ignoring unknown payload of type ${value.javaClass.name}"
-                )
-            }
-        }
-
         if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-            runCatching { addFromValue(transferable.getTransferData(DataFlavor.javaFileListFlavor)) }
+            runCatching { addDroppedValue(result, transferable.getTransferData(DataFlavor.javaFileListFlavor)) }
                 .onFailure { logger.debug("getTransferData(javaFileListFlavor) failed", it) }
         }
 
         // FileCopyPasteUtil normalizes the various OS-specific clipboard/DnD encodings
         // (Finder's text/uri-list, Explorer's CF_HDROP, etc.) into java.io.File entries.
         runCatching { FileCopyPasteUtil.getFileList(transferable) }
-            .onSuccess { addFromValue(it) }
+            .onSuccess { addDroppedValue(result, it) }
             .onFailure { logger.debug("FileCopyPasteUtil.getFileList failed", it) }
 
         for (flavor in transferable.transferDataFlavors) {
-            runCatching { addFromValue(transferable.getTransferData(flavor)) }
+            runCatching { addDroppedValue(result, transferable.getTransferData(flavor)) }
                 .onFailure { logger.debug("getTransferData($flavor) failed", it) }
         }
 
@@ -653,39 +672,7 @@ class ClaudeCodePanel(
 
     private fun extractDroppedFiles(attachedObject: Any?): List<DroppedFile> {
         val result = linkedMapOf<String, DroppedFile>()
-
-        fun add(path: String?, isDirectory: Boolean?) {
-            if (path.isNullOrBlank()) return
-            val file = File(path)
-            val normalizedPath = file.absolutePath
-            result[normalizedPath] = DroppedFile(
-                normalizedPath,
-                isDirectory ?: file.isDirectory,
-            )
-        }
-
-        fun addFromValue(value: Any?) {
-            when (value) {
-                null -> return
-                is File -> add(value.absolutePath, value.isDirectory)
-                is VirtualFile -> add(value.path, value.isDirectory)
-                is PsiElement -> value.containingFile?.virtualFile?.let { add(it.path, it.isDirectory) }
-                is Transferable -> extractDroppedFiles(value).forEach { add(it.path, it.isDirectory) }
-                // IDE DnD payloads (project tree, "Find Usages", etc.) implement TransferableWrapper.
-                is TransferableWrapper -> {
-                    value.asFileList()?.forEach(::addFromValue)
-                    value.psiElements?.forEach(::addFromValue)
-                }
-                is Array<*> -> value.forEach(::addFromValue)
-                is Iterable<*> -> value.forEach(::addFromValue)
-                is String -> parseDroppedText(value).forEach { add(it, null) }
-                else -> logger.debug(
-                    "extractDroppedFiles(attached): ignoring unknown payload of type ${value.javaClass.name}"
-                )
-            }
-        }
-
-        addFromValue(attachedObject)
+        addDroppedValue(result, attachedObject)
         return result.values.toList()
     }
 
