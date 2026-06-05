@@ -2,13 +2,13 @@ package com.github.yhk1038.claudecodegui.actions
 
 import com.github.yhk1038.claudecodegui.bridge.NodeProcessManager
 import com.github.yhk1038.claudecodegui.editor.ClaudeCodeVirtualFile
-import com.github.yhk1038.claudecodegui.services.EditorTabStateService
 import com.github.yhk1038.claudecodegui.services.NodeBackendService
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
@@ -145,15 +145,18 @@ class SendSelectionToClaudeAction : AnAction() {
     }
 
     private fun focusOrOpenClaudeTab(project: Project) {
-        val openSessionIds = EditorTabStateService.getInstance(project).getOpenSessionIds()
-        val targetSessionId = if (openSessionIds.isNotEmpty()) {
-            EditorTabStateService.getInstance(project).getActiveSessionId()
-                ?: openSessionIds.last()
-        } else {
-            UUID.randomUUID().toString()
-        }
         ApplicationManager.getApplication().invokeLater {
-            OpenClaudeCodeAction.openSession(project, targetSessionId)
+            val fileEditorManager = FileEditorManager.getInstance(project)
+            // Find a Claude Code tab that is actually open, regardless of whether its
+            // session has been created yet. EditorTabStateService tracks session ids,
+            // which an uninitialized tab (no first message sent) does not have — relying
+            // on it would spuriously open a brand-new tab instead of focusing the open one.
+            val existingTab = fileEditorManager.openFiles.firstOrNull { it is ClaudeCodeVirtualFile }
+            if (existingTab != null) {
+                fileEditorManager.openFile(existingTab, true)
+            } else {
+                OpenClaudeCodeAction.openSession(project, UUID.randomUUID().toString())
+            }
         }
     }
 
