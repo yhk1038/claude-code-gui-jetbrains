@@ -216,7 +216,14 @@ tasks {
                 // Pin the project root so NodeProcessManager.findPluginProjectRoot() can
                 // resolve webview/dist directly instead of falling back to the JAR-extracted
                 // temp directory (which serves stale assets after a wv-build).
-                "-Dplugin.project.root=${projectDir.absolutePath}"
+                "-Dplugin.project.root=${projectDir.absolutePath}",
+                // Disable IDE's dynamic plugin reload in the sandbox. Every runIde
+                // re-runs prepareSandbox which bumps plugin jar mtimes; the IDE then
+                // tries to unload+reload the plugin mid-session and silently fails
+                // ("Failed to unload modified plugins" notification → plugin disappears
+                // from the sidebar). The plugin already loaded fresh at boot, so the
+                // mid-session reload is pure cost.
+                "-Didea.auto.reload.plugins=false"
             )
         }
     }
