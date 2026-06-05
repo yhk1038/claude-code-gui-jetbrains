@@ -27,14 +27,11 @@ import { useMention } from './hooks/useMention';
 import { MentionDropdown } from './MentionDropdown';
 import { isMobile } from '@/config/environment';
 import { shouldSubmitOnEnter } from './shouldSubmitOnEnter';
+import { basename } from './basename';
 
 interface NativeDropEntry {
   path: string;
   type: 'file' | 'folder';
-}
-
-function basename(path: string): string {
-  return path.replace(/[\\/]+$/, '').split(/[\\/]/).pop() || path;
 }
 
 export function ChatInput() {
