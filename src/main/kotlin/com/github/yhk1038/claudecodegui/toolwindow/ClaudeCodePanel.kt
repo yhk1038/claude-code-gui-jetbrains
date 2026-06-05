@@ -294,24 +294,20 @@ class ClaudeCodePanel(
         // open-in-new-tab). We swallow file drops here, extract the paths off CefDragData,
         // and route them to the composer; returning true cancels CEF's own handling so the
         // tab can't jump to about:blank#blocked.
+        // CefDragHandler only has onDragEnter (no onDrop hook), so dispatching attachment
+        // here would fire on hover, not on release — that's the "file attached before I
+        // dropped" symptom. Instead we return false to let CEF forward the drag as HTML5
+        // events; the webview's window-level drop handler catches the actual drop and
+        // calls useAttachments. The window-level dragover/drop preventDefault in
+        // ChatInput blocks CEF's default file:// navigation that would otherwise jump
+        // the tab to about:blank#blocked.
         b.jbCefClient.addDragHandler(CefDragHandler { _, dragData, _ ->
-            if (dragData == null || !dragData.isFile) {
-                false
-            } else {
+            if (dragData?.isFile == true) {
                 val names = java.util.Vector<String>()
                 dragData.getFileNames(names)
-                if (names.isEmpty()) {
-                    false
-                } else {
-                    logger.info("[NativeDrop] CefDragHandler.onDragEnter received ${names.size} file(s)")
-                    val files = names.map { path ->
-                        val file = File(path)
-                        DroppedFile(file.absolutePath, file.isDirectory)
-                    }
-                    dispatchNativeDrop(files)
-                    true
-                }
+                logger.info("[NativeDrop] CefDragHandler.onDragEnter (forwarding to page): ${names.size} file(s)")
             }
+            false
         }, b.cefBrowser)
 
         // Safety net: if a file:// navigation still slips through (e.g. via the JS layer),

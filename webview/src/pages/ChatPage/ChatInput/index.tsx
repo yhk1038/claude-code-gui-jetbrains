@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, KeyboardEvent, useState } from 'react';
+import { useCallback, useEffect, useRef, KeyboardEvent, useState, type DragEvent as ReactDragEvent } from 'react';
 import { CommandPalettePanel } from '@/commandPalette/ui/CommandPalettePanel';
 import { useCommandPalette } from '@/commandPalette/hooks/useCommandPalette';
 import { PanelSectionId, PanelItemType, CommandItem } from '@/types/commandPalette';
@@ -75,6 +75,8 @@ export function ChatInput() {
   const [showModelSwitch, setShowModelSwitch] = useState(false);
 
   // Native (IDE/Swing) drag-and-drop bridge: Kotlin → Node backend → IPC NATIVE_DROP_ENTRIES.
+  // Currently unused (CefDragHandler forwards drops to the page as HTML5 events instead),
+  // but kept as a fallback path for sources that don't surface paths in dataTransfer.
   useEffect(() => {
     return subscribe('NATIVE_DROP_ENTRIES', (message) => {
       const entries = (message.payload?.entries as NativeDropEntry[] | undefined) ?? [];
@@ -88,6 +90,32 @@ export function ChatInput() {
       }
     });
   }, [subscribe, addFileAttachment, addFolderAttachment]);
+
+  // Catch native file drops anywhere in the JCEF surface, not just the chat input box.
+  // The Kotlin CefDragHandler returns false so CEF forwards the drag as HTML5 events;
+  // without window-level dragover/drop preventDefault, CEF's default action navigates
+  // the tab to `file://...` (which the popup blocker rewrites to about:blank#blocked).
+  useEffect(() => {
+    const isFileDrag = (e: DragEvent) =>
+      !!e.dataTransfer && (
+        e.dataTransfer.types.includes('Files') ||
+        e.dataTransfer.types.includes('text/uri-list')
+      );
+    const handleWindowDragOver = (e: DragEvent) => {
+      if (isFileDrag(e)) e.preventDefault();
+    };
+    const handleWindowDrop = (e: DragEvent) => {
+      if (!isFileDrag(e)) return;
+      // Reuse the React drop handler — only dataTransfer / preventDefault are touched.
+      handleDrop(e as unknown as ReactDragEvent);
+    };
+    window.addEventListener('dragover', handleWindowDragOver);
+    window.addEventListener('drop', handleWindowDrop);
+    return () => {
+      window.removeEventListener('dragover', handleWindowDragOver);
+      window.removeEventListener('drop', handleWindowDrop);
+    };
+  }, [handleDrop]);
 
   // 커맨드 팔레트 "Attach file..." 항목 연동
   useEffect(() => {
