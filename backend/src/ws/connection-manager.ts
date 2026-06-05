@@ -5,6 +5,22 @@ import { ClientEnv } from '../shared';
 
 const SESSION_CLEANUP_GRACE_MS = 30_000;
 const IDLE_SHUTDOWN_GRACE_MS = 60_000;
+/**
+ * How long an editor-context payload stays valid while waiting for a webview to
+ * connect. The "Add to Claude" action can fire before the JCEF panel has opened
+ * its /ws socket (cold start); we stash the payload and replay it to the first
+ * connection that arrives, but only within this window so a stale selection from
+ * minutes ago is never injected.
+ */
+const PENDING_EDITOR_CONTEXT_TTL_MS = 10_000;
+
+/** Push message type carrying the IDE editor selection to the webview. */
+export const EDITOR_CONTEXT_MESSAGE = 'EDITOR_CONTEXT';
+
+interface PendingEditorContext {
+  payload: Record<string, unknown>;
+  expiresAt: number;
+}
 
 interface SessionRecord {
   sessionId: string;
@@ -44,6 +60,9 @@ export class ConnectionManager {
   // is 1:1 (one JCEF browser per IDE panel, one /ws socket per browser), so this
   // map is always in sync with the panelId stored on each ClientRecord.
   private panelIdIndex = new Map<string, string>();
+  // Editor context awaiting a webview connection. Replayed to the first
+  // connection that arrives within PENDING_EDITOR_CONTEXT_TTL_MS, then cleared.
+  private pendingEditorContext: PendingEditorContext | null = null;
   private nextId = 0;
 
   // ─── Connection lifecycle ───────────────────────────────────────────────────
@@ -58,7 +77,40 @@ export class ConnectionManager {
       '[node-backend]',
       `Connection added: ${connectionId} (env: ${env}, panelId: ${panelId ?? 'none'})`,
     );
+
+    // Replay any editor context that arrived before this webview connected
+    // (e.g. "Add to Claude" fired during JCEF cold start).
+    const pendingEditorContext = this.consumePendingEditorContext();
+    if (pendingEditorContext) {
+      this.sendTo(connectionId, EDITOR_CONTEXT_MESSAGE, pendingEditorContext);
+    }
+
     return connectionId;
+  }
+
+  // ─── Editor context buffer ──────────────────────────────────────────────────
+
+  /**
+   * Stash an editor-context payload to replay to the next webview connection.
+   * Overwrites any earlier pending payload — only the latest selection matters.
+   */
+  setPendingEditorContext(payload: Record<string, unknown>): void {
+    this.pendingEditorContext = {
+      payload,
+      expiresAt: Date.now() + PENDING_EDITOR_CONTEXT_TTL_MS,
+    };
+  }
+
+  /**
+   * Return the stashed editor-context payload and clear the buffer. Returns null
+   * if nothing is stashed or the stash has expired (also clears in that case).
+   */
+  consumePendingEditorContext(): Record<string, unknown> | null {
+    const pending = this.pendingEditorContext;
+    this.pendingEditorContext = null;
+    if (!pending) return null;
+    if (Date.now() > pending.expiresAt) return null;
+    return pending.payload;
   }
 
   setNativeDropStash(panelId: string, entries: NativeDropEntry[]): boolean {
@@ -241,6 +293,10 @@ export class ConnectionManager {
   }
 
   // ─── Accessors ──────────────────────────────────────────────────────────────
+
+  getConnectionCount(): number {
+    return this.connectionMap.size;
+  }
 
   getClient(connectionId: string): ClientRecord | undefined {
     return this.clientMap.get(connectionId);

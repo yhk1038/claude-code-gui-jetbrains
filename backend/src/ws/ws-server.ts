@@ -3,6 +3,7 @@ import { readFile } from 'fs/promises';
 import { join, extname, resolve, sep } from 'path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { ConnectionManager } from './connection-manager';
+import { handleEditorContextRequest } from './editor-context-route';
 import type { Bridge } from '../bridge/bridge-interface';
 import type { IPCMessage } from '../core/types';
 import { ClientEnv } from '../shared';
@@ -73,6 +74,27 @@ const MIME_TYPES: Record<string, string> = {
   '.woff2': 'font/woff2',
   '.json': 'application/json; charset=utf-8',
 };
+
+/** Collect a request body into a string, capped to guard against unbounded input. */
+const MAX_REQUEST_BODY_BYTES = 64 * 1024;
+
+function readRequestBody(req: IncomingMessage): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let total = 0;
+    req.on('data', (chunk: Buffer) => {
+      total += chunk.length;
+      if (total > MAX_REQUEST_BODY_BYTES) {
+        reject(new Error('Request body too large'));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    req.on('error', reject);
+  });
+}
 
 async function serveStaticFile(
   webviewDir: string,
@@ -192,6 +214,24 @@ export function startWebSocketServer(
         if (urlPath === '/version') {
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ version: getPluginVersion() }));
+          return;
+        }
+
+        // IDE → backend editor selection push. Kotlin POSTs the active editor
+        // selection here (loopback only); we route it to the webview as
+        // EDITOR_CONTEXT, buffering it if no webview is connected yet.
+        if (req.method === 'POST' && urlPath === '/internal/editor-context') {
+          let rawBody: string;
+          try {
+            rawBody = await readRequestBody(req);
+          } catch {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Failed to read request body' }));
+            return;
+          }
+          const result = handleEditorContextRequest(connections, rawBody);
+          res.writeHead(result.status, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result.body));
           return;
         }
 

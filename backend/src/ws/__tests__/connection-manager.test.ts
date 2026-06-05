@@ -154,4 +154,92 @@ describe('ConnectionManager', () => {
       expect(cm.getBuffer('nonexistent')).toBe('');
     });
   });
+
+  describe('getConnectionCount', () => {
+    it('should return 0 when there are no connections', () => {
+      expect(cm.getConnectionCount()).toBe(0);
+    });
+
+    it('should reflect the number of active connections', () => {
+      cm.addConnection(createMockWs());
+      cm.addConnection(createMockWs());
+      expect(cm.getConnectionCount()).toBe(2);
+    });
+
+    it('should decrease when a connection is removed', () => {
+      const connId = cm.addConnection(createMockWs());
+      cm.addConnection(createMockWs());
+      cm.removeConnection(connId);
+      expect(cm.getConnectionCount()).toBe(1);
+    });
+  });
+
+  describe('pending editor context buffer', () => {
+    it('should return the stashed payload on consume', () => {
+      const payload = { absolutePath: '/abs/src/file.ts', relativePath: 'src/file.ts' };
+      cm.setPendingEditorContext(payload);
+      expect(cm.consumePendingEditorContext()).toEqual(payload);
+    });
+
+    it('should clear the buffer after a single consume', () => {
+      cm.setPendingEditorContext({ absolutePath: '/abs/a.ts', relativePath: 'a.ts' });
+      cm.consumePendingEditorContext();
+      expect(cm.consumePendingEditorContext()).toBeNull();
+    });
+
+    it('should return null when nothing was stashed', () => {
+      expect(cm.consumePendingEditorContext()).toBeNull();
+    });
+
+    it('should return null and clear after the 10s expiry window', () => {
+      cm.setPendingEditorContext({ absolutePath: '/abs/a.ts', relativePath: 'a.ts' });
+      vi.advanceTimersByTime(10_000 + 1);
+      expect(cm.consumePendingEditorContext()).toBeNull();
+    });
+
+    it('should still return the payload just before expiry', () => {
+      const payload = { absolutePath: '/abs/a.ts', relativePath: 'a.ts' };
+      cm.setPendingEditorContext(payload);
+      vi.advanceTimersByTime(9_999);
+      expect(cm.consumePendingEditorContext()).toEqual(payload);
+    });
+
+    it('should overwrite an earlier pending payload with the latest one', () => {
+      cm.setPendingEditorContext({ absolutePath: '/abs/old.ts', relativePath: 'old.ts' });
+      const latest = { absolutePath: '/abs/new.ts', relativePath: 'new.ts' };
+      cm.setPendingEditorContext(latest);
+      expect(cm.consumePendingEditorContext()).toEqual(latest);
+    });
+
+    it('should replay a stashed payload to a newly added connection as EDITOR_CONTEXT', () => {
+      const payload = { absolutePath: '/abs/src/file.ts', relativePath: 'src/file.ts', startLine: 10, endLine: 25 };
+      cm.setPendingEditorContext(payload);
+
+      const ws = createMockWs();
+      cm.addConnection(ws);
+
+      expect(ws.send).toHaveBeenCalledTimes(1);
+      const sent = JSON.parse((ws.send as ReturnType<typeof vi.fn>).mock.calls[0][0]);
+      expect(sent.type).toBe('EDITOR_CONTEXT');
+      expect(sent.payload).toEqual(payload);
+    });
+
+    it('should consume the buffer on replay so the next connection gets nothing', () => {
+      cm.setPendingEditorContext({ absolutePath: '/abs/a.ts', relativePath: 'a.ts' });
+      cm.addConnection(createMockWs());
+
+      const ws2 = createMockWs();
+      cm.addConnection(ws2);
+      expect(ws2.send).not.toHaveBeenCalled();
+    });
+
+    it('should not replay an expired buffer to a newly added connection', () => {
+      cm.setPendingEditorContext({ absolutePath: '/abs/a.ts', relativePath: 'a.ts' });
+      vi.advanceTimersByTime(10_000 + 1);
+
+      const ws = createMockWs();
+      cm.addConnection(ws);
+      expect(ws.send).not.toHaveBeenCalled();
+    });
+  });
 });
