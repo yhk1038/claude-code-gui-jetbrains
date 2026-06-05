@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getBridge } from '../api/bridge/Bridge';
 
 type MessageHandler = (message: IPCMessage) => void;
@@ -63,10 +63,11 @@ export function useBridge(): UseBridgeReturn {
     [bridge]
   );
 
-  return {
-    isConnected,
-    send,
-    subscribe,
-    lastError,
-  };
+  // Stabilize the returned object so consumers using `bridge` as a useEffect
+  // dependency (e.g. ChatInput's native-drop subscription) don't re-attach
+  // listeners every render. send/subscribe are already useCallback-stable.
+  return useMemo(
+    () => ({ isConnected, send, subscribe, lastError }),
+    [isConnected, send, subscribe, lastError],
+  );
 }
