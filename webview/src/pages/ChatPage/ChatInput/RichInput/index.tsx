@@ -8,8 +8,10 @@ import {
   type CompositionEvent as ReactCompositionEvent,
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
+  type UIEvent as ReactUIEvent,
 } from 'react';
 import { setCaretOffset } from '@/utils/domSelection';
+import { splitIntoSegments } from './segments';
 
 interface Props {
   value: string;
@@ -22,21 +24,47 @@ interface Props {
   disabled?: boolean;
   className?: string;
   ariaLabel?: string;
+  /**
+   * Path tokens (e.g. `src/file.ts#L10-L25`) to highlight as chips in the
+   * mirror overlay. Only exact, known tokens are highlighted — arbitrary text
+   * is never chipped. Defaults to an empty list (plain text, no chips).
+   */
+  highlightTokens?: readonly string[];
 }
 
 /**
+ * Layout classes shared by the editable div and the mirror overlay. The two
+ * layers MUST agree on font, padding, line-height and wrapping so the visible
+ * (mirror) glyphs land exactly under the (transparent) editable glyphs and the
+ * caret. Keep this list the single source of truth for both layers.
+ */
+const LAYOUT_CLASSES = [
+  'w-full px-3 text-base',
+  'whitespace-pre-wrap break-words',
+] as const;
+
+/**
  * RichInput — a `contentEditable="plaintext-only"` div that behaves like a
- * controlled <textarea> for plain text. Mirrors the Claude Code extension
- * composer: plaintext-only (Chromium/JCEF-safe, IME-friendly), CSS placeholder
- * via `data-placeholder` on `:empty`, and CSS-only auto-grow (no resize hook).
+ * controlled <textarea> for plain text, with a non-interactive mirror overlay
+ * that paints the same text and wraps known path tokens in highlight chips.
  *
- * This stage renders opaque plain text only — no syntax highlight / mirror.
+ * Two-layer composition (mirrors the Claude Code extension composer):
+ *   - The editable div holds the real text + caret but renders its glyphs
+ *     transparent (`richInputEditable`: color:transparent, caret-color visible),
+ *     sitting on top (z-10) so typing / selection / IME all behave normally.
+ *   - The mirror div (`richInputMirror`, aria-hidden, pointer-events:none) sits
+ *     behind it and paints the visible text: plain runs as text, known tokens
+ *     as chip spans. It shares {@link LAYOUT_CLASSES} so glyphs align exactly.
  *
- * value ↔ textContent sync rule: the DOM is only rewritten when it actually
- * diverges from `value`, so user typing never triggers a caret-jumping reset.
- * External (programmatic) value changes move the caret to the end. While an IME
- * composition is in flight, the sync is skipped so the in-progress glyphs are
- * never clobbered.
+ * Editing always happens in the plaintext editable div, so caret-offset math
+ * (mentions, slash, history, Cmd+Arrow) is unchanged — the mirror is display
+ * only. Scroll position is synced from the editable div to the mirror.
+ *
+ * value ↔ textContent sync rule: the editable DOM is only rewritten when it
+ * actually diverges from `value`, so user typing never triggers a caret-jumping
+ * reset. External (programmatic) value changes move the caret to the end. While
+ * an IME composition is in flight the sync is skipped so the in-progress glyphs
+ * are never clobbered.
  */
 export const RichInput = forwardRef<HTMLDivElement, Props>((props: Props, ref) => {
   const {
@@ -50,9 +78,11 @@ export const RichInput = forwardRef<HTMLDivElement, Props>((props: Props, ref) =
     disabled = false,
     className,
     ariaLabel,
+    highlightTokens = [],
   } = props;
 
   const elRef = useRef<HTMLDivElement>(null);
+  const mirrorRef = useRef<HTMLDivElement>(null);
   const isComposingRef = useRef(false);
 
   // Expose the editable div to the parent (focus / domSelection utilities) while
@@ -100,34 +130,79 @@ export const RichInput = forwardRef<HTMLDivElement, Props>((props: Props, ref) =
     [onChange],
   );
 
+  // Keep the mirror's scroll position locked to the editable div so long /
+  // multi-line input stays glyph-aligned while scrolling.
+  const handleScroll = useCallback((e: ReactUIEvent<HTMLDivElement>) => {
+    const mirror = mirrorRef.current;
+    if (!mirror) return;
+    mirror.scrollTop = e.currentTarget.scrollTop;
+    mirror.scrollLeft = e.currentTarget.scrollLeft;
+  }, []);
+
+  const segments = splitIntoSegments(value, highlightTokens);
+  // A trailing newline collapses on the last line of a wrapping box; append a
+  // zero-content newline so the mirror's height matches the editable div.
+  const trailingNewline = value.endsWith('\n');
+
   return (
-    <div
-      ref={elRef}
-      role="textbox"
-      aria-label={ariaLabel}
-      aria-multiline="true"
-      contentEditable={disabled ? false : 'plaintext-only'}
-      spellCheck={false}
-      suppressContentEditableWarning
-      data-placeholder={placeholder}
-      className={[
-        'w-full px-3 cursor-text bg-transparent text-base text-text-primary',
-        'min-h-[20px] max-h-[200px] overflow-y-auto',
-        'whitespace-pre-wrap break-words',
-        'focus:outline-none',
-        disabled ? 'opacity-50' : '',
-        className ?? '',
-      ]
-        .filter(Boolean)
-        .join(' ')}
-      onInput={handleInput}
-      onKeyDown={onKeyDown}
-      onPaste={onPaste}
-      onFocus={onFocus}
-      onBlur={onBlur}
-      onCompositionStart={handleCompositionStart}
-      onCompositionEnd={handleCompositionEnd}
-    />
+    <div className="relative">
+      {/* Mirror overlay — paints visible text + chips behind the editable div. */}
+      <div
+        ref={mirrorRef}
+        aria-hidden="true"
+        className={[
+          'richInputMirror',
+          'absolute inset-0 pointer-events-none',
+          'min-h-[20px] max-h-[200px] overflow-hidden',
+          ...LAYOUT_CLASSES,
+          className ?? '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        {segments.map((seg, i) =>
+          seg.isToken ? (
+            <span key={i} className="richInputChip">
+              {seg.text}
+            </span>
+          ) : (
+            <span key={i}>{seg.text}</span>
+          ),
+        )}
+        {trailingNewline && '\n'}
+      </div>
+
+      {/* Editable div — real text + caret, glyphs transparent (see CSS). */}
+      <div
+        ref={elRef}
+        role="textbox"
+        aria-label={ariaLabel}
+        aria-multiline="true"
+        contentEditable={disabled ? false : 'plaintext-only'}
+        spellCheck={false}
+        suppressContentEditableWarning
+        data-placeholder={placeholder}
+        className={[
+          'richInputEditable',
+          'relative z-10 cursor-text bg-transparent',
+          'min-h-[20px] max-h-[200px] overflow-y-auto',
+          'focus:outline-none',
+          ...LAYOUT_CLASSES,
+          disabled ? 'opacity-50' : '',
+          className ?? '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        onInput={handleInput}
+        onKeyDown={onKeyDown}
+        onPaste={onPaste}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        onScroll={handleScroll}
+        onCompositionStart={handleCompositionStart}
+        onCompositionEnd={handleCompositionEnd}
+      />
+    </div>
   );
 });
 

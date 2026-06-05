@@ -128,6 +128,7 @@ interface HarnessParams {
   value: string;
   currentWorkingDir: string;
   cursor?: number;
+  onInsertToken?: (token: string) => void;
 }
 
 /**
@@ -155,6 +156,7 @@ function renderEditorContext(params: HarnessParams, onChange: (next: string) => 
       textareaRef,
       currentWorkingDir: params.currentWorkingDir,
       shouldFocus: false,
+      onInsertToken: params.onInsertToken,
     });
     return { textareaRef };
   });
@@ -214,6 +216,70 @@ describe('useEditorContext — handler', () => {
     });
 
     expect(onChange).toHaveBeenCalledWith('src/file.ts ');
+  });
+
+  it('fires onInsertToken with the bare token (no trailing space) on a selection', () => {
+    const onChange = vi.fn();
+    const onInsertToken = vi.fn();
+    renderEditorContext(
+      { value: '', currentWorkingDir: '/work', onInsertToken },
+      onChange,
+    );
+
+    act(() => {
+      emitEditorContext({
+        absolutePath: '/work/src/file.ts',
+        relativePath: 'src/file.ts',
+        startLine: 10,
+        endLine: 25,
+        workingDir: '/work',
+      });
+    });
+
+    expect(onInsertToken).toHaveBeenCalledTimes(1);
+    expect(onInsertToken).toHaveBeenCalledWith('src/file.ts#L10-L25');
+  });
+
+  it('fires onInsertToken with the relativePath when there is no selection', () => {
+    const onChange = vi.fn();
+    const onInsertToken = vi.fn();
+    renderEditorContext(
+      { value: '', currentWorkingDir: '/work', onInsertToken },
+      onChange,
+    );
+
+    act(() => {
+      emitEditorContext({
+        absolutePath: '/work/src/file.ts',
+        relativePath: 'src/file.ts',
+        startLine: null,
+        endLine: null,
+        workingDir: '/work',
+      });
+    });
+
+    expect(onInsertToken).toHaveBeenCalledWith('src/file.ts');
+  });
+
+  it('does not fire onInsertToken when the payload is ignored (wrong workingDir)', () => {
+    const onChange = vi.fn();
+    const onInsertToken = vi.fn();
+    renderEditorContext(
+      { value: '', currentWorkingDir: '/work', onInsertToken },
+      onChange,
+    );
+
+    act(() => {
+      emitEditorContext({
+        absolutePath: '/other/src/file.ts',
+        relativePath: 'src/file.ts',
+        startLine: 1,
+        endLine: 2,
+        workingDir: '/other',
+      });
+    });
+
+    expect(onInsertToken).not.toHaveBeenCalled();
   });
 
   it('ignores payloads whose workingDir does not match currentWorkingDir', () => {

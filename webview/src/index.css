@@ -27,6 +27,42 @@
 }
 
 /* ============================================
+   RichInput mirror overlay (path-token chips)
+   The editable layer renders its glyphs transparent while keeping the caret
+   visible; the mirror layer behind it paints the real text and wraps known
+   path tokens in chips. Both layers share identical font/padding/wrapping
+   (Tailwind LAYOUT_CLASSES) so the mirror glyphs sit exactly under the caret.
+   ============================================ */
+.richInputEditable {
+  /* Hide the editable glyphs — the mirror paints them — but keep the caret. */
+  color: transparent;
+  caret-color: var(--text-primary);
+}
+
+/* The placeholder :before owns its own color, so it stays visible despite the
+   transparent text color above. (Specificity-safe restatement.) */
+.richInputEditable[data-placeholder]:empty:before {
+  color: var(--text-disabled);
+}
+
+.richInputMirror {
+  /* Paint the mirrored text with the normal composer color. */
+  color: var(--text-primary);
+  /* Glyph-for-glyph alignment with the editable layer requires identical line
+     metrics; the shared Tailwind classes cover font-size/family and wrapping. */
+}
+
+.richInputChip {
+  background-color: var(--accent-primary-subtle);
+  color: var(--text-link);
+  border-radius: 4px;
+  padding: 0 2px;
+  /* Keep the chip background intact when the token wraps across lines. */
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* ============================================
    Semantic Color Tokens — Light (default :root)
    ============================================ */
 :root {

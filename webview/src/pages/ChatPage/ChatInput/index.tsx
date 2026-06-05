@@ -51,6 +51,10 @@ export function ChatInput() {
   const bridge = useBridgeContext();
   const { subscribe } = bridge;
   const [isFocused, setIsFocused] = useState(false);
+  // Known path tokens (e.g. `src/file.ts#L10-L25`) inserted via Alt+K /
+  // EDITOR_CONTEXT, highlighted as chips in the composer. Reset on submit and
+  // session switch (where `value` returns to '').
+  const [pathTokens, setPathTokens] = useState<string[]>([]);
   const lastInitSessionRef = useRef<string | undefined>(undefined);
 
   const {
@@ -197,6 +201,8 @@ export function ChatInput() {
     textareaRef,
     currentWorkingDir: workingDirectory ?? '',
     shouldFocus: claudeSettings.focusInputOnEditorContext ?? true,
+    onInsertToken: (token) =>
+      setPathTokens(prev => (prev.includes(token) ? prev : [...prev, token])),
   });
 
   const handleCompact = useCallback(() => {
@@ -266,6 +272,7 @@ export function ChatInput() {
     prevChatInputSessionRef.current = currentSessionId;
     if (prev !== null && prev !== currentSessionId) {
       clearAttachments();
+      setPathTokens([]);
       inputHistory.initHistory([]);
       lastInitSessionRef.current = undefined;
     }
@@ -385,6 +392,7 @@ export function ChatInput() {
           inputHistory.pushToHistory(value);
           onSubmit(undefined, mode, attachments.length > 0 ? attachments : undefined);
           clearAttachments();
+          setPathTokens([]);
         }
       }
       // When willSubmit is false: do not prevent default — let the textarea handle it natively
@@ -511,6 +519,7 @@ export function ChatInput() {
             placeholder={isStreaming ? "Queue another message..." : "⌘ Esc to focus or unfocus Claude"}
             disabled={disabled}
             ariaLabel="Message Claude"
+            highlightTokens={pathTokens}
           />
         </div>
 
@@ -557,6 +566,7 @@ export function ChatInput() {
               onSubmit={() => {
                 onSubmit(undefined, mode, attachments.length > 0 ? attachments : undefined);
                 clearAttachments();
+                setPathTokens([]);
               }}
               onStop={onStop}
             />

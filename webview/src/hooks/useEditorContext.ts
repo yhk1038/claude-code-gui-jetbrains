@@ -22,6 +22,12 @@ export interface UseEditorContextParams {
   currentWorkingDir: string;
   /** Move focus + caret after insertion. Defaults to true. */
   shouldFocus?: boolean;
+  /**
+   * Called with the inserted path token (no trailing space), e.g.
+   * `src/file.ts#L10-L25` or `src/file.ts`, so the composer can highlight it
+   * as a chip. Fired once per successful insertion.
+   */
+  onInsertToken?: (token: string) => void;
 }
 
 /** Window during which an identical payload is treated as a duplicate. */
@@ -91,7 +97,7 @@ function parseEditorContextPayload(
  * - Tracks `value` via a ref to avoid stale-closure re-subscriptions.
  */
 export function useEditorContext(params: UseEditorContextParams): void {
-  const { value, onChange, textareaRef, currentWorkingDir, shouldFocus = true } = params;
+  const { value, onChange, textareaRef, currentWorkingDir, shouldFocus = true, onInsertToken } = params;
   const { subscribe } = useBridgeContext();
 
   // Latest values tracked via refs so the effect can subscribe once and still
@@ -104,6 +110,8 @@ export function useEditorContext(params: UseEditorContextParams): void {
   currentWorkingDirRef.current = currentWorkingDir;
   const shouldFocusRef = useRef(shouldFocus);
   shouldFocusRef.current = shouldFocus;
+  const onInsertTokenRef = useRef(onInsertToken);
+  onInsertTokenRef.current = onInsertToken;
 
   // Dedup bookkeeping.
   const lastKeyRef = useRef<string | null>(null);
@@ -128,13 +136,15 @@ export function useEditorContext(params: UseEditorContextParams): void {
       lastKeyRef.current = key;
       lastTimeRef.current = now;
 
-      const insertText = buildEditorContextText(payload) + ' ';
+      const token = buildEditorContextText(payload);
+      const insertText = token + ' ';
       const el = textareaRef.current;
       const currentValue = valueRef.current;
       const cursorPos = el ? getCaretOffset(el) : currentValue.length;
 
       const { nextValue, nextCaret } = insertAtCursor(currentValue, insertText, cursorPos);
       onChangeRef.current(nextValue);
+      onInsertTokenRef.current?.(token);
 
       if (shouldFocusRef.current) {
         requestAnimationFrame(() => {

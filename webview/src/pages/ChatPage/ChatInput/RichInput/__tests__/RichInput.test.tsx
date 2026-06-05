@@ -175,6 +175,57 @@ describe('RichInput — event delegation', () => {
   });
 });
 
+describe('RichInput — mirror overlay / chips', () => {
+  it('renders an aria-hidden mirror overlay alongside the editable div', () => {
+    const { container } = render(<RichInput value="hello" onChange={() => {}} />);
+    const mirror = container.querySelector('.richInputMirror');
+    expect(mirror).not.toBeNull();
+    expect(mirror?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('renders no chips when highlightTokens is empty', () => {
+    const { container } = render(
+      <RichInput value="src/file.ts hello" onChange={() => {}} />,
+    );
+    expect(container.querySelectorAll('.richInputChip').length).toBe(0);
+  });
+
+  it('wraps a known token in a chip span inside the mirror', () => {
+    const { container } = render(
+      <RichInput
+        value="see src/file.ts#L10-L25 now"
+        onChange={() => {}}
+        highlightTokens={['src/file.ts#L10-L25']}
+      />,
+    );
+    const chips = container.querySelectorAll('.richInputChip');
+    expect(chips.length).toBe(1);
+    expect(chips[0].textContent).toBe('src/file.ts#L10-L25');
+  });
+
+  it('does not chip arbitrary text that is not a known token', () => {
+    const { container } = render(
+      <RichInput value="this is src/other.ts" onChange={() => {}} highlightTokens={['src/file.ts']} />,
+    );
+    expect(container.querySelectorAll('.richInputChip').length).toBe(0);
+  });
+
+  it('renders a chip for every occurrence of a repeated token', () => {
+    const { container } = render(
+      <RichInput value="a.ts and a.ts" onChange={() => {}} highlightTokens={['a.ts']} />,
+    );
+    expect(container.querySelectorAll('.richInputChip').length).toBe(2);
+  });
+
+  it('keeps the editable textbox reachable (mirror is aria-hidden)', () => {
+    const { getByRole } = render(
+      <RichInput value="src/file.ts" onChange={() => {}} highlightTokens={['src/file.ts']} />,
+    );
+    // getByRole ignores aria-hidden mirror — the textbox is the editable div.
+    expect(getByRole('textbox').textContent).toBe('src/file.ts');
+  });
+});
+
 describe('RichInput — IME composition guard', () => {
   it('does not overwrite DOM textContent while composition is active', () => {
     const { getByRole, rerender } = render(
