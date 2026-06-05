@@ -38,7 +38,7 @@ function setupMockRegistry(sections: PanelSection[] = mockSections) {
 
 describe('useCommandPalette', () => {
   let onChange: ReturnType<typeof vi.fn>;
-  let textareaRef: { current: HTMLTextAreaElement | null };
+  let textareaRef: { current: HTMLDivElement | null };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -246,7 +246,7 @@ describe('useCommandPalette', () => {
         shiftKey: false,
         nativeEvent: { isComposing: false },
         preventDefault: vi.fn(),
-      } as unknown as import('react').KeyboardEvent<HTMLTextAreaElement>;
+      } as unknown as import('react').KeyboardEvent<HTMLElement>;
 
       act(() => {
         result.current.handleSlashKeyDown(enterEvent, '/');

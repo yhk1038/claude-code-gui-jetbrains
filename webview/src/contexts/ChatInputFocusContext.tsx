@@ -1,8 +1,8 @@
 import { createContext, useContext, useRef, useCallback, ReactNode, RefObject } from 'react';
 
 interface ChatInputFocusContextType {
-  textareaRef: RefObject<HTMLTextAreaElement>;
-  /** Focus the ChatInput textarea from anywhere */
+  textareaRef: RefObject<HTMLDivElement>;
+  /** Focus the ChatInput composer from anywhere */
   focus: () => void;
 }
 
@@ -12,7 +12,7 @@ const ChatInputFocusContext = createContext<ChatInputFocusContextType>({
 });
 
 export function ChatInputFocusProvider({ children }: { children: ReactNode }) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = useRef<HTMLDivElement>(null);
 
   const focus = useCallback(() => {
     textareaRef.current?.focus();

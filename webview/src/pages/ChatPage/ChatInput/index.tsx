@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, KeyboardEvent, useState, type DragEvent as ReactDragEvent } from 'react';
+import { useCallback, useEffect, useRef, KeyboardEvent, useState, type ClipboardEvent as ReactClipboardEvent, type DragEvent as ReactDragEvent } from 'react';
 import { CommandPalettePanel } from '@/commandPalette/ui/CommandPalettePanel';
 import { useCommandPalette } from '@/commandPalette/hooks/useCommandPalette';
 import { PanelSectionId, PanelItemType, CommandItem } from '@/types/commandPalette';
@@ -7,7 +7,6 @@ import { InputModeTag } from './InputModeTag';
 import { ActionButtons } from './ActionButtons';
 import { useChatInputFocus } from '../../../contexts/ChatInputFocusContext';
 import { useInputHistory } from './hooks/useInputHistory';
-import { useTextareaAutoResize } from './hooks/useTextareaAutoResize';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useChatStreamContext } from '@/contexts/ChatStreamContext';
 import { useBridgeContext } from '@/contexts/BridgeContext';
@@ -29,6 +28,8 @@ import { MentionDropdown } from './MentionDropdown';
 import { isMobile } from '@/config/environment';
 import { shouldSubmitOnEnter } from './shouldSubmitOnEnter';
 import { basename } from './basename';
+import { RichInput } from './RichInput';
+import { getCaretOffset, setCaretOffset, getSelectionRange } from '@/utils/domSelection';
 
 interface NativeDropEntry {
   path: string;
@@ -211,24 +212,21 @@ export function ChatInput() {
     const handleMentionFromPalette = () => {
       // Defer to the next tick so that the palette closes before we insert @
       setTimeout(() => {
-        const textarea = textareaRef.current;
-        if (!textarea) return;
+        const el = textareaRef.current;
+        if (!el) return;
 
         onChange('@');
         mention.detectMention('@', 1);
 
         requestAnimationFrame(() => {
-          textarea.focus();
-          textarea.setSelectionRange(1, 1);
+          el.focus();
+          setCaretOffset(el, 1);
         });
       }, 0);
     };
     window.addEventListener('command-palette:mention-file', handleMentionFromPalette);
     return () => window.removeEventListener('command-palette:mention-file', handleMentionFromPalette);
   }, [onChange, mention, textareaRef]);
-
-  // Auto-resize textarea
-  useTextareaAutoResize({ textareaRef, value });
 
   // Focus on session change or when input becomes enabled
   useEffect(() => {
@@ -318,7 +316,7 @@ export function ChatInput() {
     inputHistory.initHistory(userTexts);
   }, [currentSessionId, messages, inputHistory]);
 
-  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key.startsWith('Arrow')) console.log('[KeyDebug:textarea-keydown]', e.key, { altKey: e.altKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, defaultPrevented: e.defaultPrevented });
 
     // JCEF workaround: Cmd+Arrow 처리 후 발생하는 순수 Arrow 유령 이벤트 무시
@@ -339,24 +337,24 @@ export function ChatInput() {
     // JCEF workaround: Cmd+Arrow (macOS 줄 처음/끝 이동) 수동 처리
     // shiftKey가 있으면 선택 영역 확장이므로 기본 동작에 맡김
     if (e.metaKey && !e.altKey && !e.ctrlKey && !e.shiftKey && isArrowKey) {
-      const textarea = e.currentTarget;
-      const pos = textarea.selectionStart;
-      const text = textarea.value;
+      const editor = e.currentTarget;
+      const pos = getCaretOffset(editor);
+      const text = editor.textContent ?? '';
 
       e.preventDefault();
       lastMetaArrowTime.current = Date.now();
 
       if (e.key === 'ArrowLeft') {
         const lineStart = text.lastIndexOf('\n', pos - 1) + 1;
-        textarea.setSelectionRange(lineStart, lineStart);
+        setCaretOffset(editor, lineStart);
       } else if (e.key === 'ArrowRight') {
         let lineEnd = text.indexOf('\n', pos);
         if (lineEnd === -1) lineEnd = text.length;
-        textarea.setSelectionRange(lineEnd, lineEnd);
+        setCaretOffset(editor, lineEnd);
       } else if (e.key === 'ArrowUp') {
-        textarea.setSelectionRange(0, 0);
+        setCaretOffset(editor, 0);
       } else if (e.key === 'ArrowDown') {
-        textarea.setSelectionRange(text.length, text.length);
+        setCaretOffset(editor, text.length);
       }
       return;
     }
@@ -393,7 +391,7 @@ export function ChatInput() {
     } else if (e.key === 'ArrowUp' && !palette.showSlashCommands) {
       console.log('[KeyDebug:history-up-triggered]');
       // 복수행: 커서가 첫 번째 줄에 있을 때만 히스토리 탐색
-      const pos = e.currentTarget.selectionStart;
+      const pos = getCaretOffset(e.currentTarget);
       if (value.lastIndexOf('\n', pos - 1) !== -1) return;
 
       const historyValue = inputHistory.navigateUp(value);
@@ -403,7 +401,7 @@ export function ChatInput() {
     } else if (e.key === 'ArrowDown' && !palette.showSlashCommands) {
       console.log('[KeyDebug:history-down-triggered]');
       // 복수행: 커서가 마지막 줄에 있을 때만 히스토리 탐색
-      const pos = e.currentTarget.selectionStart;
+      const pos = getCaretOffset(e.currentTarget);
       if (value.indexOf('\n', pos) !== -1) return;
 
       const historyValue = inputHistory.navigateDown();
@@ -413,12 +411,45 @@ export function ChatInput() {
     }
   }, [disabled, value, attachments.length, onSubmit, inputHistory, onChange, palette, mention, cycleMode, clearAttachments, mode, claudeSettings.useCtrlEnterToSend]);
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value;
+  const handleRichChange = useCallback((newValue: string) => {
     onChange(newValue);
     palette.detectSlashCommand(newValue);
-    mention.detectMention(newValue, e.target.selectionStart ?? newValue.length);
-  }, [onChange, palette, mention]);
+    const caret = textareaRef.current ? getCaretOffset(textareaRef.current) : newValue.length;
+    mention.detectMention(newValue, caret);
+  }, [onChange, palette, mention, textareaRef]);
+
+  // Wrap the attachment paste handler so that, when the clipboard carries no
+  // image, we insert the plain-text payload ourselves. contentEditable would
+  // otherwise paste rich HTML; plaintext-only strips formatting but we still
+  // route through onChange to keep `value` the single source of truth.
+  const handleRichPaste = useCallback((e: ReactClipboardEvent<HTMLDivElement>) => {
+    const items = e.clipboardData?.items;
+    const hasImage = items
+      ? Array.from(items).some(item => item.kind === 'file' && item.type.startsWith('image/'))
+      : false;
+
+    if (hasImage) {
+      // Delegate image handling (it calls preventDefault internally).
+      handlePaste(e);
+      return;
+    }
+
+    const text = e.clipboardData.getData('text/plain');
+    if (!text) return;
+
+    e.preventDefault();
+    const el = textareaRef.current;
+    const { start, end } = el ? getSelectionRange(el) : { start: value.length, end: value.length };
+    const newValue = value.slice(0, start) + text + value.slice(end);
+    onChange(newValue);
+    palette.detectSlashCommand(newValue);
+    const caret = start + text.length;
+    mention.detectMention(newValue, caret);
+    requestAnimationFrame(() => {
+      const target = textareaRef.current;
+      if (target) setCaretOffset(target, caret);
+    });
+  }, [handlePaste, value, onChange, palette, mention, textareaRef]);
 
   const hasValue = !!value.trim() || attachments.length > 0;
 
@@ -467,21 +498,19 @@ export function ChatInput() {
         {/* 드래그 오버 오버레이 */}
         <DragOverlay visible={isDragOver} />
 
-        {/* Textarea 영역 */}
+        {/* Composer 영역 */}
         <div className="pt-2.5 pb-1.5">
-          <textarea
+          <RichInput
             ref={textareaRef}
             value={value}
-            onChange={handleChange}
+            onChange={handleRichChange}
             onKeyDown={handleKeyDown}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            onPaste={handlePaste}
+            onPaste={handleRichPaste}
             placeholder={isStreaming ? "Queue another message..." : "⌘ Esc to focus or unfocus Claude"}
             disabled={disabled}
-            rows={1}
-            className="w-full px-3 cursor-text resize-none bg-transparent text-base text-text-primary placeholder-text-disabled focus:outline-none disabled:opacity-50"
-            style={{ minHeight: '20px', maxHeight: '200px' }}
+            ariaLabel="Message Claude"
           />
         </div>
 

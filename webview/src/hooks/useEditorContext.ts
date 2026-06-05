@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useBridgeContext } from '@/contexts/BridgeContext';
+import { getCaretOffset, setCaretOffset } from '@/utils/domSelection';
 
 /**
  * Payload pushed by the backend over the `EDITOR_CONTEXT` IPC message.
@@ -17,7 +18,7 @@ export interface EditorContextPayload {
 export interface UseEditorContextParams {
   value: string;
   onChange: (next: string) => void;
-  textareaRef: React.RefObject<HTMLTextAreaElement>;
+  textareaRef: React.RefObject<HTMLDivElement>;
   currentWorkingDir: string;
   /** Move focus + caret after insertion. Defaults to true. */
   shouldFocus?: boolean;
@@ -128,19 +129,19 @@ export function useEditorContext(params: UseEditorContextParams): void {
       lastTimeRef.current = now;
 
       const insertText = buildEditorContextText(payload) + ' ';
-      const textarea = textareaRef.current;
+      const el = textareaRef.current;
       const currentValue = valueRef.current;
-      const cursorPos = textarea?.selectionStart ?? currentValue.length;
+      const cursorPos = el ? getCaretOffset(el) : currentValue.length;
 
       const { nextValue, nextCaret } = insertAtCursor(currentValue, insertText, cursorPos);
       onChangeRef.current(nextValue);
 
       if (shouldFocusRef.current) {
         requestAnimationFrame(() => {
-          const el = textareaRef.current;
-          if (!el) return;
-          el.focus();
-          el.setSelectionRange(nextCaret, nextCaret);
+          const target = textareaRef.current;
+          if (!target) return;
+          target.focus();
+          setCaretOffset(target, nextCaret);
         });
       }
     });

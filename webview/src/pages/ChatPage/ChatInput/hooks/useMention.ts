@@ -50,7 +50,7 @@ interface UseMentionReturn {
   selectedIndex: number;
   isLoading: boolean;
   detectMention: (value: string, cursorPosition: number) => void;
-  handleKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => boolean;
+  handleKeyDown: (e: React.KeyboardEvent<HTMLElement>) => boolean;
   selectResult: (index: number) => void;
   close: () => void;
 }
@@ -206,7 +206,7 @@ export function useMention(params: UseMentionParams): UseMentionReturn {
   );
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>): boolean => {
+    (e: React.KeyboardEvent<HTMLElement>): boolean => {
       if (!state.isActive) return false;
 
       if (e.key === 'ArrowDown') {

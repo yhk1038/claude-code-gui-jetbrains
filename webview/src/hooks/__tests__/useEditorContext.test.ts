@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useRef } from 'react';
+import { setCaretOffset } from '@/utils/domSelection';
 
 // ---------------------------------------------------------------------------
 // BridgeContext mock — captures the EDITOR_CONTEXT handler so tests can
@@ -129,16 +130,25 @@ interface HarnessParams {
   cursor?: number;
 }
 
+/**
+ * Build a real contentEditable composer div mirroring RichInput: text content
+ * set to `value`, the caret placed at `cursor` (defaults to end). Mounted in the
+ * document so window.getSelection() / getCaretOffset reflect a real caret.
+ */
+function makeComposer(value: string, cursor: number): HTMLDivElement {
+  const el = document.createElement('div');
+  el.contentEditable = 'plaintext-only';
+  el.textContent = value;
+  document.body.appendChild(el);
+  el.focus();
+  setCaretOffset(el, cursor);
+  return el;
+}
+
 function renderEditorContext(params: HarnessParams, onChange: (next: string) => void) {
-  return renderHook(() => {
-    const textareaRef = useRef<HTMLTextAreaElement>(
-      {
-        value: params.value,
-        selectionStart: params.cursor ?? params.value.length,
-        focus: vi.fn(),
-        setSelectionRange: vi.fn(),
-      } as unknown as HTMLTextAreaElement,
-    );
+  const composer = makeComposer(params.value, params.cursor ?? params.value.length);
+  const result = renderHook(() => {
+    const textareaRef = useRef<HTMLDivElement>(composer);
     useEditorContext({
       value: params.value,
       onChange,
@@ -148,7 +158,12 @@ function renderEditorContext(params: HarnessParams, onChange: (next: string) => 
     });
     return { textareaRef };
   });
+  return result;
 }
+
+afterEach(() => {
+  document.body.innerHTML = '';
+});
 
 describe('useEditorContext — handler', () => {
   it('registers and cleans up the EDITOR_CONTEXT subscription', () => {

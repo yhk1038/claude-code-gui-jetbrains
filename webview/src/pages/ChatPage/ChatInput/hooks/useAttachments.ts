@@ -11,7 +11,7 @@ export interface UseAttachmentsReturn {
   error: string | null;
   isDragOver: boolean;
   setIsDragOver: (v: boolean) => void;
-  handlePaste: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void;
+  handlePaste: (e: React.ClipboardEvent<HTMLElement>) => void;
   handleDrop: (e: React.DragEvent) => void;
 }
 
@@ -91,7 +91,7 @@ export function useAttachments(): UseAttachmentsReturn {
     setError(null);
   }, []);
 
-  const handlePaste = useCallback(async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+  const handlePaste = useCallback(async (e: React.ClipboardEvent<HTMLElement>) => {
     const items = e.clipboardData?.items;
     if (!items) return;
 

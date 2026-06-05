@@ -4,7 +4,7 @@ import { useCommandPaletteRegistry } from '../CommandPaletteProvider';
 
 interface UseCommandPaletteOptions {
   onChange: (value: string) => void;
-  textareaRef: RefObject<HTMLTextAreaElement | null>;
+  textareaRef: RefObject<HTMLDivElement | null>;
 }
 
 export function useCommandPalette({ onChange, textareaRef }: UseCommandPaletteOptions) {
@@ -121,7 +121,7 @@ export function useCommandPalette({ onChange, textareaRef }: UseCommandPaletteOp
   }, [resetSelection]);
 
   const handleSlashKeyDown = useCallback((
-    e: KeyboardEvent<HTMLTextAreaElement>,
+    e: KeyboardEvent<HTMLElement>,
     currentValue: string,
   ): boolean => {
     if (!showSlashCommands) return false;
