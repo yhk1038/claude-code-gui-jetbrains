@@ -130,6 +130,11 @@ async function main() {
   (bridges[ClientEnv.JETBRAINS] as JetBrainsBridge).onNotification('NATIVE_DROP', (_method, params) => {
     const sessionId = typeof params.sessionId === 'string' ? params.sessionId : '';
     const entries = Array.isArray(params.entries) ? params.entries : [];
+    const subscriberCount = connections.getSession(sessionId)?.subscribers.size ?? 0;
+    console.error(
+      '[node-backend]',
+      `[NATIVE_DROP] received sessionId=${sessionId} entries=${entries.length} subscribers=${subscriberCount}`,
+    );
     if (!sessionId || entries.length === 0) return;
     connections.broadcastToSession(sessionId, 'NATIVE_DROP_ENTRIES', { entries });
   });

@@ -707,7 +707,7 @@ class ClaudeCodePanel(
     }
 
     private fun dispatchNativeDrop(files: List<DroppedFile>) {
-        logger.info("[NativeDrop] dispatchNativeDrop called with ${files.size} files: ${files.map { it.path }}")
+        logger.info("[NativeDrop] dispatchNativeDrop sessionId=$sessionId, ${files.size} files: ${files.map { it.path }}")
         if (files.isEmpty()) return
         val params = buildJsonObject {
             put("sessionId", JsonPrimitive(sessionId))

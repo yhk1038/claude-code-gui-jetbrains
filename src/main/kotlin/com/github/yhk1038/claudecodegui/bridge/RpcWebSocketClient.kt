@@ -61,6 +61,7 @@ class RpcWebSocketClient(
             put("params", params)
         }
         val text = json.encodeToString(JsonObject.serializer(), message)
+        logger.info("[NativeDrop] sendNotification method=$method, payload length=${text.length}")
         ws.sendText(text, true)
     }
 
