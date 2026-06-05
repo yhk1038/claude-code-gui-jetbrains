@@ -56,7 +56,16 @@
   background-color: var(--accent-primary-subtle);
   color: var(--text-link);
   border-radius: 4px;
-  padding: 0 2px;
+  /*
+   * Extend the chip background sideways with box-shadow, NOT padding. Padding
+   * would widen the glyph run in the mirror layer, pushing following text out
+   * of sync with the transparent editable layer (whose glyphs have no padding)
+   * and misaligning the caret. box-shadow paints outside the box without
+   * affecting layout, so the editable and mirror layers stay glyph-aligned.
+   */
+  box-shadow:
+    -2px 0 0 var(--accent-primary-subtle),
+    2px 0 0 var(--accent-primary-subtle);
   /* Keep the chip background intact when the token wraps across lines. */
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;

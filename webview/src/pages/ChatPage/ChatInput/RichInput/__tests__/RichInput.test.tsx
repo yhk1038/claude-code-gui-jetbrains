@@ -255,4 +255,131 @@ describe('RichInput — IME composition guard', () => {
 
     expect(onChange).toHaveBeenLastCalledWith('한글');
   });
+
+  it('does not call onChange mid-composition (only on compositionend)', () => {
+    const onChange = vi.fn();
+    const { getByRole } = render(<RichInput value="" onChange={onChange} />);
+    const el = getByRole('textbox');
+
+    fireEvent.compositionStart(el);
+    // In-progress glyph: input fires but onChange must stay silent.
+    el.textContent = 'ㅎ';
+    fireEvent.input(el);
+    fireEvent.compositionUpdate(el);
+    expect(onChange).not.toHaveBeenCalled();
+
+    el.textContent = '한';
+    fireEvent.compositionEnd(el);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith('한');
+  });
+});
+
+describe('RichInput — mirror real-time display (IME)', () => {
+  it('paints the mirror with in-progress composition text immediately', () => {
+    const { getByRole, container } = render(
+      <RichInput value="" onChange={() => {}} />,
+    );
+    const el = getByRole('textbox');
+    const mirror = container.querySelector('.richInputMirror');
+
+    fireEvent.compositionStart(el);
+    // Composition update carries the in-progress glyph; the mirror must paint
+    // it at once even though the controlled `value` is still "".
+    el.textContent = '한';
+    fireEvent.compositionUpdate(el);
+
+    expect(mirror?.textContent).toBe('한');
+  });
+
+  it('paints the mirror via input event during composition', () => {
+    const { getByRole, container } = render(
+      <RichInput value="" onChange={() => {}} />,
+    );
+    const el = getByRole('textbox');
+    const mirror = container.querySelector('.richInputMirror');
+
+    fireEvent.compositionStart(el);
+    el.textContent = '가';
+    fireEvent.input(el);
+
+    expect(mirror?.textContent).toBe('가');
+  });
+
+  it('mirror reflects the final text after compositionend', () => {
+    const { getByRole, container } = render(
+      <RichInput value="" onChange={() => {}} />,
+    );
+    const el = getByRole('textbox');
+    const mirror = container.querySelector('.richInputMirror');
+
+    fireEvent.compositionStart(el);
+    el.textContent = '한글';
+    fireEvent.compositionUpdate(el);
+    fireEvent.compositionEnd(el);
+
+    expect(mirror?.textContent).toBe('한글');
+  });
+});
+
+describe('RichInput — mirror tracks display text', () => {
+  it('paints the mirror with controlled user input', () => {
+    // A normal controlled parent echoes the typed value straight back.
+    const onChange = vi.fn();
+    const { getByRole, container, rerender } = render(
+      <RichInput value="" onChange={onChange} />,
+    );
+    const el = getByRole('textbox');
+    const mirror = container.querySelector('.richInputMirror');
+
+    el.textContent = 'abc';
+    fireEvent.input(el);
+    expect(onChange).toHaveBeenCalledWith('abc');
+
+    rerender(<RichInput value="abc" onChange={onChange} />);
+    expect(mirror?.textContent).toBe('abc');
+  });
+
+  it('repaints the mirror when value changes externally', () => {
+    const { container, rerender } = render(
+      <RichInput value="one" onChange={() => {}} />,
+    );
+    const mirror = container.querySelector('.richInputMirror');
+    expect(mirror?.textContent).toBe('one');
+
+    rerender(<RichInput value="two" onChange={() => {}} />);
+    expect(mirror?.textContent).toBe('two');
+  });
+
+  it('clears the mirror when value is reset to empty (submit/clear)', () => {
+    const { container, rerender } = render(
+      <RichInput value="typed" onChange={() => {}} />,
+    );
+    const mirror = container.querySelector('.richInputMirror');
+    expect(mirror?.textContent).toBe('typed');
+
+    rerender(<RichInput value="" onChange={() => {}} />);
+    expect(mirror?.textContent).toBe('');
+  });
+});
+
+describe('RichInput — placeholder', () => {
+  it('keeps data-placeholder on the editable div for empty value', () => {
+    const { getByRole } = render(
+      <RichInput value="" onChange={() => {}} placeholder="Ask anything" />,
+    );
+    const el = getByRole('textbox');
+    expect(el.getAttribute('data-placeholder')).toBe('Ask anything');
+  });
+
+  it('leaves the editable div truly empty for an empty value', () => {
+    const { getByRole } = render(
+      <RichInput value="" onChange={() => {}} placeholder="Ask anything" />,
+    );
+    const el = getByRole('textbox');
+    // A real `:empty` node (no stray text/<br>) is required for the CSS
+    // placeholder `:empty:before` to render.
+    expect(el.textContent).toBe('');
+    expect(el.childNodes.length).toBe(0);
+  });
 });

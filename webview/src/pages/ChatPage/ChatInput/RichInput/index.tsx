@@ -4,6 +4,7 @@ import {
   useImperativeHandle,
   useLayoutEffect,
   useRef,
+  useState,
   type ClipboardEvent as ReactClipboardEvent,
   type CompositionEvent as ReactCompositionEvent,
   type FormEvent,
@@ -39,7 +40,7 @@ interface Props {
  * caret. Keep this list the single source of truth for both layers.
  */
 const LAYOUT_CLASSES = [
-  'w-full px-3 text-base',
+  'w-full px-3 text-base leading-normal',
   'whitespace-pre-wrap break-words',
 ] as const;
 
@@ -85,6 +86,14 @@ export const RichInput = forwardRef<HTMLDivElement, Props>((props: Props, ref) =
   const mirrorRef = useRef<HTMLDivElement>(null);
   const isComposingRef = useRef(false);
 
+  // Live display text that drives the mirror. Unlike `value` (the controlled
+  // prop, which is NOT updated mid-IME-composition), this tracks the editable
+  // div's textContent on every keystroke AND every composition update, so the
+  // mirror paints in-progress glyphs in real time. Without this the transparent
+  // editable glyphs would vanish during composition and the visible text would
+  // appear to lag one character behind.
+  const [displayText, setDisplayText] = useState(value);
+
   // Expose the editable div to the parent (focus / domSelection utilities) while
   // keeping our own internal ref for sync work.
   useImperativeHandle(ref, () => elRef.current as HTMLDivElement, []);
@@ -94,26 +103,46 @@ export const RichInput = forwardRef<HTMLDivElement, Props>((props: Props, ref) =
   useLayoutEffect(() => {
     const el = elRef.current;
     if (el === null) return;
+    // While composing, leave both the DOM and displayText untouched so the
+    // in-progress glyphs (driven by composition events) are never clobbered.
     if (isComposingRef.current) return;
 
     const current = el.textContent ?? '';
-    if (current === value) return;
+    if (current === value) {
+      // An empty value can still leave a stray <br>/empty node behind (e.g.
+      // after clearing an IME composition), which defeats `:empty` and hides
+      // the placeholder. Force a real empty node so the placeholder shows.
+      if (value === '' && el.childNodes.length > 0) {
+        el.textContent = '';
+      }
+      // DOM already matches; still reconcile displayText so an external value
+      // change that equals the live text (rare) doesn't leave a stale mirror.
+      if (displayText !== value) setDisplayText(value);
+      return;
+    }
 
     el.textContent = value;
+    // External value changes (submit/clear/Alt+K insert) must repaint the
+    // mirror to match the freshly written DOM.
+    setDisplayText(value);
 
     // Only reposition the caret when this element is focused, so background
     // (programmatic) updates don't steal the selection from elsewhere.
     if (document.activeElement === el) {
       setCaretOffset(el, value.length);
     }
-  }, [value]);
+  }, [value, displayText]);
 
   const handleInput = useCallback(
     (e: FormEvent<HTMLDivElement>) => {
+      const text = e.currentTarget.textContent ?? '';
+      // Always repaint the mirror in real time, including mid-composition.
+      setDisplayText(text);
       // During composition the intermediate text is not yet committed; defer
-      // reporting until compositionend to avoid emitting partial glyphs.
+      // reporting to the parent until compositionend to avoid emitting partial
+      // glyphs. The mirror still updates above so the user sees live feedback.
       if (isComposingRef.current) return;
-      onChange(e.currentTarget.textContent ?? '');
+      onChange(text);
     },
     [onChange],
   );
@@ -122,10 +151,21 @@ export const RichInput = forwardRef<HTMLDivElement, Props>((props: Props, ref) =
     isComposingRef.current = true;
   }, []);
 
+  const handleCompositionUpdate = useCallback(
+    (e: ReactCompositionEvent<HTMLDivElement>) => {
+      // Repaint the mirror on every composition update so the in-progress
+      // glyphs track the caret without lagging a character behind.
+      setDisplayText(e.currentTarget.textContent ?? '');
+    },
+    [],
+  );
+
   const handleCompositionEnd = useCallback(
     (e: ReactCompositionEvent<HTMLDivElement>) => {
       isComposingRef.current = false;
-      onChange(e.currentTarget.textContent ?? '');
+      const text = e.currentTarget.textContent ?? '';
+      setDisplayText(text);
+      onChange(text);
     },
     [onChange],
   );
@@ -139,10 +179,12 @@ export const RichInput = forwardRef<HTMLDivElement, Props>((props: Props, ref) =
     mirror.scrollLeft = e.currentTarget.scrollLeft;
   }, []);
 
-  const segments = splitIntoSegments(value, highlightTokens);
+  // The mirror paints `displayText` (live, includes in-progress IME glyphs),
+  // NOT `value` (which lags during composition).
+  const segments = splitIntoSegments(displayText, highlightTokens);
   // A trailing newline collapses on the last line of a wrapping box; append a
   // zero-content newline so the mirror's height matches the editable div.
-  const trailingNewline = value.endsWith('\n');
+  const trailingNewline = displayText.endsWith('\n');
 
   return (
     <div className="relative">
@@ -200,6 +242,7 @@ export const RichInput = forwardRef<HTMLDivElement, Props>((props: Props, ref) =
         onBlur={onBlur}
         onScroll={handleScroll}
         onCompositionStart={handleCompositionStart}
+        onCompositionUpdate={handleCompositionUpdate}
         onCompositionEnd={handleCompositionEnd}
       />
     </div>
