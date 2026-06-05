@@ -39,7 +39,9 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import org.cef.browser.CefBrowser
 import org.cef.browser.CefFrame
+import org.cef.callback.CefDragData
 import org.cef.handler.CefDisplayHandlerAdapter
+import org.cef.handler.CefDragHandler
 import org.cef.handler.CefLifeSpanHandlerAdapter
 import org.cef.handler.CefLoadHandlerAdapter
 import org.cef.handler.CefRequestHandlerAdapter
@@ -287,10 +289,33 @@ class ClaudeCodePanel(
             b.cefBrowser
         )
 
-        // JCEF natively turns file drops onto the browser surface into `file://` navigation;
-        // CEF's popup blocker then jumps the tab to about:blank#blocked and the panel
-        // appears as a white screen. Intercept those navigations, treat them as a native
-        // drop, and route the paths to the composer instead.
+        // Primary native-DnD hook for the JCEF surface. CEF asks every drag whether the
+        // embedder wants to handle it before it does anything else (download / navigate /
+        // open-in-new-tab). We swallow file drops here, extract the paths off CefDragData,
+        // and route them to the composer; returning true cancels CEF's own handling so the
+        // tab can't jump to about:blank#blocked.
+        b.jbCefClient.addDragHandler(CefDragHandler { _, dragData, _ ->
+            if (dragData == null || !dragData.isFile) {
+                false
+            } else {
+                val names = java.util.Vector<String>()
+                dragData.getFileNames(names)
+                if (names.isEmpty()) {
+                    false
+                } else {
+                    logger.info("[NativeDrop] CefDragHandler.onDragEnter received ${names.size} file(s)")
+                    val files = names.map { path ->
+                        val file = File(path)
+                        DroppedFile(file.absolutePath, file.isDirectory)
+                    }
+                    dispatchNativeDrop(files)
+                    true
+                }
+            }
+        }, b.cefBrowser)
+
+        // Safety net: if a file:// navigation still slips through (e.g. via the JS layer),
+        // cancel it before CEF's popup blocker jumps the tab to about:blank#blocked.
         b.jbCefClient.addRequestHandler(object : CefRequestHandlerAdapter() {
             override fun onBeforeBrowse(
                 browser: CefBrowser?,
