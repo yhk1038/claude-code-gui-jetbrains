@@ -90,9 +90,24 @@ export class FolderAttachment extends Attachment {
   constructor(params: { folderName: string; absolutePath: string }) {
     super();
     this.folderName = params.folderName;
-    this.absolutePath = params.absolutePath.endsWith('/')
-      ? params.absolutePath
-      : params.absolutePath + '/';
+    this.absolutePath = FolderAttachment.normalizeTrailingSeparator(params.absolutePath);
+  }
+
+  /**
+   * Ensures the path ends with exactly one separator, matching the separator
+   * already used in the path so that mixed separators (e.g. "C:\a\b/") are
+   * never produced.
+   *
+   * Rules:
+   *  - Already ends with `/` or `\` → return as-is.
+   *  - Contains `\` (Windows path) → append `\`.
+   *  - Otherwise (POSIX or forward-slash path) → append `/`.
+   */
+  static normalizeTrailingSeparator(path: string): string {
+    if (/[/\\]$/.test(path)) {
+      return path;
+    }
+    return path.includes('\\') ? path + '\\' : path + '/';
   }
 
   get displayLabel(): string {

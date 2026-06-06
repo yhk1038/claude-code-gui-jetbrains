@@ -143,27 +143,15 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
-            <h3>0.16.4 - Service stability hotfix</h3>
+            <h3>0.17.0 - Attach files faster, work with paths as chips</h3>
             <ul>
-                <li>Allow IDE EAP versions: future IDE builds are no longer restricted at install time. (fix #50, #53)</li>
-                <li>Blank Panel fix: resolved an issue where an empty panel opened at startup and the WebView frontend failed to render. (fix #52, PR #54)</li>
-            </ul>
-            <h3>0.16.1 - Restore WebView panel on IntelliJ 2026.1+</h3>
-            <ul>
-                <li>Fixed a regression where the WebView panel rendered as a black/blank rectangle on IntelliJ Platform 2026.1+, which runs JCEF in out-of-process (remote) mode. The plugin now detects remote-mode at runtime and skips the windowed-rendering flag that was introduced in v0.16.0 for HiDPI sharpness — that flag is unsupported in remote-mode and silently ignored by the platform, leaving the browser unable to paint (closes #51).</li>
-                <li>On 2024.x/2025.x (in-process JCEF) behavior is unchanged — the HiDPI fix from #23 still applies. On 2026.1+ the WebView renders via off-screen rendering, which restores functionality at the cost of some HiDPI sharpness until the platform-level scale-propagation issue is resolved upstream.</li>
-            </ul>
-            <h3>0.16.0 - System theme follows IDE, desktop notifications, ccg launcher</h3>
-            <ul>
-                <li>System theme now follows the IDE's Look-and-Feel in JetBrains mode and reacts to LAF changes without a restart; standalone (browser) mode continues to follow the OS preference. The dropdown is labeled "System (IDE)" or "System (OS)" accordingly (closes #45).</li>
-                <li>Light theme legibility fixed for inline code, code blocks, blockquotes, table borders, and tool labels — the previous cyan-on-cyan rendering is gone (closes #46).</li>
-                <li>Desktop notifications for stream errors and for awaiting permission / plan approval / user input, with OS sounds and an unread favicon indicator.</li>
-                <li>New <code>ccg</code> terminal launcher for Standalone mode: install with <code>curl | bash</code>, browser auto-opens, Ctrl+C exits immediately, <code>ccg update</code> always re-downloads the runtime.</li>
-                <li>Streaming UX: auto-scroll respects manual scroll-up and shows a jump-to-bottom pill; the auto-scroll threshold is configurable under Appearance.</li>
-                <li>JCEF embedded browser now renders at full HiDPI (no more pixelation on Retina/4K displays).</li>
-                <li>Plugin updates refresh the WebView correctly thanks to <code>Cache-Control</code> on the SPA shell with immutable hashed assets.</li>
-                <li>QR code in the Tunnel modal stays readable on dark themes (forced white background).</li>
-                <li>Browser auto-translate is disabled on the UI, and the update banner is hidden in standalone mode where it does not apply.</li>
+                <li><b>@-mention chips</b>: Typing @ in the composer turns a file path into an inline chip. Chips are preserved in sent messages — click one to open that file in the editor.</li>
+                <li><b>Alt+K shortcut</b>: Attach the path of the file you are currently editing straight into the chat input with a single shortcut. Whether the input regains focus afterward is configurable in Settings.</li>
+                <li><b>Native drag &amp; drop</b>: Drag files from the IDE onto the chat to attach them instantly.</li>
+                <li><b>File picker attachments</b>: Choose files to attach through a native file picker.</li>
+                <li><b>New rich composer</b>: The chat input was rebuilt on a contenteditable composer for natural chip rendering, IME input, and caret alignment.</li>
+                <li><b>Smarter tab handling</b>: If a Claude Code tab is already open, it is focused instead of opening a new one.</li>
+                <li><b>Cross-platform reliability</b>: Improved file attachment stability on Windows and in the browser (Standalone) environment.</li>
             </ul>
         """.trimIndent()
     }

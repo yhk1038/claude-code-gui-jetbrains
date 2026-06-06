@@ -1,5 +1,7 @@
 import { execFile } from 'child_process';
 import { promisify } from 'util';
+import * as fs from 'fs';
+import * as path from 'path';
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
@@ -29,7 +31,56 @@ async function isGitRepo(workingDir: string): Promise<boolean> {
   }
 }
 
-async function fetchFilesAndDirs(workingDir: string): Promise<{ files: string[]; dirs: string[] }> {
+const EXCLUDED_DIRS = new Set(['node_modules', '.git']);
+const MAX_DEPTH = 5;
+
+/**
+ * Cross-platform recursive directory walk using Node.js fs.
+ * Collects files and directories up to MAX_DEPTH levels deep, excluding
+ * EXCLUDED_DIRS at any level. Returns paths relative to `root` using
+ * forward slashes on all platforms.
+ */
+async function walkDir(
+  root: string,
+  currentDir: string,
+  depth: number,
+  files: string[],
+  dirs: string[],
+): Promise<void> {
+  if (depth > MAX_DEPTH) {
+    return;
+  }
+
+  let entries: fs.Dirent[];
+  try {
+    entries = await fs.promises.readdir(currentDir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+
+  for (const entry of entries) {
+    if (entry.isSymbolicLink()) {
+      // Skip symlinks entirely to avoid infinite loops
+      continue;
+    }
+
+    const absPath = path.join(currentDir, entry.name);
+    // Compute relative path from root and normalise to forward slashes
+    const relPath = path.relative(root, absPath).split(path.sep).join('/');
+
+    if (entry.isDirectory()) {
+      if (EXCLUDED_DIRS.has(entry.name)) {
+        continue;
+      }
+      dirs.push(relPath);
+      await walkDir(root, absPath, depth + 1, files, dirs);
+    } else if (entry.isFile()) {
+      files.push(relPath);
+    }
+  }
+}
+
+export async function fetchFilesAndDirs(workingDir: string): Promise<{ files: string[]; dirs: string[] }> {
   const cached = fileCache.get(workingDir);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return { files: cached.files, dirs: cached.dirs };
@@ -57,53 +108,8 @@ async function fetchFilesAndDirs(workingDir: string): Promise<{ files: string[];
       }
       dirs = Array.from(dirSet);
     } else {
-      const { stdout: findFiles } = await execFileAsync(
-        'find',
-        [
-          '.',
-          '-maxdepth',
-          '5',
-          '-type',
-          'f',
-          '-not',
-          '-path',
-          '*/node_modules/*',
-          '-not',
-          '-path',
-          '*/.git/*',
-        ],
-        { cwd: workingDir, maxBuffer: 10 * 1024 * 1024 },
-      );
-      const { stdout: findDirs } = await execFileAsync(
-        'find',
-        [
-          '.',
-          '-maxdepth',
-          '5',
-          '-type',
-          'd',
-          '-not',
-          '-path',
-          '*/node_modules/*',
-          '-not',
-          '-path',
-          '*/.git/*',
-          '-not',
-          '-name',
-          '.',
-        ],
-        { cwd: workingDir, maxBuffer: 10 * 1024 * 1024 },
-      );
-
-      // Strip leading "./" from find output
-      files = findFiles
-        .split('\n')
-        .filter((p) => p.length > 0)
-        .map((p) => p.replace(/^\.\//, ''));
-      dirs = findDirs
-        .split('\n')
-        .filter((p) => p.length > 0)
-        .map((p) => p.replace(/^\.\//, ''));
+      // Cross-platform: use Node.js fs instead of Unix `find` (Windows compatible)
+      await walkDir(workingDir, workingDir, 1, files, dirs);
     }
   } catch {
     // On error, return empty — do not break the service

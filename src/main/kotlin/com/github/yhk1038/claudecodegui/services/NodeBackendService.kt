@@ -2,6 +2,7 @@ package com.github.yhk1038.claudecodegui.services
 
 import com.github.yhk1038.claudecodegui.bridge.NodeProcessManager
 import com.github.yhk1038.claudecodegui.bridge.RpcWebSocketClient
+import com.intellij.openapi.util.SystemInfo
 import java.util.Properties
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
@@ -47,7 +48,7 @@ class NodeBackendService : Disposable {
         private fun handlerForPath(path: String?): NodeProcessManager.RpcHandler? {
             if (path == null) return rpcHandlers.values.firstOrNull()?.second
             return rpcHandlers.values
-                .filter { (basePath, _) -> path.startsWith(basePath) }
+                .filter { (basePath, _) -> pathMatchesBase(path, basePath) }
                 .maxByOrNull { (basePath, _) -> basePath.length }
                 ?.second
                 ?: rpcHandlers.values.firstOrNull()?.second
@@ -57,7 +58,7 @@ class NodeBackendService : Disposable {
             logger.info("[DEBUG:handlerForWorkingDir] workingDir='$workingDir', isNullOrBlank=${workingDir.isNullOrBlank()}, rpcHandlers.keys=${rpcHandlers.keys}")
             if (workingDir == null) return rpcHandlers.values.firstOrNull()?.second
             val matched = rpcHandlers.values
-                .filter { (basePath, _) -> workingDir.startsWith(basePath) }
+                .filter { (basePath, _) -> pathMatchesBase(workingDir, basePath) }
             logger.info("[DEBUG:handlerForWorkingDir] matched=${matched.size}, basePaths=${rpcHandlers.values.map { it.first }}")
             return matched
                 .maxByOrNull { (basePath, _) -> basePath.length }
@@ -415,3 +416,38 @@ class NodeBackendService : Disposable {
             ApplicationManager.getApplication().getService(NodeBackendService::class.java)
     }
 }
+
+/**
+ * Returns true if [path] is equal to or a child of [basePath], with cross-platform
+ * normalization applied before comparison:
+ *
+ * 1. Backslashes are replaced with forward slashes so that Windows-style paths from the
+ *    Node.js backend match basePaths stored by the Kotlin side (and vice-versa).
+ * 2. A trailing slash is appended to the normalised [basePath] before the prefix check to
+ *    prevent `/foo` from incorrectly matching `/foobar/x` (segment-boundary safety).
+ * 3. On case-insensitive file systems (Windows, macOS) the comparison is done in lowercase.
+ *    On case-sensitive file systems (Linux) the original casing is preserved to avoid
+ *    false positives.
+ *
+ * The optional [caseSensitive] parameter overrides the system default and is intended
+ * for unit testing on any host platform.
+ */
+internal fun pathMatchesBase(
+    path: String,
+    basePath: String,
+    caseSensitive: Boolean = SystemInfo.isFileSystemCaseSensitive,
+): Boolean {
+    fun String.normalize(): String {
+        val slashFixed = replace('\\', '/')
+        return if (caseSensitive) slashFixed else slashFixed.lowercase()
+    }
+
+    val normPath = path.normalize()
+    // Ensure basePath ends with exactly one slash so that the prefix test is
+    // segment-boundary safe: "/foo/" will not match "/foobar/x".
+    val normBase = basePath.normalize().trimEnd('/') + "/"
+
+    // A path equal to the base directory itself satisfies "normPath + '/' starts with normBase".
+    return normPath == normBase.trimEnd('/') || normPath.startsWith(normBase)
+}
+

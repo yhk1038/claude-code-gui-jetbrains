@@ -683,7 +683,7 @@ class ClaudeCodePanel(
             .filter { it.isNotBlank() && !it.startsWith("#") }
             .mapNotNull { raw ->
                 if (raw.startsWith("file://")) {
-                    runCatching { java.net.URI(raw).path }.getOrNull()
+                    resolveFileUriPath(raw)
                 } else if (
                     raw.startsWith("/") ||
                     raw.startsWith("\\\\") ||
@@ -1052,4 +1052,23 @@ class ClaudeCodePanel(
         // They are managed by ClaudeCodeBrowserService and released in fileClosed().
         logger.info("ClaudeCodePanel disposed (browser retained in pool)")
     }
+}
+
+/**
+ * Converts a `file://` URI string to an OS-native file path.
+ *
+ * `java.net.URI.path` returns the raw path component, which on Windows gives
+ * `/C:/Users/...` (leading slash before the drive letter). This function strips
+ * that spurious leading slash so the result is a valid Windows path (`C:/Users/...`).
+ * On macOS and Linux the path already starts with `/` and is returned as-is.
+ *
+ * The detection is purely string-based (`^/[A-Za-z]:`) so it works correctly in
+ * unit tests regardless of the host OS.
+ */
+internal fun resolveFileUriPath(raw: String): String? {
+    return runCatching {
+        val path = java.net.URI(raw).path ?: return null
+        // Windows: URI.path returns "/C:/..." — strip the leading slash.
+        if (path.matches(Regex("^/[A-Za-z]:.*"))) path.substring(1) else path
+    }.getOrNull()
 }
