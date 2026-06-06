@@ -60,37 +60,42 @@ class NodeProcessManager(
      * Start the Node.js backend process.
      */
     fun start() {
-        val nodePath = findNodeExecutable()
-        if (nodePath == null) {
-            logger.error(
-                "Node.js executable not found. The plugin searched PATH and common install " +
-                    "locations (nvm, volta, fnm, Homebrew) but found nothing.\n" +
-                    "How to fix:\n" +
-                    "  1. Install Node.js, or make sure 'node' is on your PATH.\n" +
-                    "  2. If you use nvm, run 'nvm alias default <version>' so a default is set.\n" +
-                    "  3. Or set the NODE_PATH_OVERRIDE environment variable to your node binary " +
-                    "(e.g. ~/.nvm/versions/node/v24.16.0/bin/node)."
-            )
-            _portDeferred.completeExceptionally(
-                IllegalStateException("Node.js executable not found")
-            )
-            return
-        }
-
-        val backendFile = findBackendFile()
-        if (backendFile == null) {
-            logger.error("Backend entry file (backend.mjs) not found.")
-            _portDeferred.completeExceptionally(
-                IllegalStateException("Backend entry file not found")
-            )
-            return
-        }
-
-        val webviewDir = extractWebviewResources()
-
-        logger.info("Starting Node.js backend: node=$nodePath, backend=${backendFile.absolutePath}, webviewDir=${webviewDir?.absolutePath}")
-
+        // Everything here — node discovery, shell PATH capture, backend extraction —
+        // can block for seconds (the `$SHELL -lic` capture is bounded only by a 10s
+        // timeout). It must NOT run on the caller's thread (EDT): start() is reached
+        // synchronously from tool-window content creation, so a blocking call here
+        // would freeze the IDE UI. Run the whole thing on Dispatchers.IO.
         scope.launch(Dispatchers.IO) {
+            val nodePath = findNodeExecutable()
+            if (nodePath == null) {
+                logger.error(
+                    "Node.js executable not found. The plugin searched PATH and common install " +
+                        "locations (nvm, volta, fnm, Homebrew) but found nothing.\n" +
+                        "How to fix:\n" +
+                        "  1. Install Node.js, or make sure 'node' is on your PATH.\n" +
+                        "  2. If you use nvm, run 'nvm alias default <version>' so a default is set.\n" +
+                        "  3. Or set the NODE_PATH_OVERRIDE environment variable to your node binary " +
+                        "(e.g. ~/.nvm/versions/node/v24.16.0/bin/node)."
+                )
+                _portDeferred.completeExceptionally(
+                    IllegalStateException("Node.js executable not found")
+                )
+                return@launch
+            }
+
+            val backendFile = findBackendFile()
+            if (backendFile == null) {
+                logger.error("Backend entry file (backend.mjs) not found.")
+                _portDeferred.completeExceptionally(
+                    IllegalStateException("Backend entry file not found")
+                )
+                return@launch
+            }
+
+            val webviewDir = extractWebviewResources()
+
+            logger.info("Starting Node.js backend: node=$nodePath, backend=${backendFile.absolutePath}, webviewDir=${webviewDir?.absolutePath}")
+
             try {
                 val env = buildMap {
                     putAll(EnvironmentUtil.getEnvironmentMap())

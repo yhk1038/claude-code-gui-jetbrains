@@ -56,8 +56,13 @@ object ShellPathResolver {
     private fun runShell(shell: String): String? {
         val marker = UUID.randomUUID().toString().replace("-", "")
         return try {
+            // Capture stdout ONLY. An interactive shell can write warnings to stderr
+            // (e.g. zsh's `can't change option: zle` without a tty); merging them into
+            // stdout risks polluting the marker-sandwiched PATH. DISCARD routes stderr
+            // to the OS null sink, so it can neither corrupt the slice nor fill a pipe
+            // buffer and block the shell.
             val pb = ProcessBuilder(shell, "-lic", buildShellCommand(marker))
-                .redirectErrorStream(true)
+                .redirectError(ProcessBuilder.Redirect.DISCARD)
             val proc = pb.start()
             val output = proc.inputStream.bufferedReader().use { it.readText() }
             val finished = proc.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS)
