@@ -76,4 +76,35 @@ class NodeExecutableResolverTest {
             assertEquals("v20.10.0", NodeExecutableResolver.selectNvmVersion(installed, "  20.10.0  "))
         }
     }
+
+    @Nested
+    inner class NormalizeConfiguredNodePath {
+        @Test
+        fun `should return null for null input`() {
+            assertNull(NodeExecutableResolver.normalizeConfiguredNodePath(null))
+        }
+
+        @Test
+        fun `should return null for empty or blank input`() {
+            assertNull(NodeExecutableResolver.normalizeConfiguredNodePath(""))
+            assertNull(NodeExecutableResolver.normalizeConfiguredNodePath("   "))
+            assertNull(NodeExecutableResolver.normalizeConfiguredNodePath("\n\t"))
+        }
+
+        @Test
+        fun `should trim surrounding whitespace from a real path`() {
+            assertEquals(
+                "/usr/local/bin/node",
+                NodeExecutableResolver.normalizeConfiguredNodePath("  /usr/local/bin/node\n"),
+            )
+        }
+
+        @Test
+        fun `should preserve a path that needs no trimming`() {
+            assertEquals(
+                "/Users/me/.n/bin/node",
+                NodeExecutableResolver.normalizeConfiguredNodePath("/Users/me/.n/bin/node"),
+            )
+        }
+    }
 }

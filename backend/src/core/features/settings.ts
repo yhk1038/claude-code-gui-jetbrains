@@ -9,6 +9,7 @@ const SETTINGS_FILE = join(homedir(), '.claude-code-gui', 'settings.js');
 
 const DEFAULT_SETTINGS: Record<string, unknown> = {
   cliPath: null,
+  nodePath: null,
   theme: 'system',
   fontSize: 13,
   autoScrollThreshold: 80,
@@ -19,6 +20,7 @@ const DEFAULT_SETTINGS: Record<string, unknown> = {
 
 const COMMENT_MAP: Record<string, string> = {
   cliPath: 'Claude CLI 실행 파일 경로 (null이면 자동 감지)',
+  nodePath: 'Node.js 실행 파일 경로 (null이면 자동 감지, 변경 시 재시작 필요)',
   theme: '테마: "system" | "light" | "dark"',
   fontSize: '글꼴 크기 (8~32)',
   autoScrollThreshold: '자동 스크롤 임계점(px). 메시지 끝에서 이 거리 안에 있을 때만 스트림을 따라 내려간다',
@@ -121,6 +123,11 @@ function validateSetting(key: string, value: unknown): string | null {
     case 'cliPath':
       if (value !== null && typeof value !== 'string') {
         return 'cliPath must be a string or null';
+      }
+      break;
+    case 'nodePath':
+      if (value !== null && typeof value !== 'string') {
+        return 'nodePath must be a string or null';
       }
       break;
     case 'terminalApp':

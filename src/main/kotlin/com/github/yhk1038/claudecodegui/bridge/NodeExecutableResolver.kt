@@ -53,6 +53,17 @@ object NodeExecutableResolver {
         return versions.first()
     }
 
+    /**
+     * Normalize a user-configured node path read from settings (`nodePath`).
+     *
+     * Returns the trimmed path, or null when it is absent/blank — so the caller
+     * falls through to auto-detection instead of trying to spawn an empty string.
+     * Existence and executability are verified by the caller against the real
+     * filesystem; this method only handles the pure string hygiene.
+     */
+    fun normalizeConfiguredNodePath(raw: String?): String? =
+        raw?.trim()?.takeIf { it.isNotEmpty() }
+
     /** True when [name] looks like `v24.16.0` / `24.16.0`. */
     private fun isVersionName(name: String): Boolean {
         val core = name.removePrefix("v")

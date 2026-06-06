@@ -34,6 +34,7 @@ class SettingsManager {
     /** 한글 주석 맵 (파일 생성 시 사용) */
     private val commentMap: LinkedHashMap<String, String> = linkedMapOf(
         "cliPath" to "Claude CLI 실행 파일 경로 (null이면 자동 감지)",
+        "nodePath" to "Node.js 실행 파일 경로 (null이면 자동 감지, 변경 시 재시작 필요)",
         "theme" to """테마: "system" | "light" | "dark"""",
         "fontSize" to "글꼴 크기 (8~32)",
         "debugMode" to "디버그 모드 활성화",
@@ -44,6 +45,7 @@ class SettingsManager {
     /** 기본값 맵 (순서 보존) */
     private val defaults: LinkedHashMap<String, JsonElement> = linkedMapOf(
         "cliPath" to JsonNull,
+        "nodePath" to JsonNull,
         "theme" to JsonPrimitive("system"),
         "fontSize" to JsonPrimitive(13),
         "debugMode" to JsonPrimitive(false),

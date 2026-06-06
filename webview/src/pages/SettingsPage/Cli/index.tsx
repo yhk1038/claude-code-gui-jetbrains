@@ -35,6 +35,7 @@ export function CliSettings() {
   const [terminals, setTerminals] = useState<TerminalInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [detectedCliPath, setDetectedCliPath] = useState<string | null>(null);
+  const [detectedNodePath, setDetectedNodePath] = useState<string | null>(null);
 
   useEffect(() => {
     send('GET_AVAILABLE_TERMINALS', {})
@@ -51,6 +52,14 @@ export function CliSettings() {
         setDetectedCliPath((res?.path as string | null) ?? null);
       })
       .catch(() => setDetectedCliPath(null));
+  }, [send]);
+
+  useEffect(() => {
+    send('GET_DETECTED_NODE_PATH', {})
+      .then((res) => {
+        setDetectedNodePath((res?.path as string | null) ?? null);
+      })
+      .catch(() => setDetectedNodePath(null));
   }, [send]);
 
   const terminalApp = settings[SettingKey.TERMINAL_APP];
@@ -161,6 +170,28 @@ export function CliSettings() {
               {detectedCliPath && !settings[SettingKey.CLI_PATH] && (
                 <span className="text-xs text-text-tertiary truncate max-w-64" title={detectedCliPath}>
                   {detectedCliPath}
+                </span>
+              )}
+            </div>
+          </SettingRow>
+        </SettingSection>
+
+        <SettingSection title="Node.js">
+          <SettingRow
+            label="Node Path"
+            description="Path to Node.js executable that runs the backend (leave empty for auto-detect). Takes effect after restart."
+          >
+            <div className="flex flex-col items-end gap-1">
+              <input
+                type="text"
+                value={settings[SettingKey.NODE_PATH] || ''}
+                onChange={(e) => updateSetting(SettingKey.NODE_PATH, e.target.value || null)}
+                placeholder="Auto-detect"
+                className="w-64 bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm text-text-primary placeholder-text-tertiary"
+              />
+              {detectedNodePath && !settings[SettingKey.NODE_PATH] && (
+                <span className="text-xs text-text-tertiary truncate max-w-64" title={detectedNodePath}>
+                  {detectedNodePath}
                 </span>
               )}
             </div>

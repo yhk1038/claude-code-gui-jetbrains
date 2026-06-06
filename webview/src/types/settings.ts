@@ -4,6 +4,7 @@
 export enum SettingKey {
   // CLI
   CLI_PATH = 'cliPath',
+  NODE_PATH = 'nodePath',
 
   // Appearance
   THEME = 'theme',
@@ -42,6 +43,7 @@ export enum LogLevel {
  */
 export interface SettingsState {
   [SettingKey.CLI_PATH]: string | null;
+  [SettingKey.NODE_PATH]: string | null;
   [SettingKey.THEME]: ThemeMode;
   [SettingKey.FONT_SIZE]: number;
   [SettingKey.AUTO_SCROLL_THRESHOLD]: number;
@@ -55,6 +57,7 @@ export interface SettingsState {
  */
 export const DEFAULT_SETTINGS: SettingsState = {
   [SettingKey.CLI_PATH]: null,
+  [SettingKey.NODE_PATH]: null,
   [SettingKey.THEME]: ThemeMode.SYSTEM,
   [SettingKey.FONT_SIZE]: 13,
   [SettingKey.AUTO_SCROLL_THRESHOLD]: 80,

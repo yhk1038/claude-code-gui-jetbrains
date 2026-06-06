@@ -123,6 +123,22 @@ describe('settings', () => {
       expect(result.status).toBe('error');
       expect(result.error).toContain('terminalApp must be a string or null');
     });
+
+    it('should accept null nodePath', async () => {
+      const result = await saveSettingToFile('nodePath', null);
+      expect(result.status).toBe('ok');
+    });
+
+    it('should accept string nodePath', async () => {
+      const result = await saveSettingToFile('nodePath', '/usr/bin/node');
+      expect(result.status).toBe('ok');
+    });
+
+    it('should reject non-string non-null nodePath', async () => {
+      const result = await saveSettingToFile('nodePath', 123);
+      expect(result.status).toBe('error');
+      expect(result.error).toContain('nodePath must be a string or null');
+    });
   });
 
   describe('readSettingsFile()', () => {
@@ -135,6 +151,7 @@ describe('settings', () => {
 
       expect(result).toEqual({
         cliPath: null,
+        nodePath: null,
         theme: 'system',
         fontSize: 13,
         autoScrollThreshold: 80,
@@ -202,6 +219,7 @@ export default {
       const result = await readSettingsFile();
       expect(result).toEqual({
         cliPath: null,
+        nodePath: null,
         theme: 'system',
         fontSize: 13,
         autoScrollThreshold: 80,

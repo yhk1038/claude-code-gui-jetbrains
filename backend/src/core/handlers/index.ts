@@ -29,6 +29,7 @@ import { loginHandler } from './login';
 import { openUrlHandler } from './openUrl';
 import { getAvailableTerminalsHandler } from './getAvailableTerminals';
 import { getDetectedCliPathHandler } from './getDetectedCliPath';
+import { getDetectedNodePathHandler } from './getDetectedNodePath';
 import { pickFilesHandler } from './pickFiles';
 import { nativeDropFlushHandler } from './nativeDropFlush';
 import { getPluginUpdatesHandler } from './getPluginUpdates';
@@ -141,6 +142,9 @@ export async function handleMessage(
       break;
     case 'GET_DETECTED_CLI_PATH':
       await getDetectedCliPathHandler(connectionId, message, connections, bridge);
+      break;
+    case 'GET_DETECTED_NODE_PATH':
+      await getDetectedNodePathHandler(connectionId, message, connections, bridge);
       break;
     case 'PICK_FILES':
       await pickFilesHandler(connectionId, message, connections, bridge);

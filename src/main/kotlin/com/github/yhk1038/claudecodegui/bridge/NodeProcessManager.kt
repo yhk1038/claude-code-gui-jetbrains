@@ -4,7 +4,10 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.EnvironmentUtil
+import com.github.yhk1038.claudecodegui.settings.SettingsManager
 import kotlinx.coroutines.*
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonPrimitive
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
@@ -241,6 +244,23 @@ class NodeProcessManager(
      * 2. Well-known locations (nvm, volta, fnm, homebrew, etc.)
      */
     private fun findNodeExecutable(): String? {
+        // 0. User-configured override from settings (highest priority — #22).
+        //    Read straight from ~/.claude-code-gui/settings.js: this runs BEFORE the
+        //    backend is spawned, so we can't ask the backend. SettingsManager reads
+        //    the file synchronously and findNodeExecutable already runs off the EDT.
+        //    Lets users on `n`/`nvm` pin an exact node when PATH holds an incompatible
+        //    one, and provides a recovery path that survives a non-bootable backend.
+        NodeExecutableResolver.normalizeConfiguredNodePath(
+            SettingsManager.getInstance().get("nodePath")?.jsonPrimitive?.contentOrNull
+        )?.let { configured ->
+            val file = File(configured)
+            if (file.exists() && file.canExecute()) {
+                logger.info("Found node via settings nodePath: $configured")
+                return configured
+            }
+            logger.warn("Configured nodePath is not an executable file, ignoring: $configured")
+        }
+
         // 1. Environment variable override
         System.getenv("NODE_PATH_OVERRIDE")?.let { envPath ->
             if (File(envPath).exists() && File(envPath).canExecute()) {
