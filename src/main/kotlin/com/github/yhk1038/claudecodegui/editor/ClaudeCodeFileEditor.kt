@@ -1,5 +1,6 @@
 package com.github.yhk1038.claudecodegui.editor
 
+import com.github.yhk1038.claudecodegui.services.EditorTabStateService
 import com.github.yhk1038.claudecodegui.toolwindow.ClaudeCodePanel
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorLocation
@@ -35,8 +36,10 @@ class ClaudeCodeFileEditor(
         }
 
         // WebView의 URL 변경을 VirtualFile에 전달 (탭 이동/분할 시 복원용)
+        // 그리고 IDE 재시작 후에도 복원되도록 영속 저장소에도 반영.
         panel.onPathChanged = { path ->
             virtualFile.currentPath = path
+            EditorTabStateService.getInstance(project).updatePath(virtualFile.sessionId, path)
         }
 
         // Streaming state change: show unread badge when streaming ends on inactive tab

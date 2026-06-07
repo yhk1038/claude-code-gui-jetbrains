@@ -25,15 +25,15 @@ class EditorTabRestoreActivity : ProjectActivity {
         val activeSessionId = stateService.getActiveSessionId()
 
         ApplicationManager.getApplication().invokeLater {
-            // 비활성 탭 먼저 복원
+            // 비활성 탭 먼저 복원 (마지막으로 보던 경로로, 없으면 세션 페이지로)
             for (sessionId in sessionIds) {
                 if (sessionId != activeSessionId) {
-                    OpenClaudeCodeAction.openSession(project, sessionId, "/sessions/$sessionId")
+                    OpenClaudeCodeAction.openSession(project, sessionId, stateService.getRestorePath(sessionId))
                 }
             }
             // 활성 탭은 마지막에 열어서 포커스 획득
             if (activeSessionId != null && activeSessionId in sessionIds) {
-                OpenClaudeCodeAction.openSession(project, activeSessionId, "/sessions/$activeSessionId")
+                OpenClaudeCodeAction.openSession(project, activeSessionId, stateService.getRestorePath(activeSessionId))
             }
 
             logger.info("Editor tabs restored successfully")
