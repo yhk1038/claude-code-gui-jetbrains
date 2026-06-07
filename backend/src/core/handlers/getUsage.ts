@@ -105,9 +105,13 @@ export function resetUsageCache(): void {
 async function runCcbUsage(): Promise<CcbUsageResponse> {
   const { shell, args } = shellInvocation('ccb oauth usage --json');
   const { stdout } = await execFileAsync(shell, args, { timeout: 15000 });
-  const trimmed = stdout.trim();
-  if (!trimmed) throw new Error('Empty response from ccb');
-  return JSON.parse(trimmed);
+  // Interactive login shells (`-l -i`) source startup files like .bashrc, which on
+  // Linux often emit control sequences such as printf "\e[?2004l" (disable bracketed
+  // paste) to stdout before our output. trim() cannot strip the ESC char, so extract
+  // the JSON object itself rather than parsing the raw stdout. (issue #62)
+  const match = stdout.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('Empty response from ccb');
+  return JSON.parse(match[0]);
 }
 
 export async function getUsageHandler(

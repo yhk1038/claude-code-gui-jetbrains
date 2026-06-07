@@ -248,6 +248,37 @@ describe('getUsageHandler', () => {
     }));
   });
 
+  // Issue #62: Linux .bashrc often emits printf "\e[?2004l" (disable bracketed paste).
+  // Under `bash -l -i -c`, this escape sequence is written to stdout before the JSON,
+  // and trim() cannot strip the ESC control char, so JSON.parse fails.
+  it('should parse JSON despite a leading bracketed-paste escape sequence (issue #62)', async () => {
+    const connections = createMockConnections();
+    const message: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
+    setupExecFileStdout(`\x1b[?2004l${JSON.stringify(SAMPLE_USAGE)}`);
+
+    await getUsageHandler('conn-1', message, connections, mockBridge);
+
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', {
+      requestId: 'req-1',
+      status: 'ok',
+      usage: SAMPLE_USAGE,
+    });
+  });
+
+  it('should parse JSON despite surrounding shell noise on stdout', async () => {
+    const connections = createMockConnections();
+    const message: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
+    setupExecFileStdout(`\x1b[?2004l\n${JSON.stringify(SAMPLE_USAGE)}\n\x1b[?2004h`);
+
+    await getUsageHandler('conn-1', message, connections, mockBridge);
+
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', 'ACK', {
+      requestId: 'req-1',
+      status: 'ok',
+      usage: SAMPLE_USAGE,
+    });
+  });
+
   describe('shellInvocation', () => {
     const originalPlatform = process.platform;
     const originalShell = process.env.SHELL;
