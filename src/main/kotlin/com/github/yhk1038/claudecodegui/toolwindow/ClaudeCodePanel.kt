@@ -6,6 +6,9 @@ import com.github.yhk1038.claudecodegui.notifications.JcefRuntimeNotifier
 import com.github.yhk1038.claudecodegui.services.ClaudeCodeBrowserService
 import com.github.yhk1038.claudecodegui.services.DiffService
 import com.github.yhk1038.claudecodegui.services.NodeBackendService
+import com.github.yhk1038.claudecodegui.toolwindow.realization.CallbackStaging
+import com.github.yhk1038.claudecodegui.toolwindow.realization.LoadingPhase
+import com.github.yhk1038.claudecodegui.toolwindow.realization.RealizationGate
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.dnd.DnDEvent
 import com.intellij.ide.dnd.DnDManager
@@ -19,6 +22,7 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptor
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.Disposer
@@ -90,25 +94,47 @@ class ClaudeCodePanel(
     // This allows the browser to survive dispose-recreate cycles during tab move/split.
     // Returns null when JCEF is not supported (e.g. Android Studio without JCEF JBR).
     private val browserService = ClaudeCodeBrowserService.getInstance(project)
-    private val holder = browserService.getOrCreate(sessionId)
-    private val browser: JBCefBrowser? = holder?.browser
-    private val cursorQuery: JBCefJSQuery? = holder?.cursorQuery
-    private val streamingQuery: JBCefJSQuery? = holder?.streamingQuery
+    private var holder: ClaudeCodeBrowserService.BrowserHolder? = null
+    private val browser: JBCefBrowser? get() = holder?.browser
+    private val cursorQuery: JBCefJSQuery? get() = holder?.cursorQuery
+    private val streamingQuery: JBCefJSQuery? get() = holder?.streamingQuery
+
+    // One-shot guard so re-attach (tab move/split) does NOT re-schedule realization.
+    private val realizationGate = RealizationGate()
+
+    // Callback staging — set by ClaudeCodeFileEditor before the holder exists,
+    // flushed onto the holder at realizeBrowser() time. Never overwrites a
+    // pooled holder that already has a callback (tab move/split safety).
+    private val titleStaging = CallbackStaging<(String) -> Unit>()
+    private val pathStaging = CallbackStaging<(String) -> Unit>()
+    private val streamingStaging = CallbackStaging<(Boolean) -> Unit>()
+
+    @Volatile
+    private var isPanelDisposed: Boolean = false
 
     // Title/path change callbacks delegated to BrowserHolder
     // so handlers installed on first panel creation can reach the latest panel's callbacks.
     // All callbacks are no-ops when holder is null (JCEF unavailable).
     var onTitleChanged: ((String) -> Unit)?
-        get() = holder?.onTitleChanged
-        set(value) { holder?.onTitleChanged = value }
+        get() = holder?.onTitleChanged ?: titleStaging.current()
+        set(value) {
+            titleStaging.stage(value)
+            holder?.onTitleChanged = value
+        }
 
     var onPathChanged: ((String) -> Unit)?
-        get() = holder?.onPathChanged
-        set(value) { holder?.onPathChanged = value }
+        get() = holder?.onPathChanged ?: pathStaging.current()
+        set(value) {
+            pathStaging.stage(value)
+            holder?.onPathChanged = value
+        }
 
     var onStreamingStateChanged: ((Boolean) -> Unit)?
-        get() = holder?.onStreamingStateChanged
-        set(value) { holder?.onStreamingStateChanged = value }
+        get() = holder?.onStreamingStateChanged ?: streamingStaging.current()
+        set(value) {
+            streamingStaging.stage(value)
+            holder?.onStreamingStateChanged = value
+        }
 
     private val panelId = UUID.randomUUID().toString()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -117,7 +143,7 @@ class ClaudeCodePanel(
     private val diffService: DiffService = DiffService.getInstance(project)
 
     // Loading label
-    private val loadingLabel = javax.swing.JLabel("Starting backend...").apply {
+    private val loadingLabel = javax.swing.JLabel(LoadingPhase.INDEXING_WAIT.message).apply {
         horizontalAlignment = javax.swing.SwingConstants.CENTER
         font = font.deriveFont(14f)
     }
@@ -126,49 +152,95 @@ class ClaudeCodePanel(
     private var errorPanel: JPanel? = null
 
     init {
-        if (holder == null) {
-            // JCEF is not available in this runtime (e.g. Android Studio without JCEF JBR).
-            // Show a fallback guidance panel and skip all browser/backend initialization.
+        if (!browserService.isJcefAvailable()) {
+            // JCEF unavailable (e.g. Android Studio without JCEF JBR). Fallback panel
+            // shown immediately; no background realization will be scheduled.
             add(JcefUnavailablePanel(), BorderLayout.CENTER)
             logger.warn("JCEF is not supported in this runtime — showing fallback panel")
             JcefRuntimeNotifier.notify(project)
         } else {
-            initWithJcef()
+            // Browser realization is deferred until addNotify() + DumbService.runWhenSmart.
+            // Show the indexing-wait placeholder so the user knows the tab is alive.
+            loadingLabel.text = LoadingPhase.INDEXING_WAIT.message
+            add(loadingLabel, BorderLayout.CENTER)
         }
     }
 
-    private fun initWithJcef() {
-        if (holder!!.isLoaded) {
-            // Browser already loaded — reattach component (tab move/split restoration)
-            val parent = browser!!.component.parent
+    override fun addNotify() {
+        super.addNotify()
+        // JCEF unavailable: nothing to realize, fallback panel already shown.
+        if (!browserService.isJcefAvailable()) return
+        // One-shot guard. Tab move/split triggers removeNotify→addNotify on a fresh
+        // panel instance, where the gate is fresh too. The holder pool inside
+        // realizeBrowser() handles reuse via getOrCreate(); the gate only protects
+        // against re-entry on THIS panel instance.
+        if (!realizationGate.tryAcquire()) return
+        scheduleBrowserRealization()
+    }
+
+    private fun scheduleBrowserRealization() {
+        // runWhenSmart runs on the EDT and may execute synchronously if already smart.
+        // dispose() may run before this callback fires (user closed the tab mid-indexing);
+        // guard with isPanelDisposed and project.isDisposed.
+        DumbService.getInstance(project).runWhenSmart {
+            if (isPanelDisposed || project.isDisposed) return@runWhenSmart
+            realizeBrowser()
+        }
+    }
+
+    private fun realizeBrowser() {
+        // Acquire (or reuse) the pooled browser holder. May return null if JCEF
+        // became unavailable between init and now — defensive check.
+        val acquired = browserService.getOrCreate(sessionId) ?: run {
+            logger.warn("JCEF became unavailable before realizeBrowser for session: $sessionId")
+            return
+        }
+        holder = acquired
+
+        // Flush staged callbacks. flush() refuses to overwrite an existing holder
+        // callback, so pooled-holder wiring from a previous panel survives.
+        titleStaging.flush(acquired.onTitleChanged) { acquired.onTitleChanged = it }
+        pathStaging.flush(acquired.onPathChanged) { acquired.onPathChanged = it }
+        streamingStaging.flush(acquired.onStreamingStateChanged) { acquired.onStreamingStateChanged = it }
+
+        val b = acquired.browser
+
+        if (acquired.isLoaded) {
+            // Browser already loaded (tab move/split): detach from previous parent if any,
+            // remove the placeholder label, and re-attach.
+            val parent = b.component.parent
             if (parent != null && parent !== this) {
-                parent.remove(browser.component)
+                parent.remove(b.component)
             }
-            add(browser.component, BorderLayout.CENTER)
+            remove(loadingLabel)
+            add(b.component, BorderLayout.CENTER)
+            revalidate()
+            repaint()
             logger.info("Reattached existing JCEF browser for session: $sessionId")
         } else {
-            // First load — show loading screen
-            add(loadingLabel, BorderLayout.CENTER)
+            // First load — switch the placeholder to the next phase.
+            loadingLabel.text = LoadingPhase.BACKEND_START.message
+            revalidate()
+            repaint()
         }
 
-        // Install JCEF handlers only once per browser instance
-        if (!holder.handlersInstalled) {
+        // Install JCEF handlers only once per browser instance.
+        if (!acquired.handlersInstalled) {
             setupBrowserHandlers()
-            holder.handlersInstalled = true
+            acquired.handlersInstalled = true
         }
 
-        // Install native (Swing / IDE) drag-and-drop bridge once per holder. Reinstalling on
-        // every panel recreate would attach duplicate listeners during tab move/split.
-        if (!holder.nativeDropBridgeInstalled) {
+        // Install native (Swing/IDE) drag-and-drop bridge once per holder.
+        if (!acquired.nativeDropBridgeInstalled) {
             setupNativeDropBridge()
-            holder.nativeDropBridgeInstalled = true
+            acquired.nativeDropBridgeInstalled = true
         }
 
-        // Register RPC handler for this panel
+        // Register RPC handler for this panel.
         backendService.ensureStarted(project.basePath ?: "", panelId, createRpcHandler())
 
-        // Load URL only if not already loaded
-        if (!holder.isLoaded) {
+        // Load URL only if not already loaded.
+        if (!acquired.isLoaded) {
             scope.launch {
                 try {
                     val port = backendService.awaitPort()
@@ -185,7 +257,7 @@ class ClaudeCodePanel(
 
     // ─── Browser handlers (JCEF) ────────────────────────────────────
 
-    // Called only from initWithJcef() — holder, browser, cursorQuery, streamingQuery are guaranteed non-null here.
+    // Called only from realizeBrowser() — holder, browser, cursorQuery, streamingQuery are guaranteed non-null here.
     private fun setupBrowserHandlers() {
         val b = browser!!
         val cq = cursorQuery!!
@@ -390,7 +462,7 @@ class ClaudeCodePanel(
      * Inject streaming state bridge so WebView can notify Kotlin of streaming changes
      * via JBCefJSQuery instead of encoding state into document.title.
      */
-    // Called only from setupBrowserHandlers() which is only called from initWithJcef() — streamingQuery is non-null.
+    // Called only from setupBrowserHandlers() which is only called from realizeBrowser() — streamingQuery is non-null.
     private fun injectStreamingStateBridge(frame: CefFrame) {
         val js = """
             (function() {
@@ -405,7 +477,7 @@ class ClaudeCodePanel(
     /**
      * Inject cursor CSS tracking script into the loaded page.
      */
-    // Called only from setupBrowserHandlers() which is only called from initWithJcef() — cursorQuery is non-null.
+    // Called only from setupBrowserHandlers() which is only called from realizeBrowser() — cursorQuery is non-null.
     private fun injectCursorTracking(frame: CefFrame) {
         val js = """
             (function() {
@@ -427,9 +499,11 @@ class ClaudeCodePanel(
      * Wraps InputMethodListeners with try-catch to suppress NPE from
      * JBCefInputMethodAdapter when replacementRange is null (macOS + JCEF + CJK IME).
      */
-    // Called only from setupBrowserHandlers() which is only called from initWithJcef() — holder and browser are non-null.
+    // Called only from setupBrowserHandlers() which is only called from realizeBrowser() — holder and browser are non-null.
     private fun installImeWorkaround() {
-        if (holder!!.imeWorkaroundInstalled) return
+        val h = holder!!
+        if (h.imeWorkaroundInstalled) return
+        val b = browser!!
 
         fun wrapListeners(component: java.awt.Component) {
             val listeners = component.inputMethodListeners
@@ -467,8 +541,8 @@ class ClaudeCodePanel(
         }
 
         javax.swing.SwingUtilities.invokeLater {
-            traverseAndWrap(browser!!.component)
-            holder.imeWorkaroundInstalled = true
+            traverseAndWrap(b.component)
+            h.imeWorkaroundInstalled = true
             logger.info("JCEF IME NPE workaround installed")
         }
     }
@@ -483,7 +557,7 @@ class ClaudeCodePanel(
      * listener) survives tab move/split. Disposal happens in
      * [ClaudeCodeBrowserService.release].
      */
-    // Called only from setupBrowserHandlers() which is only called from initWithJcef() — holder and browser are non-null.
+    // Called only from setupBrowserHandlers() which is only called from realizeBrowser() — holder and browser are non-null.
     private fun installLafListener() {
         val h = holder!!
         if (h.lafListenerInstalled) return
@@ -523,7 +597,7 @@ class ClaudeCodePanel(
     /**
      * Opens the JCEF DevTools for debugging.
      */
-    // Called only from WebViewKeyboardHandler installed via initWithJcef() — browser is non-null.
+    // Called only from WebViewKeyboardHandler installed via realizeBrowser() — browser is non-null.
     private fun openDevTools() {
         try {
             (browser!! as? com.intellij.ui.jcef.JBCefBrowserBase)?.openDevtools()
@@ -720,7 +794,7 @@ class ClaudeCodePanel(
      * Load the WebView URL from the Node.js backend.
      * Called once the backend has printed its PORT.
      */
-    // Called only from initWithJcef() — holder and browser are non-null.
+    // Called only from realizeBrowser() — holder and browser are non-null.
     private fun loadWebView(port: Int) {
         System.err.println("[ClaudeCodePanel] loadWebView called for project: ${project.name}")
         System.err.println("[ClaudeCodePanel] project.basePath: ${project.basePath}")
@@ -738,10 +812,12 @@ class ClaudeCodePanel(
         logger.info("Loading WebView from Node.js backend: $url")
 
         javax.swing.SwingUtilities.invokeLater {
+            val b = browser!!
+            val h = holder!!
             remove(loadingLabel)
-            browser!!.loadURL(url)
-            add(browser.component, BorderLayout.CENTER)
-            holder!!.isLoaded = true
+            b.loadURL(url)
+            add(b.component, BorderLayout.CENTER)
+            h.isLoaded = true
             revalidate()
             repaint()
         }
@@ -1038,6 +1114,7 @@ class ClaudeCodePanel(
     // ─── Lifecycle ──────────────────────────────────────────────────
 
     override fun dispose() {
+        isPanelDisposed = true
         // Detach browser component from this panel WITHOUT disposing the browser.
         // The browser is owned by ClaudeCodeBrowserService and survives tab move/split.
         // It will be reattached when a new ClaudeCodePanel is created for the same session.
