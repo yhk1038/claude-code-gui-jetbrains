@@ -71,10 +71,10 @@ ccg_main() {
 
   case "$cmd" in
     run)           cmd_run "$@" ;;
-    list)          cmd_list "$@" ;;
+    list|ls)       cmd_list "$@" ;;
     update)        cmd_update "$@" ;;
     stop)          cmd_stop "$@" ;;
-    version|--version) cmd_version "$@" ;;
+    version|--version|-v) cmd_version "$@" ;;
     doctor)        cmd_doctor "$@" ;;
     self-update)   cmd_self_update "$@" ;;
     uninstall)     cmd_uninstall "$@" ;;

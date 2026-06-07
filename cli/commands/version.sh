@@ -14,7 +14,16 @@ ccg_self_version() {
   fi
 }
 
+cmd_version_help() {
+  printf '%s\n\n' "$(t help_version_header)"
+  printf '%b\n' "$(t help_version_body)"
+}
+
 cmd_version() {
+  case "${1:-}" in
+    -h|--help) cmd_version_help; return 0 ;;
+  esac
+
   printf '%s\n' "$(t version_ccg "$(ccg_self_version)")"
 
   local cached

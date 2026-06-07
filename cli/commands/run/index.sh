@@ -11,8 +11,17 @@ _run_dir="$(dirname "${BASH_SOURCE[0]}")"
 source "$_run_dir/decide-action.sh"
 unset _run_dir
 
+cmd_run_help() {
+  printf '%s\n\n' "$(t help_run_header)"
+  printf '%b\n' "$(t help_run_body)"
+}
+
 # Default `ccg run` — orchestration. May spawn a long-lived foreground process.
 cmd_run() {
+  case "${1:-}" in
+    -h|--help) cmd_run_help; return 0 ;;
+  esac
+
   local status current_ver latest_tag latest_ver action
 
   status=$(port_status)

@@ -93,6 +93,20 @@ MSG_en_help_list_body="  ccg list             List the backend(s) and their desc
 MSG_en_help_stop_header="ccg stop — terminate the backend process tree"
 MSG_en_help_stop_body="  ccg stop                 Stop the backend on port 19836, descendants included.\n  ccg stop <pid>           Stop the tree rooted at this PID.\n  ccg stop --port <port>   Stop the backend on this port (alias: -p).\n  ccg stop --all           Stop EVERY backend.mjs tree, IDE ones too (asks first; alias: -a).\n  ccg stop --force         Skip SIGTERM, send SIGKILL immediately (alias: -f).\n  ccg stop --no-tree       Stop only the named process, not its children.\n  ccg stop -h, --help      Show this help.\n\n  Termination order: leaf children first, then the root. Each process gets\n  SIGTERM, up to 3 seconds to exit, then SIGKILL. With --force, SIGKILL is\n  sent immediately. A PID that is not part of a backend tree triggers a\n  confirmation prompt before anything is killed."
 
+# Help: run / update / version / doctor / self-update / uninstall
+MSG_en_help_run_header="ccg run — start (or reuse) the backend and open the browser"
+MSG_en_help_run_body="  ccg run              Check port 19836, spawn the backend (or reuse a running one),\n                       then open the WebView in your browser. This is the default\n                       command, so 'ccg' alone behaves the same. Takes no arguments.\n  ccg run -h, --help   Show this help."
+MSG_en_help_update_header="ccg update — force-update the runtime to the latest release"
+MSG_en_help_update_body="  ccg update             Refresh the runtime to the latest GitHub release. If a\n                         backend is running it is stopped first, then replaced.\n  ccg update -h, --help  Show this help."
+MSG_en_help_version_header="ccg version — show ccg, runtime, and backend versions"
+MSG_en_help_version_body="  ccg version             Show the installed ccg, cached runtime(s), and the\n                          version of any backend currently running. Alias: -v.\n  ccg version -h, --help  Show this help."
+MSG_en_help_doctor_header="ccg doctor — diagnose the environment"
+MSG_en_help_doctor_body="  ccg doctor             Check node, PATH, cache, port 19836, and how many\n                         backend processes are alive.\n  ccg doctor -h, --help  Show this help."
+MSG_en_help_self_update_header="ccg self-update — update ccg itself"
+MSG_en_help_self_update_body="  ccg self-update             Re-run the install script to update the ccg cli.\n  ccg self-update -h, --help  Show this help."
+MSG_en_help_uninstall_header="ccg uninstall — remove ccg from this machine"
+MSG_en_help_uninstall_body="  ccg uninstall             Remove ccg from this machine (binary, runtimes, PATH entry).\n  ccg uninstall -h, --help  Show this help."
+
 # Generic
 MSG_en_abort="Aborted."
 MSG_en_unknown_command="Unknown command: %s"

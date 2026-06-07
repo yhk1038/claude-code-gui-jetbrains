@@ -474,3 +474,71 @@ esac
   [ "$status" -eq 0 ]
   [[ "$output" == *"ccg list"* ]]
 }
+
+@test "dispatcher: 'ls' is an alias for list" {
+  run env CCG_LANG=en bash "$CLI_BIN/ccg" ls -h
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ccg list"* ]]
+}
+
+@test "dispatcher: '-v' is an alias for version" {
+  mock_cmd_with_logic curl 'exit 7'
+  mock_cmd_with_logic lsof 'exit 1'
+  run env CCG_LANG=en bash "$CLI_BIN/ccg" -v
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ccg version"* ]]
+}
+
+@test "dispatcher: help text shows aliases (ls, -v, -h)" {
+  run env CCG_LANG=en bash "$CLI_BIN/ccg" help
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ls"* ]]
+  [[ "$output" == *"-v"* ]]
+  [[ "$output" == *"-h"* ]]
+}
+
+# ─── per-command -h routing ───────────────────────────────────
+# Every subcommand intercepts -h/--help BEFORE doing any backend work, so these
+# return status 0 and emit their own help without needing curl/lsof mocks.
+
+@test "dispatcher: routes 'run -h' to cmd_run help" {
+  run env CCG_LANG=en bash "$CLI_BIN/ccg" run -h
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ccg run"* ]]
+}
+
+@test "dispatcher: routes 'update -h' to cmd_update help" {
+  run env CCG_LANG=en bash "$CLI_BIN/ccg" update -h
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ccg update"* ]]
+}
+
+@test "dispatcher: routes 'version -h' to cmd_version help (no backend lookup)" {
+  run env CCG_LANG=en bash "$CLI_BIN/ccg" version -h
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ccg version"* ]]
+}
+
+@test "dispatcher: routes 'doctor -h' to cmd_doctor help" {
+  run env CCG_LANG=en bash "$CLI_BIN/ccg" doctor -h
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ccg doctor"* ]]
+}
+
+@test "dispatcher: routes 'self-update -h' to cmd_self_update help" {
+  run env CCG_LANG=en bash "$CLI_BIN/ccg" self-update -h
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ccg self-update"* ]]
+}
+
+@test "dispatcher: routes 'uninstall -h' to cmd_uninstall help" {
+  run env CCG_LANG=en bash "$CLI_BIN/ccg" uninstall -h
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ccg uninstall"* ]]
+}
+
+@test "dispatcher: '--help' long form works on a subcommand (version)" {
+  run env CCG_LANG=en bash "$CLI_BIN/ccg" version --help
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ccg version"* ]]
+}

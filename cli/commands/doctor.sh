@@ -5,7 +5,16 @@
 # Requires runtime.sh (runtime_list_cached), port/* (port_status,
 # get_backend_version_via_port), backend-detect/* (list_backend_roots), i18n.sh.
 
+cmd_doctor_help() {
+  printf '%s\n\n' "$(t help_doctor_header)"
+  printf '%b\n' "$(t help_doctor_body)"
+}
+
 cmd_doctor() {
+  case "${1:-}" in
+    -h|--help) cmd_doctor_help; return 0 ;;
+  esac
+
   printf '%s\n' "$(t doctor_header)"
 
   if command -v node >/dev/null 2>&1; then
