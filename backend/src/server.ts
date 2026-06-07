@@ -1,4 +1,5 @@
 import { execFileSync, execSync } from 'child_process';
+import { selectKillablePids } from './core/port-utils';
 import { startWebSocketServer, type BridgeMap } from './ws/ws-server';
 import { BrowserBridge } from './bridge/browser-bridge';
 import { JetBrainsBridge } from './bridge/jetbrains-bridge';
@@ -34,22 +35,26 @@ import type { NativeDropEntry } from './core/types';
  */
 
 function killProcessOnPort(port: number): void {
+  // CRITICAL: only ever target processes *LISTENING* on the port. A plain
+  // `lsof -ti :PORT` also returns processes merely connected to it — including the
+  // IDE JVM's RPC WebSocket — and SIGKILLing those kills the entire IDE (exit 137).
+  // Restricting to LISTEN sockets + filtering our own PID (selectKillablePids)
+  // ensures we only reclaim the port from a stale backend, never the IDE.
   if (process.platform === 'win32') {
     try {
-      // Find PIDs listening on the port via netstat, then parse the last column
-      const output = execSync(`netstat -ano | findstr :${port}`, { encoding: 'utf8' }).trim();
+      const output = execSync(`netstat -ano | findstr :${port} | findstr LISTENING`, {
+        encoding: 'utf8',
+      }).trim();
       if (!output) return;
-      const pids = new Set<number>();
-      output.split('\n').forEach((line) => {
-        const parts = line.trim().split(/\s+/);
-        const pidStr = parts[parts.length - 1];
-        const pid = parseInt(pidStr, 10);
-        if (Number.isFinite(pid) && pid > 0) pids.add(pid);
-      });
-      pids.forEach((pid) => {
+      // Last column of each netstat row is the PID.
+      const rawPids = output
+        .split('\n')
+        .map((line) => line.trim().split(/\s+/).pop() ?? '')
+        .join('\n');
+      selectKillablePids(rawPids, process.pid).forEach((pid) => {
         try {
           execFileSync('taskkill', ['/F', '/PID', String(pid)]);
-          console.error('[node-backend]', `Killed process ${pid} occupying port ${port}`);
+          console.error('[node-backend]', `Killed listening process ${pid} on port ${port}`);
         } catch {
           // Process may have already exited — ignore
         }
@@ -59,19 +64,16 @@ function killProcessOnPort(port: number): void {
     }
   } else {
     try {
-      const pids = execFileSync('lsof', ['-ti', `:${port}`], { encoding: 'utf8' }).trim();
-      if (pids) {
-        pids.split('\n').forEach((pidStr) => {
-          const pid = parseInt(pidStr.trim(), 10);
-          if (!Number.isFinite(pid) || pid <= 0) return;
-          try {
-            process.kill(pid, 'SIGKILL');
-            console.error('[node-backend]', `Killed process ${pid} occupying port ${port}`);
-          } catch {
-            // Process may have already exited — ignore
-          }
-        });
-      }
+      // -sTCP:LISTEN restricts the query to listening sockets only.
+      const raw = execFileSync('lsof', ['-ti', `:${port}`, '-sTCP:LISTEN'], { encoding: 'utf8' });
+      selectKillablePids(raw, process.pid).forEach((pid) => {
+        try {
+          process.kill(pid, 'SIGKILL');
+          console.error('[node-backend]', `Killed listening process ${pid} on port ${port}`);
+        } catch {
+          // Process may have already exited — ignore
+        }
+      });
     } catch {
       // lsof returns non-zero when no process found — ignore
     }

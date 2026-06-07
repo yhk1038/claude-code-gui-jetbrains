@@ -141,7 +141,12 @@ class NodeBackendService : Disposable {
         rpcHandlers[key] = Pair(projectBasePath, rpcHandler)
         if (nodeProcessManager == null && rpcClient == null) {
             startBackend()
-        } else if (nodeProcessManager?.isAlive == false && !isBackendAlreadyRunning(DEFAULT_PORT)) {
+        } else if (nodeProcessManager?.isDead == true && !isBackendAlreadyRunning(DEFAULT_PORT)) {
+            // Only restart when the process actually STARTED and then EXITED. A manager
+            // that is still asynchronously starting (process not yet spawned) reports
+            // isDead == false, so a second panel initialising concurrently will NOT race
+            // a duplicate spawn — the duplicate spawn was the trigger for the EADDRINUSE
+            // storm that ended up killing the IDE.
             logger.info("Node.js backend process is dead, restarting...")
             restart()
         }
@@ -343,36 +348,37 @@ class NodeBackendService : Disposable {
     }
 
     /**
-     * Kill any process listening on the given port.
+     * Kill a *stale backend* listening on the given port.
+     *
+     * CRITICAL: only target processes LISTENING on the port. A plain `lsof -ti :PORT`
+     * also returns processes merely connected to it — including this very IDE JVM's RPC
+     * WebSocket — and `kill -9`ing those takes the whole IDE down (observed as exit 137 /
+     * SIGKILL). We restrict to LISTEN sockets (lsof -sTCP:LISTEN / netstat LISTENING) and
+     * filter out our own PID via [selectKillablePids] as a second line of defence.
      */
     private fun killProcessOnPort(port: Int) {
         try {
+            val selfPid = ProcessHandle.current().pid()
             val os = System.getProperty("os.name").lowercase()
             if (os.contains("win")) {
-                val output = ProcessBuilder("cmd", "/c", "netstat -ano | findstr :$port")
+                val output = ProcessBuilder("cmd", "/c", "netstat -ano | findstr :$port | findstr LISTENING")
                     .start().inputStream.bufferedReader().readText().trim()
-                val pids = output.lines()
-                    .mapNotNull { it.trim().split("\\s+".toRegex()).lastOrNull()?.toIntOrNull() }
-                    .filter { it > 0 }
-                    .toSet()
-                pids.forEach { pid ->
+                val raw = output.lines()
+                    .mapNotNull { it.trim().split("\\s+".toRegex()).lastOrNull() }
+                    .joinToString("\n")
+                selectKillablePids(raw, selfPid).forEach { pid ->
                     ProcessBuilder("taskkill", "/F", "/PID", pid.toString())
                         .start().waitFor(3, java.util.concurrent.TimeUnit.SECONDS)
                 }
             } else {
-                val pids = ProcessBuilder("lsof", "-ti", ":$port")
-                    .start().inputStream.bufferedReader().readText().trim()
-                if (pids.isNotEmpty()) {
-                    pids.split("\n").forEach { pidStr ->
-                        val pid = pidStr.trim().toIntOrNull()
-                        if (pid != null && pid > 0) {
-                            ProcessBuilder("kill", "-9", pid.toString())
-                                .start().waitFor(3, java.util.concurrent.TimeUnit.SECONDS)
-                        }
-                    }
+                val raw = ProcessBuilder("lsof", "-ti", ":$port", "-sTCP:LISTEN")
+                    .start().inputStream.bufferedReader().readText()
+                selectKillablePids(raw, selfPid).forEach { pid ->
+                    ProcessBuilder("kill", "-9", pid.toString())
+                        .start().waitFor(3, java.util.concurrent.TimeUnit.SECONDS)
                 }
             }
-            logger.info("Killed stale backend process on port $port")
+            logger.info("Killed stale backend process(es) listening on port $port")
         } catch (e: Exception) {
             logger.warn("Failed to kill process on port $port", e)
         }
@@ -432,6 +438,21 @@ class NodeBackendService : Disposable {
  * The optional [caseSensitive] parameter overrides the system default and is intended
  * for unit testing on any host platform.
  */
+/**
+ * Parse the PID output of `lsof -t` / netstat and return the PIDs that are safe to kill
+ * when reclaiming a port: valid positive integers, de-duplicated (preserving order), and
+ * excluding [selfPid] so the IDE never kills itself. See [NodeBackendService.killProcessOnPort].
+ */
+internal fun selectKillablePids(raw: String, selfPid: Long): List<Long> {
+    val seen = LinkedHashSet<Long>()
+    for (line in raw.split("\n")) {
+        val pid = line.trim().toLongOrNull() ?: continue
+        if (pid <= 0 || pid == selfPid) continue
+        seen.add(pid)
+    }
+    return seen.toList()
+}
+
 internal fun pathMatchesBase(
     path: String,
     basePath: String,

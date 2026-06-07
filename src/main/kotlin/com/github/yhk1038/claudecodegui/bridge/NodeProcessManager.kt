@@ -41,6 +41,23 @@ class NodeProcessManager(
     private var stderrJob: Job? = null
 
     /**
+     * Lifecycle of the managed process. [start] runs asynchronously, so for a window
+     * after start() returns the OS process does not yet exist and [isAlive] is false.
+     * Distinguishing STARTING from DEAD prevents callers (NodeBackendService.ensureStarted)
+     * from mistaking a still-spawning backend for a dead one and racing a second spawn —
+     * which collides on the port and triggers the port-reclaim kill path. See issue: the
+     * duplicate spawn was the trigger behind the IDE-killing EADDRINUSE storm.
+     */
+    enum class Lifecycle { STARTING, RUNNING, DEAD }
+
+    @Volatile
+    private var lifecycle = Lifecycle.STARTING
+
+    /** True only once the process has actually started and later exited (or failed to start). */
+    val isDead: Boolean
+        get() = lifecycle == Lifecycle.DEAD
+
+    /**
      * Handler interface for JSON-RPC requests coming from the Node.js backend.
      * The Node.js backend calls these when it needs IDE-native functionality.
      */
@@ -80,6 +97,7 @@ class NodeProcessManager(
                         "  3. Or set the NODE_PATH_OVERRIDE environment variable to your node binary " +
                         "(e.g. ~/.nvm/versions/node/v24.16.0/bin/node)."
                 )
+                lifecycle = Lifecycle.DEAD
                 _portDeferred.completeExceptionally(
                     IllegalStateException("Node.js executable not found")
                 )
@@ -89,6 +107,7 @@ class NodeProcessManager(
             val backendFile = findBackendFile()
             if (backendFile == null) {
                 logger.error("Backend entry file (backend.mjs) not found.")
+                lifecycle = Lifecycle.DEAD
                 _portDeferred.completeExceptionally(
                     IllegalStateException("Backend entry file not found")
                 )
@@ -121,6 +140,7 @@ class NodeProcessManager(
 
                 val proc = pb.start()
                 process = proc
+                lifecycle = Lifecycle.RUNNING
 
                 // Read stdout: first line is PORT, rest are logged
                 stdoutJob = scope.launch(Dispatchers.IO) {
@@ -151,6 +171,7 @@ class NodeProcessManager(
 
                 // Wait for process to exit and log the result
                 val exitCode = proc.waitFor()
+                lifecycle = Lifecycle.DEAD
                 logger.info("Node.js backend exited with code $exitCode")
 
                 if (!_portDeferred.isCompleted) {
@@ -161,6 +182,7 @@ class NodeProcessManager(
             } catch (e: CancellationException) {
                 // Normal shutdown
             } catch (e: Exception) {
+                lifecycle = Lifecycle.DEAD
                 logger.error("Failed to start Node.js backend", e)
                 if (!_portDeferred.isCompleted) {
                     _portDeferred.completeExceptionally(e)
@@ -713,6 +735,7 @@ class NodeProcessManager(
 
     override fun dispose() {
         logger.info("Disposing NodeProcessManager")
+        lifecycle = Lifecycle.DEAD
 
         stdoutJob?.cancel()
         stderrJob?.cancel()
