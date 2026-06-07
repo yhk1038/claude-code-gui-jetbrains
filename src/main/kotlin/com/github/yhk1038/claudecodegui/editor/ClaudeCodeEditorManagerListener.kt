@@ -1,31 +1,22 @@
 package com.github.yhk1038.claudecodegui.editor
 
-import com.github.yhk1038.claudecodegui.services.ClaudeCodeBrowserService
-import com.github.yhk1038.claudecodegui.services.EditorTabStateService
-import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
-import com.intellij.openapi.vfs.VirtualFile
 
 /**
- * Listens for actual file close events to clean up session state.
+ * Clears the unread badge when a Claude Code tab becomes selected.
  *
- * JetBrains calls FileEditor.dispose() both when a tab is closed AND when
- * a tab is moved/split between editor groups. This listener ensures that
- * session cleanup (removeSession, removeTab, browser release) only happens
- * on real tab close, not on tab move/split.
+ * Session/browser cleanup on tab close is intentionally NOT done here.
+ * JetBrains fires `fileClosed` on BOTH a real tab close AND a tab move/split,
+ * so releasing the pooled JCEF browser from `fileClosed` destroyed it during a
+ * move and forced a full reload (issue #29). Cleanup now lives in
+ * [com.github.yhk1038.claudecodegui.toolwindow.ClaudeCodePanel.dispose] via
+ * [com.github.yhk1038.claudecodegui.services.ClaudeCodeBrowserService.releaseRef],
+ * which distinguishes a real close from a move/split by reference counting.
  */
 class ClaudeCodeEditorManagerListener : FileEditorManagerListener {
 
-    override fun fileClosed(source: FileEditorManager, file: VirtualFile) {
-        if (file !is ClaudeCodeVirtualFile) return
-
-        val project = source.project
-        ClaudeCodeVirtualFile.removeSession(project, file.sessionId)
-        EditorTabStateService.getInstance(project).removeTab(file.sessionId)
-        ClaudeCodeBrowserService.getInstance(project).release(file.sessionId)
-    }
-
-    override fun selectionChanged(event: com.intellij.openapi.fileEditor.FileEditorManagerEvent) {
+    override fun selectionChanged(event: FileEditorManagerEvent) {
         val file = event.newFile
         if (file is ClaudeCodeVirtualFile && file.badgeState == TabBadge.UNREAD) {
             file.setBadge(TabBadge.NONE)

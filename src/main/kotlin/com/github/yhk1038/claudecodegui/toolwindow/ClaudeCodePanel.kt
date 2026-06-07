@@ -2,9 +2,11 @@ package com.github.yhk1038.claudecodegui.toolwindow
 
 import com.github.yhk1038.claudecodegui.actions.OpenClaudeCodeAction
 import com.github.yhk1038.claudecodegui.bridge.NodeProcessManager
+import com.github.yhk1038.claudecodegui.editor.ClaudeCodeVirtualFile
 import com.github.yhk1038.claudecodegui.notifications.JcefRuntimeNotifier
 import com.github.yhk1038.claudecodegui.services.ClaudeCodeBrowserService
 import com.github.yhk1038.claudecodegui.services.DiffService
+import com.github.yhk1038.claudecodegui.services.EditorTabStateService
 import com.github.yhk1038.claudecodegui.services.NodeBackendService
 import com.github.yhk1038.claudecodegui.toolwindow.realization.CallbackStaging
 import com.github.yhk1038.claudecodegui.toolwindow.realization.LoadingPhase
@@ -1124,9 +1126,17 @@ class ClaudeCodePanel(
         scope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
         if (holder != null) {
             backendService.releasePanel(project.basePath ?: "", panelId)
+            // Drop this panel's reference to the pooled browser. The service
+            // disposes the browser (and runs the cleanup below) only if no new
+            // panel re-acquires the same session within the grace period — i.e.
+            // a real tab close, not a tab move/split. (issue #29)
+            browserService.releaseRef(sessionId) {
+                ClaudeCodeVirtualFile.removeSession(project, sessionId)
+                EditorTabStateService.getInstance(project).removeTab(sessionId)
+            }
         }
         // NOTE: Do NOT call Disposer.dispose(cursorQuery) or Disposer.dispose(browser).
-        // They are managed by ClaudeCodeBrowserService and released in fileClosed().
+        // They are managed by ClaudeCodeBrowserService and released via releaseRef().
         logger.info("ClaudeCodePanel disposed (browser retained in pool)")
     }
 }

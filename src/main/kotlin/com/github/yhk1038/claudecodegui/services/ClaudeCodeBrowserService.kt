@@ -1,6 +1,7 @@
 package com.github.yhk1038.claudecodegui.services
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
@@ -9,7 +10,16 @@ import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefBrowser
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefJSQuery
+import com.intellij.util.Alarm
 import java.util.concurrent.ConcurrentHashMap
+
+/**
+ * Pure release rule for the pooled JCEF browser: a holder may be disposed only
+ * when no panel still references it. Extracted as a top-level function so the
+ * rule can be unit-tested without an IDE fixture. (issue #29)
+ */
+internal fun shouldReleasePooledBrowser(remainingPanelRefs: Int): Boolean =
+    remainingPanelRefs <= 0
 
 /**
  * Project-level service that pools JCEF browser instances by sessionId.
@@ -62,9 +72,33 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
          * disposed in [release] and the service's [dispose].
          */
         var lafListenerDisposable: Disposable? = null
+
+        /**
+         * Number of live panels referencing this browser. Incremented on
+         * [getOrCreate] (panel acquires the browser) and decremented on
+         * [releaseRef] (panel disposed). EDT-only access. (issue #29)
+         */
+        var panelRefCount: Int = 0
+
+        /**
+         * Monotonic token bumped on every acquire. A scheduled release captures
+         * the token at schedule time and aborts if the token changed meanwhile —
+         * i.e. the browser was re-acquired by a new panel during a tab move. This
+         * makes release cancellation independent of EDT-tick timing. (issue #29)
+         */
+        var releaseToken: Int = 0
     }
 
     private val holders = ConcurrentHashMap<String, BrowserHolder>()
+
+    /**
+     * Grace timer for deferred release. A tab move disposes the old panel
+     * (refCount → 0) and re-acquires from the new slot a few dozen ms later;
+     * the delay lets that re-acquire cancel the release. A real tab close has
+     * no re-acquire, so the release fires after the grace period. The delay
+     * being generous is harmless — the browser simply lingers in the pool.
+     */
+    private val releaseAlarm = Alarm(Alarm.ThreadToUse.SWING_THREAD, this)
 
     /**
      * Whether JCEF is available in this runtime.
@@ -82,15 +116,18 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
     }
 
     /**
-     * Get an existing browser for the session, or create a new one.
-     * The browser is NOT registered with Disposer — it is managed by this service.
+     * Get an existing browser for the session, or create a new one. Marks the
+     * browser as referenced by one more panel (refCount++) and bumps the
+     * release token so any pending deferred release for this session aborts —
+     * this is what keeps the browser alive across a tab move/split. The browser
+     * is NOT registered with Disposer — it is managed by this service.
      */
     fun getOrCreate(sessionId: String): BrowserHolder? {
         if (!isJcefAvailable()) {
             logger.warn("JCEF is not supported in this runtime — cannot create browser for session: $sessionId")
             return null
         }
-        return holders.getOrPut(sessionId) {
+        val holder = holders.getOrPut(sessionId) {
             logger.info("Creating new JCEF browser for session: $sessionId")
             // Disable JCEF off-screen rendering so the browser renders natively.
             // OSR (default since 2023.2) fails to forward HiDPI scale to Chromium on
@@ -114,13 +151,46 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
             val streamingQuery = JBCefJSQuery.create(browser as JBCefBrowserBase)
             BrowserHolder(browser, cursorQuery, streamingQuery)
         }
+        holder.panelRefCount += 1
+        // Bump the token so any release scheduled before this acquire aborts.
+        holder.releaseToken += 1
+        return holder
     }
 
     /**
-     * Release and dispose the browser for the given session.
-     * Called only on real tab close (via [ClaudeCodeEditorManagerListener.fileClosed]).
+     * Drop one panel's reference to the session's browser. When the last
+     * reference is gone, the browser is NOT disposed immediately: a tab
+     * move/split disposes the old panel and re-acquires from the new slot a
+     * short time later, and that re-acquire must keep the browser alive. So the
+     * release is deferred by a grace period and aborts if the browser was
+     * re-acquired meanwhile (token changed) or re-referenced (refCount > 0).
+     * Only a genuine tab close — with no re-acquire — actually disposes it.
+     *
+     * [onReleased] runs only when the browser is truly disposed, letting the
+     * caller perform the matching session/tab cleanup. (issue #29)
      */
-    fun release(sessionId: String) {
+    fun releaseRef(sessionId: String, onReleased: () -> Unit) {
+        val holder = holders[sessionId] ?: return
+        holder.panelRefCount -= 1
+        if (!shouldReleasePooledBrowser(holder.panelRefCount)) return
+
+        val tokenAtSchedule = holder.releaseToken
+        releaseAlarm.addRequest({
+            val current = holders[sessionId] ?: return@addRequest
+            // Re-acquired during the grace period → keep the pooled browser.
+            if (current.releaseToken != tokenAtSchedule) return@addRequest
+            if (!shouldReleasePooledBrowser(current.panelRefCount)) return@addRequest
+            release(sessionId)
+            onReleased()
+        }, RELEASE_GRACE_MS)
+    }
+
+    /**
+     * Dispose the pooled browser for the session and drop it from the pool.
+     * Private: callers go through [releaseRef] so the refcount + grace-period
+     * guard is always applied. (issue #29)
+     */
+    private fun release(sessionId: String) {
         holders.remove(sessionId)?.let { holder ->
             logger.info("Releasing JCEF browser for session: $sessionId")
             try { holder.lafListenerDisposable?.let { Disposer.dispose(it) } } catch (_: Exception) {}
@@ -141,6 +211,14 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
     }
 
     companion object {
+        /**
+         * Grace period before a zero-reference browser is disposed. Must comfortably
+         * exceed the tab-move dispose→re-acquire gap (observed 37–48ms) so a move
+         * never disposes the browser, while still being imperceptible on a real
+         * close. Generous on purpose — a lingering pooled browser is harmless.
+         */
+        private const val RELEASE_GRACE_MS = 750
+
         fun getInstance(project: Project): ClaudeCodeBrowserService =
             project.getService(ClaudeCodeBrowserService::class.java)
     }
