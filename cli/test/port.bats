@@ -5,11 +5,15 @@ load 'helpers/common'
 
 setup() {
   isolate_env
-  # version.sh provides parse_backend_version, which port.sh uses
+  # version.sh provides parse_backend_version, which port uses
   # shellcheck source=../lib/version.sh
   source "$CLI_LIB/version.sh"
-  # shellcheck source=../lib/port.sh
-  source "$CLI_LIB/port.sh"
+  # proc provides _snap_or_capture / collect_descendants used by the port
+  # tree-mapping helpers (port_for_tree, confirm_root_via_port).
+  # shellcheck source=../lib/proc/index.sh
+  source "$CLI_LIB/proc/index.sh"
+  # shellcheck source=../lib/port/index.sh
+  source "$CLI_LIB/port/index.sh"
 }
 
 # ─── port_status: free | ours | foreign ───────────────────────
@@ -106,6 +110,39 @@ setup() {
   [ -z "$output" ]
 }
 
+# ─── find_pids_on_port: ALL listening PIDs (multi-line) ───────────
+
+@test "find_pids_on_port: returns every PID listening on the port" {
+  mock_cmd_with_logic lsof 'printf "%s\n%s\n" "11111" "22222"'
+  run find_pids_on_port
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"11111"* ]]
+  [[ "$output" == *"22222"* ]]
+}
+
+@test "find_pids_on_port: single PID still works" {
+  mock_cmd_with_logic lsof 'printf "%s\n" "54321"'
+  run find_pids_on_port
+  [ "$status" -eq 0 ]
+  [ "$output" = "54321" ]
+}
+
+@test "find_pids_on_port: nonzero + empty when none listening" {
+  mock_cmd_with_logic lsof 'exit 1'
+  run find_pids_on_port
+  [ "$status" -ne 0 ]
+  [ -z "$output" ]
+}
+
+@test "find_pids_on_port: filters out non-numeric noise lines" {
+  mock_cmd_with_logic lsof 'printf "%s\n%s\n%s\n" "11111" "garbage" "22222"'
+  run find_pids_on_port
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"11111"* ]]
+  [[ "$output" == *"22222"* ]]
+  [[ "$output" != *"garbage"* ]]
+}
+
 # ─── graceful_kill_port: send SIGTERM, escalate if needed ────
 
 @test "graceful_kill_port: returns 0 when no process to kill" {
@@ -134,5 +171,24 @@ EOF
   graceful_kill_port
   [ "$?" -eq 0 ]
   [ -f "$BATS_TEST_TMPDIR/kill.log" ]
+  grep -q -- '-TERM 99999' "$BATS_TEST_TMPDIR/kill.log"
+}
+
+@test "graceful_kill_port: signals EVERY listening PID, not just the first" {
+  # lsof returns two PIDs the first time, then nothing (so the wait loop ends).
+  cat > "$MOCK_BIN/lsof" <<EOF
+#!/usr/bin/env bash
+if [[ -f "$BATS_TEST_TMPDIR/kill.log" ]]; then exit 1; fi
+printf '%s\n%s\n' "88888" "99999"
+EOF
+  chmod +x "$MOCK_BIN/lsof"
+
+  _kill_pid() {
+    printf '%s\n' "$*" >> "$BATS_TEST_TMPDIR/kill.log"
+  }
+
+  graceful_kill_port
+  [ "$?" -eq 0 ]
+  grep -q -- '-TERM 88888' "$BATS_TEST_TMPDIR/kill.log"
   grep -q -- '-TERM 99999' "$BATS_TEST_TMPDIR/kill.log"
 }

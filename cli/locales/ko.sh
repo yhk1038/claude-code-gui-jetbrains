@@ -59,6 +59,53 @@ MSG_ko_uninstall_removing="%s 를 제거합니다..."
 MSG_ko_uninstall_path_removed="%s 에서 PATH 항목을 제거했습니다"
 MSG_ko_uninstall_done="✔ 제거 완료. 실행 중인 ccg 세션이 있다면 종료하세요."
 
+# List (process tree)
+MSG_ko_list_header="claude-code-gui 백엔드 프로세스:"
+MSG_ko_list_none="현재 실행 중인 claude-code-gui 백엔드 프로세스가 없습니다."
+MSG_ko_list_root_with_port="● PID %s  포트 %s%s  [%s/%s]"
+MSG_ko_list_root_no_port="● PID %s  [%s/%s]"
+MSG_ko_list_port_confirmed=" ✔"
+MSG_ko_list_port_unconfirmed=" ?"
+MSG_ko_list_child="    └─ PID %s  %s"
+MSG_ko_list_zombie_hint="(좀비 — 부모를 종료해야 사라집니다)"
+MSG_ko_list_help_hint="포트 19836의 백엔드 트리를 종료하려면 'ccg stop'을 사용하세요."
+
+# Stop (process tree termination)
+MSG_ko_stop_none="포트 %s에서 실행 중인 백엔드가 없습니다."
+MSG_ko_stop_target="PID %s를 루트로 하는 백엔드 트리를 종료합니다..."
+MSG_ko_stop_done="백엔드 트리가 종료됐습니다."
+MSG_ko_stop_force="강제 모드: 정상 종료 없이 즉시 SIGKILL을 보냅니다."
+MSG_ko_stop_all_prompt="IDE가 띄운 것을 포함해 모든 backend.mjs 트리(%s개)를 종료합니다. 계속할까요? (y/N): "
+MSG_ko_stop_all_none="종료할 backend.mjs 트리를 찾지 못했습니다."
+MSG_ko_stop_no_roots="backend.mjs 트리를 찾지 못했습니다."
+MSG_ko_stop_not_ours="⚠  PID %s는 claude-code-gui 백엔드 트리에 속하지 않습니다."
+MSG_ko_stop_not_ours_prompt="그래도 (자식까지 함께) 종료할까요? (y/N): "
+MSG_ko_stop_aborted="중단됐습니다. 아무것도 종료하지 않았습니다."
+
+# Doctor (backend process hint)
+MSG_ko_doctor_backend_count="ℹ backend.mjs 프로세스 %s개 감지됨 — 트리를 보려면 'ccg list' 실행"
+MSG_ko_doctor_backend_warn="⚠ backend.mjs 프로세스 %s개 감지됨 — 'ccg list'로 확인하세요"
+
+# Help: list / stop
+MSG_ko_help_list_header="ccg list — 백엔드 프로세스 트리 표시"
+MSG_ko_help_list_body="  ccg list             백엔드와 그 자손 프로세스를 PID, (있으면)포트,\n                       출처 라벨(ide/standalone)과 함께 나열합니다.\n  ccg list -h, --help  이 도움말을 표시합니다."
+MSG_ko_help_stop_header="ccg stop — 백엔드 프로세스 트리 종료"
+MSG_ko_help_stop_body="  ccg stop                 포트 19836의 백엔드를 자손까지 함께 종료합니다.\n  ccg stop <pid>           이 PID를 루트로 트리를 종료합니다.\n  ccg stop --port <port>   이 포트의 백엔드를 종료합니다 (별칭: -p).\n  ccg stop --all           IDE 것을 포함한 모든 backend.mjs 트리를 종료합니다 (확인 후; 별칭: -a).\n  ccg stop --force         정상 종료(SIGTERM)를 생략하고 즉시 SIGKILL합니다 (별칭: -f).\n  ccg stop --no-tree       자식을 제외하고 지정 프로세스 하나만 종료합니다.\n  ccg stop -h, --help      이 도움말을 표시합니다.\n\n  종료 순서: 잎(자식)부터 먼저, 그다음 루트. 각 프로세스에 SIGTERM →\n  최대 3초 대기 → SIGKILL. --force면 즉시 SIGKILL. 백엔드 트리에\n  속하지 않은 PID는 종료 전에 확인 프롬프트를 띄웁니다."
+
+# Help: run / update / version / doctor / self-update / uninstall
+MSG_ko_help_run_header="ccg run — 백엔드를 시작(또는 재사용)하고 브라우저를 엽니다"
+MSG_ko_help_run_body="  ccg run              19836 포트를 확인하고 백엔드를 실행(이미 실행 중이면 재사용)한 뒤\n                       브라우저에서 WebView를 엽니다. 기본 명령이라 'ccg'만 입력해도\n                       동일하게 동작합니다. 인자를 받지 않습니다.\n  ccg run -h, --help   이 도움말을 표시합니다."
+MSG_ko_help_update_header="ccg update — 런타임을 최신 릴리즈로 강제 갱신합니다"
+MSG_ko_help_update_body="  ccg update             런타임을 최신 GitHub 릴리즈로 갱신합니다. 실행 중인 백엔드가\n                         있으면 먼저 종료한 뒤 교체합니다.\n  ccg update -h, --help  이 도움말을 표시합니다."
+MSG_ko_help_version_header="ccg version — ccg·런타임·백엔드 버전을 표시합니다"
+MSG_ko_help_version_body="  ccg version             설치된 ccg, 캐시된 런타임, 현재 실행 중인 백엔드의 버전을\n                          표시합니다. 별칭: -v.\n  ccg version -h, --help  이 도움말을 표시합니다."
+MSG_ko_help_doctor_header="ccg doctor — 환경을 진단합니다"
+MSG_ko_help_doctor_body="  ccg doctor             node, PATH, 캐시, 19836 포트, 살아있는 백엔드 프로세스 수를\n                         점검합니다.\n  ccg doctor -h, --help  이 도움말을 표시합니다."
+MSG_ko_help_self_update_header="ccg self-update — ccg 자체를 갱신합니다"
+MSG_ko_help_self_update_body="  ccg self-update             설치 스크립트를 다시 실행해 ccg cli를 갱신합니다.\n  ccg self-update -h, --help  이 도움말을 표시합니다."
+MSG_ko_help_uninstall_header="ccg uninstall — 이 머신에서 ccg를 제거합니다"
+MSG_ko_help_uninstall_body="  ccg uninstall             이 머신에서 ccg를 제거합니다(바이너리, 런타임, PATH 항목).\n  ccg uninstall -h, --help  이 도움말을 표시합니다."
+
 # Generic
 MSG_ko_abort="중단됐습니다."
 MSG_ko_unknown_command="알 수 없는 명령: %s"

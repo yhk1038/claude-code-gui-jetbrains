@@ -8,6 +8,7 @@ export CLI_ROOT
 export CLI_LIB="$CLI_ROOT/lib"
 export CLI_BIN="$CLI_ROOT/bin"
 export CLI_LOCALES="$CLI_ROOT/locales"
+export CLI_COMMANDS="$CLI_ROOT/commands"
 
 # Per-test isolated home + mock bin directory.
 # Call from setup() to get a clean environment.

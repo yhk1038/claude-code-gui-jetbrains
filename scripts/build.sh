@@ -32,7 +32,7 @@ CLI / ccg (cli/):
   cli-test       Run bats test suite (passes extra args to bats)
   standalone-tgz Create dist/claude-code-gui-standalone-v<ver>.tgz
                    (backend + webview for Standalone mode; requires be-build + wv-build)
-  ccg-cli-tgz    Create dist/ccg-cli-v<ver>.tar.gz from cli/{bin,lib,locales,uninstall.sh}
+  ccg-cli-tgz    Create dist/ccg-cli-v<ver>.tar.gz from cli/{bin,lib,commands,locales,uninstall.sh}
 
 Plugin (Gradle):
   build          gradlew build
@@ -123,6 +123,7 @@ case "${1:-}" in
     mkdir -p "$stage"
     cp -R "$ROOT/cli/bin" "$stage/"
     cp -R "$ROOT/cli/lib" "$stage/"
+    cp -R "$ROOT/cli/commands" "$stage/"
     cp -R "$ROOT/cli/locales" "$stage/"
     cp "$ROOT/cli/uninstall.sh" "$stage/"
     chmod +x "$stage/bin/ccg" "$stage/uninstall.sh"

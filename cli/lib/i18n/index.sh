@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# i18n: variable-prefix lookup with printf-style substitution.
+# i18n/index.sh — variable-prefix lookup with printf-style substitution.
 # Bash 3.2 compatible (no associative arrays).
+#
+# Entry/barrel: defines locale detection + loading, then sources the translate
+# sibling (the `t` function).
 #
 # Convention: messages live in locales/<lang>.sh as variables named
 #   MSG_<lang>_<key>="..."
@@ -30,7 +33,7 @@ _i18n_locales_dir() {
   fi
   local self_dir
   self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  printf '%s' "$self_dir/../locales"
+  printf '%s' "$self_dir/../../locales"
 }
 
 detect_locale() {
@@ -89,31 +92,5 @@ load_locale() {
   return 0
 }
 
-t() {
-  local key=$1
-  shift
-
-  # Auto-load on first call if caller forgot.
-  if [[ -z "$CCG_ACTIVE_LOCALE" ]]; then
-    load_locale "$(detect_locale)"
-  fi
-
-  local var="MSG_${CCG_ACTIVE_LOCALE}_${key}"
-  local template="${!var:-}"
-
-  # Fallback to en
-  if [[ -z "$template" && "$CCG_ACTIVE_LOCALE" != "en" ]]; then
-    var="MSG_en_${key}"
-    template="${!var:-}"
-  fi
-
-  if [[ -z "$template" ]]; then
-    # Visible sentinel for missing keys (development aid)
-    printf '<<%s>>' "$key"
-    return 0
-  fi
-
-  # printf interprets backslash escapes in templates (e.g. \n)
-  # shellcheck disable=SC2059
-  printf "$template" "$@"
-}
+# shellcheck source=./translate.sh
+source "$(dirname "${BASH_SOURCE[0]}")/translate.sh"
