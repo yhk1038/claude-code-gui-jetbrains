@@ -5,8 +5,14 @@ import { SessionHeader } from '../SessionHeader/index';
 import { SessionMetaDto } from '../../../dto';
 import type { SessionState } from '../../../types';
 
-// 테스트 시점 기준 상대 날짜 생성 헬퍼
-const now = new Date();
+// 테스트 시점 기준 상대 날짜 생성 헬퍼.
+// 기준 시각을 "오늘 정오"로 고정한다. 자정 직후(예: 00:00~02:00)에 실행하면
+// hoursAgo(2)가 어제로 넘어가 "Today" 그룹이 사라지는 시각 의존 flaky를 막는다.
+const now = (() => {
+  const d = new Date();
+  d.setHours(12, 0, 0, 0);
+  return d;
+})();
 const daysAgo = (days: number) => new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 const hoursAgo = (hours: number) => new Date(now.getTime() - hours * 60 * 60 * 1000);
 
