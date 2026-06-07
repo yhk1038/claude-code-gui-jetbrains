@@ -22,7 +22,7 @@ class OpenClaudeCodeSettingsAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val settingsSessionId = "settings-${UUID.randomUUID()}"
-        OpenClaudeCodeAction.openSession(project, settingsSessionId, "#/settings/general")
+        OpenClaudeCodeAction.openTab(project, settingsSessionId, "#/settings/general")
     }
 
     override fun update(e: AnActionEvent) {

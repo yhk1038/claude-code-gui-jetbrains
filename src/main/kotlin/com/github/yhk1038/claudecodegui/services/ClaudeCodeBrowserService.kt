@@ -22,7 +22,7 @@ internal fun shouldReleasePooledBrowser(remainingPanelRefs: Int): Boolean =
     remainingPanelRefs <= 0
 
 /**
- * Project-level service that pools JCEF browser instances by sessionId.
+ * Project-level service that pools JCEF browser instances by tabId.
  *
  * When a tab is moved or split, JetBrains disposes the FileEditor and creates
  * a new one. Without pooling, the JCEF browser is destroyed and recreated,
@@ -122,13 +122,13 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
      * this is what keeps the browser alive across a tab move/split. The browser
      * is NOT registered with Disposer — it is managed by this service.
      */
-    fun getOrCreate(sessionId: String): BrowserHolder? {
+    fun getOrCreate(tabId: String): BrowserHolder? {
         if (!isJcefAvailable()) {
-            logger.warn("JCEF is not supported in this runtime — cannot create browser for session: $sessionId")
+            logger.warn("JCEF is not supported in this runtime — cannot create browser for tab: $tabId")
             return null
         }
-        val holder = holders.getOrPut(sessionId) {
-            logger.info("Creating new JCEF browser for session: $sessionId")
+        val holder = holders.getOrPut(tabId) {
+            logger.info("Creating new JCEF browser for tab: $tabId")
             // Disable JCEF off-screen rendering so the browser renders natively.
             // OSR (default since 2023.2) fails to forward HiDPI scale to Chromium on
             // macOS Retina, producing pixelated output (issue #23, JBR-3526). Our
@@ -169,18 +169,18 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
      * [onReleased] runs only when the browser is truly disposed, letting the
      * caller perform the matching session/tab cleanup. (issue #29)
      */
-    fun releaseRef(sessionId: String, onReleased: () -> Unit) {
-        val holder = holders[sessionId] ?: return
+    fun releaseRef(tabId: String, onReleased: () -> Unit) {
+        val holder = holders[tabId] ?: return
         holder.panelRefCount -= 1
         if (!shouldReleasePooledBrowser(holder.panelRefCount)) return
 
         val tokenAtSchedule = holder.releaseToken
         releaseAlarm.addRequest({
-            val current = holders[sessionId] ?: return@addRequest
+            val current = holders[tabId] ?: return@addRequest
             // Re-acquired during the grace period → keep the pooled browser.
             if (current.releaseToken != tokenAtSchedule) return@addRequest
             if (!shouldReleasePooledBrowser(current.panelRefCount)) return@addRequest
-            release(sessionId)
+            release(tabId)
             onReleased()
         }, RELEASE_GRACE_MS)
     }
@@ -190,9 +190,9 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
      * Private: callers go through [releaseRef] so the refcount + grace-period
      * guard is always applied. (issue #29)
      */
-    private fun release(sessionId: String) {
-        holders.remove(sessionId)?.let { holder ->
-            logger.info("Releasing JCEF browser for session: $sessionId")
+    private fun release(tabId: String) {
+        holders.remove(tabId)?.let { holder ->
+            logger.info("Releasing JCEF browser for tab: $tabId")
             try { holder.lafListenerDisposable?.let { Disposer.dispose(it) } } catch (_: Exception) {}
             try { Disposer.dispose(holder.streamingQuery) } catch (_: Exception) {}
             try { Disposer.dispose(holder.cursorQuery) } catch (_: Exception) {}

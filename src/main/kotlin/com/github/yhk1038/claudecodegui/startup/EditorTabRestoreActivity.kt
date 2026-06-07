@@ -13,27 +13,27 @@ class EditorTabRestoreActivity : ProjectActivity {
 
     override suspend fun execute(project: Project) {
         val stateService = EditorTabStateService.getInstance(project)
-        val sessionIds = stateService.getOpenSessionIds()
+        val tabIds = stateService.getOpenTabIds()
 
-        if (sessionIds.isEmpty()) {
+        if (tabIds.isEmpty()) {
             logger.info("No saved editor tabs to restore")
             return
         }
 
-        logger.info("Restoring ${sessionIds.size} editor tab(s): $sessionIds")
+        logger.info("Restoring ${tabIds.size} editor tab(s): $tabIds")
 
-        val activeSessionId = stateService.getActiveSessionId()
+        val activeTabId = stateService.getActiveTabId()
 
         ApplicationManager.getApplication().invokeLater {
-            // 비활성 탭 먼저 복원 (마지막으로 보던 경로로, 없으면 세션 페이지로)
-            for (sessionId in sessionIds) {
-                if (sessionId != activeSessionId) {
-                    OpenClaudeCodeAction.openSession(project, sessionId, stateService.getRestorePath(sessionId))
+            // 비활성 탭 먼저 복원 (마지막으로 보던 경로로, 없으면 탭 페이지로)
+            for (tabId in tabIds) {
+                if (tabId != activeTabId) {
+                    OpenClaudeCodeAction.openTab(project, tabId, stateService.getRestorePath(tabId))
                 }
             }
             // 활성 탭은 마지막에 열어서 포커스 획득
-            if (activeSessionId != null && activeSessionId in sessionIds) {
-                OpenClaudeCodeAction.openSession(project, activeSessionId, stateService.getRestorePath(activeSessionId))
+            if (activeTabId != null && activeTabId in tabIds) {
+                OpenClaudeCodeAction.openTab(project, activeTabId, stateService.getRestorePath(activeTabId))
             }
 
             logger.info("Editor tabs restored successfully")

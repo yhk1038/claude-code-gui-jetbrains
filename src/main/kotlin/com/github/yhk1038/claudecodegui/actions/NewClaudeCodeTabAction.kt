@@ -19,7 +19,7 @@ class NewClaudeCodeTabAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        OpenClaudeCodeAction.openSession(project, UUID.randomUUID().toString())
+        OpenClaudeCodeAction.openTab(project, UUID.randomUUID().toString())
     }
 
     override fun update(e: AnActionEvent) {

@@ -6,6 +6,22 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.project.Project
 
+/**
+ * Persists which Claude Code editor **tabs** are open so they can be restored
+ * after an IDE restart.
+ *
+ * Terminology — this service deals exclusively with **tab IDs** (the per-tab
+ * UUID minted when an editor tab is opened), NOT Claude Code conversation
+ * session IDs. The only place a conversation appears is the stored *path*
+ * value (a WebView URL like `/sessions/{conversationId}/...`), which is opaque
+ * to this service.
+ *
+ * NOTE: the persisted [EditorTabState] field names (`openSessionIds`,
+ * `activeSessionId`, `sessionPaths`) are kept as-is on purpose — they are the
+ * on-disk XML schema (`claudeCodeEditorTabs.xml`) and renaming them would break
+ * restore for existing users. Their *values* are tab IDs; the public API below
+ * uses the correct `tabId` vocabulary.
+ */
 @State(
     name = "ClaudeCodeEditorTabs",
     storages = [Storage("claudeCodeEditorTabs.xml")]
@@ -14,11 +30,12 @@ import com.intellij.openapi.project.Project
 class EditorTabStateService : PersistentStateComponent<EditorTabStateService.EditorTabState> {
 
     data class EditorTabState(
+        // Persisted XML field names retained for backward compatibility.
+        // Values are TAB IDs (not conversation session IDs).
         var openSessionIds: MutableList<String> = mutableListOf(),
         var activeSessionId: String? = null,
-        // Last WebView path per session, so a restored tab lands on the
-        // conversation the user was actually viewing at shutdown rather than
-        // the panel's original sessionId page.
+        // Last WebView path per tab, so a restored tab lands on the conversation
+        // the user was actually viewing at shutdown rather than the tab's own page.
         var sessionPaths: MutableMap<String, String> = mutableMapOf()
     )
 
@@ -30,37 +47,41 @@ class EditorTabStateService : PersistentStateComponent<EditorTabStateService.Edi
         this.state = state
     }
 
-    fun addTab(sessionId: String) {
-        if (sessionId !in state.openSessionIds) {
-            state.openSessionIds.add(sessionId)
+    fun addTab(tabId: String) {
+        if (tabId !in state.openSessionIds) {
+            state.openSessionIds.add(tabId)
         }
-        state.activeSessionId = sessionId
+        state.activeSessionId = tabId
     }
 
-    fun removeTab(sessionId: String) {
-        state.openSessionIds.remove(sessionId)
-        state.sessionPaths.remove(sessionId)
-        if (state.activeSessionId == sessionId) {
+    fun removeTab(tabId: String) {
+        state.openSessionIds.remove(tabId)
+        state.sessionPaths.remove(tabId)
+        if (state.activeSessionId == tabId) {
             state.activeSessionId = state.openSessionIds.lastOrNull()
         }
     }
 
-    fun updatePath(sessionId: String, path: String) {
-        state.sessionPaths[sessionId] = path
+    fun updatePath(tabId: String, path: String) {
+        state.sessionPaths[tabId] = path
     }
 
-    fun getPath(sessionId: String): String? = state.sessionPaths[sessionId]
+    fun getPath(tabId: String): String? = state.sessionPaths[tabId]
 
     /**
-     * Path to restore a tab to: the last-viewed WebView path if known,
-     * otherwise the session's own page.
+     * Path to restore a tab to: the last-viewed WebView path if known.
+     *
+     * Fallback `/sessions/$tabId` is legacy — it formats the tab ID as if it
+     * were a conversation path. In practice a real path is almost always stored
+     * (via updatePath on URL change), and for a brand-new tab the WebView simply
+     * redirects an unknown session to `/sessions/new`. Behavior preserved.
      */
-    fun getRestorePath(sessionId: String): String =
-        state.sessionPaths[sessionId] ?: "/sessions/$sessionId"
+    fun getRestorePath(tabId: String): String =
+        state.sessionPaths[tabId] ?: "/sessions/$tabId"
 
-    fun getOpenSessionIds(): List<String> = state.openSessionIds.toList()
+    fun getOpenTabIds(): List<String> = state.openSessionIds.toList()
 
-    fun getActiveSessionId(): String? = state.activeSessionId
+    fun getActiveTabId(): String? = state.activeSessionId
 
     companion object {
         fun getInstance(project: Project): EditorTabStateService =

@@ -155,7 +155,7 @@ class SendSelectionToClaudeAction : AnAction() {
             if (existingTab != null) {
                 fileEditorManager.openFile(existingTab, true)
             } else {
-                OpenClaudeCodeAction.openSession(project, UUID.randomUUID().toString())
+                OpenClaudeCodeAction.openTab(project, UUID.randomUUID().toString())
             }
         }
     }

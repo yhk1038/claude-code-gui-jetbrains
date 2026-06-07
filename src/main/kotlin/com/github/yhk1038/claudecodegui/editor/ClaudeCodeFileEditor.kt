@@ -20,7 +20,7 @@ class ClaudeCodeFileEditor(
 
     private val panel: ClaudeCodePanel = ClaudeCodePanel(
         project,
-        virtualFile.sessionId,
+        virtualFile.tabId,
         virtualFile.currentPath ?: virtualFile.initialPath
     )
 
@@ -39,7 +39,7 @@ class ClaudeCodeFileEditor(
         // 그리고 IDE 재시작 후에도 복원되도록 영속 저장소에도 반영.
         panel.onPathChanged = { path ->
             virtualFile.currentPath = path
-            EditorTabStateService.getInstance(project).updatePath(virtualFile.sessionId, path)
+            EditorTabStateService.getInstance(project).updatePath(virtualFile.tabId, path)
         }
 
         // Streaming state change: show unread badge when streaming ends on inactive tab

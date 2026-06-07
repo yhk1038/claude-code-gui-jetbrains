@@ -86,7 +86,7 @@ import javax.swing.JPanel
  */
 class ClaudeCodePanel(
     private val project: Project,
-    private val sessionId: String = "default",
+    private val tabId: String = "default",
     private val initialPath: String? = null
 ) : JPanel(BorderLayout()), Disposable {
 
@@ -193,8 +193,8 @@ class ClaudeCodePanel(
     private fun realizeBrowser() {
         // Acquire (or reuse) the pooled browser holder. May return null if JCEF
         // became unavailable between init and now — defensive check.
-        val acquired = browserService.getOrCreate(sessionId) ?: run {
-            logger.warn("JCEF became unavailable before realizeBrowser for session: $sessionId")
+        val acquired = browserService.getOrCreate(tabId) ?: run {
+            logger.warn("JCEF became unavailable before realizeBrowser for tab: $tabId")
             return
         }
         holder = acquired
@@ -218,7 +218,7 @@ class ClaudeCodePanel(
             add(b.component, BorderLayout.CENTER)
             revalidate()
             repaint()
-            logger.info("Reattached existing JCEF browser for session: $sessionId")
+            logger.info("Reattached existing JCEF browser for tab: $tabId")
         } else {
             // First load — switch the placeholder to the next phase.
             loadingLabel.text = LoadingPhase.BACKEND_START.message
@@ -440,15 +440,15 @@ class ClaudeCodePanel(
                         when {
                             path == "/sessions/new" || path.startsWith("/sessions/new?") -> {
                                 logger.info("[ClaudeCodePanel] Popup blocked: $targetUrl -> new session tab")
-                                OpenClaudeCodeAction.openSession(project, UUID.randomUUID().toString())
+                                OpenClaudeCodeAction.openTab(project, UUID.randomUUID().toString())
                             }
                             path.startsWith("/settings/") -> {
                                 logger.info("[ClaudeCodePanel] Popup blocked: $targetUrl -> settings tab")
-                                OpenClaudeCodeAction.openSession(project, UUID.randomUUID().toString(), "/settings/general")
+                                OpenClaudeCodeAction.openTab(project, UUID.randomUUID().toString(), "/settings/general")
                             }
                             else -> {
                                 logger.info("[ClaudeCodePanel] Popup blocked: $targetUrl -> new tab with path $path")
-                                OpenClaudeCodeAction.openSession(project, UUID.randomUUID().toString(), path)
+                                OpenClaudeCodeAction.openTab(project, UUID.randomUUID().toString(), path)
                             }
                         }
                     } catch (e: Exception) {
@@ -569,7 +569,7 @@ class ClaudeCodePanel(
             // subscription lifetime matches the browser holder (tab move/split
             // safe). This avoids the deprecated LafManager.addLafManagerListener
             // overloads while still providing automatic unregistration via Disposer.
-            val parent = Disposer.newDisposable("ClaudeCodePanel.lafListener.$sessionId")
+            val parent = Disposer.newDisposable("ClaudeCodePanel.lafListener.$tabId")
             val connection = ApplicationManager.getApplication().messageBus.connect(parent)
             connection.subscribe(
                 com.intellij.ide.ui.LafManagerListener.TOPIC,
@@ -590,7 +590,7 @@ class ClaudeCodePanel(
             )
             h.lafListenerDisposable = parent
             h.lafListenerInstalled = true
-            logger.info("LafManager listener installed for session: $sessionId")
+            logger.info("LafManager listener installed for tab: $tabId")
         } catch (e: Exception) {
             logger.warn("Failed to install LafManager listener", e)
         }
@@ -938,7 +938,7 @@ class ClaudeCodePanel(
             override suspend fun openNewTab(workingDir: String) {
                 ApplicationManager.getApplication().invokeLater {
                     val targetProject = findProjectByBasePath(workingDir) ?: project
-                    OpenClaudeCodeAction.openSession(targetProject, UUID.randomUUID().toString())
+                    OpenClaudeCodeAction.openTab(targetProject, UUID.randomUUID().toString())
                     logger.info("Opened new Claude Code session tab (workingDir=$workingDir)")
                 }
             }
@@ -946,7 +946,7 @@ class ClaudeCodePanel(
             override suspend fun openSettings(workingDir: String) {
                 ApplicationManager.getApplication().invokeLater {
                     val targetProject = findProjectByBasePath(workingDir) ?: project
-                    OpenClaudeCodeAction.openSession(targetProject, UUID.randomUUID().toString(), "/settings/general")
+                    OpenClaudeCodeAction.openTab(targetProject, UUID.randomUUID().toString(), "/settings/general")
                     logger.info("Opened Claude Code settings in editor tab (workingDir=$workingDir)")
                 }
             }
@@ -1130,9 +1130,9 @@ class ClaudeCodePanel(
             // disposes the browser (and runs the cleanup below) only if no new
             // panel re-acquires the same session within the grace period — i.e.
             // a real tab close, not a tab move/split. (issue #29)
-            browserService.releaseRef(sessionId) {
-                ClaudeCodeVirtualFile.removeSession(project, sessionId)
-                EditorTabStateService.getInstance(project).removeTab(sessionId)
+            browserService.releaseRef(tabId) {
+                ClaudeCodeVirtualFile.removeTab(project, tabId)
+                EditorTabStateService.getInstance(project).removeTab(tabId)
             }
         }
         // NOTE: Do NOT call Disposer.dispose(cursorQuery) or Disposer.dispose(browser).

@@ -12,14 +12,21 @@ enum class TabBadge {
     UNREAD
 }
 
+/**
+ * Virtual file backing one Claude Code editor **tab**.
+ *
+ * [tabId] is the per-tab UUID minted when the tab is opened — it identifies the
+ * editor/browser tab, NOT a Claude Code conversation session. The conversation
+ * currently shown is tracked separately via [currentPath] (a WebView URL).
+ */
 class ClaudeCodeVirtualFile(
-    val sessionId: String,
+    val tabId: String,
     val initialPath: String? = null
 ) : LightVirtualFile("Claude Code", ClaudeCodeFileType, "") {
 
     // 동적으로 변경 가능한 표시 이름
     @Volatile
-    private var displayName: String = "Claude: ${sessionId.take(8)}"
+    private var displayName: String = "Claude: ${tabId.take(8)}"
 
     // WebView가 현재 표시 중인 경로 (탭 이동 시 복원용)
     @Volatile
@@ -39,26 +46,26 @@ class ClaudeCodeVirtualFile(
 
     companion object {
         private const val MAX_DISPLAY_NAME_LENGTH = 20
-        private val openSessions = Collections.synchronizedMap(
+        private val openTabs = Collections.synchronizedMap(
             WeakHashMap<Project, MutableMap<String, ClaudeCodeVirtualFile>>()
         )
 
-        fun getOrCreate(project: Project, sessionId: String, initialPath: String? = null): ClaudeCodeVirtualFile {
-            synchronized(openSessions) {
-                val projectSessions = openSessions.getOrPut(project) { ConcurrentHashMap() }
-                return projectSessions.getOrPut(sessionId) { ClaudeCodeVirtualFile(sessionId, initialPath) }
+        fun getOrCreate(project: Project, tabId: String, initialPath: String? = null): ClaudeCodeVirtualFile {
+            synchronized(openTabs) {
+                val projectTabs = openTabs.getOrPut(project) { ConcurrentHashMap() }
+                return projectTabs.getOrPut(tabId) { ClaudeCodeVirtualFile(tabId, initialPath) }
             }
         }
 
-        fun isSessionOpen(project: Project, sessionId: String): Boolean {
-            synchronized(openSessions) {
-                return openSessions[project]?.containsKey(sessionId) == true
+        fun isTabOpen(project: Project, tabId: String): Boolean {
+            synchronized(openTabs) {
+                return openTabs[project]?.containsKey(tabId) == true
             }
         }
 
-        fun removeSession(project: Project, sessionId: String) {
-            synchronized(openSessions) {
-                openSessions[project]?.remove(sessionId)
+        fun removeTab(project: Project, tabId: String) {
+            synchronized(openTabs) {
+                openTabs[project]?.remove(tabId)
             }
         }
     }
@@ -84,8 +91,8 @@ class ClaudeCodeVirtualFile(
 
     override fun equals(other: Any?): Boolean {
         if (other !is ClaudeCodeVirtualFile) return false
-        return sessionId == other.sessionId
+        return tabId == other.tabId
     }
 
-    override fun hashCode(): Int = sessionId.hashCode()
+    override fun hashCode(): Int = tabId.hashCode()
 }
