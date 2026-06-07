@@ -5,18 +5,27 @@ load 'helpers/common'
 
 setup() {
   isolate_env
-  # i18n.sh provides t() used by format_process_tree.
+  # i18n provides t() used by format_process_tree.
   export CCG_LOCALES_DIR="$CLI_LOCALES"
-  # shellcheck source=../lib/i18n.sh
-  source "$CLI_LIB/i18n.sh"
+  # shellcheck source=../lib/i18n/index.sh
+  source "$CLI_LIB/i18n/index.sh"
   load_locale en
-  # version.sh provides parse_backend_version (port.sh dependency)
+  # version.sh provides parse_backend_version (port dependency)
   # shellcheck source=../lib/version.sh
   source "$CLI_LIB/version.sh"
-  # shellcheck source=../lib/port.sh
-  source "$CLI_LIB/port.sh"
-  # shellcheck source=../lib/process.sh
-  source "$CLI_LIB/process.sh"
+  # process-tree discovery + termination now lives across several modules.
+  # Source them in dependency order: proc primitives, backend detection, port
+  # mapping, then the list/stop command helpers (format_process_tree, kill_tree).
+  # shellcheck source=../lib/proc/index.sh
+  source "$CLI_LIB/proc/index.sh"
+  # shellcheck source=../lib/backend-detect/index.sh
+  source "$CLI_LIB/backend-detect/index.sh"
+  # shellcheck source=../lib/port/index.sh
+  source "$CLI_LIB/port/index.sh"
+  # shellcheck source=../commands/list/format.sh
+  source "$CLI_COMMANDS/list/format.sh"
+  # shellcheck source=../commands/stop/kill-tree.sh
+  source "$CLI_COMMANDS/stop/kill-tree.sh"
 }
 
 # A reusable fake `ps` snapshot. Columns: PID PPID COMMAND (tab-separated by
@@ -97,8 +106,7 @@ TREE
   run bash -c "
     set -euo pipefail
     source '$CLI_LIB/version.sh'
-    source '$CLI_LIB/port.sh'
-    source '$CLI_LIB/process.sh'
+    source '$CLI_LIB/proc/index.sh'
     collect_descendants 720 \"\$1\"
   " _ "$snap"
   [ "$status" -eq 0 ]

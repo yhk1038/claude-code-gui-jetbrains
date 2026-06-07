@@ -5,11 +5,15 @@ load 'helpers/common'
 
 setup() {
   isolate_env
-  # version.sh provides parse_backend_version, which port.sh uses
+  # version.sh provides parse_backend_version, which port uses
   # shellcheck source=../lib/version.sh
   source "$CLI_LIB/version.sh"
-  # shellcheck source=../lib/port.sh
-  source "$CLI_LIB/port.sh"
+  # proc provides _snap_or_capture / collect_descendants used by the port
+  # tree-mapping helpers (port_for_tree, confirm_root_via_port).
+  # shellcheck source=../lib/proc/index.sh
+  source "$CLI_LIB/proc/index.sh"
+  # shellcheck source=../lib/port/index.sh
+  source "$CLI_LIB/port/index.sh"
 }
 
 # ─── port_status: free | ours | foreign ───────────────────────

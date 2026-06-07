@@ -5,8 +5,8 @@ load 'helpers/common'
 
 setup() {
   isolate_env
-  # shellcheck source=../lib/i18n.sh
-  source "$CLI_LIB/i18n.sh"
+  # shellcheck source=../lib/i18n/index.sh
+  source "$CLI_LIB/i18n/index.sh"
 }
 
 # ─── detect_locale ────────────────────────────────────────────
