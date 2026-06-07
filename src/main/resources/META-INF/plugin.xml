@@ -23,10 +23,6 @@
         <projectService
             serviceImplementation="com.github.yhk1038.claudecodegui.services.ClaudeSessionService"/>
 
-        <!-- Project service for session broadcast (Pub/Sub) -->
-        <projectService
-            serviceImplementation="com.github.yhk1038.claudecodegui.services.SessionBroadcastService"/>
-
         <!-- Application service for Node.js backend process management (singleton per computer) -->
         <applicationService
             serviceImplementation="com.github.yhk1038.claudecodegui.services.NodeBackendService"/>
