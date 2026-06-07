@@ -46,4 +46,33 @@ class ClaudeCodeBrowserServiceReleaseRuleTest {
             "A negative count must still be treated as fully released",
         )
     }
+
+    // ── indexOfReusableHolder: tab move reuses, split creates (issue #48) ──
+
+    @Test
+    fun `no holders yet means none to reuse (first open creates one)`() {
+        assertNull(indexOfReusableHolder(emptyList()))
+    }
+
+    @Test
+    fun `the sole occupied holder cannot be reused (split spawns a second browser)`() {
+        // One live pane holds the only browser → a split must NOT steal it.
+        assertNull(indexOfReusableHolder(listOf(1)))
+    }
+
+    @Test
+    fun `a freed holder is reused (tab move preserves the page)`() {
+        // The old pane released its holder (refCount 0) → the new slot reuses it.
+        assertEquals(0, indexOfReusableHolder(listOf(0)))
+    }
+
+    @Test
+    fun `picks the first unoccupied holder when some are occupied`() {
+        assertEquals(1, indexOfReusableHolder(listOf(2, 0, 0)))
+    }
+
+    @Test
+    fun `all holders occupied means none to reuse (every split pane is live)`() {
+        assertNull(indexOfReusableHolder(listOf(1, 1)))
+    }
 }

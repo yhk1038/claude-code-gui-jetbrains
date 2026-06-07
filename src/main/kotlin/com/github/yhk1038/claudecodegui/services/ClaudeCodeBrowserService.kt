@@ -14,12 +14,25 @@ import com.intellij.util.Alarm
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Pure release rule for the pooled JCEF browser: a holder may be disposed only
+ * Pure release rule for a pooled JCEF browser holder: it may be disposed only
  * when no panel still references it. Extracted as a top-level function so the
  * rule can be unit-tested without an IDE fixture. (issue #29)
  */
 internal fun shouldReleasePooledBrowser(remainingPanelRefs: Int): Boolean =
     remainingPanelRefs <= 0
+
+/**
+ * Pick a reusable (unoccupied) browser holder for a tab from the per-tab list,
+ * given each holder's current panel-reference count. Returns the index of the
+ * first free holder, or null if all are occupied (→ a new browser is needed).
+ *
+ * This is the crux of #48: a tab MOVE leaves a freed holder to reuse (so the
+ * page is preserved), whereas a tab SPLIT finds every holder occupied by the
+ * other live pane and so spawns a second browser — letting both panes render
+ * the same conversation independently. Pure for unit testing.
+ */
+internal fun indexOfReusableHolder(panelRefCounts: List<Int>): Int? =
+    panelRefCounts.indexOfFirst { shouldReleasePooledBrowser(it) }.takeIf { it >= 0 }
 
 /**
  * Project-level service that pools JCEF browser instances by tabId.
@@ -89,7 +102,9 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
         var releaseToken: Int = 0
     }
 
-    private val holders = ConcurrentHashMap<String, BrowserHolder>()
+    // tabId -> list of browser holders for that tab. Usually one, but a SPLIT of
+    // the same tab into two panes holds two browsers (one per live pane). (issue #48)
+    private val holders = ConcurrentHashMap<String, MutableList<BrowserHolder>>()
 
     /**
      * Grace timer for deferred release. A tab move disposes the old panel
@@ -116,40 +131,26 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
     }
 
     /**
-     * Get an existing browser for the session, or create a new one. Marks the
-     * browser as referenced by one more panel (refCount++) and bumps the
-     * release token so any pending deferred release for this session aborts —
-     * this is what keeps the browser alive across a tab move/split. The browser
-     * is NOT registered with Disposer — it is managed by this service.
+     * Acquire a browser holder for the tab: reuse an unoccupied pooled holder if
+     * one exists, otherwise create a new one. Marks it referenced by one more
+     * panel (refCount++) and bumps the release token so any pending deferred
+     * release for that holder aborts — this keeps the browser alive across a tab
+     * move. A split finds every holder occupied, so it gets a fresh browser and
+     * both panes render independently (issue #48). The browser is NOT registered
+     * with Disposer — it is managed by this service.
      */
     fun getOrCreate(tabId: String): BrowserHolder? {
         if (!isJcefAvailable()) {
             logger.warn("JCEF is not supported in this runtime — cannot create browser for tab: $tabId")
             return null
         }
-        val holder = holders.getOrPut(tabId) {
-            logger.info("Creating new JCEF browser for tab: $tabId")
-            // Disable JCEF off-screen rendering so the browser renders natively.
-            // OSR (default since 2023.2) fails to forward HiDPI scale to Chromium on
-            // macOS Retina, producing pixelated output (issue #23, JBR-3526). Our
-            // panel has no other Swing widgets that need to overlay the browser, so
-            // the z-order trade-off does not apply.
-            //
-            // IntelliJ 2026.1+ runs JCEF out-of-process (remote-mode) where windowed
-            // (non-OSR) browsers are unsupported; setOffScreenRendering(false) is
-            // silently ignored and the browser paints as a black rectangle (issue #51,
-            // IJPL-184288). JBCefApp.isRemoteEnabled() is package-private and cannot
-            // be called from a plugin, so detect remote-mode via the JVM system
-            // property that JBCefApp sets at class-load time.
-            val isRemoteJcef = "true" == System.getProperty("jcef.remote.enabled")
-            val builder = JBCefBrowser.createBuilder()
-            if (!isRemoteJcef) {
-                builder.setOffScreenRendering(false)
-            }
-            val browser = builder.build()
-            val cursorQuery = JBCefJSQuery.create(browser as JBCefBrowserBase)
-            val streamingQuery = JBCefJSQuery.create(browser as JBCefBrowserBase)
-            BrowserHolder(browser, cursorQuery, streamingQuery)
+        val list = holders.getOrPut(tabId) { mutableListOf() }
+        val reuseIdx = indexOfReusableHolder(list.map { it.panelRefCount })
+        val holder = if (reuseIdx != null) {
+            list[reuseIdx]
+        } else {
+            logger.info("Creating new JCEF browser for tab: $tabId (view #${list.size + 1})")
+            createHolder().also { list.add(it) }
         }
         holder.panelRefCount += 1
         // Bump the token so any release scheduled before this acquire aborts.
@@ -157,56 +158,77 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
         return holder
     }
 
+    private fun createHolder(): BrowserHolder {
+        // Disable JCEF off-screen rendering so the browser renders natively.
+        // OSR (default since 2023.2) fails to forward HiDPI scale to Chromium on
+        // macOS Retina, producing pixelated output (issue #23, JBR-3526). Our
+        // panel has no other Swing widgets that need to overlay the browser, so
+        // the z-order trade-off does not apply.
+        //
+        // IntelliJ 2026.1+ runs JCEF out-of-process (remote-mode) where windowed
+        // (non-OSR) browsers are unsupported; setOffScreenRendering(false) is
+        // silently ignored and the browser paints as a black rectangle (issue #51,
+        // IJPL-184288). JBCefApp.isRemoteEnabled() is package-private and cannot
+        // be called from a plugin, so detect remote-mode via the JVM system
+        // property that JBCefApp sets at class-load time.
+        val isRemoteJcef = "true" == System.getProperty("jcef.remote.enabled")
+        val builder = JBCefBrowser.createBuilder()
+        if (!isRemoteJcef) {
+            builder.setOffScreenRendering(false)
+        }
+        val browser = builder.build()
+        val cursorQuery = JBCefJSQuery.create(browser as JBCefBrowserBase)
+        val streamingQuery = JBCefJSQuery.create(browser as JBCefBrowserBase)
+        return BrowserHolder(browser, cursorQuery, streamingQuery)
+    }
+
     /**
-     * Drop one panel's reference to the session's browser. When the last
+     * Drop one panel's reference to a specific browser [holder]. When the last
      * reference is gone, the browser is NOT disposed immediately: a tab
-     * move/split disposes the old panel and re-acquires from the new slot a
-     * short time later, and that re-acquire must keep the browser alive. So the
-     * release is deferred by a grace period and aborts if the browser was
-     * re-acquired meanwhile (token changed) or re-referenced (refCount > 0).
-     * Only a genuine tab close — with no re-acquire — actually disposes it.
+     * move/split disposes the old panel and re-acquires a short time later, and
+     * that re-acquire must keep the browser alive. So the release is deferred by
+     * a grace period and aborts if the holder was re-acquired meanwhile (token
+     * changed) or re-referenced (refCount > 0). Only a genuine close — with no
+     * re-acquire — actually disposes it.
      *
-     * [onReleased] runs only when the browser is truly disposed, letting the
-     * caller perform the matching session/tab cleanup. (issue #29)
+     * [onTabClosed] runs only when the LAST holder for [tabId] is disposed (the
+     * whole tab is gone, not just one split pane), letting the caller perform
+     * the matching tab cleanup. (issues #29, #48)
      */
-    fun releaseRef(tabId: String, onReleased: () -> Unit) {
-        val holder = holders[tabId] ?: return
+    fun releaseRef(tabId: String, holder: BrowserHolder, onTabClosed: () -> Unit) {
         holder.panelRefCount -= 1
         if (!shouldReleasePooledBrowser(holder.panelRefCount)) return
 
         val tokenAtSchedule = holder.releaseToken
         releaseAlarm.addRequest({
-            val current = holders[tabId] ?: return@addRequest
             // Re-acquired during the grace period → keep the pooled browser.
-            if (current.releaseToken != tokenAtSchedule) return@addRequest
-            if (!shouldReleasePooledBrowser(current.panelRefCount)) return@addRequest
-            release(tabId)
-            onReleased()
+            if (holder.releaseToken != tokenAtSchedule) return@addRequest
+            if (!shouldReleasePooledBrowser(holder.panelRefCount)) return@addRequest
+
+            disposeHolder(holder)
+            val list = holders[tabId]
+            list?.remove(holder)
+            if (list != null && list.isEmpty()) {
+                holders.remove(tabId)
+                onTabClosed()
+            }
         }, RELEASE_GRACE_MS)
     }
 
     /**
-     * Dispose the pooled browser for the session and drop it from the pool.
-     * Private: callers go through [releaseRef] so the refcount + grace-period
-     * guard is always applied. (issue #29)
+     * Dispose a single browser holder. Private: callers go through [releaseRef]
+     * so the refcount + grace-period guard is always applied. (issue #29)
      */
-    private fun release(tabId: String) {
-        holders.remove(tabId)?.let { holder ->
-            logger.info("Releasing JCEF browser for tab: $tabId")
-            try { holder.lafListenerDisposable?.let { Disposer.dispose(it) } } catch (_: Exception) {}
-            try { Disposer.dispose(holder.streamingQuery) } catch (_: Exception) {}
-            try { Disposer.dispose(holder.cursorQuery) } catch (_: Exception) {}
-            try { Disposer.dispose(holder.browser) } catch (_: Exception) {}
-        }
+    private fun disposeHolder(holder: BrowserHolder) {
+        logger.info("Releasing JCEF browser holder")
+        try { holder.lafListenerDisposable?.let { Disposer.dispose(it) } } catch (_: Exception) {}
+        try { Disposer.dispose(holder.streamingQuery) } catch (_: Exception) {}
+        try { Disposer.dispose(holder.cursorQuery) } catch (_: Exception) {}
+        try { Disposer.dispose(holder.browser) } catch (_: Exception) {}
     }
 
     override fun dispose() {
-        holders.values.forEach { holder ->
-            try { holder.lafListenerDisposable?.let { Disposer.dispose(it) } } catch (_: Exception) {}
-            try { Disposer.dispose(holder.streamingQuery) } catch (_: Exception) {}
-            try { Disposer.dispose(holder.cursorQuery) } catch (_: Exception) {}
-            try { Disposer.dispose(holder.browser) } catch (_: Exception) {}
-        }
+        holders.values.flatten().forEach { disposeHolder(it) }
         holders.clear()
     }
 

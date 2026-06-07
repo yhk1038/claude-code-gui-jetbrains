@@ -1124,13 +1124,15 @@ class ClaudeCodePanel(
         browser?.let { remove(it.component) }
 
         scope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
-        if (holder != null) {
+        val acquiredHolder = holder
+        if (acquiredHolder != null) {
             backendService.releasePanel(project.basePath ?: "", panelId)
-            // Drop this panel's reference to the pooled browser. The service
-            // disposes the browser (and runs the cleanup below) only if no new
-            // panel re-acquires the same session within the grace period — i.e.
-            // a real tab close, not a tab move/split. (issue #29)
-            browserService.releaseRef(tabId) {
+            // Drop this panel's reference to its pooled browser holder. The
+            // service disposes that holder only if no new panel re-acquires it
+            // within the grace period (a real close, not a tab move). The tab
+            // cleanup below runs only when the tab's LAST holder is disposed —
+            // so closing one split pane keeps the other alive. (issues #29, #48)
+            browserService.releaseRef(tabId, acquiredHolder) {
                 ClaudeCodeVirtualFile.removeTab(project, tabId)
                 EditorTabStateService.getInstance(project).removeTab(tabId)
             }
