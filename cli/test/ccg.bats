@@ -155,6 +155,271 @@ EOF
   grep -q 'hello from fake backend' "$BATS_TEST_TMPDIR/spawn.out"
 }
 
+# ─── parse_stop_args: pure argument parsing for `ccg stop` ────
+# Echoes shell-eval'able assignments:
+#   STOP_MODE=port|pid|all   STOP_TARGET=<pid|port>
+#   STOP_FORCE=0|1  STOP_TREE=0|1  STOP_HELP=0|1  STOP_ERROR=<msg-or-empty>
+
+@test "parse_stop_args: no args → default port mode on CCG_PORT" {
+  run parse_stop_args
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"STOP_MODE=port"* ]]
+  [[ "$output" == *"STOP_TARGET=19836"* ]]
+  [[ "$output" == *"STOP_FORCE=0"* ]]
+  [[ "$output" == *"STOP_TREE=1"* ]]
+}
+
+@test "parse_stop_args: bare PID → pid mode" {
+  run parse_stop_args 12345
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"STOP_MODE=pid"* ]]
+  [[ "$output" == *"STOP_TARGET=12345"* ]]
+}
+
+@test "parse_stop_args: --port <n> → port mode with that port" {
+  run parse_stop_args --port 30000
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"STOP_MODE=port"* ]]
+  [[ "$output" == *"STOP_TARGET=30000"* ]]
+}
+
+@test "parse_stop_args: -p alias works" {
+  run parse_stop_args -p 30000
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"STOP_MODE=port"* ]]
+  [[ "$output" == *"STOP_TARGET=30000"* ]]
+}
+
+@test "parse_stop_args: --all → all mode" {
+  run parse_stop_args --all
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"STOP_MODE=all"* ]]
+}
+
+@test "parse_stop_args: -a alias → all mode" {
+  run parse_stop_args -a
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"STOP_MODE=all"* ]]
+}
+
+@test "parse_stop_args: --force sets force flag" {
+  run parse_stop_args --force
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"STOP_FORCE=1"* ]]
+}
+
+@test "parse_stop_args: -f alias sets force flag" {
+  run parse_stop_args -f 12345
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"STOP_FORCE=1"* ]]
+  [[ "$output" == *"STOP_TARGET=12345"* ]]
+}
+
+@test "parse_stop_args: --no-tree clears tree flag" {
+  run parse_stop_args --no-tree 12345
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"STOP_TREE=0"* ]]
+}
+
+@test "parse_stop_args: -h sets help flag" {
+  run parse_stop_args -h
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"STOP_HELP=1"* ]]
+}
+
+@test "parse_stop_args: --help sets help flag" {
+  run parse_stop_args --help
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"STOP_HELP=1"* ]]
+}
+
+@test "parse_stop_args: combined flags (force + no-tree + pid)" {
+  run parse_stop_args --force --no-tree 777
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"STOP_MODE=pid"* ]]
+  [[ "$output" == *"STOP_TARGET=777"* ]]
+  [[ "$output" == *"STOP_FORCE=1"* ]]
+  [[ "$output" == *"STOP_TREE=0"* ]]
+}
+
+@test "parse_stop_args: --port without value → error" {
+  run parse_stop_args --port
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"STOP_ERROR="* ]]
+  [[ "$output" != *"STOP_ERROR=\n"* ]]
+}
+
+@test "parse_stop_args: unknown flag → error" {
+  run parse_stop_args --bogus
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"STOP_ERROR="* ]]
+}
+
+@test "parse_stop_args: non-numeric bare arg → error" {
+  run parse_stop_args notapid
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"STOP_ERROR="* ]]
+}
+
+# ─── parse_list_args: pure argument parsing for `ccg list` ────
+
+@test "parse_list_args: no args → no help" {
+  run parse_list_args
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"LIST_HELP=0"* ]]
+}
+
+@test "parse_list_args: -h → help" {
+  run parse_list_args -h
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"LIST_HELP=1"* ]]
+}
+
+@test "parse_list_args: --help → help" {
+  run parse_list_args --help
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"LIST_HELP=1"* ]]
+}
+
+@test "parse_list_args: unknown flag → error" {
+  run parse_list_args --bogus
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"LIST_ERROR="* ]]
+}
+
+# ─── cmd_list / cmd_stop help integration ─────────────────────
+
+@test "cmd_list -h: prints list help (en)" {
+  export CCG_LANG=en
+  load_locale en
+  run cmd_list -h
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ccg list"* ]]
+}
+
+@test "cmd_stop -h: prints stop help with termination order (en)" {
+  export CCG_LANG=en
+  load_locale en
+  run cmd_stop -h
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ccg stop"* ]]
+  [[ "$output" == *"SIGTERM"* ]]
+  [[ "$output" == *"SIGKILL"* ]]
+  [[ "$output" == *"--all"* ]]
+  [[ "$output" == *"--no-tree"* ]]
+}
+
+@test "cmd_stop: no backend running → friendly message" {
+  export CCG_LANG=en
+  load_locale en
+  # No PIDs on the port, no backend roots.
+  find_pids_on_port() { return 1; }
+  list_backend_roots() { :; }
+  run cmd_stop
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"No backend"* ]]
+}
+
+# ─── cmd_list / cmd_stop with a DEV (watch) backend tree ─────────
+#
+# Dev backend started via `pnpm -C backend dev`. The real tree:
+#   48110 ← node /opt/homebrew/bin/pnpm -C backend dev   (pnpm dev — true root)
+#   48112 ← pnpm worker
+#   48142 ← node --import tsx/esm --watch src/server.ts   (watch supervisor)
+#   10703 ← node --import tsx/esm src/server.ts           (actual server, listens)
+_mock_ps_dev() {
+  mock_cmd_with_logic ps '
+cat <<TREE
+    1     0 /sbin/launchd
+96529     1 /bin/zsh -il
+48110 96529 node /opt/homebrew/bin/pnpm -C backend dev
+48112 48110 node /opt/homebrew/bin/pnpm -C backend dev
+48142 48112 node --import tsx/esm --watch src/server.ts
+10703 48142 node --import tsx/esm src/server.ts
+TREE
+'
+}
+
+# Forward-direction lsof mock (pid → ports): the dev server (10703) listens on
+# 9999. Mirrors the real `lsof -nP -p <pid> -iTCP -sTCP:LISTEN` rows; dispatches
+# on the `-p <pid>` argument so only 10703 reports a listening port.
+_mock_lsof_dev_9999() {
+  mock_cmd_with_logic lsof '
+case "$*" in
+  *"-p 10703"*) cat <<OUT
+COMMAND   PID USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
+node    10703  u   23u  IPv4 0x0                0t0  TCP 127.0.0.1:9999 (LISTEN)
+OUT
+  ;;
+  *) exit 1 ;;
+esac
+'
+}
+
+@test "cmd_list: dev backend shows the promoted pnpm-dev root, [dev] label and its port" {
+  export CCG_LANG=en
+  load_locale en
+  _mock_ps_dev
+  # The actual server (10703) listens on 9999 — discovered via the pid→port
+  # seam, NOT via a CCG_PORT override (defect 1).
+  _mock_lsof_dev_9999
+  # /version on the discovered port (9999) returns our signature → confirmed.
+  get_backend_version_via_port() { [[ "$CCG_PORT" == "9999" ]] && { printf '0.17.1'; return 0; }; return 1; }
+
+  run cmd_list
+  [ "$status" -eq 0 ]
+  # The durable root (pnpm dev) is what we report, with the full chain beneath.
+  [[ "$output" == *"48110"* ]]
+  [[ "$output" == *"10703"* ]]
+  [[ "$output" == *"48142"* ]]
+  # dev label and the real port.
+  [[ "$output" == *"dev"* ]]
+  [[ "$output" == *"9999"* ]]
+}
+
+@test "cmd_stop --port: dev backend terminates the whole tree from the pnpm-dev root, leaves first" {
+  export CCG_LANG=en
+  load_locale en
+  _mock_ps_dev
+  # 10703 listens on 9999; the chosen root (48110) owns the port via the tree,
+  # discovered by the pid→port seam (no CCG_PORT override).
+  _mock_lsof_dev_9999
+
+  # Record signals; report everything dead so the grace loop exits fast.
+  _kill_pid() { printf '%s\n' "$*" >> "$BATS_TEST_TMPDIR/kill.log"; }
+  _pid_alive() { return 1; }
+
+  run cmd_stop --port 9999
+  [ "$status" -eq 0 ]
+
+  # The pnpm-dev root and the whole watch chain must be signalled.
+  grep -q '48110' "$BATS_TEST_TMPDIR/kill.log"
+  grep -q '48142' "$BATS_TEST_TMPDIR/kill.log"
+  grep -q '10703' "$BATS_TEST_TMPDIR/kill.log"
+  # Leaf (server.ts) before the root (pnpm dev) — so --watch cannot respawn.
+  local order
+  order=$(grep -oE '(48110|10703)' "$BATS_TEST_TMPDIR/kill.log")
+  [ "$(printf '%s\n' "$order" | head -1)" = "10703" ]
+  [ "$(printf '%s\n' "$order" | tail -1)" = "48110" ]
+}
+
+@test "cmd_stop <pid>: bare dev server pid is recognized as ours and stops the promoted tree" {
+  export CCG_LANG=en
+  load_locale en
+  _mock_ps_dev
+  # No port involvement needed; is_our_backend should accept a dev descendant.
+  mock_cmd_with_logic lsof 'exit 1'
+  _kill_pid() { printf '%s\n' "$*" >> "$BATS_TEST_TMPDIR/kill.log"; }
+  _pid_alive() { return 1; }
+
+  # 10703 is the inner server — it belongs to a dev backend tree, so stop must
+  # proceed without the "not ours" confirmation prompt (no stdin provided).
+  run cmd_stop 10703
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"does not belong"* ]]
+  grep -q '10703' "$BATS_TEST_TMPDIR/kill.log"
+}
+
 # ─── dispatcher: subcommand routing ───────────────────────────
 
 @test "dispatcher: unknown command exits nonzero with i18n message" {
@@ -189,4 +454,23 @@ EOF
   run env CCG_LANG=ko bash "$CLI_BIN/ccg" unknown-cmd
   [ "$status" -ne 0 ]
   [[ "$output" == *"알 수 없는 명령"* ]]
+}
+
+@test "dispatcher: routes 'list -h' to cmd_list help" {
+  run env CCG_LANG=en bash "$CLI_BIN/ccg" list -h
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ccg list"* ]]
+}
+
+@test "dispatcher: routes 'stop -h' to cmd_stop help" {
+  run env CCG_LANG=en bash "$CLI_BIN/ccg" stop -h
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ccg stop"* ]]
+  [[ "$output" == *"SIGTERM"* ]]
+}
+
+@test "dispatcher: help text lists the 'list' command" {
+  run env CCG_LANG=en bash "$CLI_BIN/ccg" help
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ccg list"* ]]
 }

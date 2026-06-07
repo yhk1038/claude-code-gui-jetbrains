@@ -37,6 +37,8 @@ source "$CCG_LIB_DIR/i18n.sh"
 source "$CCG_LIB_DIR/version.sh"
 # shellcheck source=../lib/port.sh
 source "$CCG_LIB_DIR/port.sh"
+# shellcheck source=../lib/process.sh
+source "$CCG_LIB_DIR/process.sh"
 # shellcheck source=../lib/runtime.sh
 source "$CCG_LIB_DIR/runtime.sh"
 
@@ -146,13 +148,16 @@ cmd_help() {
   printf '\n\n'
   cat <<EOF
   ccg                  Run (default). Check port, compare versions, spawn backend, open browser.
+  ccg list             Show the backend process tree (PIDs, ports, source labels).
   ccg update           Force-update runtime to the latest release.
-  ccg stop             Gracefully stop the running backend on port 19836.
+  ccg stop             Stop the backend on port 19836, descendants included.
   ccg version          Show installed ccg, cached runtimes, and running backend.
   ccg doctor           Diagnose environment (node, PATH, cache, port).
   ccg self-update      Re-run the install script to update ccg itself.
   ccg uninstall        Remove ccg from this machine.
   ccg help, --help     Show this message.
+
+  Run 'ccg list -h' or 'ccg stop -h' for details on those commands.
 EOF
 }
 
@@ -204,17 +209,251 @@ cmd_doctor() {
       ;;
     foreign) printf '%s\n' "$(t doctor_port_foreign)" ;;
   esac
+
+  # Hint: how many backend.mjs trees are alive right now. Two or more often
+  # means a stale process the user forgot — nudge them toward `ccg list`.
+  local backend_count
+  backend_count=$(list_backend_roots 2>/dev/null | grep -c . || true)
+  if (( backend_count >= 2 )); then
+    printf '%s\n' "$(t doctor_backend_warn "$backend_count")"
+  elif (( backend_count == 1 )); then
+    printf '%s\n' "$(t doctor_backend_count "$backend_count")"
+  fi
+}
+
+# ─── list: show the backend process tree ─────────────────────
+
+# Pure parser for `ccg list` args. Echoes `LIST_HELP=0|1` (+ `LIST_ERROR=...`
+# on bad input). Kept tiny and pure so it is unit-testable.
+parse_list_args() {
+  local help=0
+  while (( $# > 0 )); do
+    case "$1" in
+      -h|--help) help=1 ;;
+      *)
+        printf 'LIST_ERROR=%s\n' "unknown argument: $1"
+        return 1
+        ;;
+    esac
+    shift
+  done
+  printf 'LIST_HELP=%s\n' "$help"
+  return 0
+}
+
+cmd_list_help() {
+  printf '%s\n\n' "$(t help_list_header)"
+  printf '%b\n' "$(t help_list_body)"
+  printf '\n%s\n' "$(t list_help_hint)"
+}
+
+cmd_list() {
+  local parsed
+  if ! parsed=$(parse_list_args "$@"); then
+    printf '%s\n' "${parsed#LIST_ERROR=}" >&2
+    cmd_list_help >&2
+    return 1
+  fi
+  eval "$parsed"
+
+  if [[ "${LIST_HELP:-0}" == "1" ]]; then
+    cmd_list_help
+    return 0
+  fi
+
+  printf '%s\n' "$(t list_header)"
+  format_process_tree
+}
+
+# ─── stop: terminate the backend process tree ────────────────
+
+# Pure parser for `ccg stop` args. Echoes shell assignments the caller `eval`s:
+#   STOP_MODE=port|pid|all  STOP_TARGET=<pid|port>  STOP_FORCE=0|1
+#   STOP_TREE=0|1  STOP_HELP=0|1  (STOP_ERROR=... + nonzero on bad input)
+parse_stop_args() {
+  local mode=port target=$CCG_PORT force=0 tree=1 help=0
+
+  while (( $# > 0 )); do
+    case "$1" in
+      -h|--help) help=1 ;;
+      -f|--force) force=1 ;;
+      --no-tree) tree=0 ;;
+      -a|--all) mode=all ;;
+      -p|--port)
+        if [[ -z "${2:-}" || ! "${2:-}" =~ ^[0-9]+$ ]]; then
+          printf 'STOP_ERROR=%s\n' "--port requires a numeric value"
+          return 1
+        fi
+        mode=port
+        target=$2
+        shift
+        ;;
+      -*)
+        printf 'STOP_ERROR=%s\n' "unknown flag: $1"
+        return 1
+        ;;
+      *)
+        if [[ ! "$1" =~ ^[0-9]+$ ]]; then
+          printf 'STOP_ERROR=%s\n' "not a PID: $1"
+          return 1
+        fi
+        mode=pid
+        target=$1
+        ;;
+    esac
+    shift
+  done
+
+  printf 'STOP_MODE=%s\n' "$mode"
+  printf 'STOP_TARGET=%s\n' "$target"
+  printf 'STOP_FORCE=%s\n' "$force"
+  printf 'STOP_TREE=%s\n' "$tree"
+  printf 'STOP_HELP=%s\n' "$help"
+  return 0
+}
+
+cmd_stop_help() {
+  printf '%s\n\n' "$(t help_stop_header)"
+  printf '%b\n' "$(t help_stop_body)"
+}
+
+# Confirm a y/N prompt. Returns 0 on yes. Honors STDIN; defaults to No.
+_confirm() {
+  local prompt=$1
+  printf '%s' "$prompt"
+  local answer
+  read -r answer || true
+  case "${answer:-N}" in
+    y|Y|yes|YES) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# Kill one root with the shared force/tree options derived from parsed flags.
+_stop_kill_root() {
+  local root=$1 force=$2 tree=$3 snap=$4
+  printf '%s\n' "$(t stop_target "$root")"
+  if [[ "$tree" == "0" ]]; then
+    # --no-tree: just this one process, not its children.
+    _kill_single "$root" "$force"
+  elif [[ "$force" == "1" ]]; then
+    kill_tree "$root" "$snap" --force
+  else
+    kill_tree "$root" "$snap"
+  fi
+}
+
+# Single-process kill (no descendants), honoring --force.
+_kill_single() {
+  local pid=$1 force=$2
+  if [[ "$force" == "1" ]]; then
+    _kill_pid -KILL "$pid" 2>/dev/null || true
+  else
+    _kill_pid -TERM "$pid" 2>/dev/null || true
+    local waited=0
+    while (( waited < 3 )); do
+      _pid_alive "$pid" || return 0
+      sleep 1
+      waited=$(( waited + 1 ))
+    done
+    _pid_alive "$pid" && _kill_pid -KILL "$pid" 2>/dev/null || true
+  fi
 }
 
 cmd_stop() {
-  local pid
-  if ! pid=$(find_pid_on_port 2>/dev/null); then
-    printf '%s\n' "$(t backend_stopped)"
+  local parsed
+  if ! parsed=$(parse_stop_args "$@"); then
+    printf '%s\n' "${parsed#STOP_ERROR=}" >&2
+    cmd_stop_help >&2
+    return 1
+  fi
+  eval "$parsed"
+
+  if [[ "${STOP_HELP:-0}" == "1" ]]; then
+    cmd_stop_help
     return 0
   fi
-  printf '%s\n' "$(t backend_stopping "$pid")"
-  graceful_kill_port
-  printf '%s\n' "$(t backend_stopped)"
+
+  [[ "${STOP_FORCE:-0}" == "1" ]] && printf '%s\n' "$(t stop_force)"
+
+  local snap
+  snap=$(ps_snapshot 2>/dev/null || printf '')
+
+  case "${STOP_MODE}" in
+    all)
+      local roots
+      roots=$(list_backend_roots "$snap")
+      if [[ -z "$roots" ]]; then
+        printf '%s\n' "$(t stop_all_none)"
+        return 0
+      fi
+      local count
+      count=$(printf '%s\n' "$roots" | grep -c .)
+      if ! _confirm "$(t stop_all_prompt "$count")"; then
+        printf '%s\n' "$(t stop_aborted)"
+        return 0
+      fi
+      local root
+      while IFS= read -r root; do
+        [[ -n "$root" ]] || continue
+        _stop_kill_root "$root" "${STOP_FORCE}" "${STOP_TREE}" "$snap"
+      done <<< "$roots"
+      printf '%s\n' "$(t stop_done)"
+      return 0
+      ;;
+
+    port)
+      local roots root_in_port="" pids
+      roots=$(list_backend_roots "$snap")
+      # Prefer a backend root whose TREE holds the requested port. The listening
+      # socket often lives on a descendant (a node worker fork, or the dev
+      # server.ts under --watch) rather than the root itself, so we match at the
+      # tree level — otherwise a dev/prod root never claims its own port and we
+      # fall through to killing just the leaf, which --watch would respawn.
+      if [[ -n "$roots" ]]; then
+        local r
+        while IFS= read -r r; do
+          [[ -n "$r" ]] || continue
+          if [[ -n "$(port_for_tree "$r" "$snap" "${STOP_TARGET}")" ]]; then
+            root_in_port=$r
+            break
+          fi
+        done <<< "$roots"
+      fi
+      if [[ -n "$root_in_port" ]]; then
+        _stop_kill_root "$root_in_port" "${STOP_FORCE}" "${STOP_TREE}" "$snap"
+        printf '%s\n' "$(t stop_done)"
+        return 0
+      fi
+      # No backend root owns the port. Fall back to whoever listens on it.
+      if pids=$(find_pids_on_port "${STOP_TARGET}" 2>/dev/null); then
+        graceful_kill_port
+        printf '%s\n' "$(t stop_done)"
+        return 0
+      fi
+      printf '%s\n' "$(t stop_none "${STOP_TARGET}")"
+      return 0
+      ;;
+
+    pid)
+      local target=${STOP_TARGET}
+      if ! is_our_backend "$target" "$snap"; then
+        printf '%s\n' "$(t stop_not_ours "$target")" >&2
+        if ! _confirm "$(t stop_not_ours_prompt)"; then
+          printf '%s\n' "$(t stop_aborted)"
+          return 0
+        fi
+      elif [[ "${STOP_TREE}" == "1" ]]; then
+        # Tree mode on a member of our backend: promote to the durable root so
+        # a dev --watch supervisor cannot respawn a killed leaf. --no-tree keeps
+        # the literal pid (the user explicitly asked for a single process).
+        target=$(root_for_pid "$target" "$snap")
+      fi
+      _stop_kill_root "$target" "${STOP_FORCE}" "${STOP_TREE}" "$snap"
+      printf '%s\n' "$(t stop_done)"
+      return 0
+      ;;
+  esac
 }
 
 cmd_self_update() {
@@ -409,6 +648,7 @@ ccg_main() {
 
   case "$cmd" in
     run)           cmd_run "$@" ;;
+    list)          cmd_list "$@" ;;
     update)        cmd_update "$@" ;;
     stop)          cmd_stop "$@" ;;
     version|--version) cmd_version "$@" ;;

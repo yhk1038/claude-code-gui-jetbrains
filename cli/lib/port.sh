@@ -64,6 +64,37 @@ find_pid_on_port() {
   return 1
 }
 
+# Return EVERY PID listening on <port> (default CCG_PORT), one per line.
+# Unlike find_pid_on_port (kept for callers that want just one), this surfaces
+# all holders — a single backend can have multiple listening fds, and stale
+# foreign processes may coexist. Returns nonzero (and prints nothing) if none.
+find_pids_on_port() {
+  local port=${1:-$CCG_PORT}
+  local raw
+  if command -v lsof >/dev/null 2>&1; then
+    raw=$(lsof -ti ":${port}" 2>/dev/null) || return 1
+  elif command -v netstat >/dev/null 2>&1; then
+    raw=$(netstat -anp 2>/dev/null | awk -v p=":${port}" '$4 ~ p {print $7}' | sed 's|/.*||' | grep -E '^[0-9]+$')
+  else
+    return 1
+  fi
+
+  [[ -n "$raw" ]] || return 1
+
+  local pid found=0 seen=" "
+  while IFS= read -r pid; do
+    [[ "$pid" =~ ^[0-9]+$ ]] || continue
+    case "$seen" in
+      *" $pid "*) continue ;;  # dedupe
+    esac
+    seen="$seen$pid "
+    printf '%s\n' "$pid"
+    found=1
+  done <<< "$raw"
+
+  (( found )) && return 0 || return 1
+}
+
 # Signal-send seam. Wrapped as a function so tests can override it
 # (bash builtins like `kill` beat PATH overrides, so PATH-based mocking
 # of the external /bin/kill does not work — function override does).
@@ -71,27 +102,33 @@ _kill_pid() {
   kill "$@"
 }
 
-# Send SIGTERM, wait up to <timeout> seconds, then SIGKILL.
-# No-op (returns 0) if nothing is listening.
+# Send SIGTERM to every listening PID, wait up to <timeout> seconds, then
+# SIGKILL whatever still holds the port. No-op (returns 0) if nothing listens.
 graceful_kill_port() {
   local timeout=${1:-3}
-  local pid
+  local pids pid
 
-  pid=$(find_pid_on_port) || return 0
+  pids=$(find_pids_on_port) || return 0
 
-  _kill_pid -TERM "$pid" 2>/dev/null || true
+  while IFS= read -r pid; do
+    [[ -n "$pid" ]] || continue
+    _kill_pid -TERM "$pid" 2>/dev/null || true
+  done <<< "$pids"
 
   local waited=0
   while (( waited < timeout )); do
-    if ! find_pid_on_port >/dev/null 2>&1; then
+    if ! find_pids_on_port >/dev/null 2>&1; then
       return 0
     fi
     sleep 1
     waited=$(( waited + 1 ))
   done
 
-  # Still alive — escalate
-  pid=$(find_pid_on_port) || return 0
-  _kill_pid -KILL "$pid" 2>/dev/null || true
+  # Still alive — escalate every remaining holder.
+  pids=$(find_pids_on_port) || return 0
+  while IFS= read -r pid; do
+    [[ -n "$pid" ]] || continue
+    _kill_pid -KILL "$pid" 2>/dev/null || true
+  done <<< "$pids"
   return 0
 }
