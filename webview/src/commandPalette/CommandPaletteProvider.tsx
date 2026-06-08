@@ -1,5 +1,6 @@
 import { createContext, useContext, useMemo, useRef, ReactNode } from 'react';
 import { useChatStreamContext } from '@/contexts/ChatStreamContext';
+import { useChatInputState } from '@/contexts/ChatInputStateContext';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useCliConfig } from '@/contexts/CliConfigContext';
 import { getAdapter } from '@/adapters';
@@ -46,6 +47,7 @@ interface CommandPaletteProviderProps {
 
 export function CommandPaletteProvider({ children }: CommandPaletteProviderProps) {
   const chatStream = useChatStreamContext();
+  const chatInputState = useChatInputState();
   const session = useSessionContext();
   const { controlResponse } = useCliConfig();
 
@@ -54,8 +56,8 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
     chatStream: {
       messages: chatStream.messages,
       isStreaming: chatStream.isStreaming,
-      input: chatStream.input,
-      setInput: chatStream.setInput,
+      input: chatInputState.input,
+      setInput: chatInputState.setInput,
       sendMessage: chatStream.sendMessage,
       stop: chatStream.stop,
       continue: chatStream.continue,
@@ -84,8 +86,8 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
     chatStream: {
       messages: chatStream.messages,
       isStreaming: chatStream.isStreaming,
-      input: chatStream.input,
-      setInput: chatStream.setInput,
+      input: chatInputState.input,
+      setInput: chatInputState.setInput,
       sendMessage: chatStream.sendMessage,
       stop: chatStream.stop,
       continue: chatStream.continue,
