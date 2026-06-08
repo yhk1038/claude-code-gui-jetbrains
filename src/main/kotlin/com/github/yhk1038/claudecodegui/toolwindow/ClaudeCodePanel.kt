@@ -801,15 +801,16 @@ class ClaudeCodePanel(
         System.err.println("[ClaudeCodePanel] loadWebView called for project: ${project.name}")
         System.err.println("[ClaudeCodePanel] project.basePath: ${project.basePath}")
 
-        val workingDirParam = project.basePath?.let {
-            "workingDir=${java.net.URLEncoder.encode(it, "UTF-8")}"
-        }
-        // panelId is forwarded to the /ws query by WebSocketConnector so the backend can
-        // route panel-scoped notifications (NATIVE_DROP, etc.) back to this exact webview.
-        val panelParam = "panelId=${java.net.URLEncoder.encode(panelId, "UTF-8")}"
-        val query = listOfNotNull(workingDirParam, panelParam).joinToString("&")
-        val pathSegment = initialPath ?: "/sessions/new"
-        val url = "http://localhost:$port$pathSegment?$query"
+        // theme=<light|dark> lets webview/index.html paint the correct surface
+        // color before the CSS bundle / React mount, preventing a white flash on
+        // a new JCEF tab. JBColor.isBright() reflects the current IDE LAF.
+        val url = buildWebViewUrl(
+            port = port,
+            pathSegment = initialPath ?: "/sessions/new",
+            workingDir = project.basePath,
+            panelId = panelId,
+            isBright = com.intellij.ui.JBColor.isBright(),
+        )
         System.err.println("[ClaudeCodePanel] Loading URL: $url")
         logger.info("Loading WebView from Node.js backend: $url")
 
@@ -817,6 +818,14 @@ class ClaudeCodePanel(
             val b = browser!!
             val h = holder!!
             remove(loadingLabel)
+            // Paint the Swing component with the IDE surface color so the JCEF
+            // native first paint is not white. Heavyweight (non-OSR) mode limits
+            // this, but it reduces the white flash on a fresh tab (issue #47).
+            b.component.background = if (com.intellij.ui.JBColor.isBright()) {
+                java.awt.Color(0xFFFFFF)
+            } else {
+                java.awt.Color(0x1A1A1A)
+            }
             b.loadURL(url)
             add(b.component, BorderLayout.CENTER)
             h.isLoaded = true
@@ -1154,6 +1163,36 @@ class ClaudeCodePanel(
  * The detection is purely string-based (`^/[A-Za-z]:`) so it works correctly in
  * unit tests regardless of the host OS.
  */
+/**
+ * Build the WebView URL loaded by the JCEF browser.
+ *
+ * Pure string assembly extracted from [ClaudeCodePanel.loadWebView] so the query
+ * construction (param encoding, ordering, the `theme` flag) is unit-testable.
+ *
+ * Query params, in order:
+ *   - `workingDir` — IDE project base path (omitted when null)
+ *   - `panelId`    — forwarded to /ws so the backend can route panel-scoped
+ *                    notifications (NATIVE_DROP, etc.) back to this exact webview
+ *   - `theme`      — `light` | `dark`, derived from the IDE LAF ([isBright]).
+ *                    Consumed by the FOUC guard in webview/index.html to paint
+ *                    the right surface color before CSS/React load.
+ */
+internal fun buildWebViewUrl(
+    port: Int,
+    pathSegment: String,
+    workingDir: String?,
+    panelId: String,
+    isBright: Boolean,
+): String {
+    val workingDirParam = workingDir?.let {
+        "workingDir=${java.net.URLEncoder.encode(it, "UTF-8")}"
+    }
+    val panelParam = "panelId=${java.net.URLEncoder.encode(panelId, "UTF-8")}"
+    val themeParam = "theme=${if (isBright) "light" else "dark"}"
+    val query = listOfNotNull(workingDirParam, panelParam, themeParam).joinToString("&")
+    return "http://localhost:$port$pathSegment?$query"
+}
+
 internal fun resolveFileUriPath(raw: String): String? {
     return runCatching {
         val path = java.net.URI(raw).path ?: return null
