@@ -12,6 +12,7 @@ import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener
 import com.intellij.ui.content.ContentFactory
+import com.intellij.util.ui.UIUtil
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.SwingConstants
@@ -22,9 +23,12 @@ class ClaudeCodeToolWindowFactory : ToolWindowFactory, DumbAware {
     private val logger = Logger.getInstance(ClaudeCodeToolWindowFactory::class.java)
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        // Empty panel required by the ToolWindow content structure
+        // Empty panel required by the ToolWindow content structure. Match the IDE
+        // theme background so the brief flash during the open-tab "button" trick
+        // does not expose the LAF default white on dark themes.
         val label = JLabel("Loading...", SwingConstants.CENTER)
         val panel = JPanel(BorderLayout())
+        panel.background = UIUtil.getPanelBackground()
         panel.add(label, BorderLayout.CENTER)
         val content = ContentFactory.getInstance().createContent(panel, "", false)
         toolWindow.contentManager.addContent(content)
