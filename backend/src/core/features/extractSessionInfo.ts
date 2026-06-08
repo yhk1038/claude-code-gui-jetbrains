@@ -67,11 +67,19 @@ export async function extractSessionInfo(file: string): Promise<SessionInfo> {
   await new Promise<void>((resolve, reject) => {
     const stream = createReadStream(file, { encoding: 'utf-8' });
     const rl = createInterface({ input: stream, crlfDelay: Infinity });
+    let settled = false;
 
-    const stop = () => {
+    const settle = (err?: Error) => {
+      if (settled) return;
+      settled = true;
       rl.close();
       stream.destroy();
+      if (err) reject(err);
+      else resolve();
     };
+
+    stream.on('error', settle);
+    rl.on('error', settle);
 
     rl.on('line', (line) => {
       if (skipSession) return;
@@ -111,7 +119,7 @@ export async function extractSessionInfo(file: string): Promise<SessionInfo> {
         isSidechainFromGate = isSidechain;
         if (isSidechain) {
           skipSession = true;
-          stop();
+          settle();
           return;
         }
       }
@@ -130,8 +138,7 @@ export async function extractSessionInfo(file: string): Promise<SessionInfo> {
       }
     });
 
-    rl.once('close', () => resolve());
-    stream.once('error', reject);
+    rl.once('close', () => settle());
   });
 
   if (skipSession) {
