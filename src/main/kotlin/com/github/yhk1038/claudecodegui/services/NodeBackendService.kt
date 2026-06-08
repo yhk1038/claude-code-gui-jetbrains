@@ -86,6 +86,15 @@ class NodeBackendService : Disposable {
                 ?: logger.warn("No active panel handler for rejectDiff")
         }
 
+        override suspend fun refreshFiles(paths: List<String>) {
+            if (paths.isEmpty()) return
+            // Files may belong to different projects — route each to its own panel.
+            paths.groupBy { handlerForPath(it) }.forEach { (handler, group) ->
+                handler?.refreshFiles(group)
+                    ?: logger.warn("No handler for refreshFiles: $group")
+            }
+        }
+
         override suspend fun createSession(workingDir: String) {
             handlerForWorkingDir(workingDir)?.createSession(workingDir)
                 ?: logger.warn("No handler for createSession: $workingDir")

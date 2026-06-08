@@ -198,6 +198,7 @@ class SendSelectionToClaudeAction : AnAction() {
         override suspend fun openDiff(filePath: String, oldContent: String, newContent: String, toolUseId: String?) {}
         override suspend fun applyDiff(filePath: String, newContent: String, toolUseId: String?): Boolean = false
         override suspend fun rejectDiff(toolUseId: String?) {}
+        override suspend fun refreshFiles(paths: List<String>) {}
         override suspend fun createSession(workingDir: String) {}
         override suspend fun openNewTab(workingDir: String) {}
         override suspend fun openSettings(workingDir: String) {}

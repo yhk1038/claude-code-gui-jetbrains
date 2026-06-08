@@ -40,6 +40,10 @@ export class BrowserBridge implements Bridge {
     // no-op
   }
 
+  async refreshFiles(): Promise<void> {
+    // no-op: browser mode has no IDE editor tabs to reload
+  }
+
   async createSession(_workingDir?: string): Promise<void> {
     // no-op: handled by session reset in browser mode
   }

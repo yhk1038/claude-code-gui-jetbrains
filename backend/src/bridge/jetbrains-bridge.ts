@@ -162,6 +162,10 @@ export class JetBrainsBridge implements Bridge {
     await this.request('REJECT_DIFF', params ?? {});
   }
 
+  async refreshFiles(params: { paths: string[] }): Promise<void> {
+    await this.request('REFRESH_FILES', { paths: params.paths });
+  }
+
   async createSession(workingDir?: string): Promise<void> {
     await this.request('CREATE_SESSION', workingDir ? { workingDir } : {});
   }

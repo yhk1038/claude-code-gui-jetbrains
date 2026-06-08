@@ -1,7 +1,13 @@
 import type { ConnectionManager } from '../ws/connection-manager';
+import type { Bridge } from '../bridge/bridge-interface';
 import { Claude } from './claude';
 import { diagnoseAuthError } from './features/auth-diagnosis';
 import { getStrippableAuthEnvKeys } from './features/claude-settings';
+import { EditedFileTracker } from './features/editedFileTracker';
+
+// Tracks files Claude edits so the IDE can be told to reload them once the
+// edit completes on disk. Shared across sessions — tool_use ids are unique.
+const editedFileTracker = new EditedFileTracker();
 
 // InputMode -> CLI --permission-mode flag mapping
 const INPUT_MODE_TO_CLI_FLAG: Record<string, string> = {
@@ -37,6 +43,7 @@ export async function ensureClaudeProcess(
   workingDir: string,
   targetSessionId: string,
   inputMode: string,
+  bridge: Bridge,
 ): Promise<void> {
   const existingSession = connections.getSession(targetSessionId);
   if (existingSession?.process) {
@@ -148,7 +155,7 @@ export async function ensureClaudeProcess(
       try {
         const event = JSON.parse(line) as Record<string, unknown>;
         console.error('[node-backend]', `JSON event type: ${event.type}`);
-        handleStreamEvent(targetSessionId, event, connections);
+        handleStreamEvent(targetSessionId, event, connections, bridge);
       } catch {
         console.error('[node-backend]', `Non-JSON output (unexpected in stream-json mode): ${line}`);
       }
@@ -169,7 +176,7 @@ export async function ensureClaudeProcess(
     if (remainingBuffer.trim()) {
       try {
         const event = JSON.parse(remainingBuffer) as Record<string, unknown>;
-        handleStreamEvent(targetSessionId, event, connections);
+        handleStreamEvent(targetSessionId, event, connections, bridge);
       } catch {
         console.error('[node-backend]', `Remaining buffer (non-JSON): ${remainingBuffer}`);
       }
@@ -387,8 +394,21 @@ function handleStreamEvent(
   targetSessionId: string,
   event: Record<string, unknown>,
   connections: ConnectionManager,
+  bridge: Bridge,
 ): void {
   const eventType = event.type as string;
+
+  // Detect files Claude edited and, once each edit completes on disk, ask the
+  // IDE to reload them (issue #72 — CLI writes bypass the IDE, and the native
+  // file watcher misses changes on Windows). Record intents from assistant
+  // events; emit refreshes when the matching tool_result succeeds.
+  editedFileTracker.recordEdits(event);
+  const pathsToRefresh = editedFileTracker.collectRefreshPaths(event);
+  if (pathsToRefresh.length > 0) {
+    bridge.refreshFiles({ paths: pathsToRefresh }).catch((err) => {
+      console.error('[node-backend]', 'Failed to refresh files in IDE:', err);
+    });
+  }
 
   // 백엔드 고유 사이드이펙트 (WebView 전달과 무관한 서버 내부 로직)
   if (eventType === 'result') {

@@ -210,6 +210,10 @@ class RpcWebSocketClient(
                 rpcHandler.rejectDiff(toolUseId)
                 buildJsonObject {}
             }
+            "REFRESH_FILES" -> {
+                rpcHandler.refreshFiles(parseRefreshFilePaths(params))
+                buildJsonObject {}
+            }
             "CREATE_SESSION" -> {
                 val workingDir = params["workingDir"]?.jsonPrimitive?.content ?: ""
                 rpcHandler.createSession(workingDir)
@@ -296,5 +300,18 @@ class RpcWebSocketClient(
         }
         webSocket = null
         logger.info("RpcWebSocketClient disposed")
+    }
+}
+
+/**
+ * Extracts the "paths" string array from REFRESH_FILES params, skipping any
+ * non-string entries. Returns an empty list when the param is missing, empty,
+ * or not an array. Kept top-level and internal so it can be unit-tested without
+ * a live WebSocket.
+ */
+internal fun parseRefreshFilePaths(params: JsonObject): List<String> {
+    val array = params["paths"] as? JsonArray ?: return emptyList()
+    return array.mapNotNull { element ->
+        (element as? JsonPrimitive)?.takeIf { it.isString }?.content
     }
 }

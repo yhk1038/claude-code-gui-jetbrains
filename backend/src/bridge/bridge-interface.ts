@@ -12,6 +12,12 @@ export interface Bridge {
     toolUseId?: string;
   }): Promise<{ applied: boolean }>;
   rejectDiff(params: { toolUseId?: string }): Promise<void>;
+  /**
+   * Ask the IDE host to reload the given files from disk. Used after the CLI
+   * edits files directly, so open editor tabs reflect the new content even when
+   * the IDE's native filesystem watcher misses the change (e.g. on Windows).
+   */
+  refreshFiles(params: { paths: string[] }): Promise<void>;
   createSession(workingDir?: string): Promise<void>;
   openNewTab(workingDir?: string): Promise<void>;
   openSettings(workingDir?: string): Promise<void>;

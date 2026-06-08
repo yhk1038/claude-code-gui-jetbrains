@@ -66,6 +66,7 @@ class NodeProcessManager(
         suspend fun openDiff(filePath: String, oldContent: String, newContent: String, toolUseId: String?)
         suspend fun applyDiff(filePath: String, newContent: String, toolUseId: String?): Boolean
         suspend fun rejectDiff(toolUseId: String?)
+        suspend fun refreshFiles(paths: List<String>)
         suspend fun createSession(workingDir: String)
         suspend fun openNewTab(workingDir: String)
         suspend fun openSettings(workingDir: String)
