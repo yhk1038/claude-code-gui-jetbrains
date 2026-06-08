@@ -36,7 +36,11 @@ class EditorTabStateService : PersistentStateComponent<EditorTabStateService.Edi
         var activeSessionId: String? = null,
         // Last WebView path per tab, so a restored tab lands on the conversation
         // the user was actually viewing at shutdown rather than the tab's own page.
-        var sessionPaths: MutableMap<String, String> = mutableMapOf()
+        var sessionPaths: MutableMap<String, String> = mutableMapOf(),
+        // Last WebView-reported title per tab. Used to show a sensible tab label
+        // immediately after restart, before the lazy FileEditor mounts and the
+        // WebView reconnects to push a fresh title.
+        var sessionTitles: MutableMap<String, String> = mutableMapOf()
     )
 
     private var state = EditorTabState()
@@ -57,6 +61,7 @@ class EditorTabStateService : PersistentStateComponent<EditorTabStateService.Edi
     fun removeTab(tabId: String) {
         state.openSessionIds.remove(tabId)
         state.sessionPaths.remove(tabId)
+        state.sessionTitles.remove(tabId)
         if (state.activeSessionId == tabId) {
             state.activeSessionId = state.openSessionIds.lastOrNull()
         }
@@ -67,6 +72,12 @@ class EditorTabStateService : PersistentStateComponent<EditorTabStateService.Edi
     }
 
     fun getPath(tabId: String): String? = state.sessionPaths[tabId]
+
+    fun updateTitle(tabId: String, title: String) {
+        state.sessionTitles[tabId] = title
+    }
+
+    fun getTitle(tabId: String): String? = state.sessionTitles[tabId]
 
     /**
      * Path to restore a tab to: the last-viewed WebView path if known.

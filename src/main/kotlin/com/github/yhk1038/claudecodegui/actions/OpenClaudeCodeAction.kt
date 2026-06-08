@@ -28,10 +28,17 @@ class OpenClaudeCodeAction : AnAction() {
          * Open (or focus) a Claude Code editor tab identified by [tabId].
          * [tabId] is a tab identifier, NOT a Claude conversation session ID.
          * [initialPath] is the WebView path (conversation) the tab should land on.
+         * [initialTitle] is the cached tab label to show before the WebView mounts
+         * and reports a fresh title (used by the restart restore path).
          */
-        fun openTab(project: Project, tabId: String, initialPath: String? = null) {
+        fun openTab(
+            project: Project,
+            tabId: String,
+            initialPath: String? = null,
+            initialTitle: String? = null
+        ) {
             val fileEditorManager = FileEditorManager.getInstance(project)
-            val virtualFile = ClaudeCodeVirtualFile.getOrCreate(project, tabId, initialPath)
+            val virtualFile = ClaudeCodeVirtualFile.getOrCreate(project, tabId, initialPath, initialTitle)
 
             // 이미 열린 탭이면 포커스만 이동, 아니면 새로 열기
             fileEditorManager.openFile(virtualFile, true)
