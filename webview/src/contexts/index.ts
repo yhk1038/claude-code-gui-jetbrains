@@ -9,3 +9,4 @@ export { ClaudeSettingsProvider, useClaudeSettings, ClaudeSettingsContext } from
 export { ChatInputFocusProvider, useChatInputFocus } from './ChatInputFocusContext';
 export { WorkingDirProvider, useWorkingDir } from './WorkingDirContext';
 export { CliConfigProvider, useCliConfig } from './CliConfigContext';
+export * from './ChatInputStateContext';

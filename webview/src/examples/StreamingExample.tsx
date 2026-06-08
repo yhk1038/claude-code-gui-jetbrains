@@ -1,5 +1,6 @@
 import React from 'react';
 import { useChatStreamContext } from '../contexts/ChatStreamContext';
+import { useChatInputState } from '../contexts/ChatInputStateContext';
 import { MessageRole, LoadedMessageType } from '../dto/common';
 
 /**
@@ -11,12 +12,11 @@ export const StreamingExample: React.FC = () => {
     messages,
     isStreaming,
     streamingMessageId,
-    input,
-    setInput,
     handleSubmit,
     stop,
     error,
   } = useChatStreamContext();
+  const { input, setInput } = useChatInputState();
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>

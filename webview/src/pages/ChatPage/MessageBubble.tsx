@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { LoadedMessageDto } from '../../types';
 import {
   UserMessageRenderer,
@@ -12,7 +13,11 @@ interface MessageBubbleProps {
   onRetry?: (messageId: string) => void;
 }
 
-export function MessageBubble({ message, onRetry }: MessageBubbleProps) {
+// React.memo skips re-rendering when props (message identity, onRetry) are
+// unchanged. ChatMessageArea must clone any objects it modifies — otherwise
+// in-place mutation defeats this bailout.
+export const MessageBubble = memo(function MessageBubble(props: MessageBubbleProps) {
+  const { message, onRetry } = props;
   switch (message.type) {
     case 'user':
       return <UserMessageRenderer message={message} />;
@@ -27,4 +32,4 @@ export function MessageBubble({ message, onRetry }: MessageBubbleProps) {
     default:
       return null;
   }
-}
+});

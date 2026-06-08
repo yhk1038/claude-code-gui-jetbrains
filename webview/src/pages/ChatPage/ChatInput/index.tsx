@@ -9,6 +9,7 @@ import { useChatInputFocus } from '../../../contexts/ChatInputFocusContext';
 import { useInputHistory } from './hooks/useInputHistory';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useChatStreamContext } from '@/contexts/ChatStreamContext';
+import { useChatInputState } from '@/contexts/ChatInputStateContext';
 import { useBridgeContext } from '@/contexts/BridgeContext';
 import { getTextContent, SessionState } from '@/types';
 import { LoadedMessageType } from '@/dto';
@@ -39,15 +40,14 @@ interface NativeDropEntry {
 export function ChatInput() {
   const { textareaRef } = useChatInputFocus();
   const { currentSessionId, sessionState, workingDirectory, inputMode: mode, cycleInputMode: cycleMode, syncInitialInputMode, modeResetTrigger } = useSessionContext();
-  const {
-    messages,
-    input: value,
-    setInput: onChange,
-    handleSubmit: onSubmit,
-    isStreaming,
-    stop: onStop,
-  } = useChatStreamContext();
+  const chatStream = useChatStreamContext();
+  const { handleSubmit: onSubmit, isStreaming, stop: onStop } = chatStream;
+  const { input: value, setInput: onChange } = useChatInputState();
   const inputHistory = useInputHistory();
+  const { initHistory, pushToHistory, navigateUp, navigateDown } = inputHistory;
+  // Read messages lazily via ref so ChatInput does not re-render every streaming token.
+  const messagesRef = useRef(chatStream.messages);
+  messagesRef.current = chatStream.messages;
   const bridge = useBridgeContext();
   const { subscribe } = bridge;
   const [isFocused, setIsFocused] = useState(false);
@@ -280,10 +280,10 @@ export function ChatInput() {
     if (prev !== null && prev !== currentSessionId) {
       clearAttachments();
       setPathTokens([]);
-      inputHistory.initHistory([]);
+      initHistory([]);
       lastInitSessionRef.current = undefined;
     }
-  }, [currentSessionId, clearAttachments, inputHistory]);
+  }, [currentSessionId, clearAttachments, initHistory]);
 
   const isActive = isStreaming
     || sessionState === SessionState.WaitingPermission
@@ -316,19 +316,21 @@ export function ChatInput() {
     return () => window.removeEventListener('keydown', handleArrowCapture, true);
   }, []);
 
-  // Populate input history from session messages on session change
+  // Populate input history from session messages on session change.
+  // Read messages via ref to avoid re-running this effect on every streaming token —
+  // we only care about the messages snapshot at session-switch time.
   useEffect(() => {
     if (!currentSessionId || currentSessionId === lastInitSessionRef.current) return;
-    if (messages.length === 0) return;
+    if (messagesRef.current.length === 0) return;
 
     lastInitSessionRef.current = currentSessionId;
 
-    const userTexts = messages
+    const userTexts = messagesRef.current
       .filter(m => m.type === LoadedMessageType.User)
       .map(m => getTextContent(m))
       .filter((t): t is string => Boolean(t));
-    inputHistory.initHistory(userTexts);
-  }, [currentSessionId, messages, inputHistory]);
+    initHistory(userTexts);
+  }, [currentSessionId, initHistory]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key.startsWith('Arrow')) console.log('[KeyDebug:textarea-keydown]', e.key, { altKey: e.altKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, defaultPrevented: e.defaultPrevented });
@@ -396,7 +398,7 @@ export function ChatInput() {
       if (willSubmit) {
         e.preventDefault();
         if (!disabled && (value.trim() || attachments.length > 0)) {
-          inputHistory.pushToHistory(value);
+          pushToHistory(value);
           onSubmit(undefined, mode, attachments.length > 0 ? attachments : undefined);
           clearAttachments();
           setPathTokens([]);
@@ -409,7 +411,7 @@ export function ChatInput() {
       const pos = getCaretOffset(e.currentTarget);
       if (value.lastIndexOf('\n', pos - 1) !== -1) return;
 
-      const historyValue = inputHistory.navigateUp(value);
+      const historyValue = navigateUp(value);
       if (historyValue === null) return;
       e.preventDefault();
       onChange(historyValue);
@@ -419,12 +421,12 @@ export function ChatInput() {
       const pos = getCaretOffset(e.currentTarget);
       if (value.indexOf('\n', pos) !== -1) return;
 
-      const historyValue = inputHistory.navigateDown();
+      const historyValue = navigateDown();
       if (historyValue === null) return;
       e.preventDefault();
       onChange(historyValue);
     }
-  }, [disabled, value, attachments.length, onSubmit, inputHistory, onChange, palette, mention, cycleMode, clearAttachments, mode, claudeSettings.useCtrlEnterToSend]);
+  }, [disabled, value, attachments.length, onSubmit, pushToHistory, navigateUp, navigateDown, onChange, palette, mention, cycleMode, clearAttachments, mode, claudeSettings.useCtrlEnterToSend]);
 
   const handleRichChange = useCallback((newValue: string) => {
     onChange(newValue);

@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { act } from 'react';
 import React from 'react';
 import { ChatStreamProvider, useChatStreamContext } from '../contexts/ChatStreamContext';
+import { ChatInputStateProvider, useChatInputState } from '../contexts/ChatInputStateContext';
 
 // Mock requestAnimationFrame/cancelAnimationFrame
 global.requestAnimationFrame = vi.fn((cb) => {
@@ -60,9 +61,25 @@ vi.mock('../contexts/SessionContext', () => ({
   SessionProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
+function TestWrapper({ children }: { children: React.ReactNode }) {
+  const inputRef = React.useRef('');
+  const setInputCallbackRef = React.useRef<(value: string) => void>(() => {});
+  const setInput = React.useCallback((value: string) => {
+    setInputCallbackRef.current(value);
+  }, []);
+  return (
+    <ChatStreamProvider setInput={setInput} inputRef={inputRef}>
+      <ChatInputStateProvider inputRef={inputRef} setInputCallbackRef={setInputCallbackRef}>
+        {children}
+      </ChatInputStateProvider>
+    </ChatStreamProvider>
+  );
+}
+
 // Test component that uses ChatStreamContext
 function TestChatComponent() {
   const ctx = useChatStreamContext();
+  const { input, setInput } = useChatInputState();
   return (
     <div>
       <div data-testid="messages-count">{ctx.messages.length}</div>
@@ -71,8 +88,8 @@ function TestChatComponent() {
       <div data-testid="streaming-id">{ctx.streamingMessageId || 'none'}</div>
       <input
         data-testid="input"
-        value={ctx.input}
-        onChange={(e) => ctx.setInput(e.target.value)}
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
       />
       <button data-testid="submit" onClick={() => ctx.handleSubmit(undefined, 'ask_before_edit')}>
         Send
@@ -142,9 +159,9 @@ describe('채팅 스트리밍 통합 테스트', () => {
 
   it('초기 상태가 올바르다', () => {
     render(
-      <ChatStreamProvider>
+      <TestWrapper>
         <TestChatComponent />
-      </ChatStreamProvider>
+      </TestWrapper>
     );
 
     expect(screen.getByTestId('messages-count')).toHaveTextContent('0');
@@ -158,9 +175,9 @@ describe('채팅 스트리밍 통합 테스트', () => {
     mockSession.currentSessionId = 'existing-session';
 
     render(
-      <ChatStreamProvider>
+      <TestWrapper>
         <TestChatComponent />
-      </ChatStreamProvider>
+      </TestWrapper>
     );
 
     const input = screen.getByTestId('input');
@@ -195,9 +212,9 @@ describe('채팅 스트리밍 통합 테스트', () => {
     mockSession.currentSessionId = 'existing-session';
 
     render(
-      <ChatStreamProvider>
+      <TestWrapper>
         <TestChatComponent />
-      </ChatStreamProvider>
+      </TestWrapper>
     );
 
     const submitWithMode = screen.getByTestId('submit-with-mode');
@@ -220,9 +237,9 @@ describe('채팅 스트리밍 통합 테스트', () => {
     mockSession.currentSessionId = 'test-session';
 
     render(
-      <ChatStreamProvider>
+      <TestWrapper>
         <TestChatComponent />
-      </ChatStreamProvider>
+      </TestWrapper>
     );
 
     const input = screen.getByTestId('input');
@@ -282,9 +299,9 @@ describe('채팅 스트리밍 통합 테스트', () => {
     mockSession.currentSessionId = 'test-session';
 
     render(
-      <ChatStreamProvider>
+      <TestWrapper>
         <TestChatComponent />
-      </ChatStreamProvider>
+      </TestWrapper>
     );
 
     // Start streaming
@@ -323,9 +340,9 @@ describe('채팅 스트리밍 통합 테스트', () => {
     mockSession.currentSessionId = 'test-session';
 
     render(
-      <ChatStreamProvider>
+      <TestWrapper>
         <TestChatComponent />
-      </ChatStreamProvider>
+      </TestWrapper>
     );
 
     await act(async () => {
@@ -346,9 +363,9 @@ describe('채팅 스트리밍 통합 테스트', () => {
     mockSession.currentSessionId = 'test-session';
 
     render(
-      <ChatStreamProvider>
+      <TestWrapper>
         <TestChatComponent />
-      </ChatStreamProvider>
+      </TestWrapper>
     );
 
     // Start streaming
@@ -393,9 +410,9 @@ describe('채팅 스트리밍 통합 테스트', () => {
     mockSession.currentSessionId = 'test-session';
 
     render(
-      <ChatStreamProvider>
+      <TestWrapper>
         <TestChatComponent />
-      </ChatStreamProvider>
+      </TestWrapper>
     );
 
     const input = screen.getByTestId('input');

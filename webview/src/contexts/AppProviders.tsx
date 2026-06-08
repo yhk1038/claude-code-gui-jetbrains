@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useRef } from 'react';
+import { ReactNode, useCallback, useEffect, useRef } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { BridgeProvider, useBridgeContext } from './BridgeContext';
 import { ApiProvider, useApiContext } from './ApiContext';
@@ -9,6 +9,7 @@ import { SettingsProvider } from './SettingsContext';
 import { ClaudeSettingsProvider } from './ClaudeSettingsContext';
 import { CliConfigProvider } from './CliConfigContext';
 import { ChatInputFocusProvider } from './ChatInputFocusContext';
+import { ChatInputStateProvider } from './ChatInputStateContext';
 import { WorkingDirProvider } from './WorkingDirContext';
 import { CommandPaletteProvider } from '../commandPalette/CommandPaletteProvider';
 import { useApi } from './ApiContext';
@@ -154,6 +155,50 @@ function SessionLoader({ children }: { children: ReactNode }) {
  * 11. ThemeProvider - Theme management (depends on Settings)
  * 12. SessionLoader - Reactive session management (depends on Session + ChatStream + Api)
  */
+
+interface ChatProviderBridgeProps {
+  children: ReactNode;
+}
+
+/**
+ * Bridges ChatInputStateProvider and ChatStreamProvider as siblings.
+ *
+ * ChatStreamProvider must NOT be nested inside ChatInputStateProvider —
+ * otherwise every keystroke (which triggers ChatInputStateProvider re-render)
+ * would propagate into ChatStreamProvider and all its consumers
+ * (MessageBubble, ChatMessageArea, etc.), causing the keystroke lag described
+ * in #31.
+ *
+ * The shared inputRef + setInputCallbackRef let ChatStreamProvider read/clear
+ * input without subscribing to ChatInputStateContext.
+ */
+function ChatProviderBridge(props: ChatProviderBridgeProps) {
+  const { children } = props;
+  const inputRef = useRef('');
+  const setInputCallbackRef = useRef<(value: string) => void>(() => {});
+
+  const setInput = useCallback((value: string) => {
+    setInputCallbackRef.current(value);
+  }, []);
+
+  return (
+    <ChatStreamProvider setInput={setInput} inputRef={inputRef}>
+      <ChatInputStateProvider
+        inputRef={inputRef}
+        setInputCallbackRef={setInputCallbackRef}
+      >
+        <CommandPaletteProvider>
+          <ThemeProvider>
+            <ChatInputFocusProvider>
+              <SessionLoader>{children}</SessionLoader>
+            </ChatInputFocusProvider>
+          </ThemeProvider>
+        </CommandPaletteProvider>
+      </ChatInputStateProvider>
+    </ChatStreamProvider>
+  );
+}
+
 export function AppProviders({ children }: AppProvidersProps) {
   return (
     <BridgeProvider>
@@ -164,15 +209,7 @@ export function AppProviders({ children }: AppProvidersProps) {
             <SettingsProvider>
               <ClaudeSettingsProvider>
                 <SessionProvider>
-                  <ChatStreamProvider>
-                    <CommandPaletteProvider>
-                      <ThemeProvider>
-                        <ChatInputFocusProvider>
-                          <SessionLoader>{children}</SessionLoader>
-                        </ChatInputFocusProvider>
-                      </ThemeProvider>
-                    </CommandPaletteProvider>
-                  </ChatStreamProvider>
+                  <ChatProviderBridge>{children}</ChatProviderBridge>
                 </SessionProvider>
               </ClaudeSettingsProvider>
             </SettingsProvider>

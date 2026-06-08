@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode, useEffect, useCallback, useState, useRef } from 'react';
+import { createContext, useContext, ReactNode, useEffect, useCallback, useState, useRef, useMemo } from 'react';
 import { useChatStream } from '../hooks/useChatStream';
 import { useDiffs } from '../hooks/useDiffs';
 import { useTools } from '../hooks/useTools';
@@ -27,10 +27,6 @@ interface ChatStreamContextType {
   streamingMessageId: string | null;
   error: Error | null;
   authDiagnosis: { envApiKeys: string[]; message: string } | null;
-
-  // Local input state
-  input: string;
-  setInput: (input: string) => void;
 
   // Actions
   sendMessage: (content: string, inputMode: InputMode, context?: Context[], attachments?: Attachment[]) => void;
@@ -76,36 +72,26 @@ export function useChatStreamContext() {
 
 interface ChatStreamProviderProps {
   children: ReactNode;
+  setInput: (value: string) => void;
+  inputRef: React.MutableRefObject<string>;
 }
 
-export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
+/**
+ * ChatStreamProvider receives setInput and inputRef from a sibling provider
+ * (ChatInputStateProvider via ChatProviderBridge) so that it does NOT consume
+ * ChatInputStateContext. This prevents every keystroke from re-rendering all
+ * ChatStreamContext subscribers (e.g. MessageBubble, ChatMessageArea).
+ */
+export function ChatStreamProvider(props: ChatStreamProviderProps) {
+  const { children, setInput, inputRef } = props;
   const bridge = useBridgeContext();
   const session = useSessionContext();
   const tools = useTools();
   const diffs = useDiffs();
 
-  const [input, setInput] = useState('');
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
   const toggleThinkingExpanded = useCallback(() => setIsThinkingExpanded(prev => !prev), []);
   const [sessionModel, setSessionModel] = useState<string | null>(null);
-
-  // Save input draft to localStorage for tab move/split restoration.
-  // Skip the first mount to prevent the initial empty input from clearing
-  // a saved draft (JCEF may reload the page on browser component reattach).
-  const draftInitializedRef = useRef(false);
-  useEffect(() => {
-    if (!session.currentSessionId) return;
-    if (!draftInitializedRef.current) {
-      draftInitializedRef.current = true;
-      return;
-    }
-    const key = `claude-gui:draft:${session.currentSessionId}`;
-    if (input) {
-      localStorage.setItem(key, input);
-    } else {
-      localStorage.removeItem(key);
-    }
-  }, [input, session.currentSessionId]);
 
   // EnterPlanMode 진입 전의 모드를 저장 (ExitPlanMode 시 복원용)
   const prePlanModeRef = useRef<InputMode | null>(null);
@@ -149,6 +135,18 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
     },
   });
 
+  // Destructure stable callbacks out of chatStream so downstream useCallbacks
+  // don't depend on the plain-object chatStream reference (new every render).
+  const {
+    addUserMessage,
+    clearMessages: chatStreamClearMessages,
+    loadMessages: chatStreamLoadMessages,
+    appendMessage: chatStreamAppendMessage,
+    updateMessage: chatStreamUpdateMessage,
+    resetStreamState: chatStreamResetStreamState,
+    retry: chatStreamRetry,
+  } = chatStream;
+
   // systemInit 변경 시 sessionModel 동기화
   useEffect(() => {
     if (chatStream.systemInit) {
@@ -159,20 +157,25 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
 
   // 모든 세션별 상태를 한 번에 리셋하는 통합 함수
   const resetForSessionSwitch = useCallback(() => {
-    chatStream.clearMessages();
-    chatStream.resetStreamState();
+    chatStreamClearMessages();
+    chatStreamResetStreamState();
     // Restore draft input from cache (tab move/split restoration)
-    const draft = session.currentSessionId
-      ? localStorage.getItem(`claude-gui:draft:${session.currentSessionId}`)
-      : null;
-    setInput(draft || '');
+    let draft: string | null = null;
+    try {
+      draft = session.currentSessionId
+        ? localStorage.getItem(`claude-gui:draft:${session.currentSessionId}`)
+        : null;
+    } catch {
+      // localStorage may be unavailable in some environments (e.g., tests)
+    }
+    setInput(draft ?? '');
     setIsThinkingExpanded(false);
     setSessionModel(null);
     tools.clearToolUses();
     diffs.clearDiffs();
     queuedMessageRef.current = null;
     prePlanModeRef.current = null;
-  }, [chatStream.clearMessages, chatStream.resetStreamState, tools.clearToolUses, diffs.clearDiffs, session.currentSessionId]);
+  }, [chatStreamClearMessages, chatStreamResetStreamState, setInput, tools.clearToolUses, diffs.clearDiffs, session.currentSessionId]);
 
   // resetForSessionSwitch is called directly by SessionLoader
   // when currentSessionId changes (URL-driven reactive pattern)
@@ -221,7 +224,7 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
       }
 
       // Add to local chat state (항상 — UI에는 즉시 표시)
-      chatStream.addUserMessage(content, context, attachments);
+      addUserMessage(content, context, attachments);
 
       const payload: QueuedMessage = {
         sessionId,
@@ -250,7 +253,7 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
         console.error('[ChatStreamContext] Failed to send message to bridge:', error);
       });
     },
-    [chatStream, bridge, session]
+    [addUserMessage, chatStream.isStreaming, bridge, session]
   );
 
   // 스트리밍 종료(result 수신) 시 큐잉된 메시지 자동 전송.
@@ -270,16 +273,18 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
     }
   }, [chatStream.isStreaming, bridge]);
 
-  // handleSubmit: convenience wrapper for form submission
+  // handleSubmit: convenience wrapper for form submission.
+  // Reads input via inputRef so this callback stays stable across keystrokes
+  // — otherwise every key press would invalidate contextValue.
   const handleSubmit = useCallback(
     (e: React.FormEvent | undefined, inputMode: InputMode, attachments?: Attachment[]) => {
       if (e) e.preventDefault();
-      const trimmedInput = input.trim();
+      const trimmedInput = inputRef.current.trim();
       if (!trimmedInput && (!attachments || attachments.length === 0)) return;
       sendMessage(trimmedInput, inputMode, undefined, attachments);
       setInput('');
     },
-    [input, sendMessage]
+    [inputRef, sendMessage, setInput]
   );
 
   // stop: stdin interrupt를 백엔드에 전송.
@@ -306,22 +311,21 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
   const retry = useCallback(
     (messageId: string) => {
       console.log('[ChatStreamContext] Retrying message:', messageId);
-      chatStream.retry(messageId);
+      chatStreamRetry(messageId);
     },
-    [chatStream]
+    [chatStreamRetry]
   );
 
-  const contextValue: ChatStreamContextType = {
+  // Memoize contextValue so consumers don't re-render unless one of the
+  // tracked dependencies actually changes. Input/setInput are no longer
+  // part of this context — they live in ChatInputStateContext.
+  const contextValue: ChatStreamContextType = useMemo(() => ({
     // From useChatStream
     messages: chatStream.messages,
     isStreaming: chatStream.isStreaming,
     streamingMessageId: chatStream.streamingMessageId,
     error: chatStream.error,
     authDiagnosis: chatStream.authDiagnosis,
-
-    // Local input state
-    input,
-    setInput,
 
     // Actions
     sendMessage,
@@ -330,13 +334,13 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
     continue: continueGeneration,
     retry,
 
-    resetStreamState: chatStream.resetStreamState,
+    resetStreamState: chatStreamResetStreamState,
 
     // Message manipulation
-    clearMessages: chatStream.clearMessages,
-    loadMessages: chatStream.loadMessages,
-    appendMessage: chatStream.appendMessage,
-    updateMessage: chatStream.updateMessage,
+    clearMessages: chatStreamClearMessages,
+    loadMessages: chatStreamLoadMessages,
+    appendMessage: chatStreamAppendMessage,
+    updateMessage: chatStreamUpdateMessage,
 
     // Subsystems
     tools,
@@ -354,7 +358,31 @@ export function ChatStreamProvider({ children }: ChatStreamProviderProps) {
 
     // Context window usage
     contextWindowUsage: chatStream.contextWindowUsage,
-  };
+  }), [
+    chatStream.messages,
+    chatStream.isStreaming,
+    chatStream.streamingMessageId,
+    chatStream.error,
+    chatStream.authDiagnosis,
+    chatStream.systemInit,
+    chatStream.contextWindowUsage,
+    chatStreamResetStreamState,
+    chatStreamClearMessages,
+    chatStreamLoadMessages,
+    chatStreamAppendMessage,
+    chatStreamUpdateMessage,
+    sendMessage,
+    handleSubmit,
+    stop,
+    continueGeneration,
+    retry,
+    tools,
+    diffs,
+    isThinkingExpanded,
+    toggleThinkingExpanded,
+    sessionModel,
+    resetForSessionSwitch,
+  ]);
 
   return (
     <ChatStreamContext.Provider value={contextValue}>
