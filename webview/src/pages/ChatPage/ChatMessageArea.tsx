@@ -81,7 +81,12 @@ export function ChatMessageArea(props: Props) {
       }
     }
 
-    // Build tool_use_id → ToolUseBlockDto lookup from all assistant messages
+    // Build tool_use_id → cloned ToolUseBlockDto lookup from all assistant messages.
+    // Cloning prevents mutation of the original block objects (which live on the
+    // shared messages array). In-place mutation would break React.memo bailouts on
+    // MessageBubble — referential equality holds, but the cloned inner block would
+    // be wrong — and could also duplicate runtime fields on re-render
+    // (e.g. React StrictMode).
     const toolUseMap = new Map<string, ToolUseBlockDto>();
     for (const msg of messages) {
       if (msg.type !== LoadedMessageType.Assistant) continue;
@@ -89,16 +94,15 @@ export function ChatMessageArea(props: Props) {
       if (!isContentBlockArray(content)) continue;
       for (const block of content) {
         if (block.type === ContentBlockType.ToolUse) {
-          toolUseMap.set((block as ToolUseBlockDto).id, block as ToolUseBlockDto);
+          const orig = block as ToolUseBlockDto;
+          toolUseMap.set(orig.id, {
+            ...orig,
+            tool_result: undefined,
+            childMessages: undefined,
+            subAgentMessages: undefined,
+          });
         }
       }
-    }
-
-    // Reset runtime-only fields to prevent duplication on re-render (e.g. React StrictMode)
-    for (const toolUseBlock of toolUseMap.values()) {
-      toolUseBlock.tool_result = undefined;
-      toolUseBlock.childMessages = undefined;
-      toolUseBlock.subAgentMessages = undefined;
     }
 
     // Phase 1.5: Attach progress entries to Task tool_use blocks
