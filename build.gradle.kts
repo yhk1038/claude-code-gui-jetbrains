@@ -147,6 +147,13 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
+            <h3>0.17.2 - Steadier editor controls in the IDE</h3>
+            <ul>
+                <li><b>Drag tabs across splits without losing the chat</b>: Moving a Claude Code tab between split panes — or out into a floating window — now keeps the conversation alive instead of resetting it. (#29)</li>
+                <li><b>Conversations stay alive in split tabs</b>: Splitting the editor no longer empties or resets the Claude Code panel on either side. (#48)</li>
+                <li><b>Sidebar icon opens a new tab correctly</b>: Clicking the Claude Code icon in the tool window stripe now opens a fresh chat tab every time, as expected. (#47)</li>
+                <li><b>Other backend stability fixes</b> (#67, #55).</li>
+            </ul>
             <h3>0.17.1 - Reliable Node.js detection, with a manual override</h3>
             <ul>
                 <li><b>Automatic Node.js detection</b>: The plugin now reads your shell's real PATH, so Node.js installed via nvm, fnm, volta, or similar version managers is found even when the IDE is launched from the Dock or an app launcher — fixing the "Node.js not found" error on startup.</li>
