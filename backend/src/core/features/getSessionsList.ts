@@ -6,6 +6,31 @@ import { getProjectSessionsPath } from './getProjectSessionsPath';
 
 export type SessionListEntry = SessionInfo & { sessionId: string };
 
+// Cap parallel JSONL reads so file descriptors and event-loop slices stay
+// bounded even when a project has hundreds of session files.
+const READ_CONCURRENCY = 10;
+
+async function mapWithLimit<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let nextIndex = 0;
+
+  const workerCount = Math.min(limit, items.length);
+  const workers = Array.from({ length: workerCount }, async () => {
+    while (true) {
+      const idx = nextIndex++;
+      if (idx >= items.length) return;
+      results[idx] = await fn(items[idx], idx);
+    }
+  });
+
+  await Promise.all(workers);
+  return results;
+}
+
 export async function getSessionsList(workingDir: string): Promise<SessionListEntry[]> {
   console.error('[node-backend]', 'getSessionsList workingDir:', workingDir);
 
@@ -24,22 +49,19 @@ export async function getSessionsList(workingDir: string): Promise<SessionListEn
 
     console.error('[node-backend]', 'Found .jsonl files:', jsonlFiles.length);
 
-    const sessions: SessionListEntry[] = [];
-
-    for (const file of jsonlFiles) {
+    const maybeSessions = await mapWithLimit(jsonlFiles, READ_CONCURRENCY, async (file) => {
       try {
         const sessionId = file.replace(/\.jsonl$/, '');
         const fullPath = join(sessionsPath, file);
         const sessionInfo = await extractSessionInfo(fullPath);
-
-        sessions.push({
-          sessionId,
-          ...sessionInfo,
-        });
+        return { sessionId, ...sessionInfo } satisfies SessionListEntry;
       } catch (err) {
         console.error('[node-backend]', 'Failed to parse session file:', file, err);
+        return null;
       }
-    }
+    });
+
+    const sessions = maybeSessions.filter((s): s is SessionListEntry => s !== null);
 
     // Sort by lastTimestamp descending
     sessions.sort((a, b) => {
