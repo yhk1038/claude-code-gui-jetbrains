@@ -42,9 +42,14 @@ describe('useDocumentTitle', () => {
     expect(document.title).toBe('My Session');
   });
 
-  it('falls back to "Claude Code" when title is null', () => {
+  it('leaves the existing tab title untouched when title is null', () => {
+    // A null title means the session is still loading. The hook must NOT fall
+    // back to APP_NAME here — doing so would clobber the cached tab title the
+    // JetBrains side restores from EditorTabStateService, flashing "Claude Code"
+    // mid-load (see useDocumentTitle.ts).
+    document.title = 'Cached Session';
     renderHook(() => useDocumentTitle(null, false, SOUND_OFF, null));
-    expect(document.title).toBe('Claude Code');
+    expect(document.title).toBe('Cached Session');
   });
 
   it('calls notify(SESSION_COMPLETE) when streaming ends while hidden', () => {
