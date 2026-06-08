@@ -18,6 +18,7 @@ function createMockBridge(name: string): Bridge {
     openDiff: vi.fn(),
     applyDiff: vi.fn().mockResolvedValue({ applied: false }),
     rejectDiff: vi.fn(),
+    refreshFiles: vi.fn(),
     createSession: vi.fn(),
     openNewTab: vi.fn(),
     openSettings: vi.fn(),

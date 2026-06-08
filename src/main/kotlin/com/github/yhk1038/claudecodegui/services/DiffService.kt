@@ -11,6 +11,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import java.io.File
 
@@ -154,6 +155,43 @@ class DiffService(private val project: Project) {
             logger.error("Failed to apply edit to: $filePath", e)
             Result.failure(e)
         }
+    }
+
+    /**
+     * Reload the given files from disk so open editor tabs show fresh content.
+     *
+     * The Claude CLI writes files directly, bypassing the IDE. The IDE then only
+     * notices via its native filesystem watcher, which is unreliable on Windows
+     * (issue #72), leaving tabs stale until a manual "Reload from Disk". This
+     * triggers that refresh explicitly.
+     *
+     * Uses an asynchronous VFS refresh ([VfsUtil.markDirtyAndRefresh] with
+     * async = true) so the EDT is never blocked. Files not yet known to the VFS
+     * (newly created) are discovered by refreshing their parent directory.
+     *
+     * @param paths Absolute file paths that were just written.
+     */
+    fun refreshFiles(paths: List<String>) {
+        if (paths.isEmpty()) return
+        val lfs = LocalFileSystem.getInstance()
+
+        val knownFiles = paths.mapNotNull { lfs.findFileByPath(it) }
+        if (knownFiles.isNotEmpty()) {
+            VfsUtil.markDirtyAndRefresh(true, false, false, *knownFiles.toTypedArray())
+        }
+
+        // Newly created files are not in the VFS yet — refresh their parent dirs
+        // (with reloadChildren = true) so the IDE discovers them.
+        val newFileParents = paths
+            .filter { lfs.findFileByPath(it) == null }
+            .mapNotNull { File(it).parent }
+            .distinct()
+            .mapNotNull { lfs.findFileByPath(it) }
+        if (newFileParents.isNotEmpty()) {
+            VfsUtil.markDirtyAndRefresh(true, false, true, *newFileParents.toTypedArray())
+        }
+
+        logger.info("Requested VFS refresh for ${paths.size} path(s)")
     }
 
     /**

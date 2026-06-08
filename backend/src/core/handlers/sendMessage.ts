@@ -8,7 +8,7 @@ export async function sendMessageHandler(
   connectionId: string,
   message: IPCMessage,
   connections: ConnectionManager,
-  _bridge: Bridge,
+  bridge: Bridge,
 ): Promise<void> {
   const content = message.payload?.content as string;
   const workingDir = message.payload?.workingDir as string | undefined;
@@ -33,7 +33,7 @@ export async function sendMessageHandler(
     if (content || (attachments && attachments.length > 0)) {
       // Subscribe and ensure process is running (waits for spawn)
       connections.subscribe(connectionId, resolvedSessionId);
-      await ensureClaudeProcess(connections, connectionId, workingDir, resolvedSessionId, inputMode);
+      await ensureClaudeProcess(connections, connectionId, workingDir, resolvedSessionId, inputMode, bridge);
 
       // Send content to process stdin
       sendMessageToProcess(connections, resolvedSessionId, content, attachments);

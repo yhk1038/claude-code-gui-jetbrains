@@ -940,6 +940,11 @@ class ClaudeCodePanel(
                 logger.info("Diff rejected (toolUseId=$toolUseId)")
             }
 
+            override suspend fun refreshFiles(paths: List<String>) {
+                diffService.refreshFiles(paths)
+                logger.info("Requested IDE refresh for ${paths.size} file(s)")
+            }
+
             override suspend fun createSession(workingDir: String) {
                 logger.info("Session cleared (workingDir=$workingDir)")
             }

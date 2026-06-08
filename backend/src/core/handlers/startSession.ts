@@ -7,7 +7,7 @@ export async function startSessionHandler(
   connectionId: string,
   message: IPCMessage,
   connections: ConnectionManager,
-  _bridge: Bridge,
+  bridge: Bridge,
 ): Promise<void> {
   const workingDir = message.payload?.workingDir as string | undefined;
   const sessionId = message.payload?.sessionId as string | undefined;
@@ -24,7 +24,7 @@ export async function startSessionHandler(
   try {
     if (sessionId) {
       connections.subscribe(connectionId, sessionId);
-      await ensureClaudeProcess(connections, connectionId, workingDir, sessionId, inputMode);
+      await ensureClaudeProcess(connections, connectionId, workingDir, sessionId, inputMode, bridge);
     }
   } catch (err) {
     // ensureClaudeProcess already broadcasts SERVICE_ERROR to the session.
