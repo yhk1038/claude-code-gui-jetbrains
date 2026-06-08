@@ -1,25 +1,10 @@
-import { readFile, stat } from 'fs/promises';
+import { stat } from 'fs/promises';
 import { join } from 'path';
 import { getProjectSessionsPath } from './getProjectSessionsPath';
+import { readJsonlEntries } from './readJsonlEntries';
 
 // Raw JSONL entry - passed through as-is to match Kotlin backend
 type SessionMessage = Record<string, unknown>;
-
-// Parse a JSONL file and return all valid entries
-async function parseJsonlFile(filePath: string): Promise<SessionMessage[]> {
-  const content = await readFile(filePath, 'utf-8');
-  const lines = content.trim().split('\n');
-  const entries: SessionMessage[] = [];
-  for (const line of lines) {
-    if (!line.trim()) continue;
-    try {
-      entries.push(JSON.parse(line) as SessionMessage);
-    } catch {
-      // Skip invalid JSON lines
-    }
-  }
-  return entries;
-}
 
 // Extract Task tool_use id -> agentId mappings from main session messages
 function extractTaskAgentMappings(messages: SessionMessage[]): Map<string, string> {
@@ -92,7 +77,7 @@ async function loadSubagentProgress(
   agentId: string,
 ): Promise<SessionMessage[]> {
   const subagentFile = join(subagentsDir, `agent-${agentId}.jsonl`);
-  const subagentEntries = await parseJsonlFile(subagentFile);
+  const subagentEntries = await readJsonlEntries(subagentFile);
 
   const syntheticEntries: SessionMessage[] = [];
   for (const entry of subagentEntries) {
@@ -126,22 +111,7 @@ export async function loadSessionMessages(workingDir: string, targetSessionId: s
     const sessionsPath = await getProjectSessionsPath(workingDir);
     const sessionFile = join(sessionsPath, `${targetSessionId}.jsonl`);
 
-    const content = await readFile(sessionFile, 'utf-8');
-    const lines = content.trim().split('\n');
-
-    const messages: SessionMessage[] = [];
-
-    for (const line of lines) {
-      if (!line.trim()) continue;
-
-      try {
-        const entry = JSON.parse(line) as SessionMessage;
-        // Raw JSONL entry 그대로 전달 (type 필터링 제거)
-        messages.push(entry);
-      } catch {
-        // Skip invalid JSON lines
-      }
-    }
+    const messages: SessionMessage[] = await readJsonlEntries(sessionFile);
 
     // Load subagent files and inject synthetic progress entries
     try {

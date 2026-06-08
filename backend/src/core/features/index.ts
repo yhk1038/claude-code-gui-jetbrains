@@ -1,6 +1,7 @@
 export * from './generateSessionId';
 export * from './getProjectSessionsPath';
 export * from './extractSessionInfo';
+export * from './readJsonlEntries';
 export * from './settings';
 export * from './getSessionsList';
 export * from './loadSessionMessages';

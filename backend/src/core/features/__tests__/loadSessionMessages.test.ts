@@ -1,37 +1,39 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-vi.mock('fs/promises', () => ({
-  readFile: vi.fn(),
-  stat: vi.fn(),
-}));
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { mkdtemp, rm, writeFile } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
 
 vi.mock('../getProjectSessionsPath', () => ({
   getProjectSessionsPath: vi.fn(),
 }));
 
-import { readFile, stat } from 'fs/promises';
 import { loadSessionMessages } from '../loadSessionMessages';
 import { getProjectSessionsPath } from '../getProjectSessionsPath';
 
-const mockReadFile = vi.mocked(readFile);
-const mockStat = vi.mocked(stat);
 const mockGetPath = vi.mocked(getProjectSessionsPath);
 
 describe('loadSessionMessages', () => {
-  beforeEach(() => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
     vi.clearAllMocks();
-    mockGetPath.mockResolvedValue('/sessions');
-    // Default: no subagents directory
-    mockStat.mockRejectedValue(new Error('ENOENT'));
+    tmpDir = await mkdtemp(join(tmpdir(), 'load-session-'));
+    mockGetPath.mockResolvedValue(tmpDir);
   });
 
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  async function writeSession(sessionId: string, lines: string[]): Promise<void> {
+    await writeFile(join(tmpDir, `${sessionId}.jsonl`), lines.join('\n'));
+  }
+
   it('should load and parse JSONL messages', async () => {
-    const jsonl = [
+    await writeSession('sess-1', [
       JSON.stringify({ type: 'user', uuid: 'u1', message: { content: 'Hello' } }),
       JSON.stringify({ type: 'assistant', uuid: 'u2', message: { content: 'Hi' } }),
-    ].join('\n');
-
-    mockReadFile.mockResolvedValue(jsonl);
+    ]);
 
     const result = await loadSessionMessages('/work', 'sess-1');
     expect(result).toHaveLength(2);
@@ -40,45 +42,58 @@ describe('loadSessionMessages', () => {
   });
 
   it('should skip invalid JSON lines', async () => {
-    const jsonl = [
+    await writeSession('sess-1', [
       'invalid json',
       JSON.stringify({ type: 'user', uuid: 'u1' }),
       '{broken',
-    ].join('\n');
-
-    mockReadFile.mockResolvedValue(jsonl);
+    ]);
 
     const result = await loadSessionMessages('/work', 'sess-1');
     expect(result).toHaveLength(1);
   });
 
   it('should return empty array on file read error', async () => {
-    mockReadFile.mockRejectedValue(new Error('ENOENT'));
-
     const result = await loadSessionMessages('/work', 'nonexistent');
     expect(result).toEqual([]);
   });
 
   it('should pass through all JSONL entry types without filtering', async () => {
-    const jsonl = [
+    await writeSession('sess-1', [
       JSON.stringify({ type: 'user', uuid: 'u1' }),
       JSON.stringify({ type: 'assistant', uuid: 'u2' }),
       JSON.stringify({ type: 'summary', leafUuid: 'u2', summary: 'test' }),
       JSON.stringify({ type: 'system', uuid: 'u3' }),
       JSON.stringify({ type: 'progress', uuid: 'u4' }),
-    ].join('\n');
-
-    mockReadFile.mockResolvedValue(jsonl);
+    ]);
 
     const result = await loadSessionMessages('/work', 'sess-1');
     expect(result).toHaveLength(5);
   });
 
   it('should skip empty lines', async () => {
-    const jsonl = '\n' + JSON.stringify({ type: 'user', uuid: 'u1' }) + '\n\n';
-    mockReadFile.mockResolvedValue(jsonl);
-
+    await writeSession('sess-1', ['', JSON.stringify({ type: 'user', uuid: 'u1' }), '', '']);
     const result = await loadSessionMessages('/work', 'sess-1');
     expect(result).toHaveLength(1);
   });
+
+  // Regression test for issue #19: large session files must stream, not block.
+  it('should handle multi-megabyte session files without exhausting memory', async () => {
+    const lines: string[] = [];
+    const bulk = 'A'.repeat(1000);
+    for (let i = 0; i < 10_000; i++) {
+      lines.push(
+        JSON.stringify({
+          type: i % 2 === 0 ? 'user' : 'assistant',
+          uuid: `u${i}`,
+          message: { content: [{ type: 'text', text: bulk }] },
+        }),
+      );
+    }
+    await writeSession('sess-big', lines);
+
+    const result = await loadSessionMessages('/work', 'sess-big');
+    expect(result).toHaveLength(10_000);
+    expect(result[0].type).toBe('user');
+    expect(result[9_999].type).toBe('assistant');
+  }, 15_000);
 });
