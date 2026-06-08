@@ -1,21 +1,16 @@
-import { readFile } from 'fs/promises';
+import { createReadStream } from 'fs';
+import { createInterface } from 'readline';
 
 /**
  * Extract session info from JSONL file (Cursor-compatible)
+ *
+ * Reads the file line-by-line via stream rather than loading the whole file
+ * into memory, so multi-megabyte session logs do not stall the event loop
+ * or exhaust heap. See issue #19.
  */
 
 type ContentBlock = { type: string; text?: string; [key: string]: unknown };
 type MessageContent = ContentBlock[] | string | null;
-
-interface MessageInfo {
-  uuid: string;
-  parentUuid: string | null;
-  type: string;
-  isSidechain: boolean;
-  timestamp: string | null;
-  isMeta: boolean;
-  content: MessageContent;
-}
 
 export interface SessionInfo {
   title: string;
@@ -51,39 +46,52 @@ function extractTextFromContent(content: MessageContent): string | null {
   return null;
 }
 
-function buildTranscript(leaf: MessageInfo, messages: Map<string, MessageInfo>): MessageInfo[] {
-  const transcript: MessageInfo[] = [];
-  let current: MessageInfo | undefined = leaf;
+// Counted toward messageCount + lastTimestamp + (potentially) hasUserOrAssistant.
+const COUNTED_TYPES = new Set(['user', 'assistant', 'attachment', 'system', 'progress']);
 
-  while (current) {
-    transcript.unshift(current); // Add to front
-    current = current.parentUuid ? messages.get(current.parentUuid) : undefined;
-  }
-
-  return transcript;
-}
+// First entry of these types decides isSidechain for the whole session
+// (Cursor performRefresh semantics).
+const SIDECHAIN_GATE_TYPES = new Set(['user', 'assistant', 'attachment', 'system']);
 
 export async function extractSessionInfo(file: string): Promise<SessionInfo> {
-  const messages = new Map<string, MessageInfo>(); // uuid -> MessageInfo
-  const summaries = new Map<string, string>(); // leafUuid -> summary
-  let lastUuid: string | null = null;
-  let firstTimestamp: string | null = null;
   let messageCount = 0;
+  let firstTimestamp: string | null = null;
+  let lastTimestamp: string | null = null;
   let firstUserPrompt: string | null = null;
+  let firstSummary: string | null = null;
+  let hasUserOrAssistant = false;
+  let sidechainGateSeen = false;
+  let isSidechainFromGate = false;
   let skipSession = false;
 
-  // Step 1: Collect all messages into Map
-  const content = await readFile(file, 'utf-8');
-  const lines = content.trim().split('\n');
+  await new Promise<void>((resolve, reject) => {
+    const stream = createReadStream(file, { encoding: 'utf-8' });
+    const rl = createInterface({ input: stream, crlfDelay: Infinity });
+    let settled = false;
 
-  for (const line of lines) {
-    if (!line.trim()) continue;
-    try {
-      const entry = JSON.parse(line) as Record<string, unknown>;
-      messageCount++;
+    const settle = (err?: Error) => {
+      if (settled) return;
+      settled = true;
+      rl.close();
+      stream.destroy();
+      if (err) reject(err);
+      else resolve();
+    };
 
-      const uuid = (entry.uuid as string) ?? null;
-      const parentUuid = (entry.parentUuid as string) ?? null;
+    stream.on('error', settle);
+    rl.on('error', settle);
+
+    rl.on('line', (line) => {
+      if (skipSession) return;
+      if (!line.trim()) return;
+
+      let entry: Record<string, unknown>;
+      try {
+        entry = JSON.parse(line) as Record<string, unknown>;
+      } catch {
+        return;
+      }
+
       const type = (entry.type as string) ?? null;
       const timestamp = (entry.timestamp as string) ?? null;
       const isSidechain = (entry.isSidechain as boolean) ?? false;
@@ -93,47 +101,45 @@ export async function extractSessionInfo(file: string): Promise<SessionInfo> {
         firstTimestamp = timestamp;
       }
 
-      // Cursor performRefresh: check first relevant message for isSidechain
-      if (messages.size === 0 && ['user', 'assistant', 'attachment', 'system'].includes(type as string)) {
+      if (type === 'summary') {
+        if (firstSummary === null) {
+          const summary = (entry.summary as string) ?? null;
+          if (summary) firstSummary = summary;
+        }
+        return;
+      }
+
+      if (!type || !COUNTED_TYPES.has(type)) return;
+
+      messageCount++;
+      if (timestamp) lastTimestamp = timestamp;
+
+      if (SIDECHAIN_GATE_TYPES.has(type) && !sidechainGateSeen) {
+        sidechainGateSeen = true;
+        isSidechainFromGate = isSidechain;
         if (isSidechain) {
           skipSession = true;
-          break;
+          settle();
+          return;
         }
       }
 
-      // Collect summaries
-      if (type === 'summary') {
-        const leafUuid = (entry.leafUuid as string) ?? null;
-        const summary = (entry.summary as string) ?? null;
-        if (leafUuid && summary) {
-          summaries.set(leafUuid, summary);
-        }
+      if (type === 'user' || type === 'assistant') {
+        hasUserOrAssistant = true;
       }
 
-      // Add to messages Map (only relevant types)
-      if (uuid && type && ['user', 'assistant', 'attachment', 'system', 'progress'].includes(type)) {
+      if (type === 'user' && !isMeta && firstUserPrompt === null) {
         const messageObj = entry.message as Record<string, unknown> | undefined;
-        const messageContent = (messageObj?.content ?? null) as MessageContent;
-
-        messages.set(uuid, {
-          uuid,
-          parentUuid,
-          type,
-          isSidechain,
-          timestamp,
-          isMeta,
-          content: messageContent,
-        });
-
-        lastUuid = uuid;
+        const content = (messageObj?.content ?? null) as MessageContent;
+        const text = extractTextFromContent(content);
+        if (text) {
+          firstUserPrompt = removeSystemTags(text.replace(/\n/g, ' ').trim());
+        }
       }
-    } catch {
-      // Skip malformed lines
-    }
-  }
+    });
 
-  // Suppress unused variable warning
-  void lastUuid;
+    rl.once('close', () => settle());
+  });
 
   if (skipSession) {
     return {
@@ -145,61 +151,23 @@ export async function extractSessionInfo(file: string): Promise<SessionInfo> {
     };
   }
 
-  // Filter out sessions without any user or assistant messages (empty sessions)
-  const hasUserOrAssistant = Array.from(messages.values()).some(
-    (m) => m.type === 'user' || m.type === 'assistant'
-  );
   if (!hasUserOrAssistant) {
     return {
       title: 'Empty Session',
       lastTimestamp: null,
       createdAt: firstTimestamp || '',
       messageCount,
-      isSidechain: true, // Treat as sidechain to filter it out
+      isSidechain: true,
     };
   }
 
-  // Step 2: Find leaf messages (messages that are not parents of other messages)
-  const allParentUuids = new Set(Array.from(messages.values()).map((m) => m.parentUuid).filter(Boolean));
-  const leafMessages = Array.from(messages.values()).filter((m) => !allParentUuids.has(m.uuid));
-
-  // Step 3: Build transcripts from each leaf
-  const transcripts = leafMessages.map((leaf) => buildTranscript(leaf, messages));
-
-  // Step 4: Extract isSidechain from first message of first transcript (Cursor fetchSessions logic)
-  const isSidechainFromTranscript = transcripts[0]?.[0]?.isSidechain ?? false;
-
-  // Step 5: Extract first user prompt from first transcript
-  for (const transcript of transcripts) {
-    for (const msg of transcript) {
-      if (msg.type === 'user' && !msg.isMeta && firstUserPrompt === null) {
-        const text = extractTextFromContent(msg.content);
-        if (text) {
-          // Remove system tags from the prompt for cleaner title
-          firstUserPrompt = removeSystemTags(text.replace(/\n/g, ' ').trim());
-          break;
-        }
-      }
-    }
-    if (firstUserPrompt) break;
-  }
-
-  // Step 6: Determine title (first summary > firstUserPrompt > fallback)
-  const firstSummary = summaries.size > 0 ? Array.from(summaries.values())[0] : null;
   const title = firstSummary ?? firstUserPrompt ?? 'No title';
-
-  // Step 7: Find last timestamp from all messages
-  const lastTimestamp = Array.from(messages.values())
-    .map((m) => m.timestamp)
-    .filter(Boolean)
-    .sort()
-    .pop() ?? null;
 
   return {
     title,
     lastTimestamp,
     createdAt: firstTimestamp || '',
     messageCount,
-    isSidechain: isSidechainFromTranscript,
+    isSidechain: isSidechainFromGate,
   };
 }

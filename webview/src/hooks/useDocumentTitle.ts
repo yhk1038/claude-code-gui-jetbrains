@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { APP_NAME } from '@/config/app';
 import {
   NotificationKind,
   notify,
@@ -54,7 +53,11 @@ export function useDocumentTitle(
   }, [error]);
 
   useEffect(() => {
-    document.title = title || APP_NAME;
+    // Only push a real session title up to the IDE tab. Setting APP_NAME as a
+    // fallback while the session is still loading would clobber the cached
+    // tab title that the JetBrains side restores from EditorTabStateService
+    // (the user would see the real title flash to "Claude Code" mid-load).
+    if (title) document.title = title;
   }, [title]);
 
   // Notify JCEF of streaming state changes

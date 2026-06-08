@@ -28,12 +28,22 @@ class EditorTabRestoreActivity : ProjectActivity {
             // 비활성 탭 먼저 복원 (마지막으로 보던 경로로, 없으면 탭 페이지로)
             for (tabId in tabIds) {
                 if (tabId != activeTabId) {
-                    OpenClaudeCodeAction.openTab(project, tabId, stateService.getRestorePath(tabId))
+                    OpenClaudeCodeAction.openTab(
+                        project,
+                        tabId,
+                        stateService.getRestorePath(tabId),
+                        stateService.getTitle(tabId)
+                    )
                 }
             }
             // 활성 탭은 마지막에 열어서 포커스 획득
             if (activeTabId != null && activeTabId in tabIds) {
-                OpenClaudeCodeAction.openTab(project, activeTabId, stateService.getRestorePath(activeTabId))
+                OpenClaudeCodeAction.openTab(
+                    project,
+                    activeTabId,
+                    stateService.getRestorePath(activeTabId),
+                    stateService.getTitle(activeTabId)
+                )
             }
 
             logger.info("Editor tabs restored successfully")
