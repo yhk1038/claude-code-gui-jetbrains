@@ -1,9 +1,9 @@
 package com.github.yhk1038.claudecodegui.toolwindow
 
-import com.github.yhk1038.claudecodegui.editor.ClaudeCodeVirtualFile
+import com.github.yhk1038.claudecodegui.actions.OpenClaudeCodeAction
+import com.github.yhk1038.claudecodegui.toolwindow.realization.ReentrancyGate
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.DumbService
@@ -12,7 +12,7 @@ import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener
 import com.intellij.ui.content.ContentFactory
-import java.util.UUID
+import com.intellij.util.ui.UIUtil
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.SwingConstants
@@ -23,38 +23,60 @@ class ClaudeCodeToolWindowFactory : ToolWindowFactory, DumbAware {
     private val logger = Logger.getInstance(ClaudeCodeToolWindowFactory::class.java)
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        // 빈 패널 추가 (Tool Window 구조상 필요)
+        // Empty panel required by the ToolWindow content structure. Match the IDE
+        // theme background so the brief flash during the open-tab "button" trick
+        // does not expose the LAF default white on dark themes.
         val label = JLabel("Loading...", SwingConstants.CENTER)
         val panel = JPanel(BorderLayout())
+        panel.background = UIUtil.getPanelBackground()
         panel.add(label, BorderLayout.CENTER)
         val content = ContentFactory.getInstance().createContent(panel, "", false)
         toolWindow.contentManager.addContent(content)
 
-        // Tool Window가 활성화될 때마다 에디터 탭 열기/포커스
+        // Reentrancy guard shared by both open paths below. A single stripe-icon
+        // click flips the ToolWindow to visible, during which `stateChanged` may
+        // fire several times before the deferred `hide()` runs. Without a guard,
+        // each fire would open another tab. The gate ensures exactly one open per
+        // visible cycle and resets when the ToolWindow returns to invisible so the
+        // next click opens again. All access happens on the EDT (invokeLater).
+        val openGate = ReentrancyGate()
+
+        // Open a new tab each time the stripe icon is clicked (ToolWindow becomes visible)
         val connection = project.messageBus.connect(toolWindow.disposable)
         connection.subscribe(ToolWindowManagerListener.TOPIC, object : ToolWindowManagerListener {
             override fun stateChanged(toolWindowManager: ToolWindowManager) {
                 val tw = toolWindowManager.getToolWindow("Claude Code")
-                if (tw != null && tw.isVisible) {
+                if (tw == null) return
+                if (tw.isVisible) {
                     ApplicationManager.getApplication().invokeLater {
-                        focusOrOpenClaudeCodeTab(project)
+                        if (!tw.isVisible) return@invokeLater
+                        if (openGate.enter()) {
+                            openNewTab(project, ::openTab)
+                        }
                         tw.hide()
                     }
+                } else {
+                    // Back to invisible: re-arm the gate for the next click.
+                    openGate.reset()
                 }
             }
         })
 
-        // 에디터 탭 열기 — 즉시 시도하고, NPE 발생 시 인덱싱 완료 후 재시도
+        // Open a new tab immediately — retry after indexing finishes if the editor is not ready
         ApplicationManager.getApplication().invokeLater {
+            if (!openGate.enter()) {
+                toolWindow.hide()
+                return@invokeLater
+            }
             try {
-                focusOrOpenClaudeCodeTab(project)
+                openNewTab(project, ::openTab)
                 toolWindow.hide()
             } catch (e: Exception) {
                 logger.info("Editor not ready yet, will retry after indexing", e)
                 label.text = "Waiting for project initialization..."
                 DumbService.getInstance(project).runWhenSmart {
                     ApplicationManager.getApplication().invokeLater {
-                        focusOrOpenClaudeCodeTab(project)
+                        openNewTab(project, ::openTab)
                         toolWindow.hide()
                     }
                 }
@@ -62,43 +84,26 @@ class ClaudeCodeToolWindowFactory : ToolWindowFactory, DumbAware {
         }
     }
 
-    private fun focusOrOpenClaudeCodeTab(project: Project) {
-        val fileEditorManager = FileEditorManager.getInstance(project)
-
-        // 이미 열린 Claude Code 탭 찾기
-        val openClaudeFiles = fileEditorManager.openFiles.filterIsInstance<ClaudeCodeVirtualFile>()
-
-        if (openClaudeFiles.isNotEmpty()) {
-            // 마지막으로 선택된 Claude Code 탭으로 포커스
-            val lastSelected = fileEditorManager.selectedFiles
-                .filterIsInstance<ClaudeCodeVirtualFile>()
-                .firstOrNull()
-
-            val fileToFocus = lastSelected ?: openClaudeFiles.last()
-            try {
-                fileEditorManager.openFile(fileToFocus, true)
-            } catch (e: Exception) {
-                logger.warn("Failed to open Claude Code tab, retrying in 500ms", e)
-                retryOpenFile(project, fileToFocus)
-            }
-        } else {
-            // 열린 탭이 없으면 새 세션 열기
-            val newFile = ClaudeCodeVirtualFile.getOrCreate(project, UUID.randomUUID().toString())
-            try {
-                fileEditorManager.openFile(newFile, true)
-            } catch (e: Exception) {
-                logger.warn("Failed to open new Claude Code tab, retrying in 500ms", e)
-                retryOpenFile(project, newFile)
-            }
+    /**
+     * Delegates to [OpenClaudeCodeAction.openTab] and wraps failures with a
+     * 500 ms retry — preserving the same safety net that existed in the old
+     * `focusOrOpenClaudeCodeTab` path.
+     */
+    private fun openTab(project: Project, tabId: String) {
+        try {
+            OpenClaudeCodeAction.openTab(project, tabId)
+        } catch (e: Exception) {
+            logger.warn("Failed to open Claude Code tab, retrying in 500ms", e)
+            retryOpenTab(project, tabId)
         }
     }
 
-    private fun retryOpenFile(project: Project, file: ClaudeCodeVirtualFile) {
+    private fun retryOpenTab(project: Project, tabId: String) {
         java.util.Timer().schedule(object : java.util.TimerTask() {
             override fun run() {
                 ApplicationManager.getApplication().invokeLater {
                     try {
-                        FileEditorManager.getInstance(project).openFile(file, true)
+                        OpenClaudeCodeAction.openTab(project, tabId)
                     } catch (e: Exception) {
                         logger.warn("Retry also failed to open Claude Code tab", e)
                     }

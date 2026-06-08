@@ -6,6 +6,36 @@
     <meta name="google" content="notranslate" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Claude Code</title>
+    <!--
+      FOUC guard: runs before the CSS bundle and React mount so a new JCEF tab
+      paints the correct surface color immediately instead of flashing white.
+      Mirrors webview/src/theme/bootstrapTheme.ts (resolveBootstrapTheme) — keep
+      both in sync. The background colors MUST match --surface-base in
+      src/index.css (light :root #FFFFFF, dark .dark #1A1A1A).
+      Setting documentElement.style here is intentional (not a React component).
+    -->
+    <script>
+      (function () {
+        var param = new URLSearchParams(location.search).get('theme');
+        var prefersDark =
+          window.matchMedia &&
+          window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var resolved =
+          param === 'dark'
+            ? 'dark'
+            : param === 'light'
+              ? 'light'
+              : prefersDark
+                ? 'dark'
+                : 'light';
+        if (resolved === 'dark') {
+          document.documentElement.classList.add('dark');
+        }
+        // Direct color values: CSS variables are not available yet at this point.
+        document.documentElement.style.backgroundColor =
+          resolved === 'dark' ? '#1A1A1A' : '#FFFFFF';
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
