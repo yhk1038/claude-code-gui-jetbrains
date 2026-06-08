@@ -175,16 +175,20 @@ class DiffService(private val project: Project) {
         if (paths.isEmpty()) return
         val lfs = LocalFileSystem.getInstance()
 
-        val knownFiles = paths.mapNotNull { lfs.findFileByPath(it) }
+        // IntelliJ VFS uses forward-slash paths regardless of host OS; the CLI
+        // may hand us native Windows paths with backslashes.
+        val normalized = paths.map { it.replace('\\', '/') }
+
+        val knownFiles = normalized.mapNotNull { lfs.findFileByPath(it) }
         if (knownFiles.isNotEmpty()) {
             VfsUtil.markDirtyAndRefresh(true, false, false, *knownFiles.toTypedArray())
         }
 
         // Newly created files are not in the VFS yet — refresh their parent dirs
         // (with reloadChildren = true) so the IDE discovers them.
-        val newFileParents = paths
+        val newFileParents = normalized
             .filter { lfs.findFileByPath(it) == null }
-            .mapNotNull { File(it).parent }
+            .mapNotNull { File(it).parent?.replace('\\', '/') }
             .distinct()
             .mapNotNull { lfs.findFileByPath(it) }
         if (newFileParents.isNotEmpty()) {

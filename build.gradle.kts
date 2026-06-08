@@ -147,6 +147,13 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
+            <h3>0.17.3 - Editor stability fixes</h3>
+            <ul>
+                <li><b>No more typing lag in long conversations</b>: Even as the context grows, the chat input stays responsive while you type. (#31)</li>
+                <li><b>Large session files no longer freeze the chat</b>: Projects with sizable session files now open without stalling. (#19)</li>
+                <li><b>Edits show up in the editor immediately</b>: Files modified by Claude refresh in open IDE tabs without a manual reload. (#72)</li>
+                <li><b>Tab titles restore correctly on IDE restart</b>: Reopening the IDE no longer shows a placeholder name for Claude Code tabs. (#73)</li>
+            </ul>
             <h3>0.17.2 - Steadier editor controls in the IDE</h3>
             <ul>
                 <li><b>Drag tabs across splits without losing the chat</b>: Moving a Claude Code tab between split panes — or out into a floating window — now keeps the conversation alive instead of resetting it. (#29)</li>

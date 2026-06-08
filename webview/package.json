@@ -1,7 +1,7 @@
 {
   "name": "claude-code-webview",
   "private": true,
-  "version": "0.17.2",
+  "version": "0.17.3",
   "type": "module",
   "scripts": {
     "dev": "node ./node_modules/vite/bin/vite.js",
