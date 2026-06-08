@@ -40,6 +40,10 @@ dependencies {
 
         when (platformType) {
             "RD" -> create("RD", platformVersion, useInstaller = false)
+            // IU with useInstaller=false resolves EAP/snapshot coordinates
+            // (e.g. 262.6653.22-EAP-SNAPSHOT) from the snapshots repo, reusing
+            // the artifact the Plugin Verifier already cached — no re-download.
+            "IU" -> create("IU", platformVersion, useInstaller = false)
             else -> intellijIdea(platformVersion)
         }
         bundledPlugin("org.jetbrains.plugins.terminal")
