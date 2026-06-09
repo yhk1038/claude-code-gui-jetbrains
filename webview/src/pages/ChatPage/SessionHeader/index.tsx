@@ -1,5 +1,5 @@
 import { SessionDropdown } from './SessionDropdown';
-import { ProjectButton } from './ProjectButton';
+import { WorkingDirDropdown } from './WorkingDirDropdown';
 import { TokenBatteryButton } from './TokenBatteryButton';
 import { TunnelButton } from './TunnelButton';
 import { SettingsButton } from './SettingsButton';
@@ -17,9 +17,9 @@ export function SessionHeader() {
 
   return (
     <div className="flex justify-between items-center px-2 py-1">
-      {/* Left: Project button + Session dropdown */}
+      {/* Left: Working directory dropdown + Session dropdown */}
       <div className="min-w-0 flex-1 flex items-center">
-        <ProjectButton />
+        <WorkingDirDropdown />
         <SessionDropdown />
       </div>
 

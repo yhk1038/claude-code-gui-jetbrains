@@ -1,0 +1,115 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useBridgeContext } from '@/contexts/BridgeContext';
+import { useWorkingDir } from '@/contexts/WorkingDirContext';
+import { useSessionContext } from '@/contexts/SessionContext';
+import { Route, routeToPath, withWorkingDir } from '@/router/routes';
+import { SessionState } from '@/types';
+import { classifyWorkingDirs, WorkingDirEntry } from './classifyWorkingDirs';
+import { WorkingDirToggle } from './WorkingDirToggle';
+import { WorkingDirMenu } from './WorkingDirMenu';
+
+export function WorkingDirDropdown() {
+  const { isConnected, send, subscribe } = useBridgeContext();
+  const { workingDirectory, ideRoot } = useWorkingDir();
+  const { sessionState } = useSessionContext();
+  const navigate = useNavigate();
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [entries, setEntries] = useState<WorkingDirEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const isSessionActive =
+    sessionState === SessionState.Streaming || sessionState === SessionState.WaitingPermission;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  // Re-fetch every time the dropdown opens so a session just created in
+  // another directory (or descendant tree) shows up without a manual reload.
+  useEffect(() => {
+    if (!isOpen || !isConnected) return;
+    let cancelled = false;
+    setIsLoading(true);
+    const unsubscribe = subscribe('PROJECTS_LIST', (message) => {
+      if (cancelled) return;
+      const list = (message.payload?.projects as WorkingDirEntry[]) ?? [];
+      setEntries(list);
+      setIsLoading(false);
+      unsubscribe();
+    });
+    void send('GET_PROJECTS', {});
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [isOpen, isConnected, send, subscribe]);
+
+  const classified = useMemo(
+    () => classifyWorkingDirs(entries, workingDirectory, ideRoot),
+    [entries, workingDirectory, ideRoot],
+  );
+
+  const showOffRootIndicator =
+    !!ideRoot && !!workingDirectory && ideRoot !== workingDirectory;
+
+  const onNavigate = useCallback(() => setIsOpen(false), []);
+
+  // Adding a working directory hands off to the host's native folder dialog.
+  // The bridge fires back FOLDER_SELECTED once the user picks (or cancels),
+  // so we subscribe transiently and route into the new working dir.
+  //
+  // `setWorkingDirectory` won't help here — its routing guard only fires from
+  // PROJECT_SELECTOR (or when leaving with a null dir), and we are sitting on
+  // NEW_SESSION. Navigate explicitly the same way our <Link> rows do.
+  const onAddWorkingDir = useCallback(() => {
+    const unsubscribe = subscribe('FOLDER_SELECTED', (message) => {
+      unsubscribe();
+      const selectedPath = message.payload?.path;
+      if (typeof selectedPath === 'string' && selectedPath.length > 0) {
+        // macOS folder dialog appends a trailing slash; strip it so the URL
+        // matches sessions-index `projectPath` exactly (no slash).
+        const normalized = selectedPath.replace(/\/+$/, '') || selectedPath;
+        setIsOpen(false);
+        navigate(withWorkingDir(routeToPath(Route.NEW_SESSION), normalized));
+      }
+    });
+    void send('OPEN_FOLDER_DIALOG', {});
+  }, [send, subscribe, navigate]);
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <WorkingDirToggle
+        isOpen={isOpen}
+        disabled={isSessionActive}
+        showOffRootIndicator={showOffRootIndicator}
+        title={
+          isSessionActive
+            ? 'Cannot switch working directory while a session is active'
+            : 'Switch working directory'
+        }
+        onClick={() => setIsOpen((prev) => !prev)}
+      />
+
+      {isOpen && (
+        <WorkingDirMenu
+          classified={classified}
+          currentPath={workingDirectory}
+          ideRoot={ideRoot}
+          isLoading={isLoading && entries.length === 0}
+          onNavigate={onNavigate}
+          onAddWorkingDir={onAddWorkingDir}
+        />
+      )}
+    </div>
+  );
+}
