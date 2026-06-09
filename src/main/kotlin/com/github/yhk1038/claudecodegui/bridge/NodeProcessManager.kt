@@ -35,6 +35,13 @@ class NodeProcessManager(
      * project root) coexist without colliding on a fixed port. See issue #57.
      */
     private val requestedPort: Int = 0,
+    /**
+     * Disambiguates this backend's extraction temp dirs from other concurrently
+     * running backends (one per IDE project root). Without it, two backends share
+     * `tmpdir/claude-code-{backend,webview}` and one's `deleteRecursively`+re-extract
+     * races the other's live webview serving. See issue #57 / plan S2b.
+     */
+    private val instanceTag: String = "default",
 ) : Disposable {
 
     private val logger = Logger.getInstance(NodeProcessManager::class.java)
@@ -472,7 +479,7 @@ class NodeProcessManager(
      */
     private fun extractBackendFromJar(): File? {
         return try {
-            val tempDir = File(System.getProperty("java.io.tmpdir"), "claude-code-backend")
+            val tempDir = File(System.getProperty("java.io.tmpdir"), "claude-code-backend-$instanceTag")
 
             // Always re-extract for latest version
             if (tempDir.exists()) {
@@ -524,7 +531,7 @@ class NodeProcessManager(
 
         // Production: extract from JAR
         return try {
-            val tempDir = File(System.getProperty("java.io.tmpdir"), "claude-code-webview")
+            val tempDir = File(System.getProperty("java.io.tmpdir"), "claude-code-webview-$instanceTag")
 
             if (tempDir.exists()) {
                 tempDir.deleteRecursively()

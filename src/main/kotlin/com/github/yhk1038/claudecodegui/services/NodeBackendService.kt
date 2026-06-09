@@ -49,6 +49,9 @@ class NodeBackendService : Disposable {
      * process, RPC socket, port, and the per-panel handlers for that root.
      */
     private inner class BackendInstance(private val basePath: String) {
+        // Stable per-root tag so this backend's extraction temp dirs don't collide
+        // with other roots' backends (plan S2b). Same root → same tag → safe reuse.
+        private val instanceTag: String = Integer.toHexString(basePath.hashCode())
         private var nodeProcessManager: NodeProcessManager? = null
         private var rpcClient: RpcWebSocketClient? = null
 
@@ -127,7 +130,7 @@ class NodeBackendService : Disposable {
         fun start() {
             if (nodeProcessManager != null || rpcClient != null) return
             portDeferred = CompletableDeferred()
-            val manager = NodeProcessManager(scope, requestedPort = 0) // OS-assigned free port
+            val manager = NodeProcessManager(scope, requestedPort = 0, instanceTag = instanceTag) // OS-assigned free port
             nodeProcessManager = manager
             manager.start()
             scope.launch {
