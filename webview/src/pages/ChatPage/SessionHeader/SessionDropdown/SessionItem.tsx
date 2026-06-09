@@ -25,8 +25,8 @@ export function SessionItem(props: Props) {
       onMouseLeave={() => setIsHovered(false)}
       className={`w-full px-2 py-1.5 text-left text-xs rounded transition-colors flex justify-between items-center gap-2 ${
         isSelected
-          ? 'text-text-primary bg-surface-tooltip/70'
-          : 'text-text-secondary hover:bg-surface-tooltip/40'
+          ? 'text-text-primary bg-[var(--surface-selected)]'
+          : 'text-text-secondary hover:text-text-primary hover:bg-[var(--surface-selected)]'
       }`}
       title={session.title}
     >
