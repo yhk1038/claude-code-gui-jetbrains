@@ -4,6 +4,7 @@ import { Claude } from './claude';
 import { diagnoseAuthError } from './features/auth-diagnosis';
 import { getStrippableAuthEnvKeys } from './features/claude-settings';
 import { EditedFileTracker } from './features/editedFileTracker';
+import { isWslUncPath } from './wsl-path';
 
 // Tracks files Claude edits so the IDE can be told to reload them once the
 // edit completes on disk. Shared across sessions — tool_use ids are unique.
@@ -45,6 +46,25 @@ export async function ensureClaudeProcess(
   inputMode: string,
   bridge: Bridge,
 ): Promise<void> {
+  // Standalone mode on Windows can't reach a WSL project's tooling: cmd.exe rejects
+  // the UNC cwd and the CLI would use PowerShell instead of bash. Guide the user to
+  // launch the GUI from inside their WSL shell. (JetBrains mode runs the backend
+  // inside the distro, so platform is 'linux' there and this never trips.) Issue #57.
+  if (process.platform === 'win32' && isWslUncPath(workingDir)) {
+    const msg =
+      'This project is inside WSL. On Windows, start the GUI from your WSL shell ' +
+      '(run `ccg` in a WSL terminal) so Claude runs with bash and a Linux working ' +
+      'directory instead of failing on the Windows UNC path.';
+    console.error('[node-backend]', msg);
+    connections.broadcastToSession(targetSessionId, 'SERVICE_ERROR', {
+      type: 'WSL_HOST_MISMATCH',
+      reason: msg,
+      error: msg,
+    });
+    connections.broadcastToSession(targetSessionId, 'STREAM_END');
+    return;
+  }
+
   const existingSession = connections.getSession(targetSessionId);
   if (existingSession?.process) {
     console.error(
