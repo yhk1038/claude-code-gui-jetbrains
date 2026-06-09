@@ -27,7 +27,14 @@ import java.io.InputStreamReader
  * JSON-RPC dispatch is handled by [RpcWebSocketClient] via WebSocket /rpc endpoint.
  */
 class NodeProcessManager(
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    /**
+     * Port to request from the backend via the `PORT` env var. `0` (the default)
+     * tells the backend to bind an OS-assigned free port and report the actual
+     * port back on its `PORT:{n}` stdout line — so multiple backends (one per IDE
+     * project root) coexist without colliding on a fixed port. See issue #57.
+     */
+    private val requestedPort: Int = 0,
 ) : Disposable {
 
     private val logger = Logger.getInstance(NodeProcessManager::class.java)
@@ -135,6 +142,10 @@ class NodeProcessManager(
                     if (webviewDir != null) {
                         put("WEBVIEW_DIR", webviewDir.absolutePath)
                     }
+                    // Dynamic port: backend binds an OS-assigned free port when this is 0
+                    // and reports the real port via its PORT:{n} stdout line. Lets one
+                    // backend per IDE project root coexist without a fixed-port clash (#57).
+                    put("PORT", requestedPort.toString())
                     // PROJECT_DIR removed — workingDir is passed via WebSocket message
                 }
 

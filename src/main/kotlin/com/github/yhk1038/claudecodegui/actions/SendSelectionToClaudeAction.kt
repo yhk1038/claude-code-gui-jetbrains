@@ -126,7 +126,10 @@ class SendSelectionToClaudeAction : AnAction() {
         // registered only for the lifetime of this request, then is released in finally.
         val backend = NodeBackendService.getInstance()
         val transientPanelId = "action-transient-" + System.currentTimeMillis()
-        backend.ensureStarted(workingDir ?: "", transientPanelId, NoopRpcHandler)
+        // Key the backend by IDE project root (not workingDir) so this action shares
+        // the same per-root backend as the project's Claude Code panels (#57).
+        val backendKey = project.basePath ?: workingDir ?: ""
+        backend.ensureStarted(backendKey, transientPanelId, NoopRpcHandler)
 
         // Reuse the most recent Claude Code tab, or open a new one. FileEditorManager
         // focuses the tab when it is already open. Must run on the EDT.
@@ -134,12 +137,12 @@ class SendSelectionToClaudeAction : AnAction() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val port = backend.awaitPort()
+                val port = backend.awaitPort(backendKey)
                 postEditorContext(port, payload)
             } catch (ex: Exception) {
                 logger.warn("Failed to send editor context to backend", ex)
             } finally {
-                backend.releasePanel(workingDir ?: "", transientPanelId)
+                backend.releasePanel(backendKey, transientPanelId)
             }
         }
     }

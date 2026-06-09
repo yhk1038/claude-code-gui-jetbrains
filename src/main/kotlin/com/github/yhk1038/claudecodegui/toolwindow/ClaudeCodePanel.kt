@@ -246,7 +246,7 @@ class ClaudeCodePanel(
         if (!acquired.isLoaded) {
             scope.launch {
                 try {
-                    val port = backendService.awaitPort()
+                    val port = backendService.awaitPort(project.basePath ?: "")
                     loadWebView(port)
                 } catch (e: Exception) {
                     logger.error("Failed to start Node.js backend", e)
@@ -820,7 +820,7 @@ class ClaudeCodePanel(
                 }
             }
         }
-        backendService.sendNotification("NATIVE_DROP", params)
+        backendService.sendNotification(project.basePath ?: "", "NATIVE_DROP", params)
     }
 
     // ─── WebView loading ────────────────────────────────────────────
@@ -910,10 +910,10 @@ class ClaudeCodePanel(
         revalidate()
         repaint()
 
-        backendService.restart()
+        backendService.restart(project.basePath ?: "")
         scope.launch {
             try {
-                val port = backendService.awaitPort()
+                val port = backendService.awaitPort(project.basePath ?: "")
                 loadWebView(port)
             } catch (e: Exception) {
                 logger.error("Retry: Failed to start Node.js backend", e)
