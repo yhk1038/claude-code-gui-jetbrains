@@ -9,6 +9,7 @@ import {
 import { existsSync } from 'fs';
 import { join, delimiter, resolve } from 'path';
 import { readSettingsFile } from './features/settings';
+import { candidateBinDirs } from './claude-bin-paths';
 
 export class Claude {
   private static augmentedPath: string = Claude.buildAugmentedPath();
@@ -85,26 +86,7 @@ export class Claude {
     const home = process.env.HOME ?? process.env.USERPROFILE ?? '';
     if (!home) return basePath;
 
-    const extraDirs: string[] = [
-      join(home, '.local', 'bin'),          // pipx / manual installs
-      join(home, '.npm-global', 'bin'),     // npm global (custom prefix)
-      join(home, '.volta', 'bin'),          // volta
-      join(home, '.fnm', 'aliases', 'default', 'bin'), // fnm
-    ];
-    if (process.platform === 'win32') {
-      const appData = process.env.APPDATA ?? join(home, 'AppData', 'Roaming');
-      const localAppData = process.env.LOCALAPPDATA ?? join(home, 'AppData', 'Local');
-      extraDirs.push(
-        join(appData, 'npm'),                // npm global install default on Windows
-        join(localAppData, 'Volta', 'bin'),  // volta (Windows)
-        join(home, 'scoop', 'shims'),        // scoop
-      );
-    } else {
-      extraDirs.push(
-        '/usr/local/bin',                    // macOS default / homebrew (Intel)
-        '/opt/homebrew/bin',                 // homebrew (Apple Silicon)
-      );
-    }
+    const extraDirs: string[] = candidateBinDirs();
 
     // Add nvm current version bin if NVM_DIR is set
     const nvmDir = process.env.NVM_DIR ?? join(home, '.nvm');
