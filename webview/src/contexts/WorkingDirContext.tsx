@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
 import {NavigateOptions, useNavigate, useSearchParams} from 'react-router-dom';
 import { useBridgeContext } from '@/contexts/BridgeContext';
 import { useApi } from '@/contexts/ApiContext';
@@ -7,6 +7,13 @@ import { Route, routeToPath, withWorkingDir } from '@/router/routes';
 interface WorkingDirContextValue {
   workingDirectory: string | null;
   setWorkingDirectory: (dir: string | null, options?: NavigateOptions) => void;
+  /**
+   * IDE project root that contains the current [workingDirectory]. JetBrains
+   * hosts return `project.basePath`; browser hosts return null (no ancestor
+   * cap). Used by the working-directory dropdown to bound ancestor traversal
+   * so the user cannot navigate above their IDE project.
+   */
+  ideRoot: string | null;
 }
 
 const WorkingDirContext = createContext<WorkingDirContextValue | null>(null);
@@ -19,11 +26,20 @@ export const WORKING_DIR_PARAM_KEY = 'workingDir';
 
 export function WorkingDirProvider(props: Props) {
   const { children } = props;
-  const { isConnected } = useBridgeContext();
+  const { isConnected, send, subscribe } = useBridgeContext();
   const api = useApi();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const workingDirectory = searchParams.get(WORKING_DIR_PARAM_KEY) || null;
+  // Strip trailing slashes so a path coming in via the URL (e.g. from the
+  // native folder dialog, which on macOS appends "/") matches the
+  // sessions-index `projectPath` values (which never have one). Without this,
+  // `find(e => e.path === current)` misses, ancestors filter goes off, and
+  // the synthesized fallback name becomes the full path.
+  const rawWorkingDirectory = searchParams.get(WORKING_DIR_PARAM_KEY) || null;
+  const workingDirectory = rawWorkingDirectory
+    ? rawWorkingDirectory.replace(/\/+$/, '') || rawWorkingDirectory
+    : null;
+  const [ideRoot, setIdeRoot] = useState<string | null>(null);
 
   const setWorkingDirectory = useCallback((dir: string | null, options: NavigateOptions = {}) => {
     const isOnProjectSelector = window.location.pathname === routeToPath(Route.PROJECT_SELECTOR);
@@ -51,9 +67,27 @@ export function WorkingDirProvider(props: Props) {
     }
   }, [api, workingDirectory]);
 
+  // Resolve IDE root for the current workingDirectory. The bridge replies with
+  // the project base path on JetBrains hosts and null on browser hosts.
+  useEffect(() => {
+    if (!isConnected) return;
+    let cancelled = false;
+    const unsubscribe = subscribe('IDE_ROOT', (message) => {
+      if (cancelled) return;
+      const next = message.payload?.ideRoot;
+      setIdeRoot(typeof next === 'string' && next.length > 0 ? next : null);
+    });
+    void send('GET_IDE_ROOT', workingDirectory ? { workingDir: workingDirectory } : {});
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [isConnected, workingDirectory, send, subscribe]);
+
   const value: WorkingDirContextValue = {
     workingDirectory,
     setWorkingDirectory,
+    ideRoot,
   };
 
   return (
