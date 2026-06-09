@@ -3,7 +3,6 @@ package com.github.yhk1038.claudecodegui.services
 import com.github.yhk1038.claudecodegui.bridge.NodeProcessManager
 import com.github.yhk1038.claudecodegui.bridge.RpcWebSocketClient
 import com.github.yhk1038.claudecodegui.bridge.WslPathResolver
-import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
@@ -256,43 +255,4 @@ class NodeBackendService : Disposable {
         fun getInstance(): NodeBackendService =
             ApplicationManager.getApplication().getService(NodeBackendService::class.java)
     }
-}
-
-/**
- * Parse the PID output of `lsof -t` / netstat and return the PIDs that are safe to kill
- * when reclaiming a port: valid positive integers, de-duplicated (preserving order), and
- * excluding [selfPid] so the IDE never kills itself.
- *
- * Retained as a tested utility; the dynamic-port model (#57) no longer reclaims a fixed
- * port at startup, so this is currently unused by the service. Dead-code cleanup is
- * tracked in plan S6.
- */
-internal fun selectKillablePids(raw: String, selfPid: Long): List<Long> {
-    val seen = LinkedHashSet<Long>()
-    for (line in raw.split("\n")) {
-        val pid = line.trim().toLongOrNull() ?: continue
-        if (pid <= 0 || pid == selfPid) continue
-        seen.add(pid)
-    }
-    return seen.toList()
-}
-
-/**
- * Returns true if [path] is equal to or a child of [basePath], with cross-platform
- * normalization (backslashes unified, case-folded on case-insensitive file systems,
- * segment-boundary safe). Retained as a tested utility; see plan S6 for cleanup.
- */
-internal fun pathMatchesBase(
-    path: String,
-    basePath: String,
-    caseSensitive: Boolean = SystemInfo.isFileSystemCaseSensitive,
-): Boolean {
-    fun String.normalize(): String {
-        val slashFixed = replace('\\', '/')
-        return if (caseSensitive) slashFixed else slashFixed.lowercase()
-    }
-
-    val normPath = path.normalize()
-    val normBase = basePath.normalize().trimEnd('/') + "/"
-    return normPath == normBase.trimEnd('/') || normPath.startsWith(normBase)
 }
