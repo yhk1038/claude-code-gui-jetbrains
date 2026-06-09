@@ -59,6 +59,12 @@ class NodeBackendService : Disposable {
         var portDeferred = CompletableDeferred<Int>()
             private set
 
+        // The port this backend last bound. Reused on respawn so an already-loaded
+        // WebView (pointing at this port) reconnects instead of being stranded on a
+        // stale port. 0 = never started → OS assigns a free port on first start.
+        @Volatile
+        private var lastPort: Int = 0
+
         // panelId -> handler. The Claude Code editor tabs open under this root.
         val handlers = ConcurrentHashMap<String, NodeProcessManager.RpcHandler>()
 
@@ -128,14 +134,23 @@ class NodeBackendService : Disposable {
 
         @Synchronized
         fun start() {
-            if (nodeProcessManager != null || rpcClient != null) return
+            // Alive → nothing to do. A backend that started and then exited (e.g. the
+            // Node idle-shutdown timer fired between panels) reports isDead == true and
+            // must be respawned — otherwise we'd hand callers a port no one is listening
+            // on. (A still-spawning manager reports isDead == false, so concurrent panel
+            // inits don't race a duplicate spawn.)
+            nodeProcessManager?.let { if (!it.isDead) return }
+            nodeProcessManager?.let { stop() } // clean up a dead manager/socket
+
             portDeferred = CompletableDeferred()
             // A WSL project root (UNC basePath) runs its backend inside the distro so
             // node/claude execute as Linux natives (issue #57); a native root runs locally.
             val wsl = WslPathResolver.parseUncPath(basePath)
             val manager = NodeProcessManager(
                 scope,
-                requestedPort = 0, // OS-assigned free port
+                // Reuse the last bound port on respawn (0 only on first start) so a WebView
+                // already pointing at this port reconnects instead of hitting a dead port.
+                requestedPort = lastPort,
                 instanceTag = instanceTag,
                 wslDistro = wsl?.distro,
                 wslCwd = wsl?.linuxPath,
@@ -145,6 +160,7 @@ class NodeBackendService : Disposable {
             scope.launch {
                 try {
                     val port = manager.port.await()
+                    lastPort = port
                     portDeferred.complete(port)
                     logger.info("Node.js backend for '$basePath' started on port $port")
                     connect(port)
