@@ -97,4 +97,42 @@ object WslPathResolver {
         // Fallback: normalize separators.
         return windowsPath.replace('\\', '/')
     }
+
+    /**
+     * Build the command to run `node <script>` inside a WSL distro from the Windows host.
+     *
+     * Produces, e.g.:
+     * `wsl.exe -d Ubuntu --cd /home/u/proj -- env PORT=0 JETBRAINS_MODE=true node /mnt/c/.../backend.mjs`
+     *
+     * - The leading `wsl.exe` is resolved on the Windows PATH (System32).
+     * - Everything after `--` runs inside the distro, so `env`/`node` are the distro's.
+     * - [env] entries are passed via `env K=V` so they reach the WSL process regardless of
+     *   WSLENV configuration. [scriptLinuxPath] must already be a WSL-visible path (use
+     *   [toWslPath] on the Windows extraction path).
+     * - [nodeExec] defaults to `node` (resolved on the distro's PATH). WSL-specific node
+     *   discovery is a separate concern.
+     *
+     * NOTE: `--cd` requires a reasonably recent wsl.exe (Windows 10 2004+). This builder is
+     * pure/testable; real-world execution is verified separately (issue #57, plan S4b).
+     */
+    fun buildWslNodeCommand(
+        distro: String,
+        linuxCwd: String?,
+        env: Map<String, String>,
+        scriptLinuxPath: String,
+        scriptArgs: List<String> = emptyList(),
+        nodeExec: String = "node",
+    ): List<String> = buildList {
+        add("wsl.exe")
+        add("-d"); add(distro)
+        if (!linuxCwd.isNullOrBlank()) {
+            add("--cd"); add(linuxCwd)
+        }
+        add("--")
+        add("env")
+        env.forEach { (k, v) -> add("$k=$v") }
+        add(nodeExec)
+        add(scriptLinuxPath)
+        addAll(scriptArgs)
+    }
 }

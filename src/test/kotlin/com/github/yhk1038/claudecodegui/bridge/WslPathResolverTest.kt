@@ -121,4 +121,54 @@ class WslPathResolverTest {
             assertEquals("foo/bar", WslPathResolver.toWslPath("foo\\bar"))
         }
     }
+
+    @Nested
+    inner class BuildWslNodeCommand {
+        @Test
+        fun `wraps node invocation with wsl exe, distro, cd and env`() {
+            val cmd = WslPathResolver.buildWslNodeCommand(
+                distro = "Ubuntu",
+                linuxCwd = "/home/u/proj",
+                env = linkedMapOf("PORT" to "0", "JETBRAINS_MODE" to "true"),
+                scriptLinuxPath = "/mnt/c/Temp/backend.mjs",
+            )
+            assertEquals(
+                listOf(
+                    "wsl.exe", "-d", "Ubuntu", "--cd", "/home/u/proj", "--",
+                    "env", "PORT=0", "JETBRAINS_MODE=true",
+                    "node", "/mnt/c/Temp/backend.mjs",
+                ),
+                cmd,
+            )
+        }
+
+        @Test
+        fun `omits --cd when linuxCwd is null or blank`() {
+            val cmd = WslPathResolver.buildWslNodeCommand(
+                distro = "NixOS",
+                linuxCwd = null,
+                env = emptyMap(),
+                scriptLinuxPath = "/mnt/c/b.mjs",
+            )
+            assertEquals(listOf("wsl.exe", "-d", "NixOS", "--", "env", "node", "/mnt/c/b.mjs"), cmd)
+            assertFalse(cmd.contains("--cd"))
+        }
+
+        @Test
+        fun `appends script args and honors custom node exec`() {
+            val cmd = WslPathResolver.buildWslNodeCommand(
+                distro = "Ubuntu",
+                linuxCwd = "/p",
+                env = emptyMap(),
+                scriptLinuxPath = "/s.mjs",
+                scriptArgs = listOf("--flag", "x"),
+                nodeExec = "/home/u/.nvm/node",
+            )
+            assertEquals(
+                listOf("wsl.exe", "-d", "Ubuntu", "--cd", "/p", "--", "env",
+                    "/home/u/.nvm/node", "/s.mjs", "--flag", "x"),
+                cmd,
+            )
+        }
+    }
 }
