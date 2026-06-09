@@ -203,4 +203,10 @@ export class JetBrainsBridge implements Bridge {
     const result = await this.request('REQUIRES_RESTART', {});
     return result['requiresRestart'] === true;
   }
+
+  async getIdeRoot(workingDir?: string): Promise<string | null> {
+    const result = await this.request('GET_IDE_ROOT', workingDir ? { workingDir } : {});
+    const ideRoot = result['ideRoot'];
+    return typeof ideRoot === 'string' && ideRoot.length > 0 ? ideRoot : null;
+  }
 }

@@ -261,6 +261,13 @@ class RpcWebSocketClient(
                 val requires = rpcHandler.requiresRestart()
                 buildJsonObject { put("requiresRestart", requires) }
             }
+            "GET_IDE_ROOT" -> {
+                val workingDir = params["workingDir"]?.jsonPrimitive?.content
+                val ideRoot = rpcHandler.getIdeRoot(workingDir)
+                buildJsonObject {
+                    if (ideRoot != null) put("ideRoot", ideRoot) else put("ideRoot", JsonNull)
+                }
+            }
             else -> {
                 throw IllegalArgumentException("Unknown RPC method: $method")
             }

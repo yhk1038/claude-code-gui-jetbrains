@@ -137,6 +137,16 @@ class NodeBackendService : Disposable {
             return rpcHandlers.values.firstOrNull()?.second?.requiresRestart()
                 ?: run { logger.warn("No active panel handler for requiresRestart"); true }
         }
+
+        override suspend fun getIdeRoot(workingDir: String?): String? {
+            if (workingDir.isNullOrBlank()) {
+                return rpcHandlers.values.firstOrNull()?.first
+            }
+            return rpcHandlers.values
+                .filter { (basePath, _) -> pathMatchesBase(workingDir, basePath) }
+                .maxByOrNull { (basePath, _) -> basePath.length }
+                ?.first
+        }
     }
 
     /**

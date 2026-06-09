@@ -38,6 +38,7 @@ import { getClaudeSettingsHandler } from './getClaudeSettings';
 import { saveClaudeSettingsHandler } from './saveClaudeSettings';
 import { setModelHandler } from './setModel';
 import { getWorkingDirHandler } from './getWorkingDir';
+import { getIdeRootHandler } from './getIdeRoot';
 import { tunnelStartHandler } from './tunnelStart';
 import { tunnelStopHandler } from './tunnelStop';
 import { getTunnelStatusHandler } from './getTunnelStatus';
@@ -169,6 +170,9 @@ export async function handleMessage(
       break;
     case 'GET_WORKING_DIR':
       getWorkingDirHandler(connectionId, message, connections, bridge);
+      break;
+    case 'GET_IDE_ROOT':
+      await getIdeRootHandler(connectionId, message, connections, bridge);
       break;
     case 'TUNNEL_START':
       await tunnelStartHandler(connectionId, message, connections, bridge);

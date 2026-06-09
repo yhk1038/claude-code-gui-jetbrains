@@ -29,4 +29,11 @@ export interface Bridge {
   }): Promise<{ paths: string[] }>;
   updatePlugin(): Promise<void>;
   requiresRestart(): Promise<boolean>;
+  /**
+   * Returns the IDE project root that contains [workingDir], or null when the
+   * host has no IDE context (browser mode). The WebView uses this as the
+   * ancestor cap in the working-directory dropdown so a user cannot navigate
+   * above the IDE project they are inside.
+   */
+  getIdeRoot(workingDir?: string): Promise<string | null>;
 }

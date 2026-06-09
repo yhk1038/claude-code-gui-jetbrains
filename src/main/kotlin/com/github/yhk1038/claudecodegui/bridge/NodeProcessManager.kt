@@ -75,6 +75,12 @@ class NodeProcessManager(
         suspend fun pickFiles(mode: String, multiple: Boolean): List<String>
         suspend fun updatePlugin()
         suspend fun requiresRestart(): Boolean
+        /**
+         * Returns the IDE project root that contains [workingDir], or null when no
+         * matching panel is registered. The WebView uses this to cap ancestor
+         * traversal in the working-directory dropdown.
+         */
+        suspend fun getIdeRoot(workingDir: String?): String?
     }
 
     /**

@@ -33,6 +33,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.ui.jcef.JBCefBrowser
 import com.intellij.ui.jcef.JBCefJSQuery
+import com.intellij.util.ui.UIUtil
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -304,6 +305,12 @@ class ClaudeCodePanel(
                     // SYSTEM mode against the IDE rather than the OS prefers-color-scheme.
                     val ideTheme = if (com.intellij.ui.JBColor.isBright()) "light" else "dark"
                     frame.executeJavaScript("window.__IDE_THEME__ = '$ideTheme';", frame.url, 0)
+                    // Mirror IDE List selection colors as CSS variables so lists and menus
+                    // match the IDE's native selection accent (e.g. Darcula navy blue).
+                    val colorsJs = ideColorsScript()
+                    if (colorsJs.isNotEmpty()) {
+                        frame.executeJavaScript(colorsJs, frame.url, 0)
+                    }
                     injectCursorTracking(frame)
                     injectStreamingStateBridge(frame)
                     installImeWorkaround()
@@ -550,6 +557,25 @@ class ClaudeCodePanel(
     }
 
     /**
+     * Reads the IDE's current List selection colors and returns a JS snippet that
+     * mirrors them as CSS variables on document.documentElement. Returns "" if the
+     * IDE colors cannot be read.
+     */
+    private fun ideColorsScript(): String {
+        return try {
+            val bg = UIUtil.getListSelectionBackground(true)
+            val fg = UIUtil.getListSelectionForeground(true)
+            val bgHex = String.format("#%02x%02x%02x", bg.red, bg.green, bg.blue)
+            val fgHex = String.format("#%02x%02x%02x", fg.red, fg.green, fg.blue)
+            "document.documentElement.style.setProperty('--ide-selection-bg', '$bgHex');" +
+                "document.documentElement.style.setProperty('--ide-selection-fg', '$fgHex');"
+        } catch (e: Exception) {
+            logger.warn("Failed to read IDE selection colors", e)
+            ""
+        }
+    }
+
+    /**
      * Subscribe to IDE Look-and-Feel changes and propagate them to the WebView
      * by updating window.__IDE_THEME__ and dispatching the 'ide-theme-changed'
      * event. Idempotent per browser holder.
@@ -578,6 +604,7 @@ class ClaudeCodePanel(
                     ApplicationManager.getApplication().invokeLater {
                         val newTheme = if (com.intellij.ui.JBColor.isBright()) "light" else "dark"
                         val js = "window.__IDE_THEME__ = '$newTheme'; " +
+                            ideColorsScript() +
                             "window.dispatchEvent(new Event('ide-theme-changed'));"
                         try {
                             val cef = b.cefBrowser
@@ -1023,6 +1050,14 @@ class ClaudeCodePanel(
 
             override suspend fun requiresRestart(): Boolean {
                 return true
+            }
+
+            override suspend fun getIdeRoot(workingDir: String?): String? {
+                // CompositeRpcHandler in NodeBackendService already routes by
+                // longest-prefix workingDir match, so a per-panel handler just
+                // returns its own project root. The composite picks the right
+                // panel before this is ever reached.
+                return project.basePath
             }
         }
     }

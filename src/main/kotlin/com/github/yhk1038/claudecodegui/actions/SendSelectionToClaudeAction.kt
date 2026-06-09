@@ -207,5 +207,6 @@ class SendSelectionToClaudeAction : AnAction() {
         override suspend fun pickFiles(mode: String, multiple: Boolean): List<String> = emptyList()
         override suspend fun updatePlugin() {}
         override suspend fun requiresRestart(): Boolean = false
+        override suspend fun getIdeRoot(workingDir: String?): String? = null
     }
 }

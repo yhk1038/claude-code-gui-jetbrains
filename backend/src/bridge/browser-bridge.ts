@@ -234,6 +234,11 @@ if ($dialog.ShowDialog() -eq 'OK') {
     return true;
   }
 
+  async getIdeRoot(_workingDir?: string): Promise<string | null> {
+    // Browser mode has no IDE host, so ancestor traversal is unbounded.
+    return null;
+  }
+
   async openTerminal(workingDir: string): Promise<void> {
     const settings = await readSettingsFile();
     const terminalApp = settings['terminalApp'] as string | null;
