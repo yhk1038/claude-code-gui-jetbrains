@@ -352,9 +352,15 @@ class ClaudeCodePanel(
                 line: Int
             ): Boolean {
                 val logPrefix = "[WebView]"
+                // WebView console messages reflect WebView runtime state (e.g. not
+                // logged in, claude CLI not found, request timeouts) — these are
+                // recoverable conditions, not plugin defects. Never route them to
+                // logger.error(), which the IDE surfaces as a fatal "Internal Error"
+                // dialog. Cap WebView errors at WARNING so they stay in the log
+                // without alarming the user. See issue #76.
                 when (level) {
                     org.cef.CefSettings.LogSeverity.LOGSEVERITY_ERROR ->
-                        logger.error("$logPrefix $message (source: $source:$line)")
+                        logger.warn("$logPrefix $message (source: $source:$line)")
                     org.cef.CefSettings.LogSeverity.LOGSEVERITY_WARNING ->
                         logger.warn("$logPrefix $message")
                     else ->
