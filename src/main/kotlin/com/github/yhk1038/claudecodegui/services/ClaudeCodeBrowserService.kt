@@ -35,6 +35,24 @@ internal fun indexOfReusableHolder(panelRefCounts: List<Int>): Int? =
     panelRefCounts.indexOfFirst { shouldReleasePooledBrowser(it) }.takeIf { it >= 0 }
 
 /**
+ * Decide whether JCEF is in out-of-process ("remote") mode, given the
+ * authoritative CefApp signal and the legacy system-property fallback.
+ *
+ * [cefRemoteEnabled] is the result of `CefApp.isRemoteEnabled()` (queried via
+ * reflection, exactly as JBCefApp does internally), or null when that method
+ * can't be reached (older JCEF without it). When non-null it is authoritative;
+ * only when null do we fall back to the `jcef.remote.enabled` system property.
+ *
+ * Pure so the decision is unit-testable. Regression guard for issue #79: since
+ * 2025.1 remote mode is the default but is NOT advertised via the system
+ * property, so keying off the property alone mis-detected remote builds as
+ * in-process and forced windowed rendering, which remote mode rejects
+ * (IJPL-184288) → blank panel.
+ */
+internal fun resolveRemoteJcef(cefRemoteEnabled: Boolean?, legacySystemProperty: String?): Boolean =
+    cefRemoteEnabled ?: ("true" == legacySystemProperty)
+
+/**
  * Project-level service that pools JCEF browser instances by tabId.
  *
  * When a tab is moved or split, JetBrains disposes the FileEditor and creates
@@ -165,13 +183,20 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
         // panel has no other Swing widgets that need to overlay the browser, so
         // the z-order trade-off does not apply.
         //
-        // IntelliJ 2026.1+ runs JCEF out-of-process (remote-mode) where windowed
-        // (non-OSR) browsers are unsupported; setOffScreenRendering(false) is
-        // silently ignored and the browser paints as a black rectangle (issue #51,
-        // IJPL-184288). JBCefApp.isRemoteEnabled() is package-private and cannot
-        // be called from a plugin, so detect remote-mode via the JVM system
-        // property that JBCefApp sets at class-load time.
-        val isRemoteJcef = "true" == System.getProperty("jcef.remote.enabled")
+        // IntelliJ runs JCEF out-of-process (remote-mode) by default since 2025.1,
+        // where windowed (non-OSR) browsers are unsupported; setOffScreenRendering(false)
+        // makes remote mode reject the browser and the panel renders blank
+        // (issues #51/#79, IJPL-184288).
+        //
+        // Detect remote-mode the same way JBCefApp does internally — by reflectively
+        // calling CefApp.isRemoteEnabled() — instead of reading the jcef.remote.enabled
+        // system property. That property is NOT set on modern builds (remote is the
+        // silent default), so the old property check mis-detected 2025.1+/2026.1 as
+        // in-process and forced windowed rendering → blank screen (#79).
+        val isRemoteJcef = resolveRemoteJcef(
+            queryCefRemoteEnabled(),
+            System.getProperty("jcef.remote.enabled"),
+        )
         val builder = JBCefBrowser.createBuilder()
         if (!isRemoteJcef) {
             builder.setOffScreenRendering(false)
@@ -180,6 +205,20 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
         val cursorQuery = JBCefJSQuery.create(browser as JBCefBrowserBase)
         val streamingQuery = JBCefJSQuery.create(browser as JBCefBrowserBase)
         return BrowserHolder(browser, cursorQuery, streamingQuery)
+    }
+
+    /**
+     * Query out-of-process JCEF state the way JBCefApp does internally: reflectively
+     * invoke `org.cef.CefApp.isRemoteEnabled()`. Returns the boolean result, or null
+     * when the class/method is unavailable (older JCEF) so the caller can fall back
+     * to the legacy system-property signal. Reflection is required because the method
+     * only exists on recent JCEF builds and isn't exposed by the platform API.
+     */
+    private fun queryCefRemoteEnabled(): Boolean? = try {
+        val method = Class.forName("org.cef.CefApp").getMethod("isRemoteEnabled")
+        method.invoke(null) as? Boolean
+    } catch (_: Throwable) {
+        null
     }
 
     /**
