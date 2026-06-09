@@ -10,6 +10,9 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.putJsonArray
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -169,6 +172,27 @@ class NodeBackendService : Disposable {
             logger.info("Node.js backend process is dead, restarting...")
             restart()
         }
+        // Tell the backend which project roots this IDE now serves so cross-IDE
+        // requests route correctly. No-op until the RPC socket connects, after
+        // which onConnected re-sends the full set.
+        sendProjectRoots()
+    }
+
+    /**
+     * Advertise the distinct project roots this IDE host serves to the backend.
+     *
+     * When several IDEs (separate JVMs — e.g. WebStorm + RubyMine) share the one
+     * app-level Node.js backend, the backend needs to know which RPC client owns
+     * which project to route OPEN_FILE/OPEN_DIFF/etc. to the right IDE. Dropped
+     * silently when the RPC socket isn't connected yet; [RpcWebSocketClient]
+     * re-sends via its onConnected callback once (re)connected.
+     */
+    private fun sendProjectRoots() {
+        val roots = rpcHandlers.values.map { it.first }.distinct()
+        val params = buildJsonObject {
+            putJsonArray("roots") { roots.forEach { add(it) } }
+        }
+        rpcClient?.sendNotification("REGISTER_PROJECT_ROOTS", params)
     }
 
     /**
@@ -205,6 +229,9 @@ class NodeBackendService : Disposable {
         val key = "$projectBasePath::$panelId"
         rpcHandlers.remove(key)
         logger.info("Panel released: $key (remaining handlers: ${rpcHandlers.size})")
+        // Refresh the backend's view of which roots this IDE still serves so a
+        // closed project stops receiving routed requests.
+        sendProjectRoots()
         // Node.js manages its own lifecycle — no shutdown scheduling here
     }
 
@@ -271,10 +298,19 @@ class NodeBackendService : Disposable {
      */
     private fun connectRpcWebSocket(port: Int) {
         rpcClient?.dispose()
-        val client = RpcWebSocketClient(scope, CompositeRpcHandler()) {
-            // Backend seems dead — force restart
-            forceRestart()
-        }
+        val client = RpcWebSocketClient(
+            scope,
+            CompositeRpcHandler(),
+            onPersistentFailure = {
+                // Backend seems dead — force restart
+                forceRestart()
+            },
+            onConnected = {
+                // Register this IDE's project roots once the socket is up so the
+                // backend can route cross-IDE requests to the correct host.
+                sendProjectRoots()
+            },
+        )
         rpcClient = client
         client.connect(port)
         logger.info("RPC WebSocket client connecting to port $port")
