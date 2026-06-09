@@ -21,7 +21,8 @@ import java.util.concurrent.CompletableFuture
 class RpcWebSocketClient(
     private val scope: CoroutineScope,
     private val rpcHandler: NodeProcessManager.RpcHandler,
-    private val onPersistentFailure: (() -> Unit)? = null
+    private val onPersistentFailure: (() -> Unit)? = null,
+    private val onConnected: (() -> Unit)? = null
 ) : Disposable {
 
     private val logger = Logger.getInstance(RpcWebSocketClient::class.java)
@@ -79,6 +80,14 @@ class RpcWebSocketClient(
                 webSocket = ws
                 consecutiveFailures = 0
                 logger.info("RPC WebSocket connected to port $port")
+                // Re-advertise project roots on every (re)connection so the backend
+                // can route cross-IDE requests to this host. Safe to call after the
+                // socket is assigned; reconnects re-register automatically.
+                try {
+                    onConnected?.invoke()
+                } catch (e: Exception) {
+                    logger.warn("onConnected callback failed", e)
+                }
             }
             .exceptionally { e ->
                 logger.warn("RPC WebSocket connection failed: ${e.message}")

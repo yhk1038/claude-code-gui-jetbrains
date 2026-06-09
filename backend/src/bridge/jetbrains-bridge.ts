@@ -1,5 +1,12 @@
 import type { Bridge } from './bridge-interface';
 import type { WebSocket } from 'ws';
+import { extractRoutingPath, selectRpcClientIndex } from './rpc-routing';
+
+/**
+ * Notification (IDE → backend) by which each IDE host advertises the project
+ * roots it serves, so cross-IDE requests can be routed to the right client.
+ */
+const REGISTER_PROJECT_ROOTS = 'REGISTER_PROJECT_ROOTS';
 
 interface JsonRpcRequest {
   jsonrpc: '2.0';
@@ -44,6 +51,9 @@ export class JetBrainsBridge implements Bridge {
   private idCounter = 0;
   private pendingRequests = new Map<string, PendingRequest>();
   private rpcClients = new Set<WebSocket>();
+  // Project roots each IDE client serves, used to route cross-IDE requests.
+  // An entry is added on REGISTER_PROJECT_ROOTS and removed when the socket closes.
+  private clientRoots = new Map<WebSocket, string[]>();
   private notificationHandlers = new Map<string, NotificationHandler>();
 
   onNotification(method: string, handler: NotificationHandler): void {
@@ -69,6 +79,12 @@ export class JetBrainsBridge implements Bridge {
       // Notification (Kotlin → Node, no id): dispatch to registered handler.
       if (!('id' in parsed) || !parsed.id) {
         const notification = parsed as JsonRpcNotification;
+        // Built-in: an IDE advertising the project roots it serves. Handled here
+        // (not via notificationHandlers) because it is bound to *this* socket.
+        if (notification.method === REGISTER_PROJECT_ROOTS) {
+          this.clientRoots.set(ws, parseProjectRoots(notification.params));
+          return;
+        }
         const handler = this.notificationHandlers.get(notification.method);
         if (handler) {
           handler(notification.method, notification.params ?? {});
@@ -95,20 +111,29 @@ export class JetBrainsBridge implements Bridge {
 
     ws.on('close', () => {
       this.rpcClients.delete(ws);
+      this.clientRoots.delete(ws);
       console.error('[node-backend]', 'RPC client disconnected');
     });
   }
 
-  private getRpcClient(): WebSocket | null {
-    for (const client of this.rpcClients) {
-      if (client.readyState === 1) return client;
-    }
-    return null;
+  /**
+   * Pick the RPC client for an outgoing request. When several IDE hosts share
+   * this backend, [routingPath] (a file path or workingDir) selects the client
+   * whose registered project root best matches. Falls back to the first open
+   * client when there is no path or no match — preserving single-IDE behaviour.
+   */
+  private getRpcClient(routingPath?: string): WebSocket | null {
+    const clients = [...this.rpcClients];
+    const idx = selectRpcClientIndex(
+      clients.map((ws) => ({ roots: this.clientRoots.get(ws) ?? [], isOpen: ws.readyState === 1 })),
+      routingPath,
+    );
+    return idx >= 0 ? clients[idx] : null;
   }
 
   private request(method: string, params: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
     return new Promise<Record<string, unknown>>((resolve, reject) => {
-      const client = this.getRpcClient();
+      const client = this.getRpcClient(extractRoutingPath(params));
       console.error('[node-backend]', `[DEBUG:bridge.request] method=${method}, rpcClients.size=${this.rpcClients.size}, client=${client ? `readyState=${client.readyState}` : 'null'}`);
       if (!client) {
         reject(new Error(`No RPC client connected — cannot send JSON-RPC request "${method}"`));
@@ -209,4 +234,14 @@ export class JetBrainsBridge implements Bridge {
     const ideRoot = result['ideRoot'];
     return typeof ideRoot === 'string' && ideRoot.length > 0 ? ideRoot : null;
   }
+}
+
+/**
+ * Extract the `roots` string array from a REGISTER_PROJECT_ROOTS notification's
+ * params, dropping any non-string entries. Returns [] when absent or malformed.
+ */
+export function parseProjectRoots(params: Record<string, unknown> | undefined): string[] {
+  const roots = params?.['roots'];
+  if (!Array.isArray(roots)) return [];
+  return roots.filter((r): r is string => typeof r === 'string' && r.length > 0);
 }
