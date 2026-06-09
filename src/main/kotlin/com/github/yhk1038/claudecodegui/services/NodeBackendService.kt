@@ -2,6 +2,7 @@ package com.github.yhk1038.claudecodegui.services
 
 import com.github.yhk1038.claudecodegui.bridge.NodeProcessManager
 import com.github.yhk1038.claudecodegui.bridge.RpcWebSocketClient
+import com.github.yhk1038.claudecodegui.bridge.WslPathResolver
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
@@ -130,7 +131,16 @@ class NodeBackendService : Disposable {
         fun start() {
             if (nodeProcessManager != null || rpcClient != null) return
             portDeferred = CompletableDeferred()
-            val manager = NodeProcessManager(scope, requestedPort = 0, instanceTag = instanceTag) // OS-assigned free port
+            // A WSL project root (UNC basePath) runs its backend inside the distro so
+            // node/claude execute as Linux natives (issue #57); a native root runs locally.
+            val wsl = WslPathResolver.parseUncPath(basePath)
+            val manager = NodeProcessManager(
+                scope,
+                requestedPort = 0, // OS-assigned free port
+                instanceTag = instanceTag,
+                wslDistro = wsl?.distro,
+                wslCwd = wsl?.linuxPath,
+            )
             nodeProcessManager = manager
             manager.start()
             scope.launch {
