@@ -99,21 +99,27 @@ object WslPathResolver {
     }
 
     /**
-     * Build the command to run `node <script>` inside a WSL distro from the Windows host.
+     * Build the command to run `node <script>` inside a WSL distro from the Windows host,
+     * via a **login shell** so the user's PATH (`~/.profile`, `~/.bash_profile`, `/etc/profile`)
+     * is sourced — required for distros like NixOS where `node` is on the nix profile PATH
+     * and not visible to a non-login shell. Issue #57: see the maicol07 reproducer (NixOS).
      *
      * Produces, e.g.:
-     * `wsl.exe -d Ubuntu --cd /home/u/proj -- env PORT=0 JETBRAINS_MODE=true node /mnt/c/.../backend.mjs`
+     * `wsl.exe -d NixOS --cd /home/u/proj -- bash -lc "export PORT='0'; export … ; exec 'node' '/mnt/c/.../backend.mjs'"`
      *
      * - The leading `wsl.exe` is resolved on the Windows PATH (System32).
-     * - Everything after `--` runs inside the distro, so `env`/`node` are the distro's.
-     * - [env] entries are passed via `env K=V` so they reach the WSL process regardless of
-     *   WSLENV configuration. [scriptLinuxPath] must already be a WSL-visible path (use
-     *   [toWslPath] on the Windows extraction path).
-     * - [nodeExec] defaults to `node` (resolved on the distro's PATH). WSL-specific node
-     *   discovery is a separate concern.
+     * - Everything after `--` runs inside the distro, so `bash`/`node` are the distro's.
+     * - [env] entries become `export K=V` inside the login shell, so they reach `node` as
+     *   process env vars (no WSLENV needed). `exec` replaces the bash process so signals
+     *   from the IDE reach `node` directly.
+     * - [scriptLinuxPath] must already be a WSL-visible path (use [toWslPath] on the
+     *   Windows extraction path). [nodeExec] defaults to `node` (resolved on the distro's
+     *   login-shell PATH).
+     * - All values are single-quoted with `'` → `'\''` escaping so spaces or quotes in
+     *   paths/env values can't break out of the snippet.
      *
      * NOTE: `--cd` requires a reasonably recent wsl.exe (Windows 10 2004+). This builder is
-     * pure/testable; real-world execution is verified separately (issue #57, plan S4b).
+     * pure/testable; real-world execution is verified separately.
      */
     fun buildWslNodeCommand(
         distro: String,
@@ -122,17 +128,23 @@ object WslPathResolver {
         scriptLinuxPath: String,
         scriptArgs: List<String> = emptyList(),
         nodeExec: String = "node",
-    ): List<String> = buildList {
-        add("wsl.exe")
-        add("-d"); add(distro)
-        if (!linuxCwd.isNullOrBlank()) {
-            add("--cd"); add(linuxCwd)
+    ): List<String> {
+        val parts = mutableListOf<String>()
+        env.forEach { (k, v) -> parts.add("export $k=${shellQuote(v)}") }
+        val argsPart = scriptArgs.joinToString("") { " ${shellQuote(it)}" }
+        parts.add("exec ${shellQuote(nodeExec)} ${shellQuote(scriptLinuxPath)}$argsPart")
+        val snippet = parts.joinToString("; ")
+        return buildList {
+            add("wsl.exe")
+            add("-d"); add(distro)
+            if (!linuxCwd.isNullOrBlank()) {
+                add("--cd"); add(linuxCwd)
+            }
+            add("--")
+            add("bash"); add("-lc"); add(snippet)
         }
-        add("--")
-        add("env")
-        env.forEach { (k, v) -> add("$k=$v") }
-        add(nodeExec)
-        add(scriptLinuxPath)
-        addAll(scriptArgs)
     }
+
+    /** POSIX-safe single-quote: wrap in `'…'`, replace each `'` inside with `'\''`. */
+    private fun shellQuote(s: String): String = "'" + s.replace("'", "'\\''") + "'"
 }

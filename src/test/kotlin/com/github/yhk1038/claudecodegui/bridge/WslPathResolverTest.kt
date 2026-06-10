@@ -125,7 +125,7 @@ class WslPathResolverTest {
     @Nested
     inner class BuildWslNodeCommand {
         @Test
-        fun `wraps node invocation with wsl exe, distro, cd and env`() {
+        fun `wraps node invocation in a wsl login shell with env exports`() {
             val cmd = WslPathResolver.buildWslNodeCommand(
                 distro = "Ubuntu",
                 linuxCwd = "/home/u/proj",
@@ -135,8 +135,8 @@ class WslPathResolverTest {
             assertEquals(
                 listOf(
                     "wsl.exe", "-d", "Ubuntu", "--cd", "/home/u/proj", "--",
-                    "env", "PORT=0", "JETBRAINS_MODE=true",
-                    "node", "/mnt/c/Temp/backend.mjs",
+                    "bash", "-lc",
+                    "export PORT='0'; export JETBRAINS_MODE='true'; exec 'node' '/mnt/c/Temp/backend.mjs'",
                 ),
                 cmd,
             )
@@ -150,7 +150,13 @@ class WslPathResolverTest {
                 env = emptyMap(),
                 scriptLinuxPath = "/mnt/c/b.mjs",
             )
-            assertEquals(listOf("wsl.exe", "-d", "NixOS", "--", "env", "node", "/mnt/c/b.mjs"), cmd)
+            assertEquals(
+                listOf(
+                    "wsl.exe", "-d", "NixOS", "--",
+                    "bash", "-lc", "exec 'node' '/mnt/c/b.mjs'",
+                ),
+                cmd,
+            )
             assertFalse(cmd.contains("--cd"))
         }
 
@@ -165,8 +171,30 @@ class WslPathResolverTest {
                 nodeExec = "/home/u/.nvm/node",
             )
             assertEquals(
-                listOf("wsl.exe", "-d", "Ubuntu", "--cd", "/p", "--", "env",
-                    "/home/u/.nvm/node", "/s.mjs", "--flag", "x"),
+                listOf(
+                    "wsl.exe", "-d", "Ubuntu", "--cd", "/p", "--",
+                    "bash", "-lc",
+                    "exec '/home/u/.nvm/node' '/s.mjs' '--flag' 'x'",
+                ),
+                cmd,
+            )
+        }
+
+        @Test
+        fun `single-quotes env values and paths to survive spaces and quotes`() {
+            val cmd = WslPathResolver.buildWslNodeCommand(
+                distro = "Ubuntu",
+                linuxCwd = "/p",
+                env = linkedMapOf("MSG" to "it's"),
+                scriptLinuxPath = "/path with spaces/it's.mjs",
+            )
+            // POSIX single-quote escape: ' inside '...' becomes '\''
+            assertEquals(
+                listOf(
+                    "wsl.exe", "-d", "Ubuntu", "--cd", "/p", "--",
+                    "bash", "-lc",
+                    "export MSG='it'\\''s'; exec 'node' '/path with spaces/it'\\''s.mjs'",
+                ),
                 cmd,
             )
         }
