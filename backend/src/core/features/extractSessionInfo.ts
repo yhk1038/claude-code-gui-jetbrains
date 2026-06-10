@@ -39,6 +39,24 @@ function removeSystemTags(text: string): string {
   return cleaned;
 }
 
+/**
+ * Derive a title from a user message's text. A slash command is recorded as
+ * "<command-name>/init</command-name>", so we surface "/init" — mirroring the
+ * command chip the chat renders (see the webview's parseUserContent) rather than
+ * leaking raw tags or the expanded command prompt. Otherwise the text is returned
+ * with system tags stripped, or null when nothing meaningful remains so the caller
+ * can fall through to the next candidate.
+ */
+function deriveTitleFromUserText(text: string): string | null {
+  const commandMatch = /<command-name>([\s\S]*?)<\/command-name>/.exec(text);
+  if (commandMatch) {
+    const name = commandMatch[1].trim().replace(/^\/+/, '');
+    if (name) return `/${name}`;
+  }
+  const cleaned = removeSystemTags(text.replace(/\n/g, ' ').trim());
+  return cleaned.length > 0 ? cleaned : null;
+}
+
 function extractTextFromContent(content: MessageContent): string | null {
   if (Array.isArray(content)) {
     const lastTextBlock = content.filter((block) => block.type === 'text').pop();
@@ -61,7 +79,6 @@ export async function extractSessionInfo(file: string): Promise<SessionInfo> {
   let firstTimestamp: string | null = null;
   let lastTimestamp: string | null = null;
   let firstUserPrompt: string | null = null;
-  let firstMetaUserPrompt: string | null = null;
   let firstSummary: string | null = null;
   let hasUserOrAssistant = false;
   let sidechainGateSeen = false;
@@ -132,24 +149,19 @@ export async function extractSessionInfo(file: string): Promise<SessionInfo> {
         hasUserOrAssistant = true;
       }
 
-      // Capture the first meaningful user text. A user entry whose text is only
-      // system tags (e.g. the "<command-name>/init</command-name>" line of a
-      // slash command) yields an empty string after cleaning and is skipped, so
-      // we keep scanning for the next real prompt. Non-meta prompts win over meta
-      // ones (the expanded command prompt is recorded as isMeta), and either beats
-      // the "No title" fallback.
-      if (type === 'user' && (firstUserPrompt === null || firstMetaUserPrompt === null)) {
+      // Capture the first meaningful prompt from a real (non-meta) user message.
+      // A slash command surfaces as its name ("/init"); a normal message uses its
+      // text with system tags stripped. Entries that reduce to nothing (a bare
+      // system tag, an empty tool_result) are skipped so the scan continues to the
+      // next real prompt.
+      if (type === 'user' && !isMeta && firstUserPrompt === null) {
         const messageObj = entry.message as Record<string, unknown> | undefined;
         const content = (messageObj?.content ?? null) as MessageContent;
         const text = extractTextFromContent(content);
         if (text) {
-          const cleaned = removeSystemTags(text.replace(/\n/g, ' ').trim());
-          if (cleaned) {
-            if (!isMeta && firstUserPrompt === null) {
-              firstUserPrompt = cleaned;
-            } else if (isMeta && firstMetaUserPrompt === null) {
-              firstMetaUserPrompt = cleaned;
-            }
+          const candidate = deriveTitleFromUserText(text);
+          if (candidate) {
+            firstUserPrompt = candidate;
           }
         }
       }
@@ -178,7 +190,7 @@ export async function extractSessionInfo(file: string): Promise<SessionInfo> {
     };
   }
 
-  const title = firstSummary ?? firstUserPrompt ?? firstMetaUserPrompt ?? 'No title';
+  const title = firstSummary ?? firstUserPrompt ?? 'No title';
 
   return {
     title,
