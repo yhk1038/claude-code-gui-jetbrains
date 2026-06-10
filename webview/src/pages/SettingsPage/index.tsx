@@ -1,4 +1,6 @@
 import { useRouter, Route } from '@/router';
+import { ROUTE_META } from '@/router/routes';
+import { useStaticDocumentTitle } from '@/hooks';
 import { SettingsLayout } from './SettingsLayout';
 import { GeneralSettings } from './General';
 import { AppearanceSettings } from './Appearance';
@@ -17,6 +19,11 @@ import { BrowserSettings } from './Browser';
  */
 export function SettingsPage() {
   const { route } = useRouter();
+
+  // Report a stable tab label to the IDE. Without this the JetBrains editor tab
+  // falls back to the raw URL (e.g. "localhost:PORT/settings...") because the
+  // settings screen never sets document.title.
+  useStaticDocumentTitle(ROUTE_META[Route.SETTINGS].label);
 
   const renderContent = () => {
     switch (route) {
