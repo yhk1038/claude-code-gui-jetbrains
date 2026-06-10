@@ -1,3 +1,5 @@
+import { AUTO_SCROLL_THRESHOLD_DEFAULT } from '@/utils/autoScroll';
+
 /**
  * 설정 키 정의 - Kotlin SettingsManager와 동기화 (settings.js 파일 기반)
  */
@@ -60,7 +62,7 @@ export const DEFAULT_SETTINGS: SettingsState = {
   [SettingKey.NODE_PATH]: null,
   [SettingKey.THEME]: ThemeMode.SYSTEM,
   [SettingKey.FONT_SIZE]: 13,
-  [SettingKey.AUTO_SCROLL_THRESHOLD]: 80,
+  [SettingKey.AUTO_SCROLL_THRESHOLD]: AUTO_SCROLL_THRESHOLD_DEFAULT,
   [SettingKey.DEBUG_MODE]: false,
   [SettingKey.LOG_LEVEL]: LogLevel.INFO,
   [SettingKey.TERMINAL_APP]: null,

@@ -21,6 +21,7 @@ import { useNotificationSound } from '@/notifications';
 import {isMobile} from "@/config/environment.ts";
 import { useSettings } from '@/contexts/SettingsContext';
 import { SettingKey } from '@/types/settings';
+import { clampAutoScrollThreshold, isNearBottom, AUTO_SCROLL_THRESHOLD_DEFAULT } from '@/utils/autoScroll';
 
 export function ChatPage() {
   const { textareaRef, focus: focusInput } = useChatInputFocus();
@@ -31,7 +32,9 @@ export function ChatPage() {
   const { pending: pendingPlan, approve: approvePlan, deny: denyPlan } = usePendingPlanApproval();
   const { selection: soundSelection } = useNotificationSound();
   const { settings } = useSettings();
-  const autoScrollThreshold = settings[SettingKey.AUTO_SCROLL_THRESHOLD] ?? 80;
+  const autoScrollThreshold = clampAutoScrollThreshold(
+    settings[SettingKey.AUTO_SCROLL_THRESHOLD] ?? AUTO_SCROLL_THRESHOLD_DEFAULT,
+  );
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const bottomPanelRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -44,8 +47,21 @@ export function ChatPage() {
     const measure = () => {
       const s = sentinelRef.current;
       if (!s) return;
-      const rect = s.getBoundingClientRect();
-      const isNear = rect.top <= window.innerHeight + autoScrollThreshold;
+      // Anchor the near-bottom test to the top of the sticky input panel, not
+      // window.innerHeight. The sentinel sits just above the input panel, so
+      // using innerHeight adds the panel height as a hidden offset and forces
+      // the user to scroll up panelHeight + threshold before auto-follow
+      // releases (issue #87). Falling back to innerHeight only if the panel
+      // ref is not mounted yet.
+      const panel = bottomPanelRef.current;
+      const referenceBottom = panel
+        ? panel.getBoundingClientRect().top
+        : window.innerHeight;
+      const isNear = isNearBottom(
+        s.getBoundingClientRect().top,
+        referenceBottom,
+        autoScrollThreshold,
+      );
       setIsUserNearBottom(prev => (prev === isNear ? prev : isNear));
     };
     measure();

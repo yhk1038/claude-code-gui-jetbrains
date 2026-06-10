@@ -3,6 +3,12 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { SettingKey, ThemeMode } from '@/types/settings';
 import { ROUTE_META, Route } from '@/router/routes';
 import { isJetBrains } from '@/config/environment';
+import {
+  AUTO_SCROLL_THRESHOLD_DEFAULT,
+  AUTO_SCROLL_THRESHOLD_MIN,
+  AUTO_SCROLL_THRESHOLD_MAX,
+  clampAutoScrollThreshold,
+} from '@/utils/autoScroll';
 
 const NOT_SET_VALUE = '__NOT_SET__';
 
@@ -86,13 +92,14 @@ export function AppearanceSettings() {
       <SettingSection title="Scrolling">
         <SettingRow
           label="Auto-scroll threshold"
-          description="Pixel distance from the bottom within which the chat keeps following the stream. Increase to make following more forgiving when you scroll up slightly."
+          description={`Pixel distance from the bottom within which the chat keeps auto-scrolling. Scroll up past it to read freely; smaller releases sooner. Default ${AUTO_SCROLL_THRESHOLD_DEFAULT}.`}
         >
           <input
             type="number"
-            min="1"
+            min={AUTO_SCROLL_THRESHOLD_MIN}
+            max={AUTO_SCROLL_THRESHOLD_MAX}
             step="1"
-            value={isAutoScrollThresholdNotSet ? '' : (rawAutoScrollThreshold ?? 80)}
+            value={isAutoScrollThresholdNotSet ? '' : (rawAutoScrollThreshold ?? AUTO_SCROLL_THRESHOLD_DEFAULT)}
             placeholder={isAutoScrollThresholdNotSet ? 'Not set' : undefined}
             onChange={(e) => {
               const value = e.target.value;
@@ -103,8 +110,8 @@ export function AppearanceSettings() {
                 return;
               }
               const parsed = parseInt(value, 10);
-              if (!Number.isInteger(parsed) || parsed < 1) return;
-              updateSetting(SettingKey.AUTO_SCROLL_THRESHOLD, parsed);
+              if (!Number.isInteger(parsed)) return;
+              updateSetting(SettingKey.AUTO_SCROLL_THRESHOLD, clampAutoScrollThreshold(parsed));
             }}
             className={`w-24 bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm ${
               isAutoScrollThresholdNotSet ? 'text-text-tertiary italic' : 'text-text-primary'
