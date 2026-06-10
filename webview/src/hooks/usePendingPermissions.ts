@@ -16,7 +16,7 @@ export interface PendingPermission {
 }
 
 function assessRiskLevel(toolName: string, input: Record<string, unknown>): PermissionRiskLevel {
-  if (toolName === 'Bash') return 'high';
+  if (toolName === 'Bash' || toolName === 'PowerShell') return 'high';
   if (toolName === 'Write' || toolName === 'Edit') {
     const path = (input.file_path as string) || (input.path as string) || '';
     if (path.includes('/etc/') || path.includes('/System/') || path.includes('C:\\Windows\\')) {
@@ -31,6 +31,7 @@ function assessRiskLevel(toolName: string, input: Record<string, unknown>): Perm
 function generateDescription(toolName: string, input: Record<string, unknown>): string {
   switch (toolName) {
     case 'Bash':
+    case 'PowerShell':
       return `Execute: ${(input.command as string) || 'Unknown command'}`;
     case 'Write':
       return `Write file: ${(input.file_path as string) || 'Unknown'}`;

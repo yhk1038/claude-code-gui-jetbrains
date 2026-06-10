@@ -33,6 +33,7 @@ interface ToolRendererProps {
 
 export const ToolRendererMap = new Map<string, FC<ToolRendererProps>>([
     ['Bash', BashRenderer],
+    ['PowerShell', BashRenderer],
     ['TodoWrite', TodoWriteRenderer],
     ['Task', TaskRenderer],
     ['Agent', TaskRenderer],
