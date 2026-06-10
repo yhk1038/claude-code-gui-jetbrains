@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="google" content="notranslate" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>Claude Code</title>
+    <!-- Boot title is intentionally blank: JCEF onTitleChange fires with this value
+         before React mounts, and Kotlin's isNotBlank guard will skip it automatically.
+         This removes the dual-meaning of "Claude Code" (boot placeholder vs. legitimate
+         reset-session title) so the real APP_NAME can be set explicitly by useDocumentTitle. -->
+    <title></title>
     <!--
       FOUC guard: runs before the CSS bundle and React mount so a new JCEF tab
       paints the correct surface color immediately instead of flashing white.

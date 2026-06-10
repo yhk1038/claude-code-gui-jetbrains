@@ -26,10 +26,11 @@ class ClaudeCodeVirtualFile(
 ) : LightVirtualFile("Claude Code", ClaudeCodeFileType, "") {
 
     // 동적으로 변경 가능한 표시 이름. 재시작 직후에는 백엔드 통신 전이라
-    // 저장된 마지막 제목(initialTitle)을 우선 보여 주고, 없을 때만 hash로 폴백.
+    // 저장된 마지막 제목(initialTitle)을 우선 보여 주고, 없을 때는 "Claude Code"로 폴백.
+    // (새 탭이 첫 페인트부터 hash 대신 앱 이름을 표시)
     @Volatile
     private var displayName: String = initialTitle?.let { truncateName(it) }
-        ?: "Claude: ${tabId.take(8)}"
+        ?: "Claude Code"
 
     // WebView가 현재 표시 중인 경로 (탭 이동 시 복원용)
     @Volatile

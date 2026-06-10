@@ -4,6 +4,7 @@ import {
   notify,
   type SoundSelection,
 } from '@/notifications';
+import { APP_NAME } from '@/config/app';
 import {
   hasUnreadFavicon,
   restoreDefaultFavicon,
@@ -24,13 +25,19 @@ import {
  * fires STREAM_ERROR instead of SESSION_COMPLETE so the user can tell at a
  * glance whether the response succeeded.
  *
- * The third argument is the user's notification-sound preference (see
- * `useNotificationSound`); the caller passes it down so this hook stays
- * decoupled from settings storage. The fourth argument is the current stream
- * error (or null) from `useChatStreamContext`.
+ * @param title - The current session title, or null while loading / on reset session.
+ * @param isResetSession - True when the current URL is /sessions/new (currentSessionId === null),
+ *   meaning this is a confirmed reset session with no active conversation. In this case, even
+ *   when title is null, document.title is explicitly set to APP_NAME. When false and title is
+ *   null, the cached tab title is preserved (mid-load protection: avoids flashing "Claude Code"
+ *   while EditorTabStateService restores the real title).
+ * @param isStreaming - Whether a Claude response is currently streaming.
+ * @param soundSelection - The user's notification-sound preference (see `useNotificationSound`).
+ * @param error - The current stream error (or null) from `useChatStreamContext`.
  */
 export function useDocumentTitle(
   title: string | null,
+  isResetSession: boolean,
   isStreaming: boolean,
   soundSelection: SoundSelection,
   error: Error | null,
@@ -53,12 +60,19 @@ export function useDocumentTitle(
   }, [error]);
 
   useEffect(() => {
-    // Only push a real session title up to the IDE tab. Setting APP_NAME as a
-    // fallback while the session is still loading would clobber the cached
-    // tab title that the JetBrains side restores from EditorTabStateService
-    // (the user would see the real title flash to "Claude Code" mid-load).
-    if (title) document.title = title;
-  }, [title]);
+    // Push the session title to the IDE tab.
+    // - title present: always reflect it.
+    // - title null + isResetSession=true (/sessions/new): confirmed reset session,
+    //   explicitly set APP_NAME (fixes "/clear" leaving stale title — bug 2).
+    // - title null + isResetSession=false: session is still loading mid-navigation;
+    //   do NOT touch document.title to preserve the cached tab title that
+    //   EditorTabStateService restored (avoids "Claude Code" flash mid-load).
+    if (title) {
+      document.title = title;
+    } else if (isResetSession) {
+      document.title = APP_NAME;
+    }
+  }, [title, isResetSession]);
 
   // Notify JCEF of streaming state changes
   useEffect(() => {

@@ -10,10 +10,10 @@ import { useChatStreamContext } from '@/contexts/ChatStreamContext';
 import { useNotificationSound } from '@/notifications';
 
 export function SessionHeader() {
-  const { currentSession } = useSessionContext();
+  const { currentSession, currentSessionId } = useSessionContext();
   const { isStreaming, error } = useChatStreamContext();
   const { selection } = useNotificationSound();
-  useDocumentTitle(currentSession?.title || null, isStreaming, selection, error);
+  useDocumentTitle(currentSession?.title || null, currentSessionId === null, isStreaming, selection, error);
 
   return (
     <div className="flex justify-between items-center px-2 py-1">
