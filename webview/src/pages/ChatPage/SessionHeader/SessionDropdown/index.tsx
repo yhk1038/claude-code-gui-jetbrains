@@ -6,7 +6,7 @@ import { useSessionContext } from '@/contexts/SessionContext';
 import { useConfirmDialog } from '@/components/ConfirmDialog/useConfirmDialog';
 
 export function SessionDropdown() {
-  const { sessions, currentSessionId, currentSession, switchSession, deleteSession } = useSessionContext();
+  const { sessions, currentSessionId, currentSession, switchSession, deleteSession, renameSession } = useSessionContext();
   const { confirmDialog, confirm } = useConfirmDialog();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -83,6 +83,7 @@ export function SessionDropdown() {
           currentSessionId={currentSessionId}
           onSelectSession={handleSelectSession}
           onDeleteSession={handleDeleteSession}
+          onRenameSession={renameSession}
         />
       )}
 

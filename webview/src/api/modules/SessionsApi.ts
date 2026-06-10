@@ -75,6 +75,15 @@ export class SessionsApi {
   }
 
   /**
+   * Rename a session (persists a user-specified title override)
+   * PATCH /sessions/:id
+   */
+  async rename(sessionId: string, title: string, workingDir?: string): Promise<void> {
+    const dir = workingDir ?? this.getConfig().workingDir;
+    await this.bridge.request('RENAME_SESSION', { sessionId, title, workingDir: dir });
+  }
+
+  /**
    * Activate (switch to) a session
    * POST /sessions/:id/activate
    */

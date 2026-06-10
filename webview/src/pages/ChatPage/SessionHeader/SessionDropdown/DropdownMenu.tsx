@@ -10,6 +10,7 @@ interface Props {
   currentSessionId: string | null;
   onSelectSession: (sessionId: string) => void;
   onDeleteSession: (sessionId: string) => void;
+  onRenameSession: (sessionId: string, title: string) => void;
 }
 
 export function DropdownMenu(props: Props) {
@@ -21,6 +22,7 @@ export function DropdownMenu(props: Props) {
     currentSessionId,
     onSelectSession,
     onDeleteSession,
+    onRenameSession,
   } = props;
 
   return (
@@ -33,6 +35,7 @@ export function DropdownMenu(props: Props) {
           currentSessionId={currentSessionId}
           onSelectSession={onSelectSession}
           onDeleteSession={onDeleteSession}
+          onRenameSession={onRenameSession}
         />
       ) : (
         <div className="px-2.5 py-3 text-xs text-text-tertiary text-center">
