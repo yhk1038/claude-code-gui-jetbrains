@@ -147,41 +147,11 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
-            <h3>0.17.4 - Cross-platform stability fixes</h3>
+            <h3>0.18.0 - Rename sessions and clearer titles</h3>
             <ul>
-                <li><b>WSL projects work on Windows</b>: Opening a project from inside WSL on a Windows IDE now starts Claude inside the distro instead of failing. (#57)</li>
-                <li><b>PowerShell commands now render on Windows</b>: When Claude runs PowerShell, the actual command shows in the permission prompt and the tool card instead of "unknown". (#84)</li>
-                <li><b>Chat panel reliability</b>: The panel renders correctly on IntelliJ 2025.1+ / 2026.1 instead of coming up blank, and opening a second IDE window no longer surfaces "Internal Error" popups — chats route to the IDE you clicked from. (#76, #79)</li>
-                <li><b>Nested working-directory navigation</b>: A new dropdown at the top-left folder icon lists sibling and descendant working directories around the IDE root, so sessions started inside a sub-folder are one click away. (#43)</li>
-            </ul>
-            <h3>0.17.3 - Editor stability fixes</h3>
-            <ul>
-                <li><b>No more typing lag in long conversations</b>: Even as the context grows, the chat input stays responsive while you type. (#31)</li>
-                <li><b>Large session files no longer freeze the chat</b>: Projects with sizable session files now open without stalling. (#19)</li>
-                <li><b>Edits show up in the editor immediately</b>: Files modified by Claude refresh in open IDE tabs without a manual reload. (#72)</li>
-                <li><b>Tab titles restore correctly on IDE restart</b>: Reopening the IDE no longer shows a placeholder name for Claude Code tabs. (#73)</li>
-            </ul>
-            <h3>0.17.2 - Steadier editor controls in the IDE</h3>
-            <ul>
-                <li><b>Drag tabs across splits without losing the chat</b>: Moving a Claude Code tab between split panes — or out into a floating window — now keeps the conversation alive instead of resetting it. (#29)</li>
-                <li><b>Conversations stay alive in split tabs</b>: Splitting the editor no longer empties or resets the Claude Code panel on either side. (#48)</li>
-                <li><b>Sidebar icon opens a new tab correctly</b>: Clicking the Claude Code icon in the tool window stripe now opens a fresh chat tab every time, as expected. (#47)</li>
-                <li><b>Other backend stability fixes</b> (#67, #55).</li>
-            </ul>
-            <h3>0.17.1 - Reliable Node.js detection, with a manual override</h3>
-            <ul>
-                <li><b>Automatic Node.js detection</b>: The plugin now reads your shell's real PATH, so Node.js installed via nvm, fnm, volta, or similar version managers is found even when the IDE is launched from the Dock or an app launcher — fixing the "Node.js not found" error on startup.</li>
-                <li><b>Manual Node path</b>: You can now set the Node.js executable path explicitly in Settings, just like the Claude CLI path. Handy if you manage multiple Node versions (for example with <code>n</code>) and want to pin the exact one the backend runs on.</li>
-            </ul>
-            <h3>0.17.0 - Attach files faster, work with paths as chips</h3>
-            <ul>
-                <li><b>@-mention chips</b>: Typing @ in the composer turns a file path into an inline chip. Chips are preserved in sent messages — click one to open that file in the editor.</li>
-                <li><b>Alt+K shortcut</b>: Attach the path of the file you are currently editing straight into the chat input with a single shortcut. Whether the input regains focus afterward is configurable in Settings.</li>
-                <li><b>Native drag &amp; drop</b>: Drag files from the IDE onto the chat to attach them instantly.</li>
-                <li><b>File picker attachments</b>: Choose files to attach through a native file picker.</li>
-                <li><b>New rich composer</b>: The chat input was rebuilt on a contenteditable composer for natural chip rendering, IME input, and caret alignment.</li>
-                <li><b>Smarter tab handling</b>: If a Claude Code tab is already open, it is focused instead of opening a new one.</li>
-                <li><b>Cross-platform reliability</b>: Improved file attachment stability on Windows and in the browser (Standalone) environment.</li>
+                <li><b>Rename your conversations</b>: Hover a session in the dropdown and click the pencil to rename it inline. Your custom title is saved and survives restarts. (#14)</li>
+                <li><b>Meaningful titles for command sessions</b>: A conversation started with a slash command (like /init) now shows the command as its title instead of "No title". (#14)</li>
+                <li><b>Steadier scrolling while reading</b>: The chat no longer yanks the view to the bottom while a reply is still streaming, so you can read a long answer from the top. (#87)</li>
             </ul>
         """.trimIndent()
     }
