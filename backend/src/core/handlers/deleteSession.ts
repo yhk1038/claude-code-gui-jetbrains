@@ -1,5 +1,5 @@
 import { unlink } from 'fs/promises';
-import { join, resolve, basename } from 'path';
+import { resolve, basename, relative, isAbsolute } from 'path';
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
@@ -47,8 +47,11 @@ export async function deleteSessionHandler(
     const sessionsDir = await getProjectSessionsPath(workingDir);
     const sessionFile = resolve(sessionsDir, `${sessionId}.jsonl`);
 
-    // Ensure resolved path stays within sessionsDir
-    if (!sessionFile.startsWith(resolve(sessionsDir) + '/')) {
+    // Ensure the resolved path stays within sessionsDir. Compare via path.relative
+    // rather than a hardcoded "/" separator so the check holds on Windows too
+    // (matches the guard in renameSession).
+    const relativeSessionFile = relative(resolve(sessionsDir), sessionFile);
+    if (relativeSessionFile.startsWith('..') || isAbsolute(relativeSessionFile)) {
       connections.sendTo(connectionId, 'ACK', {
         requestId: message.requestId,
         status: 'error',
