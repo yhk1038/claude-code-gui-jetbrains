@@ -88,6 +88,29 @@ function emitBashRequest(
   });
 }
 
+/** Emit a CLI_EVENT control_request for a PowerShell tool. */
+function emitPowerShellRequest(
+  emit: typeof mockEmit,
+  opts: { controlRequestId?: string; toolUseId?: string; command?: string } = {},
+) {
+  const {
+    controlRequestId = 'ctrl-ps',
+    toolUseId = 'tool-ps',
+    command = 'Get-ChildItem',
+  } = opts;
+
+  emit('CLI_EVENT', {
+    type: 'control_request',
+    request_id: controlRequestId,
+    request: {
+      subtype: 'can_use_tool',
+      tool_name: 'PowerShell',
+      tool_use_id: toolUseId,
+      input: { command },
+    },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -222,6 +245,27 @@ describe('usePendingPermissions', () => {
           result.current.deny('sig-test', 'some reason');
         });
       }).not.toThrow();
+    });
+  });
+
+  describe('PowerShell tool', () => {
+    it('treats PowerShell as a pending permission with high risk and command description', () => {
+      const { result } = renderHook(() => usePendingPermissions());
+
+      act(() => {
+        emitPowerShellRequest(mockEmit, {
+          controlRequestId: 'ctrl-ps-1',
+          toolUseId: 'tool-ps-1',
+          command: 'Get-Process | Where-Object CPU -gt 100',
+        });
+      });
+
+      expect(result.current.pending).not.toBeNull();
+      expect(result.current.pending?.toolName).toBe('PowerShell');
+      expect(result.current.pending?.riskLevel).toBe('high');
+      expect(result.current.pending?.description).toBe(
+        'Execute: Get-Process | Where-Object CPU -gt 100',
+      );
     });
   });
 
