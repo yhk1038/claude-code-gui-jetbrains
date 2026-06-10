@@ -59,7 +59,7 @@ export function ProjectSelectorPage() {
 
   if (isLoading) {
     return (
-      <div className="h-full flex items-center justify-center bg-surface-base">
+      <div className="fixed inset-0 z-40 flex items-center justify-center bg-surface-base">
         <div className="text-center">
           <div className="animate-spin w-6 h-6 border-2 border-border-strong border-t-text-secondary rounded-full mx-auto mb-3" />
           <p className="text-text-tertiary text-sm">Loading projects...</p>
@@ -70,7 +70,7 @@ export function ProjectSelectorPage() {
 
   if (error) {
     return (
-      <div className="h-full flex items-center justify-center bg-surface-base">
+      <div className="fixed inset-0 z-40 flex items-center justify-center bg-surface-base">
         <div className="text-center">
           <p className="text-state-error-fg text-sm mb-2">{error}</p>
           <button
@@ -86,7 +86,7 @@ export function ProjectSelectorPage() {
 
   if (projects.length === 0) {
     return (
-      <div className="h-full flex items-center justify-center bg-surface-base">
+      <div className="fixed inset-0 z-40 flex items-center justify-center bg-surface-base">
         <div className="text-center max-w-md px-4 w-full">
           <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-surface-overlay flex items-center justify-center">
             <svg className="w-6 h-6 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -106,7 +106,7 @@ export function ProjectSelectorPage() {
   }
 
   return (
-    <div className="h-full flex items-center justify-center bg-surface-base">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-surface-base">
       <div className="w-full max-w-md px-4">
         {/* Header */}
         <div className="text-center mb-6">
