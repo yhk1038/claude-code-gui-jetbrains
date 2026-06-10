@@ -133,12 +133,17 @@ Idle → Streaming → Waiting Permission → Has Diff → Error
 
 프로젝트 로컬 스킬은 `.claude/skills/` 에 위치한다. oh-my-claudecode 스킬이 아닌 **프로젝트 로컬 스킬**을 우선 사용한다.
 
+> **구조 규칙**: 각 스킬은 반드시 `.claude/skills/<이름>/SKILL.md` 형태(폴더 + SKILL.md)여야 하며, SKILL.md 상단에 `name`·`description` YAML frontmatter가 있어야 자연어 요청 시 자동 트리거된다. 평면 `.claude/skills/<이름>.md` 파일은 Claude Code가 스킬로 인식하지 못한다.
+
 | 스킬 | 파일 경로 | 트리거 키워드 |
 |------|-----------|--------------|
-| `/deploy` | `.claude/skills/deploy.md` | "배포", "deploy", "릴리즈", "release", "publish", "마켓플레이스 발행" |
-| `/build` | `.claude/skills/build.md` | "빌드", "build", "컴파일", "compile" |
-| `/precheck` | `.claude/skills/precheck.md` | "프리체크", "precheck", "배포 전 검수" |
-| `/release-monitor` | `.claude/skills/release-monitor.md` | "릴리즈 모니터링", "release-monitor", "마켓플레이스 모니터링", "approval 확인" |
+| `/cc-gui-reporter` | `.claude/skills/cc-gui-reporter/SKILL.md` | "마켓플레이스 확인", "리뷰/댓글/대댓글 확인", "미응답", "미해결 버그", "현황", "리포트", "report", "triage" |
+| `/deploy` | `.claude/skills/deploy/SKILL.md` | "배포", "deploy", "릴리즈", "release", "publish", "마켓플레이스 발행" |
+| `/build` | `.claude/skills/build/SKILL.md` | "빌드", "build", "컴파일", "compile" |
+| `/precheck` | `.claude/skills/precheck/SKILL.md` | "프리체크", "precheck", "배포 전 검수" |
+| `/release-monitor` | `.claude/skills/release-monitor/SKILL.md` | "릴리즈 모니터링", "release-monitor", "마켓플레이스 모니터링", "approval 확인" |
+
+`/cc-gui-reporter`의 데이터 수집은 `./scripts/cc-gui-report.sh` 가 담당한다 (사용자가 직접 실행 가능, 읽기 전용).
 
 ## JetBrains SDK API 사용 주의사항
 
