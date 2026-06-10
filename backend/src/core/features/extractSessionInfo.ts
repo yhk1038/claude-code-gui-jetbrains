@@ -32,8 +32,11 @@ function removeSystemTags(text: string): string {
   // Clean up extra whitespace
   cleaned = cleaned.replace(/\s+/g, ' ').trim();
 
-  // If everything was removed, return original text
-  return cleaned.length > 0 ? cleaned : text;
+  // When the text is nothing but system tags (e.g. a slash command like
+  // "<command-name>/init</command-name>"), nothing meaningful is left. Return
+  // the empty string so the caller can fall through to the next title
+  // candidate instead of leaking the raw tags.
+  return cleaned;
 }
 
 function extractTextFromContent(content: MessageContent): string | null {
@@ -58,6 +61,7 @@ export async function extractSessionInfo(file: string): Promise<SessionInfo> {
   let firstTimestamp: string | null = null;
   let lastTimestamp: string | null = null;
   let firstUserPrompt: string | null = null;
+  let firstMetaUserPrompt: string | null = null;
   let firstSummary: string | null = null;
   let hasUserOrAssistant = false;
   let sidechainGateSeen = false;
@@ -128,12 +132,25 @@ export async function extractSessionInfo(file: string): Promise<SessionInfo> {
         hasUserOrAssistant = true;
       }
 
-      if (type === 'user' && !isMeta && firstUserPrompt === null) {
+      // Capture the first meaningful user text. A user entry whose text is only
+      // system tags (e.g. the "<command-name>/init</command-name>" line of a
+      // slash command) yields an empty string after cleaning and is skipped, so
+      // we keep scanning for the next real prompt. Non-meta prompts win over meta
+      // ones (the expanded command prompt is recorded as isMeta), and either beats
+      // the "No title" fallback.
+      if (type === 'user' && (firstUserPrompt === null || firstMetaUserPrompt === null)) {
         const messageObj = entry.message as Record<string, unknown> | undefined;
         const content = (messageObj?.content ?? null) as MessageContent;
         const text = extractTextFromContent(content);
         if (text) {
-          firstUserPrompt = removeSystemTags(text.replace(/\n/g, ' ').trim());
+          const cleaned = removeSystemTags(text.replace(/\n/g, ' ').trim());
+          if (cleaned) {
+            if (!isMeta && firstUserPrompt === null) {
+              firstUserPrompt = cleaned;
+            } else if (isMeta && firstMetaUserPrompt === null) {
+              firstMetaUserPrompt = cleaned;
+            }
+          }
         }
       }
     });
@@ -161,7 +178,7 @@ export async function extractSessionInfo(file: string): Promise<SessionInfo> {
     };
   }
 
-  const title = firstSummary ?? firstUserPrompt ?? 'No title';
+  const title = firstSummary ?? firstUserPrompt ?? firstMetaUserPrompt ?? 'No title';
 
   return {
     title,

@@ -268,6 +268,111 @@ describe('extractSessionInfo', () => {
       expect(result.title).toBe('Real user message');
     });
 
+    it('falls back to a meta user prompt when the first non-meta entry is only system tags', async () => {
+      // Reproduces the /init (slash-command) shape: the first user entry is just
+      // the command tags, and the real expanded prompt arrives as an isMeta entry.
+      const filePath = await writeJsonl([
+        JSON.stringify({
+          uuid: 'u1',
+          parentUuid: null,
+          type: 'user',
+          timestamp: '2025-01-01T00:00:00Z',
+          message: { content: '<command-message>init</command-message>\n<command-name>/init</command-name>' },
+        }),
+        JSON.stringify({
+          uuid: 'u2',
+          parentUuid: 'u1',
+          type: 'user',
+          isMeta: true,
+          timestamp: '2025-01-01T00:01:00Z',
+          message: { content: [{ type: 'text', text: 'Please analyze this codebase and create a CLAUDE.md file' }] },
+        }),
+        JSON.stringify({
+          uuid: 'u3',
+          parentUuid: 'u2',
+          type: 'assistant',
+          timestamp: '2025-01-01T00:02:00Z',
+          message: { content: [{ type: 'text', text: 'Done' }] },
+        }),
+      ]);
+
+      const result = await extractSessionInfo(filePath);
+
+      expect(result.title).toBe('Please analyze this codebase and create a CLAUDE.md file');
+    });
+
+    it('skips a tag-only user prompt and uses the next meaningful non-meta prompt', async () => {
+      const filePath = await writeJsonl([
+        JSON.stringify({
+          uuid: 'u1',
+          parentUuid: null,
+          type: 'user',
+          timestamp: '2025-01-01T00:00:00Z',
+          message: { content: '<command-name>/clear</command-name>' },
+        }),
+        JSON.stringify({
+          uuid: 'u2',
+          parentUuid: 'u1',
+          type: 'user',
+          timestamp: '2025-01-01T00:01:00Z',
+          message: { content: [{ type: 'text', text: 'What does this function do?' }] },
+        }),
+      ]);
+
+      const result = await extractSessionInfo(filePath);
+
+      expect(result.title).toBe('What does this function do?');
+    });
+
+    it('never leaks raw command tags as the title', async () => {
+      // Only tag-only prompts and an assistant reply — no meaningful text anywhere.
+      const filePath = await writeJsonl([
+        JSON.stringify({
+          uuid: 'u1',
+          parentUuid: null,
+          type: 'user',
+          timestamp: '2025-01-01T00:00:00Z',
+          message: { content: '<command-message>compact</command-message>\n<command-name>/compact</command-name>' },
+        }),
+        JSON.stringify({
+          uuid: 'u2',
+          parentUuid: 'u1',
+          type: 'assistant',
+          timestamp: '2025-01-01T00:01:00Z',
+          message: { content: [{ type: 'text', text: 'ok' }] },
+        }),
+      ]);
+
+      const result = await extractSessionInfo(filePath);
+
+      expect(result.title).not.toContain('<');
+      expect(result.title).toBe('No title');
+    });
+
+    it('prefers a non-meta prompt over a meta prompt when both are meaningful', async () => {
+      const filePath = await writeJsonl([
+        JSON.stringify({
+          uuid: 'u1',
+          parentUuid: null,
+          type: 'user',
+          isMeta: true,
+          timestamp: '2025-01-01T00:00:00Z',
+          message: { content: [{ type: 'text', text: 'Meta expanded prompt' }] },
+        }),
+        JSON.stringify({
+          uuid: 'u2',
+          parentUuid: 'u1',
+          type: 'user',
+          timestamp: '2025-01-01T00:01:00Z',
+          message: { content: [{ type: 'text', text: 'Real typed message' }] },
+        }),
+      ]);
+
+      const result = await extractSessionInfo(filePath);
+
+      expect(result.title).toBe('Real typed message');
+    });
+
     it('should handle empty lines', async () => {
       const filePath = await writeJsonl([
         '',
