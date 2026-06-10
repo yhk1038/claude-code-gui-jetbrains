@@ -8,15 +8,21 @@ vi.mock('../../features/getProjectSessionsPath', () => ({
   getProjectSessionsPath: vi.fn(),
 }));
 
+vi.mock('../../features/sessionTitleOverrides', () => ({
+  removeSessionTitleOverride: vi.fn(),
+}));
+
 import { unlink } from 'fs/promises';
 import { deleteSessionHandler } from '../deleteSession';
 import { getProjectSessionsPath } from '../../features/getProjectSessionsPath';
+import { removeSessionTitleOverride } from '../../features/sessionTitleOverrides';
 import type { ConnectionManager } from '../../../ws/connection-manager';
 import type { Bridge } from '../../../bridge/bridge-interface';
 import type { IPCMessage } from '../../types';
 
 const mockUnlink = vi.mocked(unlink);
 const mockGetPath = vi.mocked(getProjectSessionsPath);
+const mockRemoveOverride = vi.mocked(removeSessionTitleOverride);
 
 function createMockConnections() {
   return {
@@ -110,6 +116,7 @@ describe('deleteSessionHandler', () => {
     await deleteSessionHandler('conn-1', message, connections, mockBridge);
 
     expect(mockUnlink).toHaveBeenCalled();
+    expect(mockRemoveOverride).toHaveBeenCalledWith('/home/user/.claude/projects/-test', 'abc123');
     expect(connections.broadcastToAll).toHaveBeenCalledWith('SESSIONS_UPDATED', {
       action: 'delete',
       session: { sessionId: 'abc123' },

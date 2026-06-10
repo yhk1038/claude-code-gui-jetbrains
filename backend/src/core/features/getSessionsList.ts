@@ -3,6 +3,7 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import { extractSessionInfo, type SessionInfo } from './extractSessionInfo';
 import { getProjectSessionsPath } from './getProjectSessionsPath';
+import { readSessionTitleOverrides } from './sessionTitleOverrides';
 
 export type SessionListEntry = SessionInfo & { sessionId: string };
 
@@ -62,6 +63,16 @@ export async function getSessionsList(workingDir: string): Promise<SessionListEn
     });
 
     const sessions = maybeSessions.filter((s): s is SessionListEntry => s !== null);
+
+    // Apply user-specified title overrides. The CLI-derived title is preserved as
+    // the source of truth; an override only replaces what the user explicitly renamed.
+    const overrides = await readSessionTitleOverrides(sessionsPath);
+    for (const session of sessions) {
+      const override = overrides[session.sessionId];
+      if (override) {
+        session.title = override;
+      }
+    }
 
     // Sort by lastTimestamp descending
     sessions.sort((a, b) => {

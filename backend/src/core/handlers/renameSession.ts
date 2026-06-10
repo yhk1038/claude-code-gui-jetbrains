@@ -1,30 +1,31 @@
-import { unlink } from 'fs/promises';
-import { join, resolve, basename } from 'path';
+import { existsSync } from 'fs';
+import { basename, isAbsolute, relative, resolve } from 'path';
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { getProjectSessionsPath } from '../features/getProjectSessionsPath';
-import { removeSessionTitleOverride } from '../features/sessionTitleOverrides';
+import { writeSessionTitleOverride } from '../features/sessionTitleOverrides';
 
-export async function deleteSessionHandler(
+export async function renameSessionHandler(
   connectionId: string,
   message: IPCMessage,
   connections: ConnectionManager,
   _bridge: Bridge,
 ): Promise<void> {
   const sessionId = message.payload?.sessionId as string | undefined;
+  const title = (message.payload?.title as string | undefined)?.trim();
+  const workingDir = message.payload?.workingDir as string | undefined;
 
-  if (!sessionId) {
+  if (!sessionId || !title || !workingDir) {
     connections.sendTo(connectionId, 'ACK', {
       requestId: message.requestId,
       status: 'error',
-      error: 'Missing sessionId',
+      error: 'sessionId, title, and workingDir are required',
     });
     return;
   }
 
   try {
-    // Validate sessionId to prevent path traversal (must be a simple filename component)
     if (sessionId !== basename(sessionId) || sessionId.includes('..')) {
       connections.sendTo(connectionId, 'ACK', {
         requestId: message.requestId,
@@ -34,38 +35,23 @@ export async function deleteSessionHandler(
       return;
     }
 
-    const workingDir = message.payload?.workingDir as string | undefined;
-    if (!workingDir) {
-      connections.sendTo(connectionId, 'ACK', {
-        requestId: message.requestId,
-        status: 'error',
-        error: 'workingDir is required',
-      });
-      return;
-    }
-
     const sessionsDir = await getProjectSessionsPath(workingDir);
     const sessionFile = resolve(sessionsDir, `${sessionId}.jsonl`);
-
-    // Ensure resolved path stays within sessionsDir
-    if (!sessionFile.startsWith(resolve(sessionsDir) + '/')) {
+    const relativeSessionFile = relative(resolve(sessionsDir), sessionFile);
+    if (relativeSessionFile.startsWith('..') || isAbsolute(relativeSessionFile) || !existsSync(sessionFile)) {
       connections.sendTo(connectionId, 'ACK', {
         requestId: message.requestId,
         status: 'error',
-        error: 'Invalid sessionId',
+        error: 'Session not found',
       });
       return;
     }
 
-    await unlink(sessionFile);
-
-    // Drop any stored title override so a future session reusing this id does not
-    // inherit a stale custom title.
-    await removeSessionTitleOverride(sessionsDir, sessionId);
+    await writeSessionTitleOverride(sessionsDir, sessionId, title);
 
     connections.broadcastToAll('SESSIONS_UPDATED', {
-      action: 'delete',
-      session: { sessionId },
+      action: 'rename',
+      session: { sessionId, title },
     });
 
     connections.sendTo(connectionId, 'ACK', { requestId: message.requestId, status: 'ok' });
