@@ -95,9 +95,31 @@ export class LoadedMessageDto {
   // CLI streaming metadata (not in JSONL, present during streaming)
   isSynthetic?: boolean;
 
+  // API error metadata emitted by the CLI for synthetic error messages
+  // (e.g. authentication failures). Preserved verbatim from the CLI entry.
+  isApiErrorMessage?: boolean;
+  apiErrorStatus?: number;
+  error?: string;
+
   // UI-only fields (not in JSONL, set during streaming/local creation)
   isStreaming?: boolean;
   context?: Context[];
+}
+
+/**
+ * True when a message is the CLI's synthetic "authentication failed" error
+ * (401 / authentication_failed). Used to surface an inline login CTA, and to
+ * distinguish auth failures from other API errors (rate limit, network).
+ *
+ * A free function (not a `LoadedMessageDto` getter) because messages are created
+ * as plain object literals throughout — both loaded (class-transformed) and live
+ * streaming messages must work, and plain objects carry no class getters.
+ */
+export function isAuthErrorMessage(
+  m: Pick<LoadedMessageDto, 'isApiErrorMessage' | 'apiErrorStatus' | 'error'>,
+): boolean {
+  if (!m.isApiErrorMessage) return false;
+  return m.apiErrorStatus === 401 || m.error === 'authentication_failed';
 }
 
 
