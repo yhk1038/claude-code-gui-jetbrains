@@ -43,6 +43,7 @@ import { getIdeRootHandler } from './getIdeRoot';
 import { tunnelStartHandler } from './tunnelStart';
 import { tunnelStopHandler } from './tunnelStop';
 import { getTunnelStatusHandler } from './getTunnelStatus';
+import { getTunnelPrereqsHandler } from './getTunnelPrereqs';
 import { sleepGuardEnableHandler } from './sleepGuardEnable';
 import { sleepGuardDisableHandler } from './sleepGuardDisable';
 import { listProjectFilesHandler } from './listProjectFiles';
@@ -186,6 +187,9 @@ export async function handleMessage(
       break;
     case 'GET_TUNNEL_STATUS':
       await getTunnelStatusHandler(connectionId, message, connections, bridge);
+      break;
+    case 'GET_TUNNEL_PREREQS':
+      await getTunnelPrereqsHandler(connectionId, message, connections, bridge);
       break;
     case 'SLEEP_GUARD_ENABLE':
       await sleepGuardEnableHandler(connectionId, message, connections, bridge);

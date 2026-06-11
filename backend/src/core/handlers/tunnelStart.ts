@@ -1,7 +1,7 @@
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
-import { startTunnel, getTunnelStatus } from '../features/tunnel-manager';
+import { startTunnel, getTunnelStatus, TunnelError } from '../features/tunnel-manager';
 import { serverPort } from '../../config/environment';
 
 export async function tunnelStartHandler(
@@ -32,6 +32,7 @@ export async function tunnelStartHandler(
       const status = getTunnelStatus();
       if (status.url !== null) return;
       const error = err instanceof Error ? err.message : String(err);
-      connections.broadcastToAll('TUNNEL_STATUS', { enabled: false, url: null, error });
+      const errorCode = err instanceof TunnelError ? err.code : 'unknown';
+      connections.broadcastToAll('TUNNEL_STATUS', { enabled: false, url: null, error, errorCode });
     });
 }

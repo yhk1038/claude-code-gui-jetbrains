@@ -1,9 +1,10 @@
-import { spawn, type ChildProcess } from 'child_process';
+import { spawn, execFileSync, type ChildProcess } from 'child_process';
 import { existsSync, mkdirSync, chmodSync, openSync, readFileSync, writeFileSync, unlinkSync } from 'fs';
 import { resolve } from 'path';
 import { exec as execCallback } from 'child_process';
 import { promisify } from 'util';
-import { arch, platform, tmpdir } from 'os';
+import { arch, platform, tmpdir, homedir } from 'os';
+import { augmentedEnv } from '../augmented-path';
 
 const execAsync = promisify(execCallback);
 
@@ -12,13 +13,30 @@ export interface TunnelStatus {
   url: string | null;
 }
 
+export type TunnelErrorCode =
+  | 'cloudflared-missing' // cloudflared not found and could not be installed
+  | 'tunnel-timeout'      // URL never appeared within the timeout window
+  | 'tunnel-exited'       // cloudflared exited before producing a URL
+  | 'unknown';
+
+/** Error carrying a machine-readable code so the UI can show actionable guidance. */
+export class TunnelError extends Error {
+  constructor(public readonly code: TunnelErrorCode, message: string) {
+    super(message);
+    this.name = 'TunnelError';
+  }
+}
+
 let tunnelProcess: ChildProcess | null = null;
 let tunnelUrl: string | null = null;
 const TUNNEL_LOG_FILE = resolve(tmpdir(), 'cloudflared-tunnel.log');
 const TUNNEL_PID_FILE = resolve(tmpdir(), 'cloudflared-tunnel.pid');
 
 function getLocalBinPath(): string {
-  return resolve(process.cwd(), '.local', 'bin', getLocalBinName());
+  // A stable, writable, per-user location (NOT process.cwd(), which for an
+  // IDE-spawned backend is unpredictable and may be read-only). This dir is
+  // also registered in candidateBinDirs so an installed binary is found later.
+  return resolve(homedir(), '.claude-code-gui', 'bin', getLocalBinName());
 }
 
 function getDownloadUrl(): string | null {
@@ -47,24 +65,27 @@ async function installCloudflared(): Promise<string> {
   const localBin = getLocalBinPath();
   const localBinDir = resolve(localBin, '..');
   const os = platform();
+  // Run every probe/install with the augmented PATH so brew/winget/cloudflared
+  // are visible even when the IDE handed us a minimal PATH.
+  const env = augmentedEnv();
 
   // Try package manager first
   if (os === 'darwin') {
     try {
-      await execAsync('which brew');
+      await execAsync('which brew', { env });
       console.error('[node-backend]', 'Installing cloudflared via Homebrew...');
-      await execAsync('brew install cloudflared');
-      const { stdout } = await execAsync('which cloudflared');
+      await execAsync('brew install cloudflared', { env });
+      const { stdout } = await execAsync('which cloudflared', { env });
       return stdout.trim();
     } catch {
       // brew not available or install failed, fall through
     }
   } else if (os === 'win32') {
     try {
-      await execAsync('where winget');
+      await execAsync('where winget', { env });
       console.error('[node-backend]', 'Installing cloudflared via winget...');
-      await execAsync('winget install --id Cloudflare.cloudflared --accept-source-agreements --accept-package-agreements');
-      const { stdout } = await execAsync('where cloudflared');
+      await execAsync('winget install --id Cloudflare.cloudflared --accept-source-agreements --accept-package-agreements', { env });
+      const { stdout } = await execAsync('where cloudflared', { env });
       return stdout.trim().split('\n')[0];
     } catch {
       // winget not available or install failed, fall through
@@ -81,12 +102,12 @@ async function installCloudflared(): Promise<string> {
   mkdirSync(localBinDir, { recursive: true });
 
   if (url.endsWith('.tgz')) {
-    await execAsync(`curl -fsSL "${url}" | tar -xz -C "${localBinDir}"`);
+    await execAsync(`curl -fsSL "${url}" | tar -xz -C "${localBinDir}"`, { env });
   } else if (os === 'win32') {
     // Windows: use PowerShell for download
-    await execAsync(`powershell -Command "Invoke-WebRequest -Uri '${url}' -OutFile '${localBin}'"`, { timeout: 60_000 });
+    await execAsync(`powershell -Command "Invoke-WebRequest -Uri '${url}' -OutFile '${localBin}'"`, { timeout: 60_000, env });
   } else {
-    await execAsync(`curl -fsSL -o "${localBin}" "${url}"`);
+    await execAsync(`curl -fsSL -o "${localBin}" "${url}"`, { env });
   }
 
   if (os !== 'win32') {
@@ -156,10 +177,10 @@ export function restoreTunnelState(): void {
 }
 
 async function findOrInstallCloudflared(): Promise<string> {
-  // 1. Try system PATH
+  // 1. Try system PATH (augmented so IDE-spawned backends still find it)
   const whichCmd = platform() === 'win32' ? 'where cloudflared' : 'which cloudflared';
   try {
-    const { stdout } = await execAsync(whichCmd);
+    const { stdout } = await execAsync(whichCmd, { env: augmentedEnv() });
     const binPath = stdout.trim().split('\n')[0];
     if (binPath) return binPath;
   } catch {
@@ -191,7 +212,7 @@ export function startTunnel(port: number): Promise<string> {
     try {
       binaryPath = await findOrInstallCloudflared();
     } catch (err) {
-      rejectPromise(new Error(`Failed to locate or install cloudflared: ${String(err)}`));
+      rejectPromise(new TunnelError('cloudflared-missing', `Failed to locate or install cloudflared: ${String(err)}`));
       return;
     }
 
@@ -202,6 +223,8 @@ export function startTunnel(port: number): Promise<string> {
     const proc = spawn(binaryPath, args, {
       stdio: ['ignore', logFd, logFd],
       detached: true,
+      windowsHide: true, // don't pop a console window on Windows
+      env: augmentedEnv(),
     });
 
     tunnelProcess = proc;
@@ -212,7 +235,7 @@ export function startTunnel(port: number): Promise<string> {
     const timeoutId = setTimeout(() => {
       if (!resolved) {
         resolved = true;
-        rejectPromise(new Error('Timed out waiting for cloudflared tunnel URL (15s)'));
+        rejectPromise(new TunnelError('tunnel-timeout', 'Timed out waiting for cloudflared tunnel URL (15s)'));
         stopTunnel();
       }
     }, 15_000);
@@ -244,7 +267,7 @@ export function startTunnel(port: number): Promise<string> {
       if (!resolved) {
         resolved = true;
         clearTimeout(timeoutId);
-        rejectPromise(err);
+        rejectPromise(new TunnelError('unknown', `cloudflared process error: ${err.message}`));
       }
       tunnelProcess = null;
       tunnelUrl = null;
@@ -255,7 +278,7 @@ export function startTunnel(port: number): Promise<string> {
       if (!resolved) {
         resolved = true;
         clearTimeout(timeoutId);
-        rejectPromise(new Error(`cloudflared exited unexpectedly (code=${code})`));
+        rejectPromise(new TunnelError('tunnel-exited', `cloudflared exited unexpectedly (code=${code})`));
       }
       tunnelProcess = null;
       tunnelUrl = null;
@@ -263,29 +286,56 @@ export function startTunnel(port: number): Promise<string> {
   });
 }
 
-export function stopTunnel(): void {
-  if (tunnelProcess) {
+/** Terminate the cloudflared process by PID, using the right mechanism per OS. */
+function killTunnelPid(pid: number): void {
+  if (process.platform === 'win32') {
+    // Windows ignores SIGTERM; taskkill /T also reaps the detached child tree.
     try {
-      tunnelProcess.kill('SIGTERM');
-    } catch (err) {
-      console.error('[node-backend]', 'Failed to kill cloudflared process:', err);
+      execFileSync('taskkill', ['/F', '/T', '/PID', String(pid)]);
+    } catch {
+      // already gone
     }
-    tunnelProcess = null;
   } else {
-    // Restored state: no ChildProcess reference, use PID file
     try {
-      if (existsSync(TUNNEL_PID_FILE)) {
-        const pid = parseInt(readFileSync(TUNNEL_PID_FILE, 'utf-8').trim(), 10);
-        if (!isNaN(pid) && isProcessAlive(pid)) {
-          process.kill(pid, 'SIGTERM');
-        }
-      }
+      process.kill(pid, 'SIGTERM');
+    } catch {
+      // already gone
+    }
+  }
+}
+
+export function stopTunnel(): void {
+  // Prefer the live ChildProcess pid; fall back to the PID file for a tunnel
+  // restored from a previous backend session (no ChildProcess reference).
+  let pid = tunnelProcess?.pid ?? null;
+  if (pid === null && existsSync(TUNNEL_PID_FILE)) {
+    try {
+      const parsed = parseInt(readFileSync(TUNNEL_PID_FILE, 'utf-8').trim(), 10);
+      if (!isNaN(parsed) && isProcessAlive(parsed)) pid = parsed;
     } catch {
       // ignore
     }
   }
+  if (pid !== null) killTunnelPid(pid);
+
+  tunnelProcess = null;
   tunnelUrl = null;
   removePidFile();
+}
+
+/**
+ * Best-effort check whether cloudflared can be located without installing it.
+ * Lets the UI warn the user before they toggle the tunnel on. Never throws.
+ */
+export async function isCloudflaredAvailable(): Promise<boolean> {
+  const whichCmd = platform() === 'win32' ? 'where cloudflared' : 'which cloudflared';
+  try {
+    const { stdout } = await execAsync(whichCmd, { env: augmentedEnv() });
+    if (stdout.trim()) return true;
+  } catch {
+    // not in PATH
+  }
+  return existsSync(getLocalBinPath());
 }
 
 /**
