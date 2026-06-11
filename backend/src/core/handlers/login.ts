@@ -10,7 +10,14 @@ export function loginHandler(
   _bridge: Bridge,
 ): Promise<void> {
   return new Promise((resolve) => {
-    const child = Claude.spawn(['auth', 'login'], {
+    // Map the webview-selected login method to the CLI flag. The default
+    // (`claude auth login` with no flag) is the Claude subscription flow, so an
+    // unknown/missing method falls back to --claudeai. Previously the method was
+    // dropped entirely, so "Anthropic Console" always ran the subscription flow.
+    const method = message.payload?.method as string | undefined;
+    const methodFlag = method === 'console' ? '--console' : '--claudeai';
+
+    const child = Claude.spawn(['auth', 'login', methodFlag], {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
