@@ -712,6 +712,15 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
         const assistantMessage = cliEvent.message as Record<string, unknown> | undefined;
         if (!assistantMessage) return;
 
+        // Preserve top-level API-error metadata. Auth failures arrive as a
+        // synthetic assistant entry carrying isApiErrorMessage/apiErrorStatus/error
+        // (not inside `message`), which the renderer uses to show a login CTA.
+        const apiErrorFields = {
+          isApiErrorMessage: cliEvent.isApiErrorMessage as boolean | undefined,
+          apiErrorStatus: cliEvent.apiErrorStatus as number | undefined,
+          error: cliEvent.error as string | undefined,
+        };
+
         const messageId = assistantMessage.id as string;
         const incomingContent = assistantMessage.content;
         const assistantUsage = assistantMessage.usage as {
@@ -763,6 +772,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
               message: { ...msg.message!, content: mergedBlocks },
               isStreaming: false,
               message_id: messageId,
+              ...apiErrorFields,
             };
           }));
 
@@ -783,6 +793,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
             message: { role: MessageRole.Assistant, content: finalTurnBlocks } as LoadedMessageDto['message'],
             isStreaming: false,
             message_id: messageId,
+            ...apiErrorFields,
           };
           appendMessage(newAssistantMessage);
         }

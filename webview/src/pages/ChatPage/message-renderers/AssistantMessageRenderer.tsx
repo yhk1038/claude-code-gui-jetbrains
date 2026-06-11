@@ -1,8 +1,9 @@
 import React from 'react';
-import { LoadedMessageDto, isContentBlockArray } from '../../../types';
+import { LoadedMessageDto, isContentBlockArray, isAuthErrorMessage } from '../../../types';
 import { ToolUseBlockDto, ThinkingBlockDto, ContentBlockType } from '../../../dto/message/ContentBlockDto';
 import { StreamingMessage } from '../StreamingMessage';
 import { ToolRenderer } from './ToolRenderer';
+import { LoginCta } from '../LoginCta';
 import {ThinkingStreamingMessage} from "@/pages/ChatPage/ThinkingStreamingMessage.tsx";
 
 interface AssistantMessageRendererProps {
@@ -78,6 +79,8 @@ export const AssistantMessageRenderer: React.FC<AssistantMessageRendererProps> =
               )}
             </>
         ) : null}
+
+        {isAuthErrorMessage(message) && <LoginCta className="mt-2" />}
 
         {/*{message.context && <ContextPills context={message.context} />}*/}
       </>
