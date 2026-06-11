@@ -3,7 +3,7 @@ import { LoadedMessageDto, isContentBlockArray, isAuthErrorMessage } from '../..
 import { ToolUseBlockDto, ThinkingBlockDto, ContentBlockType } from '../../../dto/message/ContentBlockDto';
 import { StreamingMessage } from '../StreamingMessage';
 import { ToolRenderer } from './ToolRenderer';
-import { LoginCta } from '../LoginCta';
+import { AuthErrorRenderer } from './AuthErrorRenderer';
 import {ThinkingStreamingMessage} from "@/pages/ChatPage/ThinkingStreamingMessage.tsx";
 
 interface AssistantMessageRendererProps {
@@ -28,6 +28,11 @@ export const AssistantMessageRenderer: React.FC<AssistantMessageRendererProps> =
           return false;
         });
     if (isEmpty) return null;
+  }
+
+  // Auth-failure entry gets its own one-line renderer (error text + inline login CTA).
+  if (!message.isStreaming && isAuthErrorMessage(message)) {
+    return <AuthErrorRenderer message={message} />;
   }
 
   return (
@@ -79,8 +84,6 @@ export const AssistantMessageRenderer: React.FC<AssistantMessageRendererProps> =
               )}
             </>
         ) : null}
-
-        {isAuthErrorMessage(message) && <LoginCta className="mt-2" />}
 
         {/*{message.context && <ContextPills context={message.context} />}*/}
       </>
