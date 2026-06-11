@@ -4,8 +4,9 @@ import { useBridgeContext } from './BridgeContext';
 interface AuthContextValue {
   /** null = not yet determined; true/false = known login state. */
   loggedIn: boolean | null;
-  /** Re-query the CLI auth status (e.g. after a login completes). */
-  refetch: () => void;
+  /** Re-query the CLI auth status (e.g. after a login completes). Awaitable so
+   * callers can show a spinner while the re-check is in flight. */
+  refetch: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
