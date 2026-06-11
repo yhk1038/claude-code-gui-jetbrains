@@ -3,6 +3,13 @@ import { render, screen } from '@testing-library/react';
 import { LoadedMessageDto } from '../../../../types';
 import { LoadedMessageType, toInstance } from '../../../../dto/common';
 
+// AuthErrorRenderer reads loggedIn from the auth context; without a provider
+// it throws. Mock the context (as LoginCta's own test does) so the renderer can
+// be unit-tested in isolation. logged-out → the red status dot is shown.
+vi.mock('@/contexts', () => ({
+  useAuthContext: () => ({ loggedIn: false }),
+}));
+
 vi.mock('../../LoginCta', () => ({
   LoginCta: () => <button data-testid="login-cta">Re-Sign</button>,
 }));
