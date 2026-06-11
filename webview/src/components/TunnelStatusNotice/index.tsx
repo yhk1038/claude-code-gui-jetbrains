@@ -11,18 +11,33 @@ interface Props {
   cloudflaredAvailable: boolean | null;
   tunnelEnabled: boolean;
   tunnelLoading: boolean;
+  installing: boolean;
+  awaitingInstallConsent: boolean;
   error: string | null;
   errorCode: TunnelErrorCode | null;
   onRetry: () => void;
+  onConfirmInstall: () => void;
+  onCancelInstall: () => void;
 }
 
 /**
  * Shared notice shown above the tunnel toggle in both the chat modal and the
- * settings page: an actionable error panel when a start attempt failed, or an
- * upfront warning when cloudflared isn't installed yet.
+ * settings page: an actionable error panel, an install-consent prompt when
+ * cloudflared is missing, or an upfront warning that it isn't installed yet.
  */
 export function TunnelStatusNotice(props: Props) {
-  const { cloudflaredAvailable, tunnelEnabled, tunnelLoading, error, errorCode, onRetry } = props;
+  const {
+    cloudflaredAvailable,
+    tunnelEnabled,
+    tunnelLoading,
+    installing,
+    awaitingInstallConsent,
+    error,
+    errorCode,
+    onRetry,
+    onConfirmInstall,
+    onCancelInstall,
+  } = props;
   const [copied, setCopied] = useState(false);
 
   if (error) {
@@ -72,13 +87,35 @@ export function TunnelStatusNotice(props: Props) {
     );
   }
 
-  if (cloudflaredAvailable === false && !tunnelEnabled && !tunnelLoading) {
+  if (awaitingInstallConsent) {
+    return (
+      <div className="py-2 px-3 text-xs text-state-warning-fg bg-state-warning-bg rounded space-y-2">
+        <div className="flex items-start gap-2">
+          <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <span>
+            cloudflared isn’t installed. Install it now and enable the tunnel? This downloads
+            cloudflared (about 3 minutes the first time).
+          </span>
+        </div>
+        <div className="flex items-center gap-3 pt-1 pl-6">
+          <button onClick={onConfirmInstall} className="text-xs font-medium underline cursor-pointer">
+            Install &amp; enable
+          </button>
+          <button onClick={onCancelInstall} className="text-xs underline opacity-80 cursor-pointer">
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (cloudflaredAvailable === false && !tunnelEnabled && !tunnelLoading && !installing) {
     return (
       <div className="py-2 px-3 text-xs text-state-warning-fg bg-state-warning-bg rounded flex items-start gap-2">
         <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
         <span>
-          cloudflared isn’t installed yet. Turning the tunnel on will download it
-          automatically (about 3 minutes the first time).
+          cloudflared isn’t installed yet. Turning the tunnel on will ask to download it
+          (about 3 minutes the first time).
         </span>
       </div>
     );

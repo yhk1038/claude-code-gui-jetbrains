@@ -61,7 +61,7 @@ function getLocalBinName(): string {
   return platform() === 'win32' ? 'cloudflared.exe' : 'cloudflared';
 }
 
-async function installCloudflared(): Promise<string> {
+export async function installCloudflared(): Promise<string> {
   const localBin = getLocalBinPath();
   const localBinDir = resolve(localBin, '..');
   const os = platform();
@@ -176,8 +176,13 @@ export function restoreTunnelState(): void {
   }
 }
 
-async function findOrInstallCloudflared(): Promise<string> {
-  // 1. Try system PATH (augmented so IDE-spawned backends still find it)
+/**
+ * Locate cloudflared WITHOUT installing it — installation is now an explicit,
+ * user-consented action (see installCloudflaredHandler). Returns null if not
+ * found. The PATH lookup is augmented so an IDE-spawned backend still sees a
+ * brew/winget install.
+ */
+async function findCloudflared(): Promise<string | null> {
   const whichCmd = platform() === 'win32' ? 'where cloudflared' : 'which cloudflared';
   try {
     const { stdout } = await execAsync(whichCmd, { env: augmentedEnv() });
@@ -186,15 +191,8 @@ async function findOrInstallCloudflared(): Promise<string> {
   } catch {
     // not in PATH
   }
-
-  // 2. Try project-local binary
   const localBin = getLocalBinPath();
-  if (existsSync(localBin)) {
-    return localBin;
-  }
-
-  // 3. Auto-install
-  return installCloudflared();
+  return existsSync(localBin) ? localBin : null;
 }
 
 export function startTunnel(port: number): Promise<string> {
@@ -208,11 +206,11 @@ export function startTunnel(port: number): Promise<string> {
       return;
     }
 
-    let binaryPath: string;
-    try {
-      binaryPath = await findOrInstallCloudflared();
-    } catch (err) {
-      rejectPromise(new TunnelError('cloudflared-missing', `Failed to locate or install cloudflared: ${String(err)}`));
+    const binaryPath = await findCloudflared();
+    if (!binaryPath) {
+      // Do NOT auto-install here — the UI asks for consent and calls
+      // INSTALL_CLOUDFLARED explicitly before retrying.
+      rejectPromise(new TunnelError('cloudflared-missing', 'cloudflared is not installed'));
       return;
     }
 
@@ -324,18 +322,11 @@ export function stopTunnel(): void {
 }
 
 /**
- * Best-effort check whether cloudflared can be located without installing it.
- * Lets the UI warn the user before they toggle the tunnel on. Never throws.
+ * Whether cloudflared can be located without installing it. Lets the UI warn
+ * the user (and ask for install consent) before they toggle the tunnel on.
  */
 export async function isCloudflaredAvailable(): Promise<boolean> {
-  const whichCmd = platform() === 'win32' ? 'where cloudflared' : 'which cloudflared';
-  try {
-    const { stdout } = await execAsync(whichCmd, { env: augmentedEnv() });
-    if (stdout.trim()) return true;
-  } catch {
-    // not in PATH
-  }
-  return existsSync(getLocalBinPath());
+  return (await findCloudflared()) !== null;
 }
 
 /**

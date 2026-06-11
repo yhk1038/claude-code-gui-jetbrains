@@ -13,12 +13,16 @@ export function TunnelSettings() {
     tunnelUrl,
     tunnelLoading,
     cloudflaredAvailable,
+    awaitingInstallConsent,
+    installing,
     preventSleep,
     sleepLoading,
     error,
     errorCode,
     handleTunnelToggle,
     handleSleepToggle,
+    confirmInstallAndStart,
+    cancelInstall,
     retryTunnel,
   } = useTunnelStatus();
 
@@ -29,7 +33,7 @@ export function TunnelSettings() {
   const meta = ROUTE_META[Route.SETTINGS_TUNNEL];
 
   useEffect(() => {
-    if (tunnelLoading) {
+    if (tunnelLoading || installing) {
       setElapsedSec(0);
       elapsedRef.current = setInterval(() => setElapsedSec((s) => s + 1), 1000);
     } else {
@@ -41,7 +45,7 @@ export function TunnelSettings() {
     return () => {
       if (elapsedRef.current) clearInterval(elapsedRef.current);
     };
-  }, [tunnelLoading]);
+  }, [tunnelLoading, installing]);
 
   const handleCopy = () => {
     if (!tunnelUrl) return;
@@ -60,29 +64,33 @@ export function TunnelSettings() {
           cloudflaredAvailable={cloudflaredAvailable}
           tunnelEnabled={tunnelEnabled}
           tunnelLoading={tunnelLoading}
+          installing={installing}
+          awaitingInstallConsent={awaitingInstallConsent}
           error={error}
           errorCode={errorCode}
           onRetry={retryTunnel}
+          onConfirmInstall={confirmInstallAndStart}
+          onCancelInstall={cancelInstall}
         />
         <SettingRow
           label="Remote Tunnel (Unofficial)"
-          description="Expose your local server via cloudflared for remote access. No account required. If cloudflared is not installed, it will be downloaded automatically."
+          description="Expose your local server via cloudflared for remote access. No account required. If cloudflared isn’t installed, you’ll be asked to install it first."
         >
           <ToggleSwitch
             checked={tunnelEnabled}
             onChange={handleTunnelToggle}
-            disabled={tunnelLoading}
+            disabled={tunnelLoading || installing}
           />
         </SettingRow>
 
-        {tunnelLoading && (
+        {(tunnelLoading || installing) && (
           <div className="py-4 border-b border-border-default flex flex-col items-center gap-2">
             <div className="flex items-center gap-2 text-sm text-text-secondary">
               <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              <span>{cloudflaredAvailable === false ? 'Installing cloudflared…' : 'Establishing tunnel connection…'} ({elapsedSec}s)</span>
+              <span>{installing ? 'Installing cloudflared…' : 'Establishing tunnel connection…'} ({elapsedSec}s)</span>
             </div>
             <p className="text-xs text-text-disabled">This typically takes ~1 min (If installation is required, it takes about 3 mins.)</p>
           </div>

@@ -17,12 +17,16 @@ export function TunnelModal(props: Props) {
     tunnelUrl,
     tunnelLoading,
     cloudflaredAvailable,
+    awaitingInstallConsent,
+    installing,
     preventSleep,
     sleepLoading,
     error,
     errorCode,
     handleTunnelToggle,
     handleSleepToggle,
+    confirmInstallAndStart,
+    cancelInstall,
     retryTunnel,
   } = useTunnelStatus();
 
@@ -52,7 +56,7 @@ export function TunnelModal(props: Props) {
   }, [onClose]);
 
   useEffect(() => {
-    if (tunnelLoading) {
+    if (tunnelLoading || installing) {
       setElapsedSec(0);
       elapsedRef.current = setInterval(() => setElapsedSec((s) => s + 1), 1000);
     } else {
@@ -64,7 +68,7 @@ export function TunnelModal(props: Props) {
     return () => {
       if (elapsedRef.current) clearInterval(elapsedRef.current);
     };
-  }, [tunnelLoading]);
+  }, [tunnelLoading, installing]);
 
   const handleCopy = () => {
     if (!fullTunnelUrl) return;
@@ -100,9 +104,13 @@ export function TunnelModal(props: Props) {
             cloudflaredAvailable={cloudflaredAvailable}
             tunnelEnabled={tunnelEnabled}
             tunnelLoading={tunnelLoading}
+            installing={installing}
+            awaitingInstallConsent={awaitingInstallConsent}
             error={error}
             errorCode={errorCode}
             onRetry={retryTunnel}
+            onConfirmInstall={confirmInstallAndStart}
+            onCancelInstall={cancelInstall}
           />
 
           {/* Tunnel toggle */}
@@ -114,19 +122,19 @@ export function TunnelModal(props: Props) {
             <ToggleSwitch
               checked={tunnelEnabled}
               onChange={handleTunnelToggle}
-              disabled={tunnelLoading}
+              disabled={tunnelLoading || installing}
             />
           </div>
 
           {/* Loading indicator */}
-          {tunnelLoading && (
+          {(tunnelLoading || installing) && (
             <div className="flex flex-col items-center gap-2 py-2">
               <div className="flex items-center gap-2 text-sm text-text-secondary">
                 <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                <span>{cloudflaredAvailable === false ? 'Installing cloudflared…' : 'Connecting…'} ({elapsedSec}s)</span>
+                <span>{installing ? 'Installing cloudflared…' : 'Connecting…'} ({elapsedSec}s)</span>
               </div>
               <p className="text-xs text-text-disabled">Typically ~1 min (install: ~3 min)</p>
             </div>
