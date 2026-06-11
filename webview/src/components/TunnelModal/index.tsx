@@ -3,6 +3,7 @@ import { XMarkIcon, ClipboardDocumentIcon, ClipboardDocumentCheckIcon } from '@h
 import { QRCodeSVG } from 'qrcode.react';
 import { ToggleSwitch } from '@/components/ToggleSwitch';
 import { Portal } from '@/components/Portal';
+import { TunnelStatusNotice } from '@/components/TunnelStatusNotice';
 import { useTunnelStatus } from '@/hooks';
 
 interface Props {
@@ -15,11 +16,14 @@ export function TunnelModal(props: Props) {
     tunnelEnabled,
     tunnelUrl,
     tunnelLoading,
+    cloudflaredAvailable,
     preventSleep,
     sleepLoading,
     error,
+    errorCode,
     handleTunnelToggle,
     handleSleepToggle,
+    retryTunnel,
   } = useTunnelStatus();
 
   const [copied, setCopied] = useState(false);
@@ -92,11 +96,14 @@ export function TunnelModal(props: Props) {
 
         {/* Body */}
         <div className="px-4 py-4 space-y-4">
-          {error && (
-            <div className="py-2 px-3 text-sm text-state-error-fg bg-state-error-bg rounded">
-              {error}
-            </div>
-          )}
+          <TunnelStatusNotice
+            cloudflaredAvailable={cloudflaredAvailable}
+            tunnelEnabled={tunnelEnabled}
+            tunnelLoading={tunnelLoading}
+            error={error}
+            errorCode={errorCode}
+            onRetry={retryTunnel}
+          />
 
           {/* Tunnel toggle */}
           <div className="flex items-center justify-between">
@@ -119,7 +126,7 @@ export function TunnelModal(props: Props) {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                <span>Connecting... ({elapsedSec}s)</span>
+                <span>{cloudflaredAvailable === false ? 'Installing cloudflared…' : 'Connecting…'} ({elapsedSec}s)</span>
               </div>
               <p className="text-xs text-text-disabled">Typically ~1 min (install: ~3 min)</p>
             </div>

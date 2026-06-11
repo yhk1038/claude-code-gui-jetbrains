@@ -12,4 +12,5 @@ export { useLoginGate } from './useLoginGate';
 export type { LoadedMessage } from './useChatStream';
 export type { AttachedContext } from './useContext';
 export { useTunnelStatus } from './useTunnelStatus';
+export * from './tunnelError';
 export * from './useEditorContext';
