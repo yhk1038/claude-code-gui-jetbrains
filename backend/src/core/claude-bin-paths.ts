@@ -27,6 +27,7 @@ export function candidateBinDirs(
     join(home, '.npm-global', 'bin'),                // npm global (custom prefix)
     join(home, '.volta', 'bin'),                     // volta
     join(home, '.fnm', 'aliases', 'default', 'bin'), // fnm
+    join(home, '.claude-code-gui', 'bin'),           // cloudflared auto-install location
   ];
 
   if (platform === 'win32') {

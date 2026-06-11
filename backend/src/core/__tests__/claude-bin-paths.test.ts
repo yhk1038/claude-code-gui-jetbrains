@@ -34,6 +34,11 @@ describe('candidateBinDirs', () => {
     );
   });
 
+  it('includes the cloudflared auto-install location (~/.claude-code-gui/bin)', () => {
+    const dirs = candidateBinDirs({ HOME: home }, 'darwin');
+    expect(dirs).toContain(join(home, '.claude-code-gui', 'bin'));
+  });
+
   it('does not include unix-only dirs on Windows', () => {
     const dirs = candidateBinDirs({ HOME: home }, 'win32');
     expect(dirs).not.toContain('/usr/local/bin');
