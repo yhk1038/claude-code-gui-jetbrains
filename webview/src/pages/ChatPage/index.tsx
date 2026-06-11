@@ -13,7 +13,7 @@ import { BrowserPermissionBanner } from './BrowserPermissionBanner';
 import { useChatInputFocus } from '../../contexts/ChatInputFocusContext';
 import { useChatStreamContext } from '../../contexts/ChatStreamContext';
 import { useSessionContext } from '../../contexts/SessionContext';
-import { useAwaitingNotifications } from '../../hooks';
+import { useAwaitingNotifications, useLoginGate } from '../../hooks';
 import { usePendingAskUserQuestion } from '../../hooks/usePendingAskUserQuestion';
 import { usePendingPermissions } from '../../hooks/usePendingPermissions';
 import { usePendingPlanApproval } from '../../hooks/usePendingPlanApproval';
@@ -24,6 +24,9 @@ import { SettingKey } from '@/types/settings';
 import { clampAutoScrollThreshold, isNearBottom, AUTO_SCROLL_THRESHOLD_DEFAULT } from '@/utils/autoScroll';
 
 export function ChatPage() {
+  // Redirect logged-out users to the login screen before they hit a failing chat.
+  useLoginGate();
+
   const { textareaRef, focus: focusInput } = useChatInputFocus();
   const { currentSessionId, currentSession } = useSessionContext();
   const { messages, isStreaming } = useChatStreamContext();
