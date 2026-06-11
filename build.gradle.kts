@@ -147,6 +147,11 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
+            <h3>0.18.2 - Smoother sign-in and remote control</h3>
+            <ul>
+                <li><b>Sign-in guidance</b>: Sending a message while signed out used to do nothing. Now you get a clear prompt to sign in. (#91)</li>
+                <li><b>Remote control turns on instantly</b>: When you enable remote control, the loading spinner could keep spinning for up to a minute even after the connection link was ready. It now clears the moment the link is available. (#92)</li>
+            </ul>
             <h3>0.18.1 - UI bug fixes</h3>
             <ul>
                 <li>The project selector screen now fills the whole window instead of leaving part of it blank.</li>
@@ -247,6 +252,11 @@ tasks {
         description = "Install webview npm dependencies via pnpm"
         dependsOn("syncVersions")
         workingDir = file("webview")
+        // CI=true lets pnpm recreate node_modules non-interactively when the
+        // resolved pnpm version differs from how the modules were last installed
+        // (the pinned packageManager field forces a specific version). Without
+        // it, the install aborts under Gradle with ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY.
+        environment("CI", "true")
         commandLine("pnpm", "install", "--frozen-lockfile")
         inputs.files(file("webview/package.json"), file("webview/pnpm-lock.yaml"))
         outputs.dir(file("webview/node_modules"))
@@ -256,6 +266,7 @@ tasks {
         description = "Install backend npm dependencies via pnpm"
         dependsOn("syncVersions")
         workingDir = file("backend")
+        environment("CI", "true")
         commandLine("pnpm", "install")
         inputs.files(fileTree("backend").include("package.json"))
         outputs.dir(file("backend/node_modules"))
