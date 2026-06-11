@@ -6,6 +6,7 @@ export { ThemeProvider, useThemeContext } from './ThemeContext';
 export { AppProviders } from './AppProviders';
 export { SettingsProvider, useSettings, SettingsContext } from './SettingsContext';
 export { ClaudeSettingsProvider, useClaudeSettings, ClaudeSettingsContext } from './ClaudeSettingsContext';
+export { AuthProvider, useAuthContext } from './AuthContext';
 export { ChatInputFocusProvider, useChatInputFocus } from './ChatInputFocusContext';
 export { WorkingDirProvider, useWorkingDir } from './WorkingDirContext';
 export { CliConfigProvider, useCliConfig } from './CliConfigContext';

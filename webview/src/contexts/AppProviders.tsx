@@ -7,6 +7,7 @@ import { ChatStreamProvider, useChatStreamContext } from './ChatStreamContext';
 import { ThemeProvider } from './ThemeContext';
 import { SettingsProvider } from './SettingsContext';
 import { ClaudeSettingsProvider } from './ClaudeSettingsContext';
+import { AuthProvider } from './AuthContext';
 import { CliConfigProvider } from './CliConfigContext';
 import { ChatInputFocusProvider } from './ChatInputFocusContext';
 import { ChatInputStateProvider } from './ChatInputStateContext';
@@ -208,9 +209,11 @@ export function AppProviders({ children }: AppProvidersProps) {
             <CliConfigProvider>
             <SettingsProvider>
               <ClaudeSettingsProvider>
-                <SessionProvider>
-                  <ChatProviderBridge>{children}</ChatProviderBridge>
-                </SessionProvider>
+                <AuthProvider>
+                  <SessionProvider>
+                    <ChatProviderBridge>{children}</ChatProviderBridge>
+                  </SessionProvider>
+                </AuthProvider>
               </ClaudeSettingsProvider>
             </SettingsProvider>
           </CliConfigProvider>
