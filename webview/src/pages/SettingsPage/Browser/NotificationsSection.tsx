@@ -6,6 +6,7 @@ import {
   type SoundSelection,
 } from '@/notifications';
 import { SettingSection, SettingRow } from '../common';
+import { Select, type SelectOption } from '@/components/Select';
 
 interface Props {
   className?: string;
@@ -37,6 +38,11 @@ export const NotificationsSection = (props: Props) => {
     }
   };
 
+  const soundOptions: SelectOption[] = [
+    { value: SOUND_OFF, label: 'Off' },
+    ...sounds.map((sound) => ({ value: sound.id, label: sound.label })),
+  ];
+
   const isEmpty = !loading && error === null && sounds.length === 0;
   const description =
     error !== null
@@ -51,19 +57,14 @@ export const NotificationsSection = (props: Props) => {
     <div className={className}>
       <SettingSection title="Notifications">
         <SettingRow label="Sound" description={description}>
-          <select
-            className="bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm text-text-primary disabled:opacity-50"
+          <Select
             value={selection}
+            options={soundOptions}
+            ariaLabel="Notification Sound"
             disabled={loading || error !== null}
-            onChange={(e) => handleChange(e.target.value as SoundSelection)}
-          >
-            <option value={SOUND_OFF}>Off</option>
-            {sounds.map((sound) => (
-              <option key={sound.id} value={sound.id}>
-                {sound.label}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => handleChange(value as SoundSelection)}
+            className="bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm text-text-primary"
+          />
         </SettingRow>
       </SettingSection>
     </div>

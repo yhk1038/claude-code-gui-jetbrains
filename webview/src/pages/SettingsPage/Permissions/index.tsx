@@ -1,4 +1,5 @@
 import { SettingSection, SettingRow } from '../common';
+import { Select, type SelectOption } from '@/components/Select';
 import { ToggleSwitch } from '@/components/ToggleSwitch';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 import { type InputMode, INPUT_MODES, getAvailableModes, CLI_FLAG_TO_INPUT_MODE, INPUT_MODE_TO_CLI_FLAG } from '@/types/chatInput';
@@ -38,6 +39,16 @@ export function PermissionsSettings() {
     await updateSetting('permissions', updated as PermissionsConfig);
   };
 
+  const defaultModeOptions: SelectOption[] = [
+    ...(scope === 'project'
+      ? [{ value: NOT_SET_VALUE, label: 'Not set (use global)', italic: true }]
+      : []),
+    ...getAvailableModes(mergedBypassDisabled).map((modeId) => ({
+      value: modeId,
+      label: INPUT_MODES[modeId].label,
+    })),
+  ];
+
   return (
     <div>
       <h2 className="text-xl font-semibold text-text-primary mb-6">{meta.label}</h2>
@@ -76,10 +87,11 @@ export function PermissionsSettings() {
           label="Default Input Mode"
           description="Initial permission mode when opening a new session"
         >
-          <select
+          <Select
             value={isDefaultModeNotSet ? NOT_SET_VALUE : defaultModeValue}
-            onChange={(e) => {
-              const value = e.target.value;
+            options={defaultModeOptions}
+            ariaLabel="Default Input Mode"
+            onChange={(value) => {
               if (value === NOT_SET_VALUE) {
                 deletePermissionsKey('defaultMode');
                 return;
@@ -90,20 +102,9 @@ export function PermissionsSettings() {
               }
             }}
             className={`bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm ${
-              isDefaultModeNotSet ? 'text-text-tertiary italic' : 'text-text-primary'
+              isDefaultModeNotSet ? 'text-text-tertiary' : 'text-text-primary'
             }`}
-          >
-            {scope === 'project' && (
-              <option value={NOT_SET_VALUE} className="text-text-tertiary">
-                Not set (use global)
-              </option>
-            )}
-            {getAvailableModes(mergedBypassDisabled).map((modeId) => (
-              <option key={modeId} value={modeId}>
-                {INPUT_MODES[modeId].label}
-              </option>
-            ))}
-          </select>
+          />
         </SettingRow>
       </SettingSection>
     </div>

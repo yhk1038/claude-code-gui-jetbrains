@@ -1,4 +1,5 @@
 import { SettingSection, SettingRow } from '../common';
+import { Select, type SelectOption } from '@/components/Select';
 import { useSettings } from '@/contexts/SettingsContext';
 import { SettingKey, ThemeMode } from '@/types/settings';
 import { ROUTE_META, Route } from '@/router/routes';
@@ -26,6 +27,15 @@ export function AppearanceSettings() {
   const rawAutoScrollThreshold = scopeSettings[SettingKey.AUTO_SCROLL_THRESHOLD] as number | undefined;
   const isAutoScrollThresholdNotSet = rawAutoScrollThreshold === undefined && scope === 'project';
 
+  const themeOptions: SelectOption[] = [
+    ...(scope === 'project'
+      ? [{ value: NOT_SET_VALUE, label: 'Not set (use global)', italic: true }]
+      : []),
+    { value: ThemeMode.SYSTEM, label: isJetBrains() ? 'System (IDE)' : 'System (OS)' },
+    { value: ThemeMode.LIGHT, label: 'Light' },
+    { value: ThemeMode.DARK, label: 'Dark' },
+  ];
+
   return (
     <div>
       <h2 className="text-xl font-semibold text-text-primary mb-6">
@@ -37,10 +47,11 @@ export function AppearanceSettings() {
           label="Color Theme"
           description="Choose the color theme for the interface"
         >
-          <select
+          <Select
             value={themeValue}
-            onChange={(e) => {
-              const value = e.target.value;
+            options={themeOptions}
+            ariaLabel="Color Theme"
+            onChange={(value) => {
               if (value === NOT_SET_VALUE) {
                 resetToGlobal(SettingKey.THEME);
                 return;
@@ -48,18 +59,9 @@ export function AppearanceSettings() {
               updateSetting(SettingKey.THEME, value as ThemeMode);
             }}
             className={`bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm ${
-              isThemeNotSet ? 'text-text-tertiary italic' : 'text-text-primary'
+              isThemeNotSet ? 'text-text-tertiary' : 'text-text-primary'
             }`}
-          >
-            {scope === 'project' && (
-              <option value={NOT_SET_VALUE} className="text-text-tertiary">
-                Not set (use global)
-              </option>
-            )}
-            <option value={ThemeMode.SYSTEM}>{isJetBrains() ? 'System (IDE)' : 'System (OS)'}</option>
-            <option value={ThemeMode.LIGHT}>Light</option>
-            <option value={ThemeMode.DARK}>Dark</option>
-          </select>
+          />
         </SettingRow>
 
         <SettingRow

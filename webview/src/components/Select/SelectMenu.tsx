@@ -1,0 +1,91 @@
+import { useLayoutEffect, useState, type RefObject } from 'react';
+import { Portal } from '../Portal';
+import type { SelectOption } from './types';
+
+interface Position {
+  left: number;
+  top: number;
+  minWidth: number;
+}
+
+interface Props {
+  options: SelectOption[];
+  value: string;
+  anchorRef: RefObject<HTMLElement>;
+  menuRef: RefObject<HTMLDivElement>;
+  onSelect: (value: string) => void;
+}
+
+/**
+ * Floating option list for {@link Select}.
+ *
+ * Rendered through {@link Portal} into `document.body` with `position: fixed`,
+ * anchored to the trigger via `getBoundingClientRect`. Unlike a native
+ * `<select>` popup — which the OS draws as a separate window and which JCEF
+ * windowed (non-OSR) mode mis-positions (issue #96) — this list is plain DOM
+ * inside the web view, so its coordinates always track the trigger.
+ *
+ * The only inline style is the runtime-computed `left`/`top`/`minWidth`, which
+ * cannot be expressed as build-time Tailwind classes. All visual styling stays
+ * in className.
+ */
+export function SelectMenu(props: Props) {
+  const { options, value, anchorRef, menuRef, onSelect } = props;
+  const [pos, setPos] = useState<Position | null>(null);
+
+  useLayoutEffect(() => {
+    const anchor = anchorRef.current;
+    if (!anchor) return;
+
+    const rect = anchor.getBoundingClientRect();
+    const gap = 4;
+    const viewportPadding = 8;
+    const menu = menuRef.current;
+    const menuHeight = menu?.offsetHeight ?? 0;
+    // Right-align the menu to the trigger: when the list is wider than the
+    // trigger it grows leftward, keeping its right edge flush with the trigger.
+    const menuWidth = Math.max(menu?.offsetWidth ?? 0, rect.width);
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUp = spaceBelow < menuHeight + gap && rect.top > spaceBelow;
+
+    setPos({
+      left: Math.max(viewportPadding, rect.right - menuWidth),
+      top: openUp ? rect.top - menuHeight - gap : rect.bottom + gap,
+      minWidth: rect.width,
+    });
+  }, [anchorRef, menuRef, options]);
+
+  return (
+    <Portal>
+      <div
+        ref={menuRef}
+        role="listbox"
+        className="fixed z-[100] max-h-72 overflow-y-auto rounded-lg border border-border-default bg-surface-raised py-1 shadow-xl"
+        style={{ left: pos?.left ?? 0, top: pos?.top ?? 0, minWidth: pos?.minWidth ?? 0 }}
+      >
+        {options.map((option) => {
+          const isSelected = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="option"
+              aria-selected={isSelected}
+              onClick={() => onSelect(option.value)}
+              className={`flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm transition-colors hover:bg-surface-hover ${
+                isSelected ? 'text-text-primary' : 'text-text-secondary'
+              } ${option.italic ? 'italic text-text-tertiary' : ''}`}
+            >
+              <span className="truncate">{option.label}</span>
+              {isSelected && (
+                <span aria-hidden className="flex-shrink-0 text-accent-primary">
+                  ✓
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </Portal>
+  );
+}

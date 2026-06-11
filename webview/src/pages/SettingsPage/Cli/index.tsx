@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SettingSection, SettingRow, ScopeGuard } from '../common';
+import { Select, type SelectOption } from '@/components/Select';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 import { useBridge } from '@/hooks/useBridge';
@@ -81,6 +82,23 @@ export function CliSettings() {
     void updateSetting(SettingKey.TERMINAL_APP, value || null);
   };
 
+  const terminalOptions: SelectOption[] = [
+    { value: '', label: 'System Default' },
+    ...terminals.map((t) => ({
+      value: t.label,
+      label: t.isDefault ? `${t.label} (Default)` : t.label,
+    })),
+    { value: CUSTOM_MARKER, label: 'Custom...' },
+  ];
+
+  const modelOptions: SelectOption[] =
+    availableModels.length === 0
+      ? [{ value: '', label: 'Default (recommended)' }]
+      : availableModels.map((m) => ({
+          value: m.value === DEFAULT_MODEL_ALIAS ? '' : m.value,
+          label: m.displayName,
+        }));
+
   return (
     <div>
       <h2 className="text-xl font-semibold text-text-primary mb-6">{meta.label}</h2>
@@ -101,19 +119,13 @@ export function CliSettings() {
               <span className="text-sm text-text-tertiary">Detecting terminals...</span>
             ) : (
               <div className="flex items-center gap-2">
-                <select
+                <Select
                   value={selectValue}
-                  onChange={(e) => handleSelectChange(e.target.value)}
+                  options={terminalOptions}
+                  ariaLabel="Terminal App"
+                  onChange={handleSelectChange}
                   className="bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm text-text-primary"
-                >
-                  <option value="">System Default</option>
-                  {terminals.map((t) => (
-                    <option key={t.id} value={t.label}>
-                      {t.isDefault ? `${t.label} (Default)` : t.label}
-                    </option>
-                  ))}
-                  <option value={CUSTOM_MARKER}>Custom...</option>
-                </select>
+                />
                 {selectValue === CUSTOM_MARKER && (
                   <input
                     type="text"
@@ -134,22 +146,13 @@ export function CliSettings() {
           label="Default Model"
           description="Default model for new sessions"
         >
-          <select
+          <Select
             value={claudeSettings.model ? toModelAlias(claudeSettings.model) : ''}
-            onChange={(e) => void updateClaudeSetting('model', e.target.value || null)}
+            options={modelOptions}
+            ariaLabel="Default Model"
+            onChange={(value) => void updateClaudeSetting('model', value || null)}
             className="bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm text-text-primary"
-          >
-            {availableModels.length === 0 ? (
-              <option value="">Default (recommended)</option>
-            ) : availableModels.map((m) => (
-              <option
-                key={m.value}
-                value={m.value === DEFAULT_MODEL_ALIAS ? '' : m.value}
-              >
-                {m.displayName}
-              </option>
-            ))}
-          </select>
+          />
         </SettingRow>
       </SettingSection>
 

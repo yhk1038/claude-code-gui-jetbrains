@@ -1,4 +1,5 @@
 import { SettingSection, SettingRow } from '../common';
+import { Select, type SelectOption } from '@/components/Select';
 import { useSettings } from '@/contexts/SettingsContext';
 import { SettingKey, LogLevel } from '@/types/settings';
 import { ToggleSwitch } from '@/components/ToggleSwitch';
@@ -16,6 +17,16 @@ export function AdvancedSettings() {
   const rawLogLevel = scopeSettings[SettingKey.LOG_LEVEL] as LogLevel | undefined;
   const isLogLevelNotSet = rawLogLevel === undefined && scope === 'project';
   const logLevelValue = isLogLevelNotSet ? NOT_SET_VALUE : (rawLogLevel ?? LogLevel.INFO);
+
+  const logLevelOptions: SelectOption[] = [
+    ...(scope === 'project'
+      ? [{ value: NOT_SET_VALUE, label: 'Not set (use global)', italic: true }]
+      : []),
+    { value: LogLevel.DEBUG, label: 'Debug' },
+    { value: LogLevel.INFO, label: 'Info' },
+    { value: LogLevel.WARN, label: 'Warning' },
+    { value: LogLevel.ERROR, label: 'Error' },
+  ];
 
   return (
     <div>
@@ -47,10 +58,11 @@ export function AdvancedSettings() {
           label="Log Level"
           description="Minimum log level to display"
         >
-          <select
+          <Select
             value={logLevelValue}
-            onChange={(e) => {
-              const value = e.target.value;
+            options={logLevelOptions}
+            ariaLabel="Log Level"
+            onChange={(value) => {
               if (value === NOT_SET_VALUE) {
                 resetToGlobal(SettingKey.LOG_LEVEL);
                 return;
@@ -58,19 +70,9 @@ export function AdvancedSettings() {
               updateSetting(SettingKey.LOG_LEVEL, value as LogLevel);
             }}
             className={`bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm ${
-              isLogLevelNotSet ? 'text-text-tertiary italic' : 'text-text-primary'
+              isLogLevelNotSet ? 'text-text-tertiary' : 'text-text-primary'
             }`}
-          >
-            {scope === 'project' && (
-              <option value={NOT_SET_VALUE} className="text-text-tertiary">
-                Not set (use global)
-              </option>
-            )}
-            <option value={LogLevel.DEBUG}>Debug</option>
-            <option value={LogLevel.INFO}>Info</option>
-            <option value={LogLevel.WARN}>Warning</option>
-            <option value={LogLevel.ERROR}>Error</option>
-          </select>
+          />
         </SettingRow>
       </SettingSection>
     </div>

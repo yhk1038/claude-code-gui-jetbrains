@@ -1,4 +1,5 @@
 import { SettingSection, SettingRow } from '../common';
+import { Select, type SelectOption } from '@/components/Select';
 import { ToggleSwitch } from '@/components/ToggleSwitch';
 import { APP_NAME } from '@/config/app';
 import { ROUTE_META, Route } from '@/router/routes';
@@ -29,6 +30,13 @@ export function GeneralSettings() {
   const useCtrlEnterToSend = (scopeSettings.useCtrlEnterToSend as boolean | undefined) ?? false;
   const focusInputOnEditorContext = (scopeSettings.focusInputOnEditorContext as boolean | undefined) ?? true;
 
+  const languageOptions: SelectOption[] = [
+    ...(scope === 'project'
+      ? [{ value: NOT_SET_VALUE, label: 'Not set (use global)', italic: true }]
+      : []),
+    ...LANGUAGE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label })),
+  ];
+
   return (
     <div>
       <h2 className="text-xl font-semibold text-text-primary mb-6">{meta.label}</h2>
@@ -38,31 +46,21 @@ export function GeneralSettings() {
           label="Language"
           description="Claude's preferred response language"
         >
-          <select
-            className={`bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm ${
-              isNotSet ? 'text-text-tertiary italic' : 'text-text-primary'
-            }`}
+          <Select
             value={currentLanguage}
-            onChange={(e) => {
-              const value = e.target.value;
+            options={languageOptions}
+            ariaLabel="Language"
+            className={`bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm ${
+              isNotSet ? 'text-text-tertiary' : 'text-text-primary'
+            }`}
+            onChange={(value) => {
               if (value === NOT_SET_VALUE) {
                 resetToGlobal('language');
                 return;
               }
               updateSetting('language', value);
             }}
-          >
-            {scope === 'project' && (
-              <option value={NOT_SET_VALUE} className="text-text-tertiary">
-                Not set (use global)
-              </option>
-            )}
-            {LANGUAGE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          />
         </SettingRow>
 
         <SettingRow

@@ -36,13 +36,23 @@ beforeEach(() => {
   playMock.mockResolvedValue(undefined);
 });
 
+const getTrigger = () =>
+  screen.getByRole('button', { name: /Notification Sound/i }) as HTMLButtonElement;
+
+/** Open the dropdown and return the visible option labels (stripped of the ✓ marker). */
+const openAndGetOptionLabels = () => {
+  fireEvent.click(getTrigger());
+  return screen
+    .getAllByRole('option')
+    .map((o) => o.textContent?.replace('✓', '').trim());
+};
+
 describe('NotificationsSection', () => {
-  it('shows a loading hint and disables the select while sounds are fetching', () => {
+  it('shows a loading hint and disables the trigger while sounds are fetching', () => {
     listMock.mockReturnValueOnce(new Promise(() => {}));
     render(<NotificationsSection />);
 
-    const select = screen.getByRole('combobox') as HTMLSelectElement;
-    expect(select.disabled).toBe(true);
+    expect(getTrigger().disabled).toBe(true);
     expect(screen.getByText(/loading system sounds/i)).toBeInTheDocument();
   });
 
@@ -54,14 +64,12 @@ describe('NotificationsSection', () => {
 
     render(<NotificationsSection />);
 
-    const select = screen.getByRole('combobox') as HTMLSelectElement;
     await waitFor(() => {
-      expect(select.disabled).toBe(false);
+      expect(getTrigger().disabled).toBe(false);
     });
+    expect(getTrigger().textContent).toContain('Off');
 
-    const optionValues = Array.from(select.options).map((o) => o.value);
-    expect(optionValues).toEqual([SOUND_OFF, 'Glass', 'Ping']);
-    expect(select.value).toBe(SOUND_OFF);
+    expect(openAndGetOptionLabels()).toEqual(['Off', 'Glass', 'Ping']);
   });
 
   it('reads the persisted selection at mount', async () => {
@@ -73,11 +81,10 @@ describe('NotificationsSection', () => {
 
     render(<NotificationsSection />);
 
-    const select = screen.getByRole('combobox') as HTMLSelectElement;
     await waitFor(() => {
-      expect(select.disabled).toBe(false);
+      expect(getTrigger().disabled).toBe(false);
     });
-    expect(select.value).toBe('Ping');
+    expect(getTrigger().textContent).toContain('Ping');
   });
 
   it('persists the new value to localStorage and previews it on change', async () => {
@@ -87,14 +94,14 @@ describe('NotificationsSection', () => {
     ]);
 
     render(<NotificationsSection />);
-    const select = screen.getByRole('combobox') as HTMLSelectElement;
     await waitFor(() => {
-      expect(select.disabled).toBe(false);
+      expect(getTrigger().disabled).toBe(false);
     });
 
-    fireEvent.change(select, { target: { value: 'Glass' } });
+    fireEvent.click(getTrigger());
+    fireEvent.click(screen.getByRole('option', { name: 'Glass' }));
 
-    expect(select.value).toBe('Glass');
+    expect(getTrigger().textContent).toContain('Glass');
     expect(localStorage.getItem(NOTIFICATION_SOUND_STORAGE_KEY)).toBe('Glass');
     expect(playMock).toHaveBeenCalledTimes(1);
     expect(playMock).toHaveBeenCalledWith('Glass');
@@ -105,15 +112,15 @@ describe('NotificationsSection', () => {
     listMock.mockResolvedValueOnce([{ id: 'Glass', label: 'Glass' }]);
 
     render(<NotificationsSection />);
-    const select = screen.getByRole('combobox') as HTMLSelectElement;
     await waitFor(() => {
-      expect(select.disabled).toBe(false);
+      expect(getTrigger().disabled).toBe(false);
     });
-    expect(select.value).toBe('Glass');
+    expect(getTrigger().textContent).toContain('Glass');
 
-    fireEvent.change(select, { target: { value: SOUND_OFF } });
+    fireEvent.click(getTrigger());
+    fireEvent.click(screen.getByRole('option', { name: 'Off' }));
 
-    expect(select.value).toBe(SOUND_OFF);
+    expect(getTrigger().textContent).toContain('Off');
     expect(localStorage.getItem(NOTIFICATION_SOUND_STORAGE_KEY)).toBe(SOUND_OFF);
     expect(playMock).not.toHaveBeenCalled();
   });
@@ -122,27 +129,24 @@ describe('NotificationsSection', () => {
     listMock.mockResolvedValueOnce([]);
 
     render(<NotificationsSection />);
-    const select = screen.getByRole('combobox') as HTMLSelectElement;
     await waitFor(() => {
-      expect(select.disabled).toBe(false);
+      expect(getTrigger().disabled).toBe(false);
     });
 
     // Only Off is selectable.
-    const optionValues = Array.from(select.options).map((o) => o.value);
-    expect(optionValues).toEqual([SOUND_OFF]);
+    expect(openAndGetOptionLabels()).toEqual(['Off']);
     expect(screen.getByText(/no system sounds detected/i)).toBeInTheDocument();
   });
 
-  it('shows an error hint and disables the select when the fetch fails', async () => {
+  it('shows an error hint and disables the trigger when the fetch fails', async () => {
     listMock.mockRejectedValueOnce(new Error('scan failed'));
 
     render(<NotificationsSection />);
-    const select = screen.getByRole('combobox') as HTMLSelectElement;
 
     await waitFor(() => {
       expect(screen.getByText(/scan failed/i)).toBeInTheDocument();
     });
-    expect(select.disabled).toBe(true);
+    expect(getTrigger().disabled).toBe(true);
   });
 
   it('swallows preview failures without throwing', async () => {
@@ -151,13 +155,13 @@ describe('NotificationsSection', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     render(<NotificationsSection />);
-    const select = screen.getByRole('combobox') as HTMLSelectElement;
     await waitFor(() => {
-      expect(select.disabled).toBe(false);
+      expect(getTrigger().disabled).toBe(false);
     });
 
+    fireEvent.click(getTrigger());
     expect(() =>
-      fireEvent.change(select, { target: { value: 'Glass' } }),
+      fireEvent.click(screen.getByRole('option', { name: 'Glass' })),
     ).not.toThrow();
 
     await new Promise((resolve) => setTimeout(resolve, 0));
