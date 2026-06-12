@@ -160,12 +160,19 @@ class NodeProcessManager(
                     // PATH. NOTE: not verifiable on our dev host — see issue #57 (S4b).
                     val linuxBackend = WslPathResolver.toWslPath(backendFile.absolutePath)
                         ?: backendFile.absolutePath
+                    // Capture the distro's interactive-login PATH (sources ~/.bashrc, so nvm/fnm/nix
+                    // bin dirs are present) and inject it into the backend env. The backend launches
+                    // with `bash -lc` (login only) which never reads ~/.bashrc, so without this the
+                    // `node`/`claude` it spawns fail with ENOENT when installed on those paths (#57).
+                    // Null = capture failed; fall back to the login-shell PATH (no PATH export).
+                    val wslShellPath = ShellPathResolver.resolveWsl(wslDistro)
                     val wslEnv = buildMap {
                         put("JETBRAINS_MODE", "true")
                         put("PORT", requestedPort.toString())
                         webviewDir?.let { wv ->
                             WslPathResolver.toWslPath(wv.absolutePath)?.let { put("WEBVIEW_DIR", it) }
                         }
+                        wslShellPath?.let { put("PATH", it) }
                     }
                     val cmd = WslPathResolver.buildWslNodeCommand(wslDistro, wslCwd, wslEnv, linuxBackend)
                     logger.info("Starting WSL backend (distro=$wslDistro, cwd=$wslCwd): ${cmd.joinToString(" ")}")

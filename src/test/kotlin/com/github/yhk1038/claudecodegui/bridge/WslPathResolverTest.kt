@@ -199,4 +199,35 @@ class WslPathResolverTest {
             )
         }
     }
+
+    @Nested
+    inner class BuildWslPathCaptureCommand {
+        @Test
+        fun `wraps the inner shell command in a login shell inside the distro`() {
+            val inner = "printf 'M'; command printenv PATH; printf 'M'"
+            val cmd = WslPathResolver.buildWslPathCaptureCommand("NixOS", inner)
+            assertEquals(
+                listOf("wsl.exe", "-d", "NixOS", "--", "bash", "-lic", inner),
+                cmd,
+            )
+        }
+
+        @Test
+        fun `uses an interactive login shell so bashrc-managed PATH is sourced`() {
+            // -lic (interactive), NOT -lc: nvm/fnm/nix add their bin dirs in .bashrc,
+            // which a non-interactive login shell never reads. This is the whole point
+            // of capturing the WSL PATH the same way native ShellPathResolver does.
+            val cmd = WslPathResolver.buildWslPathCaptureCommand("Ubuntu", "x")
+            assertTrue(cmd.contains("-lic"))
+            assertFalse(cmd.contains("-lc"))
+        }
+
+        @Test
+        fun `passes the distro through -d`() {
+            val cmd = WslPathResolver.buildWslPathCaptureCommand("Debian", "x")
+            assertEquals("wsl.exe", cmd[0])
+            assertEquals("-d", cmd[1])
+            assertEquals("Debian", cmd[2])
+        }
+    }
 }

@@ -145,6 +145,28 @@ object WslPathResolver {
         }
     }
 
+    /**
+     * Build the command that captures the WSL distro's real shell PATH from the Windows host,
+     * via an **interactive login shell** (`bash -lic`) so the user's full PATH is sourced.
+     *
+     * Why interactive (`-i`) and not just login (`-l`): version managers like nvm/fnm and the
+     * nix profile add their bin directories in `~/.bashrc`, which a *non*-interactive login
+     * shell never reads. [buildWslNodeCommand] launches the backend with `bash -lc` (login only),
+     * so on its own it misses those PATH entries — exactly the `spawn claude ENOENT` reported on
+     * issue #57. This builder mirrors what native `ShellPathResolver` does with `$SHELL -lic`,
+     * giving WSL the same PATH-capture guarantee. The captured PATH is then injected back into
+     * [buildWslNodeCommand]'s env, so the backend (and the `claude`/`node` it spawns) sees it.
+     *
+     * [innerShellCommand] should print the PATH wrapped in markers (see
+     * `ShellPathResolver.buildShellCommand`) so the caller can slice it out of shell startup noise.
+     * Capturing in a *separate* process keeps that noise off the backend's own stdout.
+     *
+     * Produces, e.g.:
+     * `wsl.exe -d NixOS -- bash -lic "printf 'M'; command printenv PATH; printf 'M'"`
+     */
+    fun buildWslPathCaptureCommand(distro: String, innerShellCommand: String): List<String> =
+        listOf("wsl.exe", "-d", distro, "--", "bash", "-lic", innerShellCommand)
+
     /** POSIX-safe single-quote: wrap in `'…'`, replace each `'` inside with `'\''`. */
     private fun shellQuote(s: String): String = "'" + s.replace("'", "'\\''") + "'"
 }

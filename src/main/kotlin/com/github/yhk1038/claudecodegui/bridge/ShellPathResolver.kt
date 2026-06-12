@@ -47,13 +47,38 @@ object ShellPathResolver {
 
         cache[shell]?.let { return it.ifEmpty { null } }
 
-        val resolved = runShell(shell)
+        val resolved = capturePath(shell) { marker -> listOf(shell, "-lic", buildShellCommand(marker)) }
         cache[shell] = resolved ?: ""
         return resolved
     }
 
-    /** Launch the shell and capture its PATH. Returns null on any failure. */
-    private fun runShell(shell: String): String? {
+    /**
+     * Resolve the real shell PATH *inside* a WSL [distro], the WSL counterpart of [resolve].
+     *
+     * A WSL backend is launched by `WslPathResolver.buildWslNodeCommand` with `bash -lc` (login
+     * only), which never sources `~/.bashrc` — so nvm/fnm/nix bin dirs that live there are absent
+     * and `spawn claude`/`node` fails with ENOENT (issue #57). This captures the PATH the same way
+     * native does (`bash -lic`, interactive login) so the caller can inject it back into the
+     * backend's env. Cached per distro. Returns null on any failure (caller falls back to the
+     * login-shell PATH). Only meaningful on Windows, where WSL exists.
+     */
+    @Synchronized
+    fun resolveWsl(distro: String): String? {
+        val key = "wsl:$distro"
+        cache[key]?.let { return it.ifEmpty { null } }
+
+        val resolved = capturePath(key) { marker ->
+            WslPathResolver.buildWslPathCaptureCommand(distro, buildShellCommand(marker))
+        }
+        cache[key] = resolved ?: ""
+        return resolved
+    }
+
+    /**
+     * Launch a process built by [commandFor] (given a fresh marker) and slice the marker-wrapped
+     * PATH out of its stdout. [label] is only for logging. Returns null on any failure.
+     */
+    private fun capturePath(label: String, commandFor: (String) -> List<String>): String? {
         val marker = UUID.randomUUID().toString().replace("-", "")
         return try {
             // Capture stdout ONLY. An interactive shell can write warnings to stderr
@@ -61,26 +86,26 @@ object ShellPathResolver {
             // stdout risks polluting the marker-sandwiched PATH. DISCARD routes stderr
             // to the OS null sink, so it can neither corrupt the slice nor fill a pipe
             // buffer and block the shell.
-            val pb = ProcessBuilder(shell, "-lic", buildShellCommand(marker))
+            val pb = ProcessBuilder(commandFor(marker))
                 .redirectError(ProcessBuilder.Redirect.DISCARD)
             val proc = pb.start()
             val output = proc.inputStream.bufferedReader().use { it.readText() }
             val finished = proc.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS)
             if (!finished) {
                 proc.destroyForcibly()
-                logger.info("resolveShellPath: $shell timed out after ${TIMEOUT_SECONDS}s")
+                logger.info("resolveShellPath: $label timed out after ${TIMEOUT_SECONDS}s")
                 return null
             }
             val path = extractBetweenMarkers(output, marker)
             if (looksLikePath(path)) {
-                logger.info("resolveShellPath: $shell -> ${path!!.split(":").size} entries")
+                logger.info("resolveShellPath: $label -> ${path!!.split(":").size} entries")
                 path
             } else {
-                logger.info("resolveShellPath: $shell returned empty/invalid PATH")
+                logger.info("resolveShellPath: $label returned empty/invalid PATH")
                 null
             }
         } catch (e: Exception) {
-            logger.info("resolveShellPath: $shell failed: ${e.message}")
+            logger.info("resolveShellPath: $label failed: ${e.message}")
             null
         }
     }
