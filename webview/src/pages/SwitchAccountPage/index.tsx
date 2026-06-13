@@ -5,6 +5,7 @@ import { Route, ROUTE_META, Label } from '@/router/routes';
 import { getBridge, LOGIN_REQUEST_TIMEOUT_MS } from '@/api/bridge/Bridge';
 import { getAdapter } from '@/adapters';
 import { useSessionContext } from '@/contexts/SessionContext';
+import { useAuthContext } from '@/contexts';
 
 interface Props {
   className?: string;
@@ -18,6 +19,7 @@ export function SwitchAccountPage(props: Props) {
   const meta = ROUTE_META[Route.SWITCH_ACCOUNT];
 
   const { workingDirectory } = useSessionContext();
+  const { refetch } = useAuthContext();
   const [loadingMethod, setLoadingMethod] = useState<LoginMethod | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,6 +37,11 @@ export function SwitchAccountPage(props: Props) {
       );
 
       if (result?.status === 'ok') {
+        // Re-query auth status before navigating so the chat login gate
+        // (useLoginGate) sees the fresh logged-in state. Without this, navigate
+        // happens while AuthContext.loggedIn is still the stale `false`, and the
+        // gate bounces the user right back to this login screen (#99).
+        await refetch();
         navigate(Route.NEW_SESSION);
       } else {
         setError(result?.error ?? 'Login failed. Please try again.');
