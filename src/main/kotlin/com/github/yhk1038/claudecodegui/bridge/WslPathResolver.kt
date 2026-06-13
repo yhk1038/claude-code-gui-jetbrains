@@ -80,11 +80,13 @@ object WslPathResolver {
         if (windowsPath == null) return null
         if (windowsPath.isBlank()) return windowsPath
 
+        // WSL UNC path -> the path inside the distro. Checked BEFORE the leading-slash
+        // short-circuit: a forward-slashed UNC (`//wsl.localhost/...`) also starts with
+        // '/', so a naive linux-path check would wrongly return it unchanged. See #57.
+        parseUncPath(windowsPath)?.let { return it.linuxPath }
+
         // Already a Linux absolute path — nothing to convert.
         if (windowsPath.startsWith("/")) return windowsPath
-
-        // WSL UNC path -> the path inside the distro.
-        parseUncPath(windowsPath)?.let { return it.linuxPath }
 
         // Drive-letter path: "C:\Users\foo" or "C:Users\foo" -> "/mnt/c/Users/foo".
         if (windowsPath.length >= 2 && windowsPath[1] == ':') {
@@ -100,12 +102,20 @@ object WslPathResolver {
 
     /**
      * Build the command to run `node <script>` inside a WSL distro from the Windows host,
-     * via a **login shell** so the user's PATH (`~/.profile`, `~/.bash_profile`, `/etc/profile`)
-     * is sourced — required for distros like NixOS where `node` is on the nix profile PATH
-     * and not visible to a non-login shell. Issue #57: see the maicol07 reproducer (NixOS).
+     * via a **login + interactive shell** (`bash -lic`) so the user's full PATH is sourced.
      *
-     * Produces, e.g.:
-     * `wsl.exe -d NixOS --cd /home/u/proj -- bash -lc "export PORT='0'; export … ; exec 'node' '/mnt/c/.../backend.mjs'"`
+     * A login shell alone (`-lc`) sources `~/.profile` / `~/.bash_profile` / `/etc/profile`,
+     * which covers nix-profile distros like NixOS. But it does NOT source `~/.bashrc`, where
+     * nvm/fnm/n write their PATH init — and Ubuntu's stock `.bashrc` returns at the very top
+     * for non-interactive shells (`case $- in *i*) ;; *) return;; esac`). So `-lc` misses an
+     * nvm-managed `node`/`claude` entirely: the backend dies with exit 127 (node not found)
+     * or, where node is on the profile PATH but claude is not, the CLI later fails with
+     * `spawn claude ENOENT`. Adding `-i` makes bash source `.bashrc`, matching how the native
+     * host captures PATH (ShellPathResolver also uses `-lic`). Issue #57 / maicol07 reproducer.
+     *
+     * `exec` then replaces bash with node, so node — and anything it spawns (claude) —
+     * inherits that interactive-shell PATH. Produces, e.g.:
+     * `wsl.exe -d Ubuntu --cd /home/u/proj -- bash -lic "export PORT='0'; export … ; exec 'node' '/mnt/c/.../backend.mjs'"`
      *
      * - The leading `wsl.exe` is resolved on the Windows PATH (System32).
      * - Everything after `--` runs inside the distro, so `bash`/`node` are the distro's.
@@ -114,7 +124,7 @@ object WslPathResolver {
      *   from the IDE reach `node` directly.
      * - [scriptLinuxPath] must already be a WSL-visible path (use [toWslPath] on the
      *   Windows extraction path). [nodeExec] defaults to `node` (resolved on the distro's
-     *   login-shell PATH).
+     *   login + interactive shell PATH).
      * - All values are single-quoted with `'` → `'\''` escaping so spaces or quotes in
      *   paths/env values can't break out of the snippet.
      *
@@ -141,7 +151,7 @@ object WslPathResolver {
                 add("--cd"); add(linuxCwd)
             }
             add("--")
-            add("bash"); add("-lc"); add(snippet)
+            add("bash"); add("-lic"); add(snippet)
         }
     }
 
