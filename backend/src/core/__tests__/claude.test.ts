@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 
 // We can't easily test Claude class directly because buildAugmentedPath runs
 // at class load time. Instead we test the observable behavior.
@@ -9,6 +9,24 @@ vi.mock('../features/settings', () => ({
   readSettingsFile: vi.fn().mockResolvedValue({ cliPath: null }),
 }));
 
+// Mock child_process so we can inspect the options passed to spawn/execFile
+// without launching a real process.
+vi.mock('child_process', () => ({
+  spawn: vi.fn(() => ({ on: vi.fn() })),
+  execFile: vi.fn(
+    (
+      _cmd: string,
+      _args: string[],
+      _opts: unknown,
+      cb?: (err: unknown, stdout: string, stderr: string) => void,
+    ) => {
+      cb?.(null, '{}', '');
+      return { on: vi.fn() };
+    },
+  ),
+}));
+
+import { spawn as cpSpawn, execFile as cpExecFile } from 'child_process';
 import { Claude } from '../claude';
 
 describe('Claude', () => {
@@ -35,6 +53,52 @@ describe('Claude', () => {
   describe('refresh()', () => {
     it('should load settings without throwing', async () => {
       await expect(Claude.refresh()).resolves.not.toThrow();
+    });
+  });
+
+  // Regression for issue #99: on Windows the `claude` launcher is a .cmd/.ps1
+  // wrapper that execFile cannot run without a shell, so `claude auth status`
+  // (GET_ACCOUNT) failed with ENOENT and the user was stuck on the login screen
+  // even while already authenticated. spawn() already ran through a shell on
+  // win32; exec() must do the same so the two stay symmetric.
+  describe('shell handling across platforms', () => {
+    const originalPlatform = process.platform;
+
+    const setPlatform = (value: NodeJS.Platform) => {
+      Object.defineProperty(process, 'platform', { value, configurable: true });
+    };
+
+    afterEach(() => {
+      setPlatform(originalPlatform);
+      vi.clearAllMocks();
+    });
+
+    it('exec() runs through a shell on win32 (#99)', async () => {
+      setPlatform('win32');
+      await Claude.exec(['auth', 'status']);
+      const opts = vi.mocked(cpExecFile).mock.calls[0]?.[2] as { shell?: boolean };
+      expect(opts.shell).toBe(true);
+    });
+
+    it('exec() does not force a shell on non-win32', async () => {
+      setPlatform('darwin');
+      await Claude.exec(['auth', 'status']);
+      const opts = vi.mocked(cpExecFile).mock.calls[0]?.[2] as { shell?: boolean };
+      expect(opts.shell).toBeFalsy();
+    });
+
+    it('exec() honors an explicit shell override', async () => {
+      setPlatform('win32');
+      await Claude.exec(['auth', 'status'], { shell: false });
+      const opts = vi.mocked(cpExecFile).mock.calls[0]?.[2] as { shell?: boolean };
+      expect(opts.shell).toBe(false);
+    });
+
+    it('spawn() runs through a shell on win32', () => {
+      setPlatform('win32');
+      Claude.spawn(['auth', 'login', '--claudeai']);
+      const opts = vi.mocked(cpSpawn).mock.calls[0]?.[2] as { shell?: boolean };
+      expect(opts.shell).toBe(true);
     });
   });
 });

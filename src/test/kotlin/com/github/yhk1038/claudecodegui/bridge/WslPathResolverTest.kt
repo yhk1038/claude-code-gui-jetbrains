@@ -106,6 +106,13 @@ class WslPathResolverTest {
         }
 
         @Test
+        fun `converts forward-slashed wsl unc path`() {
+            // The IDE hands the backend a forward-slashed UNC; it also starts with '/',
+            // so it must be matched as UNC before the linux-path short-circuit. See #57.
+            assertEquals("/home/yhk/test-proj", WslPathResolver.toWslPath("//wsl.localhost/Ubuntu/home/yhk/test-proj"))
+        }
+
+        @Test
         fun `leaves linux path unchanged`() {
             assertEquals("/home/user/proj", WslPathResolver.toWslPath("/home/user/proj"))
         }
@@ -135,7 +142,7 @@ class WslPathResolverTest {
             assertEquals(
                 listOf(
                     "wsl.exe", "-d", "Ubuntu", "--cd", "/home/u/proj", "--",
-                    "bash", "-lc",
+                    "bash", "-lic",
                     "export PORT='0'; export JETBRAINS_MODE='true'; exec 'node' '/mnt/c/Temp/backend.mjs'",
                 ),
                 cmd,
@@ -153,7 +160,7 @@ class WslPathResolverTest {
             assertEquals(
                 listOf(
                     "wsl.exe", "-d", "NixOS", "--",
-                    "bash", "-lc", "exec 'node' '/mnt/c/b.mjs'",
+                    "bash", "-lic", "exec 'node' '/mnt/c/b.mjs'",
                 ),
                 cmd,
             )
@@ -173,7 +180,7 @@ class WslPathResolverTest {
             assertEquals(
                 listOf(
                     "wsl.exe", "-d", "Ubuntu", "--cd", "/p", "--",
-                    "bash", "-lc",
+                    "bash", "-lic",
                     "exec '/home/u/.nvm/node' '/s.mjs' '--flag' 'x'",
                 ),
                 cmd,
@@ -192,7 +199,7 @@ class WslPathResolverTest {
             assertEquals(
                 listOf(
                     "wsl.exe", "-d", "Ubuntu", "--cd", "/p", "--",
-                    "bash", "-lc",
+                    "bash", "-lic",
                     "export MSG='it'\\''s'; exec 'node' '/path with spaces/it'\\''s.mjs'",
                 ),
                 cmd,

@@ -7,6 +7,20 @@ import {
 } from 'child_process';
 import { readSettingsFile } from './features/settings';
 import { augmentedPath } from './augmented-path';
+import { isWslUncPath, toWslPath } from './wsl-path';
+
+/**
+ * In a WSL backend (running inside the distro, platform === 'linux') the IDE hands us the
+ * project root as a Windows UNC path (`//wsl.localhost/Ubuntu/home/...`). That path does not
+ * exist inside the distro, so spawning the CLI with it as cwd fails with `spawn ... ENOENT`
+ * — the *cwd*, not the binary, is missing. Convert it to the inner Linux path. Issue #57.
+ */
+function resolveWslCwd(cwd: SpawnOptions['cwd']): SpawnOptions['cwd'] {
+  if (process.platform === 'linux' && typeof cwd === 'string' && isWslUncPath(cwd)) {
+    return toWslPath(cwd) ?? cwd;
+  }
+  return cwd;
+}
 
 export class Claude {
   private static cliPath: string | null = null;
@@ -33,6 +47,7 @@ export class Claude {
   static spawn(args: string[], options?: SpawnOptions): ChildProcess {
     return cpSpawn(Claude.command, args, {
       ...options,
+      cwd: resolveWslCwd(options?.cwd),
       shell: options?.shell ?? (process.platform === 'win32'),
       env: {
         ...Claude.env,
@@ -46,6 +61,14 @@ export class Claude {
       cpExecFile(Claude.command, args, {
         timeout: 10000,
         ...options,
+        cwd: resolveWslCwd(options?.cwd),
+        // On Windows the `claude` launcher is a .cmd/.ps1 wrapper that execFile
+        // cannot run without a shell (it fails with ENOENT). spawn() already
+        // runs through a shell on win32; keep exec() symmetric so `auth status`
+        // and `--version` resolve the wrapper. Without this, GET_ACCOUNT always
+        // reported "not logged in" and users were stuck on the login screen
+        // even while authenticated (#99).
+        shell: options?.shell ?? (process.platform === 'win32'),
         env: {
           ...Claude.env,
           ...options?.env,

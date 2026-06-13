@@ -5,6 +5,8 @@ import { Route, ROUTE_META, Label } from '@/router/routes';
 import { getBridge, LOGIN_REQUEST_TIMEOUT_MS } from '@/api/bridge/Bridge';
 import { getAdapter } from '@/adapters';
 import { useSessionContext } from '@/contexts/SessionContext';
+import { useAuthContext } from '@/contexts';
+import { LoginCodeInput } from './LoginCodeInput';
 
 interface Props {
   className?: string;
@@ -18,14 +20,24 @@ export function SwitchAccountPage(props: Props) {
   const meta = ROUTE_META[Route.SWITCH_ACCOUNT];
 
   const { workingDirectory } = useSessionContext();
+  const { refetch } = useAuthContext();
   const [loadingMethod, setLoadingMethod] = useState<LoginMethod | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [codeRequired, setCodeRequired] = useState(false);
 
   const handleLogin = async (method: LoginMethod) => {
     if (loadingMethod !== null) return;
 
     setLoadingMethod(method);
     setError(null);
+    setCodeRequired(false);
+
+    // Some flows (e.g. WSL projects) can't auto-complete via a local callback: the
+    // CLI prints a code after browser sign-in and waits for it. The backend emits
+    // LOGIN_CODE_REQUIRED only when that prompt appears, so the input is optional. (#57)
+    const unsubscribe = getBridge().subscribe('LOGIN_CODE_REQUIRED', () => {
+      setCodeRequired(true);
+    });
 
     try {
       const result = await getBridge().request<{ requestId: string; status: string; error?: string }>(
@@ -35,6 +47,11 @@ export function SwitchAccountPage(props: Props) {
       );
 
       if (result?.status === 'ok') {
+        // Re-query auth status before navigating so the chat login gate
+        // (useLoginGate) sees the fresh logged-in state. Without this, navigate
+        // happens while AuthContext.loggedIn is still the stale `false`, and the
+        // gate bounces the user right back to this login screen (#99).
+        await refetch();
         navigate(Route.NEW_SESSION);
       } else {
         setError(result?.error ?? 'Login failed. Please try again.');
@@ -42,8 +59,18 @@ export function SwitchAccountPage(props: Props) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
     } finally {
+      unsubscribe();
+      setCodeRequired(false);
       setLoadingMethod(null);
     }
+  };
+
+  const handleSubmitCode = (code: string): void => {
+    getBridge().sendRaw({
+      type: 'SUBMIT_LOGIN_CODE',
+      payload: { code },
+      timestamp: Date.now(),
+    });
   };
 
   const handleOpenProviderDocs = async () => {
@@ -96,6 +123,10 @@ export function SwitchAccountPage(props: Props) {
             <p className="text-xs text-state-error-fg mt-3 px-3 py-2 bg-state-error-bg border border-state-error-border rounded-lg">
               {error}
             </p>
+          )}
+
+          {codeRequired && (
+            <LoginCodeInput onSubmit={handleSubmitCode} />
           )}
 
           <button

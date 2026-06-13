@@ -27,6 +27,7 @@ import { getVersionHandler } from './getVersion';
 import { getAccountHandler } from './getAccount';
 import { reclaimSessionHandler } from './reclaimSession';
 import { loginHandler } from './login';
+import { submitLoginCodeHandler } from './submitLoginCode';
 import { openUrlHandler } from './openUrl';
 import { getAvailableTerminalsHandler } from './getAvailableTerminals';
 import { getDetectedCliPathHandler } from './getDetectedCliPath';
@@ -140,6 +141,9 @@ export async function handleMessage(
       break;
     case 'LOGIN':
       await loginHandler(connectionId, message, connections, bridge);
+      break;
+    case 'SUBMIT_LOGIN_CODE':
+      submitLoginCodeHandler(connectionId, message, connections, bridge);
       break;
     case 'OPEN_URL':
       await openUrlHandler(connectionId, message, connections, bridge);
