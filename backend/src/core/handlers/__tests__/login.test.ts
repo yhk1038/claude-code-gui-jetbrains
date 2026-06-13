@@ -5,7 +5,7 @@ vi.mock('../../claude', () => ({
   Claude: { spawn: vi.fn() },
 }));
 
-import { loginHandler } from '../login';
+import { loginHandler, cancelLogin } from '../login';
 import { Claude } from '../../claude';
 import type { ConnectionManager } from '../../../ws/connection-manager';
 import type { Bridge } from '../../../bridge/bridge-interface';
@@ -13,8 +13,12 @@ import type { IPCMessage } from '../../types';
 
 const mockSpawn = vi.mocked(Claude.spawn);
 
-function fakeChild(): EventEmitter {
-  return new EventEmitter();
+type FakeChild = EventEmitter & { kill: ReturnType<typeof vi.fn> };
+
+function fakeChild(): FakeChild {
+  const child = new EventEmitter() as FakeChild;
+  child.kill = vi.fn();
+  return child;
 }
 
 function createMockConnections() {
@@ -65,5 +69,28 @@ describe('loginHandler', () => {
       requestId: 'r1',
       status: 'error',
     }));
+  });
+});
+
+describe('cancelLogin', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('kills the in-flight login child for the connection and forgets it', () => {
+    const child = fakeChild();
+    mockSpawn.mockReturnValue(child as never);
+    const connections = createMockConnections();
+    const message: IPCMessage = { type: 'LOGIN', payload: { method: 'claude-ai' }, requestId: 'r1', timestamp: 0 };
+    // Login is in flight: the child has NOT closed yet.
+    void loginHandler('c1', message, connections, mockBridge);
+
+    expect(cancelLogin('c1')).toBe(true);
+    expect(child.kill).toHaveBeenCalled();
+
+    // The child is forgotten, so a second cancel is a no-op.
+    expect(cancelLogin('c1')).toBe(false);
+  });
+
+  it('returns false when the connection has no in-flight login', () => {
+    expect(cancelLogin('no-such-connection')).toBe(false);
   });
 });

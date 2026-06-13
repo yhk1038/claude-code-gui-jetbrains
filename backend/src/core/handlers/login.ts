@@ -107,3 +107,18 @@ export function submitLoginCode(connectionId: string, code: string): boolean {
   child.stdin.write(code.trim() + '\n');
   return true;
 }
+
+/**
+ * Kill the in-flight `claude auth login` process for [connectionId], if any, and
+ * forget it. Called when the webview connection drops: an interactive login that
+ * is still waiting on stdin (e.g. the "paste code" prompt) never closes on its
+ * own, so without this it would linger as a zombie. Returns false when there was
+ * no such process.
+ */
+export function cancelLogin(connectionId: string): boolean {
+  const child = activeLoginChildren.get(connectionId);
+  if (!child) return false;
+  activeLoginChildren.delete(connectionId);
+  child.kill();
+  return true;
+}

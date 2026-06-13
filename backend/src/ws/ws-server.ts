@@ -8,6 +8,7 @@ import type { Bridge } from '../bridge/bridge-interface';
 import type { IPCMessage } from '../core/types';
 import { ClientEnv } from '../shared';
 import { getPluginVersion } from '../core/handlers/getVersion';
+import { cancelLogin } from '../core/handlers/login';
 import { LogWebSocketServer } from '../logging/log-ws';
 
 const ALLOWED_WS_ORIGINS = new Set([
@@ -203,6 +204,9 @@ export function startWebSocketServer(
 
       ws.on('close', () => {
         console.error('[node-backend]', `Client disconnected: ${connectionId}`);
+        // An interactive `claude auth login` waiting on stdin won't exit on its
+        // own once the webview is gone — kill it so it can't linger as a zombie.
+        cancelLogin(connectionId);
         connections.removeConnection(connectionId);
       });
     });
