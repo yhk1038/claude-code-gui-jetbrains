@@ -46,6 +46,13 @@ export class Claude {
       cpExecFile(Claude.command, args, {
         timeout: 10000,
         ...options,
+        // On Windows the `claude` launcher is a .cmd/.ps1 wrapper that execFile
+        // cannot run without a shell (it fails with ENOENT). spawn() already
+        // runs through a shell on win32; keep exec() symmetric so `auth status`
+        // and `--version` resolve the wrapper. Without this, GET_ACCOUNT always
+        // reported "not logged in" and users were stuck on the login screen
+        // even while authenticated (#99).
+        shell: options?.shell ?? (process.platform === 'win32'),
         env: {
           ...Claude.env,
           ...options?.env,
