@@ -6,6 +6,7 @@ import { getBridge, LOGIN_REQUEST_TIMEOUT_MS } from '@/api/bridge/Bridge';
 import { getAdapter } from '@/adapters';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useAuthContext } from '@/contexts';
+import { LoginCodeInput } from './LoginCodeInput';
 
 interface Props {
   className?: string;
@@ -22,12 +23,21 @@ export function SwitchAccountPage(props: Props) {
   const { refetch } = useAuthContext();
   const [loadingMethod, setLoadingMethod] = useState<LoginMethod | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [codeRequired, setCodeRequired] = useState(false);
 
   const handleLogin = async (method: LoginMethod) => {
     if (loadingMethod !== null) return;
 
     setLoadingMethod(method);
     setError(null);
+    setCodeRequired(false);
+
+    // Some flows (e.g. WSL projects) can't auto-complete via a local callback: the
+    // CLI prints a code after browser sign-in and waits for it. The backend emits
+    // LOGIN_CODE_REQUIRED only when that prompt appears, so the input is optional. (#57)
+    const unsubscribe = getBridge().subscribe('LOGIN_CODE_REQUIRED', () => {
+      setCodeRequired(true);
+    });
 
     try {
       const result = await getBridge().request<{ requestId: string; status: string; error?: string }>(
@@ -49,8 +59,18 @@ export function SwitchAccountPage(props: Props) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
     } finally {
+      unsubscribe();
+      setCodeRequired(false);
       setLoadingMethod(null);
     }
+  };
+
+  const handleSubmitCode = (code: string): void => {
+    getBridge().sendRaw({
+      type: 'SUBMIT_LOGIN_CODE',
+      payload: { code },
+      timestamp: Date.now(),
+    });
   };
 
   const handleOpenProviderDocs = async () => {
@@ -103,6 +123,10 @@ export function SwitchAccountPage(props: Props) {
             <p className="text-xs text-state-error-fg mt-3 px-3 py-2 bg-state-error-bg border border-state-error-border rounded-lg">
               {error}
             </p>
+          )}
+
+          {codeRequired && (
+            <LoginCodeInput onSubmit={handleSubmitCode} />
           )}
 
           <button
