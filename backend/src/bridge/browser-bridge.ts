@@ -239,6 +239,16 @@ if ($dialog.ShowDialog() -eq 'OK') {
     return null;
   }
 
+  async showNotification(_params: {
+    title: string;
+    body: string;
+    workingDir?: string;
+    panelId?: string;
+  }): Promise<void> {
+    // no-op: browser mode raises notifications via the webview's own
+    // Notification API, so the backend is never asked to show one.
+  }
+
   async openTerminal(workingDir: string): Promise<void> {
     const settings = await readSettingsFile();
     const terminalApp = settings['terminalApp'] as string | null;

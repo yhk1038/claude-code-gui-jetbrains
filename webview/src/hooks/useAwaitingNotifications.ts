@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import {
   NotificationKind,
   notify,
+  shouldNotifyForBackgroundEvent,
   type SoundSelection,
 } from '@/notifications';
 import { setUnreadFavicon } from './favicon';
@@ -20,11 +21,12 @@ interface AwaitingSignals {
  * transitions into a state that needs the user's attention (currently:
  * pending tool-permission, plan-approval, or user-question prompts).
  *
- * Triggers only while the tab is hidden — if the user is already viewing
- * the session, both the OS notification and the unread badge would be
- * redundant noise. The favicon is restored by useDocumentTitle's
- * visibilitychange handler, which reads the DOM directly so any source can
- * set the unread state.
+ * Gated by shouldNotifyForBackgroundEvent(): in the browser this fires only
+ * while the tab is hidden — if the user is already viewing the session, both
+ * the OS notification and the unread badge would be redundant noise. In JCEF it
+ * always fires and the IDE host focus-gates the native notification instead. The
+ * favicon is restored by useDocumentTitle's visibilitychange handler, which
+ * reads the DOM directly so any source can set the unread state.
  *
  * Unread badge and desktop notification always travel together: their
  * shared purpose is to signal "you should be looking at this session right
@@ -47,7 +49,7 @@ export function useAwaitingNotifications(
   const wasPendingPermissionRef = useRef(false);
   useEffect(() => {
     const isPending = signals.pendingPermission;
-    if (isPending && !wasPendingPermissionRef.current && document.hidden) {
+    if (isPending && !wasPendingPermissionRef.current && shouldNotifyForBackgroundEvent()) {
       setUnreadFavicon();
       notify(
         NotificationKind.AWAITING_PERMISSION,
@@ -61,7 +63,7 @@ export function useAwaitingNotifications(
   const wasPendingPlanRef = useRef(false);
   useEffect(() => {
     const isPending = signals.pendingPlanApproval;
-    if (isPending && !wasPendingPlanRef.current && document.hidden) {
+    if (isPending && !wasPendingPlanRef.current && shouldNotifyForBackgroundEvent()) {
       setUnreadFavicon();
       notify(
         NotificationKind.AWAITING_PLAN_APPROVAL,
@@ -75,7 +77,7 @@ export function useAwaitingNotifications(
   const wasPendingUserAnswerRef = useRef(false);
   useEffect(() => {
     const isPending = signals.pendingUserAnswer;
-    if (isPending && !wasPendingUserAnswerRef.current && document.hidden) {
+    if (isPending && !wasPendingUserAnswerRef.current && shouldNotifyForBackgroundEvent()) {
       setUnreadFavicon();
       notify(
         NotificationKind.AWAITING_USER_INPUT,
