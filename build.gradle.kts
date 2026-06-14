@@ -147,6 +147,14 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
+            <h3>0.18.3 - Steadier sign-in on Windows and WSL</h3>
+            <ul>
+                <li><b>Windows & WSL sign-in fixes</b>: Claude failed to launch in WSL projects, and the login screen could get stuck on Windows. Both are now resolved. (#57, #99)</li>
+                <li><b>Sign-in link shown in a dialog</b>: Signing in no longer pops open a browser unexpectedly. You can see the link on screen and open it yourself. (#57)</li>
+                <li><b>Polished settings dropdowns</b>: The selection menus in Settings now match the app theme and look consistent everywhere. (#96)</li>
+                <li><b>Auto-scroll keeps up with long replies</b>: Auto-scroll no longer breaks when a large block of content arrives all at once. (#100)</li>
+                <li>Other backend bug fixes. (#97)</li>
+            </ul>
             <h3>0.18.2 - Smoother sign-in and remote control</h3>
             <ul>
                 <li><b>Sign-in guidance</b>: Sending a message while signed out used to do nothing. Now you get a clear prompt to sign in. (#91)</li>
