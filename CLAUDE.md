@@ -143,7 +143,7 @@ Idle → Streaming → Waiting Permission → Has Diff → Error
 | `/precheck` | `.claude/skills/precheck/SKILL.md` | "프리체크", "precheck", "배포 전 검수" |
 | `/release-monitor` | `.claude/skills/release-monitor/SKILL.md` | "릴리즈 모니터링", "release-monitor", "마켓플레이스 모니터링", "approval 확인" |
 
-`/cc-gui-reporter`의 데이터 수집은 `./scripts/cc-gui-report.sh` 가 담당한다 (사용자가 직접 실행 가능, 읽기 전용).
+`/cc-gui-reporter`의 데이터 수집은 `./ignore/cc-gui-report.sh` 가 담당한다 (사용자가 직접 실행 가능, 읽기 전용. git 비추적 — `ignore/` 폴더).
 
 ## JetBrains SDK API 사용 주의사항
 
