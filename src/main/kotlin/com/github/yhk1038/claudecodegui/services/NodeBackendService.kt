@@ -1,6 +1,7 @@
 package com.github.yhk1038.claudecodegui.services
 
 import com.github.yhk1038.claudecodegui.bridge.NodeProcessManager
+import com.github.yhk1038.claudecodegui.bridge.NotificationOutcome
 import com.github.yhk1038.claudecodegui.bridge.RpcWebSocketClient
 import com.github.yhk1038.claudecodegui.bridge.WslPathResolver
 import com.intellij.openapi.Disposable
@@ -130,6 +131,15 @@ class NodeBackendService : Disposable {
                 any()?.requiresRestart() ?: run { warn("requiresRestart"); true }
 
             override suspend fun getIdeRoot(workingDir: String?): String? = basePath.ifBlank { null }
+
+            override suspend fun showNotification(title: String, body: String, panelId: String?): NotificationOutcome {
+                // Route to the originating panel so its "Open session" action returns
+                // to the right tab; fall back to any panel when the id is unknown
+                // (e.g. the tab was closed between send and completion).
+                val handler = panelId?.let { handlers[it] } ?: any()
+                return handler?.showNotification(title, body, panelId)
+                    ?: run { warn("showNotification"); NotificationOutcome(shown = false, ideFocused = true) }
+            }
         }
 
         @Synchronized

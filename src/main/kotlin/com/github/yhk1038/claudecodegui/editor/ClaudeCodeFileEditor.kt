@@ -51,7 +51,7 @@ class ClaudeCodeFileEditor(
         panel.onStreamingStateChanged = { isStreaming ->
             if (!isStreaming && wasStreaming) {
                 if (!isTabActive()) {
-                    virtualFile.setBadge(TabBadge.UNREAD)
+                    virtualFile.setBadge(TabBadge.UNREAD, project)
                 }
             }
             wasStreaming = isStreaming

@@ -36,4 +36,26 @@ export interface Bridge {
    * above the IDE project they are inside.
    */
   getIdeRoot(workingDir?: string): Promise<string | null>;
+  /**
+   * Show a host-native desktop notification. Used for "agent needs your
+   * attention" / "response complete" events when the webview cannot raise its
+   * own browser notification (JCEF has no Notification API). In browser mode the
+   * webview shows the notification itself, so this is a no-op there.
+   *
+   * [workingDir] routes the request to the IDE host serving that project root
+   * when several IDEs share one backend; [panelId] then selects the exact panel
+   * (session tab) inside that IDE so the notification — and its "Open session"
+   * action — target the right tab.
+   *
+   * Returns whether the IDE balloon was shown (false when suppressed because the
+   * user is viewing the session) and whether the IDE window was focused. The
+   * caller raises a real OS notification when the IDE is NOT focused, since an
+   * in-IDE balloon is hidden behind other apps then.
+   */
+  showNotification(params: {
+    title: string;
+    body: string;
+    workingDir?: string;
+    panelId?: string;
+  }): Promise<{ shown: boolean; ideFocused: boolean }>;
 }

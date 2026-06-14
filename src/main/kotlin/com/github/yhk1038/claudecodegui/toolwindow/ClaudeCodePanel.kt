@@ -2,6 +2,7 @@ package com.github.yhk1038.claudecodegui.toolwindow
 
 import com.github.yhk1038.claudecodegui.actions.OpenClaudeCodeAction
 import com.github.yhk1038.claudecodegui.bridge.NodeProcessManager
+import com.github.yhk1038.claudecodegui.bridge.NotificationOutcome
 import com.github.yhk1038.claudecodegui.editor.ClaudeCodeVirtualFile
 import com.github.yhk1038.claudecodegui.notifications.JcefRuntimeNotifier
 import com.github.yhk1038.claudecodegui.services.ClaudeCodeBrowserService
@@ -17,7 +18,12 @@ import com.intellij.ide.dnd.DnDManager
 import com.intellij.ide.dnd.DnDTarget
 import com.intellij.ide.dnd.FileCopyPasteUtil
 import com.intellij.ide.dnd.TransferableWrapper
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationAction
+import com.intellij.notification.NotificationGroupManager
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptor
@@ -30,6 +36,7 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.wm.WindowManager
 import com.intellij.psi.PsiElement
 import com.intellij.ui.jcef.JBCefBrowser
 import com.intellij.ui.jcef.JBCefJSQuery
@@ -1072,6 +1079,52 @@ class ClaudeCodePanel(
                 // returns its own project root. The composite picks the right
                 // panel before this is ever reached.
                 return project.basePath
+            }
+
+            override suspend fun showNotification(title: String, body: String, panelId: String?): NotificationOutcome {
+                // panelId already routed us to the right panel (see NodeBackendService
+                // Router), so we act on our own tabId here.
+                val result = CompletableDeferred<NotificationOutcome>()
+                ApplicationManager.getApplication().invokeLater {
+                    // Gate here, not in the webview: JCEF's document.hidden is unreliable
+                    // for editor-tab / app-focus changes (works in 2024.2, not 2026.1).
+                    // Suppress only when the user is actually looking at THIS session —
+                    // its editor tab is the selected editor AND the IDE window is focused
+                    // (the same signal the unread tab badge uses).
+                    val fem = FileEditorManager.getInstance(project)
+                    val thisTabSelected = fem.selectedEditors.any {
+                        (it.file as? ClaudeCodeVirtualFile)?.tabId == tabId
+                    }
+                    val ideFocused = WindowManager.getInstance().getFrame(project)?.isActive == true
+                    if (thisTabSelected && ideFocused) {
+                        logger.info("Skipping notification (user viewing this session): $title")
+                        result.complete(NotificationOutcome(shown = false, ideFocused = ideFocused))
+                        return@invokeLater
+                    }
+
+                    // IDE balloon (visible when the IDE is in the foreground) + Event Log
+                    // entry with a one-click jump back to the session. When the IDE is in
+                    // the background the backend also raises a real OS notification (it
+                    // reads ideFocused from this result), since the balloon would be hidden.
+                    val notification = NotificationGroupManager.getInstance()
+                        .getNotificationGroup("claude-code-gui.attention")
+                        .createNotification(title, body, NotificationType.INFORMATION)
+
+                    if (ClaudeCodeVirtualFile.isTabOpen(project, tabId)) {
+                        notification.addAction(object : NotificationAction("Open session") {
+                            override fun actionPerformed(e: AnActionEvent, n: Notification) {
+                                val virtualFile = ClaudeCodeVirtualFile.getOrCreate(project, tabId)
+                                FileEditorManager.getInstance(project).openFile(virtualFile, true)
+                                n.expire()
+                            }
+                        })
+                    }
+
+                    notification.notify(project)
+                    logger.info("Showed attention notification: $title (ideFocused=$ideFocused)")
+                    result.complete(NotificationOutcome(shown = true, ideFocused = ideFocused))
+                }
+                return result.await()
             }
         }
     }

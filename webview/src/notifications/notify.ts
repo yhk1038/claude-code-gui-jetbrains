@@ -1,5 +1,6 @@
 import { api } from '@/api/ClaudeCodeApi';
 import { NOTIFICATION_TEMPLATES } from './templates';
+import { isIdeHost } from './host';
 import {
   NotificationKind,
   SOUND_OFF,
@@ -10,16 +11,19 @@ import {
 /**
  * Emits a desktop notification for the given event kind.
  *
- * Silently no-ops in environments where the Notification API is unavailable
- * (e.g. JCEF inside the JetBrains IDE) or when permission has not been
- * granted yet, so callers can invoke it unconditionally.
+ * Two delivery paths, chosen by environment:
+ *  - JetBrains IDE (JCEF): the page's own `Notification` API is unreliable, so we
+ *    ask the IDE host to raise a native notification via `SHOW_NOTIFICATION`. The
+ *    platform shows a balloon, or an OS notification when the IDE is backgrounded.
+ *  - Browser / standalone: the page's own `Notification` API. No-ops when
+ *    permission has not been granted, so callers can invoke unconditionally.
  *
- * As of Phase 1.5 the notification itself is always created with
- * `silent: true` — sound playback is delegated to the Node.js backend via
- * `PLAY_SYSTEM_SOUND` so we can play a specific OS sound consistently
- * across browsers (the browser `silent: false` path is too unreliable on
- * Chrome/macOS). When `soundSelection !== SOUND_OFF`, the selected
- * `soundId` is sent to the backend in fire-and-forget fashion.
+ * On the browser path the notification is created with `silent: true` — sound is
+ * delegated to the Node.js backend via `PLAY_SYSTEM_SOUND` so we can play a
+ * specific OS sound consistently across browsers (the browser `silent: false`
+ * path is too unreliable on Chrome/macOS). Sound is played on both paths; when
+ * `soundSelection !== SOUND_OFF` the selected `soundId` is sent to the backend in
+ * fire-and-forget fashion.
  */
 
 const activeNotifications = new Set<Notification>();
@@ -30,23 +34,43 @@ export function notify(
   soundSelection: SoundSelection,
 ): void {
   if (typeof window === 'undefined') return;
-  if (!('Notification' in window)) return;
-  if (Notification.permission !== 'granted') return;
 
   const template = NOTIFICATION_TEMPLATES[kind];
+  const title = template.title(ctx);
 
-  let n: Notification;
-  try {
-    n = new Notification(template.title(ctx), {
-      body: template.body,
-      icon: template.icon,
-      // Always silence the browser's own sound channel — sound is played by
-      // the backend (Phase 1.5) so we don't double up.
-      silent: true,
+  if (isIdeHost()) {
+    // JetBrains IDE: delegate to the host (browser Notification API is
+    // present-but-broken in JCEF — CEF #2951 — so never use it here).
+    api.notifications.show({ title, body: template.body }).catch((err: unknown) => {
+      console.warn('[notify] SHOW_NOTIFICATION failed:', err);
     });
-  } catch {
-    // Some platforms (e.g. some mobile Safari versions) throw when constructing
-    // a Notification directly. Treat construction failure as a no-op.
+  } else if ('Notification' in window && Notification.permission === 'granted') {
+    // Browser / standalone mode: raise the notification ourselves.
+    let n: Notification;
+    try {
+      n = new Notification(title, {
+        body: template.body,
+        icon: template.icon,
+        // Always silence the browser's own sound channel — sound is played by
+        // the backend so we don't double up.
+        silent: true,
+      });
+    } catch {
+      // Some platforms (e.g. some mobile Safari versions) throw when constructing
+      // a Notification directly. Treat construction failure as a no-op.
+      return;
+    }
+
+    activeNotifications.add(n);
+    n.onclick = () => {
+      window.focus();
+      n.close();
+    };
+    n.onclose = () => {
+      activeNotifications.delete(n);
+    };
+  } else {
+    // Browser without notification permission/API — nothing to show, no sound.
     return;
   }
 
@@ -56,15 +80,6 @@ export function notify(
       console.warn('[notify] PLAY_SYSTEM_SOUND failed:', err);
     });
   }
-
-  activeNotifications.add(n);
-  n.onclick = () => {
-    window.focus();
-    n.close();
-  };
-  n.onclose = () => {
-    activeNotifications.delete(n);
-  };
 }
 
 if (typeof window !== 'undefined' && 'addEventListener' in window) {

@@ -10,11 +10,15 @@ import { NotificationKind, SOUND_OFF } from '../types';
 // ---------------------------------------------------------------------------
 
 const playMock = vi.fn();
+const showNotificationMock = vi.fn();
 
 vi.mock('@/api/ClaudeCodeApi', () => ({
   api: {
     sounds: {
       play: (...args: unknown[]) => playMock(...args),
+    },
+    notifications: {
+      show: (...args: unknown[]) => showNotificationMock(...args),
     },
   },
 }));
@@ -69,10 +73,18 @@ function uninstallNotificationMock() {
   delete (globalThis as unknown as { Notification?: unknown }).Notification;
 }
 
+// notify() detects the IDE (JCEF) by the panelId in the page URL, NOT by the
+// presence of window.Notification.
+function setPanelId(id: string | null) {
+  window.history.replaceState({}, '', id ? `/?panelId=${id}` : '/');
+}
+
 beforeEach(() => {
   vi.resetModules();
   playMock.mockReset();
   playMock.mockResolvedValue(undefined);
+  showNotificationMock.mockReset();
+  showNotificationMock.mockResolvedValue(undefined);
   beforeUnloadListeners = [];
   originalAddEventListener = window.addEventListener.bind(window);
   vi.spyOn(window, 'addEventListener').mockImplementation(((
@@ -90,22 +102,69 @@ beforeEach(() => {
   originalFocus = window.focus.bind(window);
   focusSpy = vi.fn();
   window.focus = focusSpy as unknown as typeof window.focus;
+
+  // Default to standalone (no panelId); IDE tests opt in via setPanelId.
+  setPanelId(null);
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
   uninstallNotificationMock();
+  setPanelId(null);
   window.focus = originalFocus;
 });
 
 describe('notify()', () => {
-  it('is a no-op when window.Notification is unavailable', async () => {
+  it('delegates to api.notifications.show when panelId is present (IDE)', async () => {
+    setPanelId('panel-1');
     uninstallNotificationMock();
     const { notify } = await import('../notify');
-    expect(() =>
-      notify(NotificationKind.SESSION_COMPLETE, { sessionTitle: 't' }, SOUND_OFF),
-    ).not.toThrow();
+    notify(NotificationKind.SESSION_COMPLETE, { sessionTitle: 'My Session' }, SOUND_OFF);
+    expect(showNotificationMock).toHaveBeenCalledTimes(1);
+    expect(showNotificationMock).toHaveBeenCalledWith({
+      title: 'My Session',
+      body: 'Response complete',
+    });
+    // SOUND_OFF → no sound on the IDE path either.
     expect(playMock).not.toHaveBeenCalled();
+  });
+
+  it('delegates to the host in the IDE even when window.Notification exists (CEF #2951)', async () => {
+    // Recent JCEF exposes a present-but-broken Notification object; panelId must
+    // win so we never take the dead browser path inside the IDE.
+    setPanelId('panel-1');
+    installNotificationMock('granted');
+    const { notify } = await import('../notify');
+    notify(NotificationKind.SESSION_COMPLETE, { sessionTitle: 'My Session' }, SOUND_OFF);
+    expect(showNotificationMock).toHaveBeenCalledTimes(1);
+    expect(constructorSpy).not.toHaveBeenCalled();
+  });
+
+  it('falls back to APP_NAME on the IDE path when sessionTitle is null', async () => {
+    setPanelId('panel-1');
+    uninstallNotificationMock();
+    const { notify } = await import('../notify');
+    notify(NotificationKind.STREAM_ERROR, { sessionTitle: null }, SOUND_OFF);
+    expect(showNotificationMock).toHaveBeenCalledWith({
+      title: 'Claude Code',
+      body: 'Response failed',
+    });
+  });
+
+  it('plays the selected sound on the IDE path', async () => {
+    setPanelId('panel-1');
+    uninstallNotificationMock();
+    const { notify } = await import('../notify');
+    notify(NotificationKind.SESSION_COMPLETE, { sessionTitle: null }, 'Glass');
+    expect(showNotificationMock).toHaveBeenCalledTimes(1);
+    expect(playMock).toHaveBeenCalledWith('Glass');
+  });
+
+  it('does NOT call api.notifications.show on the browser path', async () => {
+    installNotificationMock('granted');
+    const { notify } = await import('../notify');
+    notify(NotificationKind.SESSION_COMPLETE, { sessionTitle: 't' }, SOUND_OFF);
+    expect(showNotificationMock).not.toHaveBeenCalled();
   });
 
   it('is a no-op when permission is "default"', async () => {
