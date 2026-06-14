@@ -1,6 +1,7 @@
 package com.github.yhk1038.claudecodegui.actions
 
 import com.github.yhk1038.claudecodegui.bridge.NodeProcessManager
+import com.github.yhk1038.claudecodegui.bridge.NotificationOutcome
 import com.github.yhk1038.claudecodegui.editor.ClaudeCodeVirtualFile
 import com.github.yhk1038.claudecodegui.services.NodeBackendService
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -211,6 +212,7 @@ class SendSelectionToClaudeAction : AnAction() {
         override suspend fun updatePlugin() {}
         override suspend fun requiresRestart(): Boolean = false
         override suspend fun getIdeRoot(workingDir: String?): String? = null
-        override suspend fun showNotification(title: String, body: String, panelId: String?) {}
+        override suspend fun showNotification(title: String, body: String, panelId: String?) =
+            NotificationOutcome(shown = false, ideFocused = true)
     }
 }
