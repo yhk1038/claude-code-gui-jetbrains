@@ -1,5 +1,7 @@
 package com.github.yhk1038.claudecodegui.editor
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.testFramework.LightVirtualFile
@@ -41,11 +43,18 @@ class ClaudeCodeVirtualFile(
     var badgeState: TabBadge = TabBadge.NONE
         private set
 
-    fun setBadge(badge: TabBadge) {
+    fun setBadge(badge: TabBadge, project: Project) {
         if (badgeState == badge) return
         badgeState = badge
-        // Trigger tab icon refresh by notifying a property change
-        VirtualFileManager.getInstance().notifyPropertyChanged(this, PROP_NAME, name, name)
+        // Refresh the tab's icon so ClaudeCodeFileIconPatcher repaints the badge.
+        // Do NOT use notifyPropertyChanged(PROP_NAME, name, name): IntelliJ 2024.2+
+        // rejects a VFilePropertyChangeEvent whose old == new value with
+        // "IllegalArgumentException: Values must be different" (the name is
+        // unchanged here — only the badge is). updateFilePresentation refreshes the
+        // tab presentation without faking a name change.
+        ApplicationManager.getApplication().invokeLater {
+            FileEditorManagerEx.getInstanceEx(project).updateFilePresentation(this)
+        }
     }
 
     companion object {
