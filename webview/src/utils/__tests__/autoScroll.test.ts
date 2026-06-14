@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   clampAutoScrollThreshold,
   nextAutoFollow,
+  shouldShowScrollToBottom,
   AUTO_SCROLL_THRESHOLD_DEFAULT,
   AUTO_SCROLL_THRESHOLD_MAX,
   AUTO_SCROLL_THRESHOLD_MIN,
@@ -83,5 +84,42 @@ describe('nextAutoFollow', () => {
   it('respects a custom release EPS argument', () => {
     expect(nextAutoFollow(true, -10, 500, RESUME, 20)).toBe(true);
     expect(nextAutoFollow(true, -25, 500, RESUME, 20)).toBe(false);
+  });
+});
+
+describe('shouldShowScrollToBottom', () => {
+  const THRESHOLD = 80;
+
+  // The button is meaningful ONLY when all three hide-conditions are false:
+  // auto-follow off AND there are messages AND the view is beyond the threshold.
+  it('shows when auto-follow is off, has messages, and far from the bottom', () => {
+    expect(shouldShowScrollToBottom(false, true, 500, THRESHOLD)).toBe(true);
+  });
+
+  // Hide-condition 1: auto-follow is active -> the view already tracks the bottom.
+  it('hides while auto-follow is active, even when far from the bottom', () => {
+    expect(shouldShowScrollToBottom(true, true, 500, THRESHOLD)).toBe(false);
+  });
+
+  // Hide-condition 2: no messages (an uninitialized session has nothing to scroll).
+  it('hides when there are no messages', () => {
+    expect(shouldShowScrollToBottom(false, false, 500, THRESHOLD)).toBe(false);
+  });
+
+  // Hide-condition 3: already within the threshold of the bottom.
+  it('hides when within the threshold of the bottom', () => {
+    expect(shouldShowScrollToBottom(false, true, THRESHOLD, THRESHOLD)).toBe(false);
+    expect(shouldShowScrollToBottom(false, true, THRESHOLD - 1, THRESHOLD)).toBe(false);
+    expect(shouldShowScrollToBottom(false, true, 0, THRESHOLD)).toBe(false);
+  });
+
+  // The exact bug: pinned near the bottom, a tiny upward nudge releases
+  // auto-follow, but the position is still within the threshold -> stay hidden.
+  it('stays hidden when auto-follow released but still within the threshold', () => {
+    expect(shouldShowScrollToBottom(false, true, 10, THRESHOLD)).toBe(false);
+  });
+
+  it('shows just past the threshold boundary', () => {
+    expect(shouldShowScrollToBottom(false, true, THRESHOLD + 1, THRESHOLD)).toBe(true);
   });
 });

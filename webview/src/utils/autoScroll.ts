@@ -60,3 +60,29 @@ export function nextAutoFollow(
   if (scrollDelta > releaseEps && distanceFromBottom <= resumeThreshold) return true;
   return prev;
 }
+
+/**
+ * Decide whether the "Scroll to bottom" button should be visible.
+ *
+ * The button is only useful when the user is genuinely stranded above the
+ * stream, so it hides whenever ANY of these hold:
+ *  - auto-follow is active (the view already tracks the bottom)
+ *  - there are no messages (an uninitialized session has nothing to scroll)
+ *  - the view is already within `threshold` px of the bottom
+ *
+ * This must NOT be conflated with auto-follow alone: auto-follow tracks user
+ * *intent*, so a tiny upward nudge while pinned near the bottom releases it —
+ * but the button should stay hidden there because the user can already see the
+ * bottom. Visibility is therefore a separate, position-aware decision.
+ */
+export function shouldShowScrollToBottom(
+  autoFollow: boolean,
+  hasMessages: boolean,
+  distanceFromBottom: number,
+  threshold: number,
+): boolean {
+  if (autoFollow) return false;
+  if (!hasMessages) return false;
+  if (distanceFromBottom <= threshold) return false;
+  return true;
+}
