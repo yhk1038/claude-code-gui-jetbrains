@@ -21,7 +21,7 @@ import { useNotificationSound } from '@/notifications';
 import {isMobile} from "@/config/environment.ts";
 import { useSettings } from '@/contexts/SettingsContext';
 import { SettingKey } from '@/types/settings';
-import { clampAutoScrollThreshold, nextAutoFollow, AUTO_SCROLL_THRESHOLD_DEFAULT, AUTO_SCROLL_BOTTOM_EPS } from '@/utils/autoScroll';
+import { clampAutoScrollThreshold, nextAutoFollow, shouldShowScrollToBottom, AUTO_SCROLL_THRESHOLD_DEFAULT, AUTO_SCROLL_BOTTOM_EPS } from '@/utils/autoScroll';
 
 export function ChatPage() {
   // Redirect logged-out users to the login screen before they hit a failing chat.
@@ -46,7 +46,15 @@ export function ChatPage() {
   const autoFollowRef = useRef(true);
   const prevScrollTopRef = useRef(0);
   const lastScrollHeightRef = useRef(0);
-  const [autoFollow, setAutoFollow] = useState(true);
+  // Button visibility is a separate, position-aware decision from auto-follow
+  // (which tracks intent): the button hides whenever the view already shows the
+  // bottom — auto-follow active, no messages, or within the resume threshold.
+  const hasMessagesRef = useRef(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+
+  useEffect(() => {
+    hasMessagesRef.current = messages.length > 0;
+  }, [messages.length]);
 
   // Drive auto-follow from a requestAnimationFrame loop. A single loop both
   // decides the next auto-follow state and performs the scroll, so the two can
@@ -67,7 +75,8 @@ export function ChatPage() {
         const delta = el.scrollTop - prevScrollTopRef.current;
         const next = nextAutoFollow(autoFollowRef.current, delta, dist, autoScrollThreshold);
         autoFollowRef.current = next;
-        setAutoFollow(prev => (prev === next ? prev : next));
+        const show = shouldShowScrollToBottom(next, hasMessagesRef.current, dist, autoScrollThreshold);
+        setShowScrollButton(prev => (prev === show ? prev : show));
         const grew = el.scrollHeight !== lastScrollHeightRef.current;
         if (next && grew && dist > AUTO_SCROLL_BOTTOM_EPS) {
           el.scrollTo({ top: el.scrollHeight });
@@ -85,7 +94,7 @@ export function ChatPage() {
     const el = scrollContainerRef.current;
     if (!el) return;
     autoFollowRef.current = true;
-    setAutoFollow(true);
+    setShowScrollButton(false);
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, []);
 
@@ -135,7 +144,7 @@ export function ChatPage() {
         const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
         const atBottom = dist <= autoScrollThreshold;
         autoFollowRef.current = atBottom;
-        setAutoFollow(atBottom);
+        // Button visibility is reconciled by the rAF loop on the next frame.
       });
       localStorage.removeItem(key);
     }
@@ -204,7 +213,7 @@ export function ChatPage() {
 
       </div>
 
-      {!autoFollow && (
+      {showScrollButton && (
         <button
           onClick={scrollToBottom}
           className="fixed bottom-[7.5rem] left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-surface-raised border border-border-default rounded-full shadow-md text-xs text-text-primary hover:bg-surface-hover transition-colors"
