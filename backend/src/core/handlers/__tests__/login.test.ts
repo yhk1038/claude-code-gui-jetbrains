@@ -13,11 +13,19 @@ import type { IPCMessage } from '../../types';
 
 const mockSpawn = vi.mocked(Claude.spawn);
 
-type FakeChild = EventEmitter & { kill: ReturnType<typeof vi.fn> };
+type FakeChild = EventEmitter & {
+  kill: ReturnType<typeof vi.fn>;
+  stdout: EventEmitter;
+  stderr: EventEmitter;
+  stdin: { writable: boolean; write: ReturnType<typeof vi.fn> };
+};
 
 function fakeChild(): FakeChild {
   const child = new EventEmitter() as FakeChild;
   child.kill = vi.fn();
+  child.stdout = new EventEmitter();
+  child.stderr = new EventEmitter();
+  child.stdin = { writable: true, write: vi.fn() };
   return child;
 }
 
@@ -25,7 +33,7 @@ function createMockConnections() {
   return { sendTo: vi.fn() } as unknown as ConnectionManager;
 }
 
-const mockBridge = {} as Bridge;
+const mockBridge = { openUrl: vi.fn() } as unknown as Bridge;
 
 async function runLogin(method: unknown, exitCode: number, connections = createMockConnections()) {
   const child = fakeChild();
@@ -69,6 +77,55 @@ describe('loginHandler', () => {
       requestId: 'r1',
       status: 'error',
     }));
+  });
+});
+
+// The CLI (claude auth login) always prints the OAuth URL with an "If the browser
+// didn't open, visit:" notice — and, where it can, also opens the browser ITSELF.
+// It does not tell us through stdout whether that auto-open succeeded, so we must
+// NOT open the URL ourselves (that double-opens on macOS/Windows). Instead we
+// forward the URL to the webview, which shows it and lets the user open it.
+describe('loginHandler OAuth URL forwarding', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  function startLogin(connections = createMockConnections()) {
+    const child = fakeChild();
+    mockSpawn.mockReturnValue(child as never);
+    const message: IPCMessage = { type: 'LOGIN', payload: { method: 'claude-ai' }, requestId: 'r1', timestamp: 0 };
+    const promise = loginHandler('c1', message, connections, mockBridge);
+    return { child, connections, promise };
+  }
+
+  const URL = 'https://claude.ai/oauth/authorize?code=abc123&state=xyz';
+
+  it('forwards the OAuth URL to the webview and does NOT open it directly', async () => {
+    const { child, connections, promise } = startLogin();
+
+    child.stdout.emit('data', Buffer.from(`Opening browser to sign in…\nIf the browser didn't open, visit: ${URL}\n`));
+
+    expect(connections.sendTo).toHaveBeenCalledWith('c1', 'LOGIN_URL_AVAILABLE', expect.objectContaining({
+      requestId: 'r1',
+      url: URL,
+    }));
+    expect(vi.mocked((mockBridge as unknown as { openUrl: ReturnType<typeof vi.fn> }).openUrl)).not.toHaveBeenCalled();
+
+    child.emit('close', 0);
+    await promise;
+  });
+
+  it('forwards the URL only once even when it spans multiple chunks', async () => {
+    const { child, connections, promise } = startLogin();
+
+    child.stdout.emit('data', Buffer.from('If the browser didn\'t open, visit: https://claude.ai/oauth/'));
+    child.stdout.emit('data', Buffer.from('authorize?code=abc123&state=xyz\n'));
+    child.stdout.emit('data', Buffer.from('still streaming more output...\n'));
+
+    const urlCalls = vi.mocked(connections.sendTo).mock.calls.filter(([, type]) => type === 'LOGIN_URL_AVAILABLE');
+    expect(urlCalls).toHaveLength(1);
+    expect(urlCalls[0][2]).toMatchObject({ url: URL });
+
+    child.emit('close', 0);
+    await promise;
   });
 });
 

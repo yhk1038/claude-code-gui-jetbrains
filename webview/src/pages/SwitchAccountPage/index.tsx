@@ -6,7 +6,7 @@ import { getBridge, LOGIN_REQUEST_TIMEOUT_MS } from '@/api/bridge/Bridge';
 import { getAdapter } from '@/adapters';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useAuthContext } from '@/contexts';
-import { LoginCodeInput } from './LoginCodeInput';
+import { LoginUrlModal } from './LoginUrlModal';
 
 interface Props {
   className?: string;
@@ -23,20 +23,23 @@ export function SwitchAccountPage(props: Props) {
   const { refetch } = useAuthContext();
   const [loadingMethod, setLoadingMethod] = useState<LoginMethod | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [codeRequired, setCodeRequired] = useState(false);
+  const [loginUrl, setLoginUrl] = useState<string | null>(null);
 
   const handleLogin = async (method: LoginMethod) => {
     if (loadingMethod !== null) return;
 
     setLoadingMethod(method);
     setError(null);
-    setCodeRequired(false);
+    setLoginUrl(null);
 
-    // Some flows (e.g. WSL projects) can't auto-complete via a local callback: the
-    // CLI prints a code after browser sign-in and waits for it. The backend emits
-    // LOGIN_CODE_REQUIRED only when that prompt appears, so the input is optional. (#57)
-    const unsubscribe = getBridge().subscribe('LOGIN_CODE_REQUIRED', () => {
-      setCodeRequired(true);
+    // The CLI prints the OAuth URL and (where it can) opens the browser itself,
+    // without telling us whether that auto-open succeeded. So the backend forwards
+    // the URL via LOGIN_URL_AVAILABLE rather than opening it — opening it ourselves
+    // would double-open on macOS/Windows. We show it in a modal and let the user
+    // open it when needed (e.g. WSL, where claude can't). (#57)
+    const unsubscribeUrl = getBridge().subscribe('LOGIN_URL_AVAILABLE', (message) => {
+      const url = message.payload?.url as string | undefined;
+      if (url) setLoginUrl(url);
     });
 
     try {
@@ -59,9 +62,18 @@ export function SwitchAccountPage(props: Props) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
     } finally {
-      unsubscribe();
-      setCodeRequired(false);
+      unsubscribeUrl();
+      setLoginUrl(null);
       setLoadingMethod(null);
+    }
+  };
+
+  const handleOpenLoginUrl = async () => {
+    if (loginUrl === null) return;
+    try {
+      await getAdapter().openUrl(loginUrl);
+    } catch (err) {
+      console.error('[SwitchAccount] Failed to open login URL:', err);
     }
   };
 
@@ -125,10 +137,6 @@ export function SwitchAccountPage(props: Props) {
             </p>
           )}
 
-          {codeRequired && (
-            <LoginCodeInput onSubmit={handleSubmitCode} />
-          )}
-
           <button
             onClick={() => { void handleLogin('claude-ai'); }}
             disabled={loadingMethod !== null}
@@ -180,6 +188,14 @@ export function SwitchAccountPage(props: Props) {
           </p>
         </div>
       </div>
+
+      {loginUrl !== null && (
+        <LoginUrlModal
+          onOpenUrl={() => { void handleOpenLoginUrl(); }}
+          onSubmitCode={handleSubmitCode}
+          onClose={() => setLoginUrl(null)}
+        />
+      )}
     </div>
   );
 }

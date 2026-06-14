@@ -1,13 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { Route } from '@/router/routes';
 
-const { mockNavigate, mockRequest, mockRefetch, mockSubscribe, mockSendRaw } = vi.hoisted(() => ({
+const { mockNavigate, mockRequest, mockRefetch, mockSubscribe, mockSendRaw, mockOpenUrl } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
   mockRequest: vi.fn(),
   mockRefetch: vi.fn(),
   mockSubscribe: vi.fn((_type: string, _handler: (m: unknown) => void) => () => {}),
   mockSendRaw: vi.fn(),
+  mockOpenUrl: vi.fn(),
 }));
 
 vi.mock('@/router', () => ({ useRouter: () => ({ navigate: mockNavigate }) }));
@@ -22,10 +23,20 @@ vi.mock('@/contexts/SessionContext', () => ({
   useSessionContext: () => ({ workingDirectory: '/tmp' }),
 }));
 vi.mock('@/adapters', () => ({
-  getAdapter: () => ({ openUrl: vi.fn(), openTerminal: vi.fn() }),
+  getAdapter: () => ({ openUrl: mockOpenUrl, openTerminal: vi.fn() }),
 }));
 
 import { SwitchAccountPage } from '../index';
+
+/** Subscribe to a specific bridge message type, capturing its handler to fire later. */
+function captureHandlers() {
+  const handlers: Record<string, (m: unknown) => void> = {};
+  mockSubscribe.mockImplementation((type: string, handler: (m: unknown) => void) => {
+    handlers[type] = handler;
+    return () => {};
+  });
+  return handlers;
+}
 
 describe('SwitchAccountPage', () => {
   beforeEach(() => {
@@ -34,6 +45,7 @@ describe('SwitchAccountPage', () => {
     mockRefetch.mockReset();
     mockSendRaw.mockReset();
     mockSubscribe.mockReset();
+    mockOpenUrl.mockReset();
     // Default: subscribe is a no-op returning an unsubscribe fn.
     mockSubscribe.mockReturnValue(() => {});
   });
@@ -68,17 +80,15 @@ describe('SwitchAccountPage', () => {
     expect(mockRefetch).not.toHaveBeenCalled();
   });
 
-  // Issue #57: flows that can't auto-complete (e.g. WSL projects) print a code
-  // after browser sign-in. The optional code input must stay hidden until the
-  // backend emits LOGIN_CODE_REQUIRED, then submitting it sends SUBMIT_LOGIN_CODE.
-  it('shows the optional code input only when the CLI requests a code, then submits it (#57)', async () => {
-    // Capture the LOGIN_CODE_REQUIRED handler so we can fire it mid-login.
-    let codeHandler: ((m: unknown) => void) | undefined;
-    mockSubscribe.mockImplementation((type: string, handler: (m: unknown) => void) => {
-      if (type === 'LOGIN_CODE_REQUIRED') codeHandler = handler;
-      return () => {};
-    });
-    // Keep LOGIN pending so the input can appear mid-flow.
+  // Issue #57: a pasted code is needed only when the browser's callback page can't
+  // reach claude's local loopback server (e.g. WSL) — and the CLI output is
+  // identical whether or not it's needed (it always prints "Paste code here if
+  // prompted >"). So we cannot auto-detect it; the code field stays collapsed
+  // until the user reveals it (they only have a code when their browser showed
+  // one). Revealing and submitting it sends SUBMIT_LOGIN_CODE.
+  it('keeps the code input collapsed until the user reveals it, then submits it (#57)', async () => {
+    const handlers = captureHandlers();
+    // Keep LOGIN pending so the modal stays open mid-flow.
     let resolveLogin: (v: { status: string }) => void = () => {};
     mockRequest.mockReturnValue(new Promise((res) => { resolveLogin = res; }));
     mockRefetch.mockResolvedValue(undefined);
@@ -86,11 +96,17 @@ describe('SwitchAccountPage', () => {
     render(<SwitchAccountPage />);
     fireEvent.click(screen.getByText('Claude.ai Subscription'));
 
-    // Hidden until the backend asks for a code.
+    await waitFor(() => expect(handlers['LOGIN_URL_AVAILABLE']).toBeDefined());
+    act(() => {
+      handlers['LOGIN_URL_AVAILABLE']({ type: 'LOGIN_URL_AVAILABLE', payload: { url: 'https://claude.ai/oauth/authorize?a=1' } });
+    });
+
+    // The modal is open but the code field is collapsed by default.
+    await screen.findByText('Open sign-in page');
     expect(screen.queryByPlaceholderText('Paste code here')).toBeNull();
 
-    await waitFor(() => expect(codeHandler).toBeDefined());
-    codeHandler?.({ type: 'LOGIN_CODE_REQUIRED' });
+    // The user reveals it only when their browser handed them a code.
+    fireEvent.click(screen.getByText('Received a code in your browser? Enter it'));
 
     const input = await screen.findByPlaceholderText('Paste code here');
     fireEvent.change(input, { target: { value: '  my-code  ' } });
@@ -103,5 +119,34 @@ describe('SwitchAccountPage', () => {
     // Completing the login navigates as usual.
     resolveLogin({ status: 'ok' });
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith(Route.NEW_SESSION));
+  });
+
+  // Issue #57 core fix: the backend no longer opens the OAuth URL itself (that
+  // double-opens on macOS/Windows where claude also auto-opens). It forwards the
+  // URL; we show a modal and open it ONLY when the user clicks the button.
+  it('shows the URL modal on LOGIN_URL_AVAILABLE and opens the URL only on user click, never automatically', async () => {
+    const handlers = captureHandlers();
+    mockRequest.mockReturnValue(new Promise(() => {})); // keep login pending
+
+    render(<SwitchAccountPage />);
+    fireEvent.click(screen.getByText('Claude.ai Subscription'));
+
+    await waitFor(() => expect(handlers['LOGIN_URL_AVAILABLE']).toBeDefined());
+    // No modal, nothing opened until the URL arrives.
+    expect(screen.queryByText('Open sign-in page')).toBeNull();
+    expect(mockOpenUrl).not.toHaveBeenCalled();
+
+    const url = 'https://claude.ai/oauth/authorize?code=abc&state=xyz';
+    act(() => {
+      handlers['LOGIN_URL_AVAILABLE']({ type: 'LOGIN_URL_AVAILABLE', payload: { url } });
+    });
+
+    const openBtn = await screen.findByText('Open sign-in page');
+    // Modal is shown but the URL is NOT auto-opened.
+    expect(mockOpenUrl).not.toHaveBeenCalled();
+
+    // Only a user click opens it.
+    fireEvent.click(openBtn);
+    expect(mockOpenUrl).toHaveBeenCalledWith(url);
   });
 });

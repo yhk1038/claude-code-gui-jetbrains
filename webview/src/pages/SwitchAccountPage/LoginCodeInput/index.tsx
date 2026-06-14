@@ -22,7 +22,7 @@ export function LoginCodeInput(props: Props) {
   };
 
   return (
-    <div className={`mt-6 p-4 rounded-lg bg-surface-overlay border border-border-default ${className}`}>
+    <div className={`p-4 rounded-lg bg-surface-overlay border border-border-default ${className}`}>
       <p className="text-sm text-text-primary font-semibold">Paste the code from your browser</p>
       <p className="text-xs text-text-tertiary mt-1">
         After signing in, your browser shows a code. Paste it here to finish logging in.

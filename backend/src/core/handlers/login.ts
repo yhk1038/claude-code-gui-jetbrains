@@ -34,7 +34,9 @@ export function loginHandler(
   connectionId: string,
   message: IPCMessage,
   connections: ConnectionManager,
-  bridge: Bridge,
+  // Kept for the shared handler signature (handlers/index.ts dispatches all
+  // handlers with the same args); login no longer opens URLs through the bridge.
+  _bridge: Bridge,
 ): Promise<void> {
   return new Promise((resolve) => {
     // Map the webview-selected login method to the CLI flag. The default
@@ -52,38 +54,37 @@ export function loginHandler(
     activeLoginChildren.set(connectionId, child);
 
     let buf = '';
-    let urlOpened = false;
-    let codeRequested = false;
+    let urlForwarded = false;
     const scan = (chunk: Buffer): void => {
       buf += chunk.toString();
 
-      // (1) claude tries to open the browser itself, but where it can't find an
-      // opener it silently prints "visit: <url>" and waits — e.g. WSL with
-      // appendWindowsPath=false (no xdg-open/cmd/explorer on PATH; claude ignores
-      // $BROWSER), where the user got an endless spinner and no browser. Capture the
-      // OAuth URL and open it through the IDE (BrowserUtil.browse on the Windows
-      // side). Issue #57.
-      if (!urlOpened) {
+      // The CLI always prints the OAuth URL with an "If the browser didn't open,
+      // visit:" notice, and — where it can — opens the browser ITSELF (macOS
+      // `open`, Windows `rundll32`, WSL via the Windows registry). It does NOT tell
+      // us through stdout whether that auto-open succeeded, so we must not open the
+      // URL ourselves: on macOS/Windows that double-opens (claude's tab + ours).
+      // Instead we forward the URL to the webview, which presents it and lets the
+      // user open it — covering the environments where claude can't (e.g. WSL with
+      // appendWindowsPath=false, no registry access). Issue #57.
+      //
+      // We deliberately do NOT try to detect "a code is needed" from the output:
+      // the CLI unconditionally prints "Paste code here if prompted >" in EVERY
+      // flow (verified on Windows and WSL — identical output and identical OAuth
+      // URL). Whether a pasted code is actually required depends on whether the
+      // browser's callback page can reach claude's local loopback server, decided
+      // browser-side and never surfaced in the CLI output. So the webview shows the
+      // code field only when the user reveals it (they only have a code when their
+      // browser actually handed them one). Issue #57.
+      if (!urlForwarded) {
         const url = extractOAuthUrl(buf);
         if (url) {
-          urlOpened = true;
-          console.error('[login] opening OAuth URL via IDE:', url);
-          bridge.openUrl(url).catch((err) => {
-            console.error('[login] bridge.openUrl failed:', err);
+          urlForwarded = true;
+          console.error('[login] OAuth URL available, forwarding to webview:', url);
+          connections.sendTo(connectionId, 'LOGIN_URL_AVAILABLE', {
+            requestId: message.requestId,
+            url,
           });
         }
-      }
-
-      // (2) When the flow can't auto-complete via a local callback, the CLI prints
-      // the post-sign-in code prompt ("Paste code here ...") and waits on stdin. This
-      // prompt does NOT appear for every user/flow, so we tell the webview to reveal
-      // an OPTIONAL code-input field only once we actually observe it. Issue #57.
-      if (!codeRequested && /paste code/i.test(buf)) {
-        codeRequested = true;
-        console.error('[login] CLI is prompting for an OAuth code; asking webview to show input');
-        connections.sendTo(connectionId, 'LOGIN_CODE_REQUIRED', {
-          requestId: message.requestId,
-        });
       }
     };
     child.stdout?.on('data', scan);
