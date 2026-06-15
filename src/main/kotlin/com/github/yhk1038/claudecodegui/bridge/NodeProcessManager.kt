@@ -5,6 +5,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.EnvironmentUtil
 import com.github.yhk1038.claudecodegui.settings.SettingsManager
+import com.github.yhk1038.claudecodegui.toolwindow.realization.LoadingPhase
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
@@ -50,6 +51,14 @@ class NodeProcessManager(
     private val wslDistro: String? = null,
     /** Linux working directory inside [wslDistro] (the project root's `/home/...` path). */
     private val wslCwd: String? = null,
+    /**
+     * Invoked as [start] advances through its blocking sub-steps (node discovery,
+     * shell-PATH capture, resource extraction, waiting for the PORT line) so the panel
+     * placeholder can show real progress instead of a single frozen "Starting backend..."
+     * line. Called off the EDT; the listener is responsible for marshalling to the UI
+     * thread. See issue #97.
+     */
+    private val onProgress: ((LoadingPhase) -> Unit)? = null,
 ) : Disposable {
 
     private val logger = Logger.getInstance(NodeProcessManager::class.java)
@@ -61,6 +70,26 @@ class NodeProcessManager(
     private var process: Process? = null
     private var stdoutJob: Job? = null
     private var stderrJob: Job? = null
+
+    // Bounded ring buffer of the most recent backend stderr lines. Lets a startup
+    // failure or port timeout surface the backend's own output in the error panel
+    // instead of an opaque "did not become ready" message — the watchdog half of the
+    // issue #97 fix. Written from the stderr reader, read from a timeout handler on a
+    // different thread, so all access is synchronized on the deque.
+    private val recentStderrLines = ArrayDeque<String>()
+
+    private fun rememberStderr(line: String) {
+        synchronized(recentStderrLines) {
+            recentStderrLines.addLast(line)
+            while (recentStderrLines.size > MAX_STDERR_LINES) recentStderrLines.removeFirst()
+        }
+    }
+
+    /** The most recent backend stderr lines (up to [MAX_STDERR_LINES]), or null if none. */
+    fun recentStderr(): String? {
+        val lines = synchronized(recentStderrLines) { recentStderrLines.toList() }
+        return lines.takeIf { it.isNotEmpty() }?.joinToString("\n")
+    }
 
     /**
      * Lifecycle of the managed process. [start] runs asynchronously, so for a window
@@ -115,6 +144,7 @@ class NodeProcessManager(
         // synchronously from tool-window content creation, so a blocking call here
         // would freeze the IDE UI. Run the whole thing on Dispatchers.IO.
         scope.launch(Dispatchers.IO) {
+            onProgress?.invoke(LoadingPhase.LOCATING_NODE)
             // A WSL backend runs node inside the distro (resolved on the distro's PATH),
             // so skip Windows-side node discovery for WSL project roots.
             val nodePath = if (wslDistro != null) null else findNodeExecutable()
@@ -135,6 +165,7 @@ class NodeProcessManager(
                 return@launch
             }
 
+            onProgress?.invoke(LoadingPhase.PREPARING_BACKEND)
             val backendFile = findBackendFile()
             if (backendFile == null) {
                 logger.error("Backend entry file (backend.mjs) not found.")
@@ -196,6 +227,7 @@ class NodeProcessManager(
                 val proc = pb.start()
                 process = proc
                 lifecycle = Lifecycle.RUNNING
+                onProgress?.invoke(LoadingPhase.WAITING_FOR_PORT)
 
                 // Read stdout: first line is PORT, rest are logged
                 stdoutJob = scope.launch(Dispatchers.IO) {
@@ -293,6 +325,7 @@ class NodeProcessManager(
         while (true) {
             val line = reader.readLine() ?: break
             if (line.isNotBlank()) {
+                rememberStderr(line)
                 System.err.println("[Node.js] $line")
                 logger.info("[Node.js] $line")
             }
@@ -820,4 +853,9 @@ class NodeProcessManager(
      */
     val isAlive: Boolean
         get() = process?.isAlive == true
+
+    companion object {
+        // How many recent stderr lines to retain for startup-failure diagnostics (#97).
+        private const val MAX_STDERR_LINES = 30
+    }
 }

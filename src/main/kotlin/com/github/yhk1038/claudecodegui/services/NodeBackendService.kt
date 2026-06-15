@@ -3,6 +3,7 @@ package com.github.yhk1038.claudecodegui.services
 import com.github.yhk1038.claudecodegui.bridge.NodeProcessManager
 import com.github.yhk1038.claudecodegui.bridge.RpcWebSocketClient
 import com.github.yhk1038.claudecodegui.bridge.WslPathResolver
+import com.github.yhk1038.claudecodegui.toolwindow.realization.LoadingPhase
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
@@ -67,6 +68,22 @@ class NodeBackendService : Disposable {
 
         // panelId -> handler. The Claude Code editor tabs open under this root.
         val handlers = ConcurrentHashMap<String, NodeProcessManager.RpcHandler>()
+
+        // panelId -> loading-progress listener. Panels register here so they can
+        // reflect the backend's start sub-phases in their placeholder label (#97).
+        private val progressListeners = ConcurrentHashMap<String, (LoadingPhase) -> Unit>()
+
+        fun addProgressListener(panelId: String, listener: (LoadingPhase) -> Unit) {
+            progressListeners[panelId] = listener
+        }
+
+        fun removeProgressListener(panelId: String) {
+            progressListeners.remove(panelId)
+        }
+
+        private fun emitProgress(phase: LoadingPhase) {
+            progressListeners.values.forEach { it(phase) }
+        }
 
         /**
          * RPC requests from this backend always concern this one project root, so
@@ -142,6 +159,14 @@ class NodeBackendService : Disposable {
             nodeProcessManager?.let { if (!it.isDead) return }
             nodeProcessManager?.let { stop() } // clean up a dead manager/socket
 
+            // Wake any awaiter still parked on the previous (now superseded) deferred so
+            // it fails fast instead of hanging on a port that will never arrive — the new
+            // deferred below is a different object the old awaiter can't observe. Matters
+            // on the retry path (restart() → start()), where a panel may already be in
+            // awaitPort(). See issue #97.
+            if (!portDeferred.isCompleted) {
+                portDeferred.cancel(CancellationException("Backend restarting"))
+            }
             portDeferred = CompletableDeferred()
             // A WSL project root (UNC basePath) runs its backend inside the distro so
             // node/claude execute as Linux natives (issue #57); a native root runs locally.
@@ -154,6 +179,7 @@ class NodeBackendService : Disposable {
                 instanceTag = instanceTag,
                 wslDistro = wsl?.distro,
                 wslCwd = wsl?.linuxPath,
+                onProgress = ::emitProgress,
             )
             nodeProcessManager = manager
             manager.start()
@@ -204,6 +230,9 @@ class NodeBackendService : Disposable {
 
         suspend fun awaitPort(): Int = portDeferred.await()
 
+        /** Recent backend stderr, for surfacing a startup-failure cause (#97). */
+        fun recentDiagnostics(): String? = nodeProcessManager?.recentStderr()
+
         /** Kill the process — used by restart() for a clean slate. */
         fun stop() {
             rpcClient?.dispose(); rpcClient = null
@@ -229,10 +258,28 @@ class NodeBackendService : Disposable {
         inst.start() // no-op if already running
     }
 
+    /**
+     * Register a loading-progress [listener] for [panelId] so the panel can mirror the
+     * backend's start sub-phases in its placeholder. Register BEFORE [ensureStarted] so
+     * the first phase emitted by start() is not missed. See issue #97.
+     */
+    @Synchronized
+    fun addProgressListener(projectBasePath: String, panelId: String, listener: (LoadingPhase) -> Unit) {
+        backends.getOrPut(projectBasePath) { BackendInstance(projectBasePath) }
+            .addProgressListener(panelId, listener)
+    }
+
     /** Await the port of the backend serving [projectBasePath]. */
     suspend fun awaitPort(projectBasePath: String): Int =
         (backends[projectBasePath]
             ?: error("No backend registered for project root: $projectBasePath")).awaitPort()
+
+    /**
+     * Most recent backend stderr for [projectBasePath], or null when none. Used to
+     * attach a concrete cause to a start failure/timeout error panel. See issue #97.
+     */
+    fun recentBackendDiagnostics(projectBasePath: String): String? =
+        backends[projectBasePath]?.recentDiagnostics()
 
     /** Restart the backend for [projectBasePath] (retry path). */
     @Synchronized
@@ -255,6 +302,7 @@ class NodeBackendService : Disposable {
     fun releasePanel(projectBasePath: String, panelId: String) {
         val inst = backends[projectBasePath] ?: return
         inst.handlers.remove(panelId)
+        inst.removeProgressListener(panelId)
         logger.info("Panel released: $projectBasePath::$panelId (remaining handlers: ${inst.handlers.size})")
     }
 
