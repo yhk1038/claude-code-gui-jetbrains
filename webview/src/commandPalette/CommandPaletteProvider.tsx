@@ -4,6 +4,8 @@ import { useChatInputState } from '@/contexts/ChatInputStateContext';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useCliConfig } from '@/contexts/CliConfigContext';
 import { getAdapter } from '@/adapters';
+import { SWITCH_MODEL_EVENT } from '@/pages/ChatPage/ModelSwitchOverlay';
+import { ROTATE_MODEL_EVENT } from '@/pages/ChatPage/ChatInput/ModelTag';
 import { PanelSection } from '@/types/commandPalette';
 import type { SlashCommandInfo } from '@/types/slashCommand';
 import { CommandPaletteServices } from './types';
@@ -151,6 +153,24 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
       match: (e: KeyboardEvent) => (e.metaKey || e.ctrlKey) && e.key === ',',
       execute: async () => {
         await getAdapter().openSettings();
+      },
+    });
+
+    keyboardReg.register({
+      id: 'open-model-menu',
+      match: (e: KeyboardEvent) =>
+        (e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'M' || e.key === 'm'),
+      execute: async () => {
+        window.dispatchEvent(new CustomEvent(SWITCH_MODEL_EVENT));
+      },
+    });
+
+    keyboardReg.register({
+      id: 'rotate-model',
+      match: (e: KeyboardEvent) =>
+        (e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === '.' || e.key === '>'),
+      execute: async () => {
+        window.dispatchEvent(new CustomEvent(ROTATE_MODEL_EVENT));
       },
     });
 
