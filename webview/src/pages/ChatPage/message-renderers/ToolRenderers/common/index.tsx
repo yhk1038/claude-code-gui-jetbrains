@@ -2,8 +2,29 @@ import {ReactNode, useState} from "react";
 import {ContextPills} from "@/pages/ChatPage/message-renderers";
 import type {LoadedMessageDto} from "@/types";
 import {cn} from "@/utils/cn.ts";
+import {AnyContentBlockDto, ContentBlockType, TextBlockDto, ToolResultBlockDto} from "@/dto/message/ContentBlockDto";
 
 export * from './RendererProps';
+
+/**
+ * Extract displayable text from a tool_result (OUT) message.
+ * tool_result content can be a plain string or a content-block array
+ * (e.g. [{ type: 'text', text }]); both are normalized to a single string.
+ */
+export function toolResultText(toolResult?: LoadedMessageDto): string {
+    const content = toolResult?.message?.content;
+    if (!Array.isArray(content)) return '';
+    const block = content[0];
+    if (!block || block.type !== ContentBlockType.ToolResult) return '';
+    const value = (block as ToolResultBlockDto).content;
+    if (typeof value === 'string') return value;
+    if (Array.isArray(value)) {
+        return value
+            .map((b: AnyContentBlockDto) => (b.type === ContentBlockType.Text ? (b as TextBlockDto).text : ''))
+            .join('');
+    }
+    return '';
+}
 
 export const ToolWrapper = (props: {
     message?: LoadedMessageDto;
