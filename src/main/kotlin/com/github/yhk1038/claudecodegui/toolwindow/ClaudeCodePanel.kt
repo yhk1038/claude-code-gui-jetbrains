@@ -40,6 +40,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
@@ -240,6 +241,18 @@ class ClaudeCodePanel(
             acquired.nativeDropBridgeInstalled = true
         }
 
+        // Mirror the backend's start sub-phases in the placeholder label so a slow
+        // start (heavy .zshrc shell-PATH capture, first-run extraction) reads as
+        // progress, not a frozen screen. Registered BEFORE ensureStarted so the first
+        // emitted phase is not missed. See issue #97.
+        backendService.addProgressListener(project.basePath ?: "", panelId) { phase ->
+            ApplicationManager.getApplication().invokeLater {
+                if (!isPanelDisposed && holder?.isLoaded != true) {
+                    loadingLabel.text = phase.message
+                }
+            }
+        }
+
         // Register RPC handler for this panel.
         backendService.ensureStarted(project.basePath ?: "", panelId, createRpcHandler())
 
@@ -247,7 +260,21 @@ class ClaudeCodePanel(
         if (!acquired.isLoaded) {
             scope.launch {
                 try {
-                    val port = backendService.awaitPort(project.basePath ?: "")
+                    // Bound the wait: without a timeout a backend that never prints its
+                    // PORT line (and never exits) leaves the panel stuck on the
+                    // placeholder forever. withTimeoutOrNull returns null on timeout —
+                    // and, being non-throwing, never trips the CancellationException
+                    // re-throw below (TimeoutCancellationException is a subclass). #97.
+                    val port = withTimeoutOrNull(BACKEND_START_TIMEOUT_MS) {
+                        backendService.awaitPort(project.basePath ?: "")
+                    }
+                    if (port == null) {
+                        logger.warn("Node.js backend did not become ready within ${BACKEND_START_TIMEOUT_MS}ms")
+                        javax.swing.SwingUtilities.invokeLater {
+                            showBackendError("Backend did not become ready within ${BACKEND_START_TIMEOUT_MS / 1000} seconds.")
+                        }
+                        return@launch
+                    }
                     loadWebView(port)
                 } catch (e: CancellationException) {
                     // Panel/tab closed before the backend port was ready — a normal
@@ -918,7 +945,16 @@ class ClaudeCodePanel(
         backendService.restart(project.basePath ?: "")
         scope.launch {
             try {
-                val port = backendService.awaitPort(project.basePath ?: "")
+                val port = withTimeoutOrNull(BACKEND_START_TIMEOUT_MS) {
+                    backendService.awaitPort(project.basePath ?: "")
+                }
+                if (port == null) {
+                    logger.warn("Retry: Node.js backend did not become ready within ${BACKEND_START_TIMEOUT_MS}ms")
+                    javax.swing.SwingUtilities.invokeLater {
+                        showBackendError("Backend did not become ready within ${BACKEND_START_TIMEOUT_MS / 1000} seconds.")
+                    }
+                    return@launch
+                }
                 loadWebView(port)
             } catch (e: CancellationException) {
                 // Panel/tab closed mid-retry — a normal shutdown, not a failure.
@@ -1177,6 +1213,16 @@ class ClaudeCodePanel(
     }
 
     // ─── Lifecycle ──────────────────────────────────────────────────
+
+    companion object {
+        /**
+         * Upper bound on how long the panel waits for the backend to report its port
+         * before surfacing a retryable error. Generous enough to absorb a slow shell-PATH
+         * capture (up to a 10s timeout), first-run resource extraction, and a cold WSL
+         * `wsl.exe` start, while still bounding the formerly-unbounded wait. See issue #97.
+         */
+        private const val BACKEND_START_TIMEOUT_MS = 30_000L
+    }
 
     override fun dispose() {
         isPanelDisposed = true

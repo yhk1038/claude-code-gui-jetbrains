@@ -5,6 +5,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.EnvironmentUtil
 import com.github.yhk1038.claudecodegui.settings.SettingsManager
+import com.github.yhk1038.claudecodegui.toolwindow.realization.LoadingPhase
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
@@ -50,6 +51,14 @@ class NodeProcessManager(
     private val wslDistro: String? = null,
     /** Linux working directory inside [wslDistro] (the project root's `/home/...` path). */
     private val wslCwd: String? = null,
+    /**
+     * Invoked as [start] advances through its blocking sub-steps (node discovery,
+     * shell-PATH capture, resource extraction, waiting for the PORT line) so the panel
+     * placeholder can show real progress instead of a single frozen "Starting backend..."
+     * line. Called off the EDT; the listener is responsible for marshalling to the UI
+     * thread. See issue #97.
+     */
+    private val onProgress: ((LoadingPhase) -> Unit)? = null,
 ) : Disposable {
 
     private val logger = Logger.getInstance(NodeProcessManager::class.java)
@@ -115,6 +124,7 @@ class NodeProcessManager(
         // synchronously from tool-window content creation, so a blocking call here
         // would freeze the IDE UI. Run the whole thing on Dispatchers.IO.
         scope.launch(Dispatchers.IO) {
+            onProgress?.invoke(LoadingPhase.LOCATING_NODE)
             // A WSL backend runs node inside the distro (resolved on the distro's PATH),
             // so skip Windows-side node discovery for WSL project roots.
             val nodePath = if (wslDistro != null) null else findNodeExecutable()
@@ -135,6 +145,7 @@ class NodeProcessManager(
                 return@launch
             }
 
+            onProgress?.invoke(LoadingPhase.PREPARING_BACKEND)
             val backendFile = findBackendFile()
             if (backendFile == null) {
                 logger.error("Backend entry file (backend.mjs) not found.")
@@ -196,6 +207,7 @@ class NodeProcessManager(
                 val proc = pb.start()
                 process = proc
                 lifecycle = Lifecycle.RUNNING
+                onProgress?.invoke(LoadingPhase.WAITING_FOR_PORT)
 
                 // Read stdout: first line is PORT, rest are logged
                 stdoutJob = scope.launch(Dispatchers.IO) {
