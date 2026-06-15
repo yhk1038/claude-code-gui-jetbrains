@@ -13,13 +13,15 @@ export type InputMode = typeof InputModeValues[keyof typeof InputModeValues];
 
 export interface InputModeConfig {
   id: InputMode;
-  icon: string;           // codicon 아이콘 이름 (예: 'tasklist', 'zap')
-  label: string;          // 표시 라벨
-  description: string;    // 툴팁 설명
-  borderColor: string;    // Tailwind 테두리 색상 클래스
-  textColor: string;      // 텍스트 색상 클래스
-  hoverBg: string;        // 호버 시 배경색
-  sendButtonBg: string;   // 전송 버튼 배경색
+  icon: string;               // codicon 아이콘 이름 (예: 'tasklist', 'zap')
+  label: string;              // 표시 라벨
+  description: string;        // 툴팁 설명
+  borderColor: string;        // Tailwind 테두리 색상 클래스 (unfocused)
+  borderColorFocused: string; // Tailwind 테두리 색상 클래스 (focused)
+  outline: string;            // Tailwind outline 색상 클래스 (focused)
+  textColor: string;          // 텍스트 색상 클래스
+  hoverBg: string;            // 호버 시 배경색
+  sendButtonBg: string;       // 전송 버튼 배경색
 }
 
 export const INPUT_MODES: Record<InputMode, InputModeConfig> = {
@@ -28,40 +30,48 @@ export const INPUT_MODES: Record<InputMode, InputModeConfig> = {
     icon: 'tasklist',
     label: 'Plan mode',
     description: 'Claude will explore the code and present a plan before editing. Click, or press Shift+Tab, to switch modes.',
-    borderColor: 'border-border-default',
-    textColor: 'text-text-secondary',
+    borderColor: 'border-blue-500/50',
+    borderColorFocused: 'border-blue-500',
+    outline: 'outline-blue-500/15',
+    textColor: 'text-blue-500',
     hoverBg: 'hover:bg-surface-hover',
-    sendButtonBg: 'bg-surface-pressed hover:bg-surface-pressed',
+    sendButtonBg: 'bg-blue-500',
   },
   bypass: {
     id: 'bypass',
     icon: 'zap',
     label: 'Bypass permissions',
     description: 'Claude Code will not ask for your approval before running potentially dangerous commands.',
-    borderColor: 'border-state-error-border',
-    textColor: 'text-state-error-fg',
+    borderColor: 'border-red-500/50',
+    borderColorFocused: 'border-red-500',
+    outline: 'outline-red-500/15',
+    textColor: 'text-red-500',
     hoverBg: 'hover:bg-state-error-bg',
-    sendButtonBg: 'bg-state-error-fg hover:bg-state-error-fg',
+    sendButtonBg: 'bg-red-500',
   },
   ask_before_edit: {
     id: 'ask_before_edit',
     icon: 'comment-discussion',
     label: 'Ask before edits',
     description: 'Claude will ask before each edit. Click, or press Shift+Tab, to switch modes.',
-    borderColor: 'border-state-pending-border',
-    textColor: 'text-state-pending-fg',
+    borderColor: 'border-orange-500/50',
+    borderColorFocused: 'border-orange-500',
+    outline: 'outline-orange-500/15',
+    textColor: 'text-orange-500',
     hoverBg: 'hover:bg-state-pending-bg',
-    sendButtonBg: 'bg-state-pending-fg hover:bg-state-pending-fg',
+    sendButtonBg: 'bg-orange-500',
   },
   auto_edit: {
     id: 'auto_edit',
     icon: 'robot',
     label: 'Edit automatically',
     description: 'Claude will edit your selected text or the whole file. Click, or press Shift+Tab, to switch modes.',
-    borderColor: 'border-state-success-border',
-    textColor: 'text-state-success-fg',
+    borderColor: 'border-gray-400/50',
+    borderColorFocused: 'border-gray-400',
+    outline: 'outline-gray-400/15',
+    textColor: 'text-gray-400',
     hoverBg: 'hover:bg-state-success-bg',
-    sendButtonBg: 'bg-state-success-fg hover:bg-state-success-fg',
+    sendButtonBg: 'bg-gray-400',
   },
 };
 

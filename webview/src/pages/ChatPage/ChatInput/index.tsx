@@ -478,7 +478,7 @@ export function ChatInput() {
         className={`
           relative rounded-lg border bg-surface-raised
           transition-colors duration-150
-          ${isDragOver ? 'border-border-focus bg-accent-primary/5' : isFocused && mode !== 'plan' ? modeConfig.borderColor : 'border-border-default'}
+          ${isDragOver ? 'border-border-focus bg-accent-primary/5' : isFocused ? `${modeConfig.borderColorFocused} outline outline-4 ${modeConfig.outline}` : modeConfig.borderColor}
         `}
       >
         {/* Mention dropdown */}
