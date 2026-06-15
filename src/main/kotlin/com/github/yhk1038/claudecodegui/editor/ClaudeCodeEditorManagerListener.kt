@@ -2,6 +2,7 @@ package com.github.yhk1038.claudecodegui.editor
 
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
+import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
 
 /**
  * Clears the unread badge when a Claude Code tab becomes selected.
@@ -19,7 +20,9 @@ class ClaudeCodeEditorManagerListener : FileEditorManagerListener {
     override fun selectionChanged(event: FileEditorManagerEvent) {
         val file = event.newFile
         if (file is ClaudeCodeVirtualFile && file.badgeState == TabBadge.UNREAD) {
-            file.setBadge(TabBadge.NONE)
+            if (file.setBadge(TabBadge.NONE)) {
+                (event.manager as? FileEditorManagerEx)?.refreshIcons()
+            }
         }
     }
 }

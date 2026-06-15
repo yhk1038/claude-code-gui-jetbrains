@@ -6,6 +6,7 @@ import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorLocation
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorState
+import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.UserDataHolderBase
@@ -51,7 +52,9 @@ class ClaudeCodeFileEditor(
         panel.onStreamingStateChanged = { isStreaming ->
             if (!isStreaming && wasStreaming) {
                 if (!isTabActive()) {
-                    virtualFile.setBadge(TabBadge.UNREAD)
+                    if (virtualFile.setBadge(TabBadge.UNREAD)) {
+                        FileEditorManagerEx.getInstanceEx(project).refreshIcons()
+                    }
                 }
             }
             wasStreaming = isStreaming
