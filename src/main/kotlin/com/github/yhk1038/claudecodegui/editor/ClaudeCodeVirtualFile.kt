@@ -41,11 +41,18 @@ class ClaudeCodeVirtualFile(
     var badgeState: TabBadge = TabBadge.NONE
         private set
 
-    fun setBadge(badge: TabBadge) {
-        if (badgeState == badge) return
+    /**
+     * Updates the unread badge state. Returns true if the state actually changed,
+     * so the caller can refresh the editor tab icon (re-running
+     * [ClaudeCodeFileIconPatcher]). The icon refresh itself is driven by the
+     * caller via [com.intellij.openapi.fileEditor.ex.FileEditorManagerEx.refreshIcons],
+     * because firing a PROP_NAME change with an unchanged name throws
+     * IllegalArgumentException ("Values must be different").
+     */
+    fun setBadge(badge: TabBadge): Boolean {
+        if (badgeState == badge) return false
         badgeState = badge
-        // Trigger tab icon refresh by notifying a property change
-        VirtualFileManager.getInstance().notifyPropertyChanged(this, PROP_NAME, name, name)
+        return true
     }
 
     companion object {
