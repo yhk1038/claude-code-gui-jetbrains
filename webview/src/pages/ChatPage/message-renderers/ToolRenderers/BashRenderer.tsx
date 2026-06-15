@@ -1,4 +1,4 @@
-import {Container, LabelValue, RendererProps, ToolHeader, ToolWrapper} from "./common";
+import {Container, LabelValue, RendererProps, ToolHeader, ToolWrapper, toolResultText} from "./common";
 
 interface BashToolUseDto {
     name: string;
@@ -6,30 +6,22 @@ interface BashToolUseDto {
         command: string;
         description: string;
     };
-    tool_result?: BashToolResultDto;
-}
-
-interface BashToolResultDto {
-    message: {
-        content: [{content: string}]
-    }
 }
 
 export function BashRenderer(props: RendererProps) {
     const toolUse = props.toolUse as unknown as BashToolUseDto;
-    const toolResult = props.toolResult as BashToolResultDto | undefined;
 
     const name = toolUse.name;
     const description = toolUse.input?.description ?? '';
-    const input = toolUse.input?.command ?? '' as string;
-    const output = toolResult?.message?.content?.[0]?.content ?? '' as string;
+    const input = toolUse.input?.command ?? '';
+    const output = toolResultText(props.toolResult);
 
     return (
         <ToolWrapper message={props.message}>
             <ToolHeader
                 name={name}
                 description={description}
-                inProgress={!toolResult}
+                inProgress={!props.toolResult}
                 className="mb-2.5"
             />
 
@@ -42,7 +34,7 @@ export function BashRenderer(props: RendererProps) {
                     {input}
                 </LabelValue>
                 <LabelValue label="OUT" maxHeight="max-h-[60px]">
-                    {toolUse.tool_result ? output : ''}
+                    {output}
                 </LabelValue>
             </Container>
         </ToolWrapper>
