@@ -23,6 +23,7 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
 
   const models: ModelInfo[] = controlResponse?.response?.response?.models ?? [];
   const currentModel = sessionModel ?? DEFAULT_MODEL_ALIAS;
+  const isMac = navigator.platform.toUpperCase().includes('MAC');
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -83,8 +84,11 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
       }}
     >
       {/* Header */}
-      <div className="pt-1 pb-1.5 px-3 text-[0.9230rem] text-text-tertiary">
-        Select a model
+      <div className="pt-1 pb-1.5 px-3 text-[0.9230rem] text-text-tertiary flex items-center justify-between">
+        <span>Select a model</span>
+        <kbd className="inline-flex items-center px-1.5 py-0.5 bg-surface-tooltip rounded text-text-secondary text-xs font-mono">
+          {isMac ? '⌘⇧M' : 'Ctrl+Shift+M'}
+        </kbd>
       </div>
 
       {/* Model list */}

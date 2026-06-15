@@ -16,6 +16,7 @@ import { LoadedMessageType } from '@/dto';
 import { useAttachments } from './hooks/useAttachments';
 import { AttachmentPreview } from './AttachmentPreview';
 import { ContextWindowTag } from './ContextWindowTag';
+import { ModelTag } from './ModelTag';
 import { DragOverlay } from './DragOverlay';
 import { AttachMenu } from './AttachMenu';
 import { ModelSwitchOverlay, SWITCH_MODEL_EVENT } from '@/pages/ChatPage/ModelSwitchOverlay';
@@ -556,8 +557,10 @@ export function ChatInput() {
             <ContextWindowTag onClick={handleCompact} disabled={isStreaming} />
           </div>
 
-          {/* 우측: 액션 버튼들 + 첨부 드롭다운 메뉴 */}
-          <div className="relative">
+          {/* 우측: 모델 태그 + 액션 버튼들 + 첨부 드롭다운 메뉴 */}
+          <div className="flex items-center gap-2">
+            <ModelTag />
+            <div className="relative">
             <AttachMenu
               addImageAttachment={addImageAttachment}
               addFileAttachment={addFileAttachment}
@@ -579,6 +582,7 @@ export function ChatInput() {
               }}
               onStop={onStop}
             />
+            </div>
           </div>
         </div>
       </div>

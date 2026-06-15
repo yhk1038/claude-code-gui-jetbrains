@@ -18,7 +18,7 @@ export function Tag(props: Props) {
                 text-[0.8461rem] font-medium transition-colors
                 ${disabled
                     ? 'text-text-tertiary cursor-default'
-                    : 'text-text-secondary cursor-pointer hover:bg-surface-base/[7%]'
+                    : 'text-text-secondary cursor-pointer hover:bg-surface-hover'
                 }
                 ${className}
             `}
