@@ -230,6 +230,9 @@ class NodeBackendService : Disposable {
 
         suspend fun awaitPort(): Int = portDeferred.await()
 
+        /** Recent backend stderr, for surfacing a startup-failure cause (#97). */
+        fun recentDiagnostics(): String? = nodeProcessManager?.recentStderr()
+
         /** Kill the process — used by restart() for a clean slate. */
         fun stop() {
             rpcClient?.dispose(); rpcClient = null
@@ -270,6 +273,13 @@ class NodeBackendService : Disposable {
     suspend fun awaitPort(projectBasePath: String): Int =
         (backends[projectBasePath]
             ?: error("No backend registered for project root: $projectBasePath")).awaitPort()
+
+    /**
+     * Most recent backend stderr for [projectBasePath], or null when none. Used to
+     * attach a concrete cause to a start failure/timeout error panel. See issue #97.
+     */
+    fun recentBackendDiagnostics(projectBasePath: String): String? =
+        backends[projectBasePath]?.recentDiagnostics()
 
     /** Restart the backend for [projectBasePath] (retry path). */
     @Synchronized

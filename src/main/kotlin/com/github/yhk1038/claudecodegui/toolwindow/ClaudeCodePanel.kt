@@ -270,8 +270,9 @@ class ClaudeCodePanel(
                     }
                     if (port == null) {
                         logger.warn("Node.js backend did not become ready within ${BACKEND_START_TIMEOUT_MS}ms")
+                        val diag = backendService.recentBackendDiagnostics(project.basePath ?: "")
                         javax.swing.SwingUtilities.invokeLater {
-                            showBackendError("Backend did not become ready within ${BACKEND_START_TIMEOUT_MS / 1000} seconds.")
+                            showBackendError("Backend did not become ready within ${BACKEND_START_TIMEOUT_MS / 1000} seconds.", diag)
                         }
                         return@launch
                     }
@@ -282,8 +283,9 @@ class ClaudeCodePanel(
                     throw e
                 } catch (e: Exception) {
                     logger.error("Failed to start Node.js backend", e)
+                    val diag = backendService.recentBackendDiagnostics(project.basePath ?: "")
                     javax.swing.SwingUtilities.invokeLater {
-                        showBackendError(e.message ?: "Unknown error")
+                        showBackendError(e.message ?: "Unknown error", diag)
                     }
                 }
             }
@@ -900,20 +902,31 @@ class ClaudeCodePanel(
     }
 
     /**
-     * Show error when the Node.js backend fails to start.
+     * Show error when the Node.js backend fails to start. When [diagnostics] (the
+     * backend's recent stderr) is available it is appended so the user/maintainer sees
+     * the concrete cause instead of an opaque message — the watchdog half of #97.
      */
-    private fun showBackendError(errorMessage: String) {
+    private fun showBackendError(errorMessage: String, diagnostics: String? = null) {
         remove(loadingLabel)
 
         errorPanel = JPanel(BorderLayout(0, 12)).apply {
             border = javax.swing.BorderFactory.createEmptyBorder(40, 40, 40, 40)
 
+            val diagnosticsHtml = diagnostics
+                ?.let { escapeHtml(it).replace("\n", "<br>") }
+                ?.let {
+                    "<br><br><b>Recent backend output:</b><br>" +
+                    "<div style='text-align:left;'>$it</div>"
+                }
+                ?: ""
+
             val messageLabel = javax.swing.JLabel(
                 "<html><div style='text-align:center;'>" +
                 "<b>Node.js backend failed to start</b><br><br>" +
-                "Error: $errorMessage<br><br>" +
+                "Error: ${escapeHtml(errorMessage)}<br><br>" +
                 "Ensure Node.js is installed and available on PATH.<br>" +
                 "The backend file (backend.mjs) must be built before running." +
+                diagnosticsHtml +
                 "</div></html>"
             ).apply {
                 horizontalAlignment = javax.swing.SwingConstants.CENTER
@@ -950,8 +963,9 @@ class ClaudeCodePanel(
                 }
                 if (port == null) {
                     logger.warn("Retry: Node.js backend did not become ready within ${BACKEND_START_TIMEOUT_MS}ms")
+                    val diag = backendService.recentBackendDiagnostics(project.basePath ?: "")
                     javax.swing.SwingUtilities.invokeLater {
-                        showBackendError("Backend did not become ready within ${BACKEND_START_TIMEOUT_MS / 1000} seconds.")
+                        showBackendError("Backend did not become ready within ${BACKEND_START_TIMEOUT_MS / 1000} seconds.", diag)
                     }
                     return@launch
                 }
@@ -961,8 +975,9 @@ class ClaudeCodePanel(
                 throw e
             } catch (e: Exception) {
                 logger.error("Retry: Failed to start Node.js backend", e)
+                val diag = backendService.recentBackendDiagnostics(project.basePath ?: "")
                 javax.swing.SwingUtilities.invokeLater {
-                    showBackendError(e.message ?: "Unknown error")
+                    showBackendError(e.message ?: "Unknown error", diag)
                 }
             }
         }
@@ -1222,6 +1237,11 @@ class ClaudeCodePanel(
          * `wsl.exe` start, while still bounding the formerly-unbounded wait. See issue #97.
          */
         private const val BACKEND_START_TIMEOUT_MS = 30_000L
+
+        /** Escape the minimal set of HTML metacharacters so backend stderr can be safely
+         * embedded in the Swing HTML error label without breaking its markup. */
+        private fun escapeHtml(s: String): String =
+            s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     }
 
     override fun dispose() {

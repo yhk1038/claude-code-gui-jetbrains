@@ -71,6 +71,26 @@ class NodeProcessManager(
     private var stdoutJob: Job? = null
     private var stderrJob: Job? = null
 
+    // Bounded ring buffer of the most recent backend stderr lines. Lets a startup
+    // failure or port timeout surface the backend's own output in the error panel
+    // instead of an opaque "did not become ready" message — the watchdog half of the
+    // issue #97 fix. Written from the stderr reader, read from a timeout handler on a
+    // different thread, so all access is synchronized on the deque.
+    private val recentStderrLines = ArrayDeque<String>()
+
+    private fun rememberStderr(line: String) {
+        synchronized(recentStderrLines) {
+            recentStderrLines.addLast(line)
+            while (recentStderrLines.size > MAX_STDERR_LINES) recentStderrLines.removeFirst()
+        }
+    }
+
+    /** The most recent backend stderr lines (up to [MAX_STDERR_LINES]), or null if none. */
+    fun recentStderr(): String? {
+        val lines = synchronized(recentStderrLines) { recentStderrLines.toList() }
+        return lines.takeIf { it.isNotEmpty() }?.joinToString("\n")
+    }
+
     /**
      * Lifecycle of the managed process. [start] runs asynchronously, so for a window
      * after start() returns the OS process does not yet exist and [isAlive] is false.
@@ -305,6 +325,7 @@ class NodeProcessManager(
         while (true) {
             val line = reader.readLine() ?: break
             if (line.isNotBlank()) {
+                rememberStderr(line)
                 System.err.println("[Node.js] $line")
                 logger.info("[Node.js] $line")
             }
@@ -832,4 +853,9 @@ class NodeProcessManager(
      */
     val isAlive: Boolean
         get() = process?.isAlive == true
+
+    companion object {
+        // How many recent stderr lines to retain for startup-failure diagnostics (#97).
+        private const val MAX_STDERR_LINES = 30
+    }
 }

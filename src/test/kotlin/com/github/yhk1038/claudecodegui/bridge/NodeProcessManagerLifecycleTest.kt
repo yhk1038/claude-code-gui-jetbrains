@@ -49,4 +49,13 @@ class NodeProcessManagerLifecycleTest {
         assertEquals(LoadingPhase.LOCATING_NODE, firstPhase)
         mgr.dispose()
     }
+
+    @Test
+    fun `recentStderr is null before any backend output`() {
+        // The watchdog diagnostics buffer starts empty; recentStderr() must report
+        // null (not an empty string) so callers can branch on "no diagnostics". #97.
+        val mgr = NodeProcessManager(CoroutineScope(Dispatchers.Default))
+        assertNull(mgr.recentStderr(), "no stderr should be collected before start")
+        mgr.dispose()
+    }
 }
