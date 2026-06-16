@@ -36,7 +36,7 @@ class ClaudeSessionsToolWindowFactory : ToolWindowFactory, DumbAware {
     companion object {
         // Fixed tabId so the pooled JCEF browser is reused across reopen, and is
         // namespaced apart from the UUID-keyed editor tabs.
-        private const val SESSION_PANEL_TAB_ID = "session-panel"
+        const val SESSION_PANEL_TAB_ID = "session-panel"
         private const val SESSION_PANEL_PATH = "/session-panel"
     }
 }

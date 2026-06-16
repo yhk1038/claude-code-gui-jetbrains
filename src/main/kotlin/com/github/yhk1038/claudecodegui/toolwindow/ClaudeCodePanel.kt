@@ -349,8 +349,20 @@ class ClaudeCodePanel(
                     injectStreamingStateBridge(frame)
                     installImeWorkaround()
                     logger.info("WebView loaded successfully")
-                    javax.swing.SwingUtilities.invokeLater {
-                        b.component.requestFocusInWindow()
+                    // Grab OS focus ONLY for the active, on-screen tab. The grab itself is
+                    // needed — it's what lets the WebView focus its input textarea. The
+                    // earlier UNCONDITIONAL grab was the bug: when several tabs realize at
+                    // once (session restore) and the left tool window also held focus, they
+                    // all fought and the CEF native component could not settle, toggling
+                    // focusOwner null <-> CefBrowserWr$3 ~10x/s (visible flicker). Gating on
+                    // isShowing limits the grab to the single visible tab — input focus works,
+                    // background-restored tabs don't pile on. The left session panel never grabs.
+                    if (tabId != ClaudeSessionsToolWindowFactory.SESSION_PANEL_TAB_ID) {
+                        javax.swing.SwingUtilities.invokeLater {
+                            if (b.component.isShowing) {
+                                b.component.requestFocusInWindow()
+                            }
+                        }
                     }
                 }
             }

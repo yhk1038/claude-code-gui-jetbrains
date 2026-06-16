@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { useBridgeContext } from './BridgeContext';
 
 interface AuthContextValue {
@@ -27,19 +27,32 @@ export function AuthProvider(props: AuthProviderProps) {
   const { isConnected, send } = useBridgeContext();
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
 
+  // Single-flight guard: a focus ping-pong can fire window 'focus' dozens of times
+  // per second; without this, each one launches a concurrent GET_ACCOUNT, and the
+  // CLI buckles under the burst and returns status='error' — which used to be read
+  // as "logged out". Collapsing to one in-flight request keeps the burst harmless.
+  const inFlightRef = useRef(false);
+
   const refetch = useCallback(async () => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     try {
       const result = await send('GET_ACCOUNT', {});
       if (result?.status === 'ok' && result.account) {
         const account = result.account as { loggedIn?: boolean };
         setLoggedIn(account.loggedIn === true);
       } else {
-        // status 'error' means credentials were not found → definitively logged out.
-        setLoggedIn(false);
+        // status 'error' is ambiguous: it can mean credentials-not-found (truly
+        // logged out) OR a transient CLI failure (e.g. concurrent invocations).
+        // Never flip an already-known-logged-in user to logged out on it; only an
+        // undetermined (null) state resolves to false. A real logout surfaces as a
+        // status 'ok' with loggedIn:false, which the branch above handles.
+        setLoggedIn((prev) => (prev === true ? true : false));
       }
     } catch {
-      // Transient failure (e.g. socket hiccup): keep the prior known state,
-      // never flip a real user to "logged out" on a network blip.
+      // Transient failure (e.g. socket hiccup): keep the prior known state.
+    } finally {
+      inFlightRef.current = false;
     }
   }, [send]);
 
@@ -48,9 +61,21 @@ export function AuthProvider(props: AuthProviderProps) {
   }, [isConnected, refetch]);
 
   useEffect(() => {
-    const onFocus = () => { if (isConnected) void refetch(); };
+    // Debounce window-focus re-checks: coalesce a focus storm into at most one
+    // re-check per second so a focus ping-pong cannot stampede GET_ACCOUNT.
+    let timer: number | null = null;
+    const onFocus = () => {
+      if (!isConnected || timer !== null) return;
+      timer = window.setTimeout(() => {
+        timer = null;
+        void refetch();
+      }, 1000);
+    };
     window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      if (timer !== null) window.clearTimeout(timer);
+    };
   }, [isConnected, refetch]);
 
   return (

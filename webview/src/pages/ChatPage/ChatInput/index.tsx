@@ -252,10 +252,18 @@ export function ChatInput() {
     }
   }, [currentSessionId, disabled, textareaRef]);
 
-  // Focus textarea when window/document gains focus
+  // Focus textarea when window/document gains focus.
+  // Only restore focus when nothing else is already focused (activeElement is
+  // body). The left session panel runs in a separate JCEF window; switching
+  // between the two fires window 'focus' here repeatedly, and unconditionally
+  // grabbing focus would let the editor tab keep stealing it back from the
+  // panel — a focus ping-pong. Guarding on document.body keeps the
+  // "return-to-IDE restores the input" intent without the tug-of-war.
   useEffect(() => {
     const handleFocus = () => {
-      textareaRef.current?.focus();
+      if (document.activeElement === document.body) {
+        textareaRef.current?.focus();
+      }
     };
 
     const handleVisibilityChange = () => {

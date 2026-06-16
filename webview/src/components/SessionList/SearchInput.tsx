@@ -19,7 +19,6 @@ export function SearchInput(props: Props) {
           onChange={(e) => onChange(e.target.value)}
           className={`w-full ${scale.searchInput} bg-surface-overlay text-text-secondary rounded outline-none placeholder:text-text-tertiary`}
           placeholder="Search sessions..."
-          autoFocus
         />
         <SessionRefresher />
       </div>
