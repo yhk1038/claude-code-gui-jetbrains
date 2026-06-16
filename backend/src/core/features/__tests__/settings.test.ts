@@ -139,6 +139,19 @@ describe('settings', () => {
       expect(result.status).toBe('error');
       expect(result.error).toContain('nodePath must be a string or null');
     });
+
+    it('should accept valid hostMode values', async () => {
+      for (const mode of ['editor-tab', 'tool-window']) {
+        const result = await saveSettingToFile('hostMode', mode);
+        expect(result.status).toBe('ok');
+      }
+    });
+
+    it('should reject invalid hostMode value', async () => {
+      const result = await saveSettingToFile('hostMode', 'sidebar');
+      expect(result.status).toBe('error');
+      expect(result.error).toContain('hostMode must be one of');
+    });
   });
 
   describe('readSettingsFile()', () => {
@@ -158,6 +171,7 @@ describe('settings', () => {
         debugMode: false,
         logLevel: 'info',
         terminalApp: null,
+        hostMode: 'editor-tab',
       });
       expect(mockWriteFile).toHaveBeenCalled();
     });
@@ -226,6 +240,7 @@ export default {
         debugMode: false,
         logLevel: 'info',
         terminalApp: null,
+        hostMode: 'editor-tab',
       });
     });
 

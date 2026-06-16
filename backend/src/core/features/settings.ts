@@ -16,6 +16,7 @@ const DEFAULT_SETTINGS: Record<string, unknown> = {
   debugMode: false,
   logLevel: 'info',
   terminalApp: null,
+  hostMode: 'editor-tab',
 };
 
 const COMMENT_MAP: Record<string, string> = {
@@ -27,6 +28,7 @@ const COMMENT_MAP: Record<string, string> = {
   debugMode: '디버그 모드 활성화',
   logLevel: '로그 레벨: "debug" | "info" | "warn" | "error"',
   terminalApp: '터미널 프로그램 (null이면 OS 기본 터미널)',
+  hostMode: '채팅을 띄우는 자리: "editor-tab" | "tool-window"',
 };
 
 function generateSettingsContent(settings: Record<string, unknown>): string {
@@ -133,6 +135,11 @@ function validateSetting(key: string, value: unknown): string | null {
     case 'terminalApp':
       if (value !== null && typeof value !== 'string') {
         return 'terminalApp must be a string or null';
+      }
+      break;
+    case 'hostMode':
+      if (!['editor-tab', 'tool-window'].includes(value as string)) {
+        return 'hostMode must be one of "editor-tab", "tool-window"';
       }
       break;
   }

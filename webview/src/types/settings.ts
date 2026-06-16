@@ -19,6 +19,17 @@ export enum SettingKey {
 
   // Terminal
   TERMINAL_APP = 'terminalApp',
+
+  // Host
+  HOST_MODE = 'hostMode',
+}
+
+/**
+ * 채팅을 띄우는 자리(호스트) - Kotlin HostMode / 백엔드 hostMode 와 동기화.
+ */
+export enum HostMode {
+  EDITOR_TAB = 'editor-tab',
+  TOOL_WINDOW = 'tool-window',
 }
 
 /**
@@ -52,6 +63,7 @@ export interface SettingsState {
   [SettingKey.DEBUG_MODE]: boolean;
   [SettingKey.LOG_LEVEL]: LogLevel;
   [SettingKey.TERMINAL_APP]: string | null;
+  [SettingKey.HOST_MODE]: HostMode;
 }
 
 /**
@@ -66,4 +78,5 @@ export const DEFAULT_SETTINGS: SettingsState = {
   [SettingKey.DEBUG_MODE]: false,
   [SettingKey.LOG_LEVEL]: LogLevel.INFO,
   [SettingKey.TERMINAL_APP]: null,
+  [SettingKey.HOST_MODE]: HostMode.EDITOR_TAB,
 };

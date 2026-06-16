@@ -1,11 +1,9 @@
 package com.github.yhk1038.claudecodegui.actions
 
-import com.github.yhk1038.claudecodegui.editor.ClaudeCodeVirtualFile
-import com.github.yhk1038.claudecodegui.services.EditorTabStateService
+import com.github.yhk1038.claudecodegui.hosting.ChatHostRouter
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import java.util.UUID
 
@@ -37,14 +35,9 @@ class OpenClaudeCodeAction : AnAction() {
             initialPath: String? = null,
             initialTitle: String? = null
         ) {
-            val fileEditorManager = FileEditorManager.getInstance(project)
-            val virtualFile = ClaudeCodeVirtualFile.getOrCreate(project, tabId, initialPath, initialTitle)
-
-            // 이미 열린 탭이면 포커스만 이동, 아니면 새로 열기
-            fileEditorManager.openFile(virtualFile, true)
-
-            // 탭 상태 영속화
-            EditorTabStateService.getInstance(project).addTab(tabId)
+            // Host router: pick the current host and delegate. Every open entry
+            // point funnels here, so this one line makes them all host-aware.
+            ChatHostRouter.currentHost(project).openOrFocus(project, tabId, initialPath, initialTitle)
         }
     }
 }
