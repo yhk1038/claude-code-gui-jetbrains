@@ -34,13 +34,7 @@ export function SessionPanelPage() {
 
   return (
     <div className="flex flex-col h-screen bg-surface-base text-text-primary">
-      <div className="flex-shrink-0 px-3 pt-3 pb-2">
-        <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-text-tertiary">
-          Claude Code
-        </span>
-      </div>
-
-      <div className="flex-shrink-0 px-1.5">
+      <div className="flex-shrink-0 px-1.5 pt-2">
         <button
           onClick={openNewTab}
           className="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded transition-colors"
