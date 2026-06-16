@@ -147,38 +147,11 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
-            <h3>0.18.4 - See and switch your model right in the composer</h3>
+            <h3>0.19.0 - Session panel & Sidebar chats now available!</h3>
             <ul>
-                <li><b>Current model at a glance</b>: The chat input now shows which Claude model you're using, and you can switch models with a keyboard shortcut without leaving the keyboard. (#108)</li>
-                <li><b>Color-coded input modes</b>: Each input mode (Plan, Bypass, Ask, Auto) now has its own color, and the input box highlights when focused so the active mode is easy to recognize.</li>
-                <li><b>Tool results show again</b>: Run output that was missing from some tool cards now renders correctly.</li>
-                <li><b>No more stuck "Starting backend…"</b>: The panel no longer hangs indefinitely when the backend is slow to start. (#97)</li>
-                <li><b>Cleaner scroll button</b>: The scroll-to-bottom button now hides when you're already near the bottom. (#104)</li>
-                <li>Other stability improvements.</li>
-            </ul>
-            <h3>0.18.3 - Steadier sign-in on Windows and WSL</h3>
-            <ul>
-                <li><b>Windows & WSL sign-in fixes</b>: Claude failed to launch in WSL projects, and the login screen could get stuck on Windows. Both are now resolved. (#57, #99)</li>
-                <li><b>Sign-in link shown in a dialog</b>: Signing in no longer pops open a browser unexpectedly. You can see the link on screen and open it yourself. (#57)</li>
-                <li><b>Polished settings dropdowns</b>: The selection menus in Settings now match the app theme and look consistent everywhere. (#96)</li>
-                <li><b>Auto-scroll keeps up with long replies</b>: Auto-scroll no longer breaks when a large block of content arrives all at once. (#100)</li>
-                <li>Other backend bug fixes. (#97)</li>
-            </ul>
-            <h3>0.18.2 - Smoother sign-in and remote control</h3>
-            <ul>
-                <li><b>Sign-in guidance</b>: Sending a message while signed out used to do nothing. Now you get a clear prompt to sign in. (#91)</li>
-                <li><b>Remote control turns on instantly</b>: When you enable remote control, the loading spinner could keep spinning for up to a minute even after the connection link was ready. It now clears the moment the link is available. (#92)</li>
-            </ul>
-            <h3>0.18.1 - UI bug fixes</h3>
-            <ul>
-                <li>The project selector screen now fills the whole window instead of leaving part of it blank.</li>
-                <li>The scroll-to-bottom button now disappears properly after you clear a session.</li>
-            </ul>
-            <h3>0.18.0 - Rename sessions and clearer titles</h3>
-            <ul>
-                <li><b>Rename your conversations</b>: Hover a session in the dropdown and click the pencil to rename it inline. Your custom title is saved and survives restarts. (#14)</li>
-                <li><b>Meaningful titles for command sessions</b>: A conversation started with a slash command (like /init) now shows the command as its title instead of "No title". (#14)</li>
-                <li><b>Steadier scrolling while reading</b>: The chat no longer yanks the view to the bottom while a reply is still streaming, so you can read a long answer from the top. (#87)</li>
+                <li>New session list panel on the left: browse all your Claude sessions and click one to open it in a new tab — even when no editor tab is open.</li>
+                <li>Choose where chats open — a dedicated editor tab or the sidebar tool window — under Settings → General → Preferred Location.</li>
+                <li>Fixed a startup freeze — restoring Claude tabs no longer locks up the IDE for up to a minute. (#110)</li>
             </ul>
         """.trimIndent()
     }
