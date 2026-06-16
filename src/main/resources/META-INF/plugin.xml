@@ -7,6 +7,8 @@
     <depends>org.jetbrains.plugins.terminal</depends>
     <depends optional="true" config-file="claudecode-jcef.xml">com.intellij.modules.jcef</depends>
 
+    <resource-bundle>messages.ClaudeCodeBundle</resource-bundle>
+
     <extensions defaultExtensionNs="com.intellij">
         <!-- Sidebar button that opens Editor Tab -->
         <toolWindow
