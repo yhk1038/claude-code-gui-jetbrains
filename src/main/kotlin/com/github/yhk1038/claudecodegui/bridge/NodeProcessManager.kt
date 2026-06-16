@@ -120,6 +120,7 @@ class NodeProcessManager(
         suspend fun refreshFiles(paths: List<String>)
         suspend fun createSession(workingDir: String)
         suspend fun openNewTab(workingDir: String)
+        suspend fun openSession(sessionId: String, workingDir: String?)
         suspend fun openSettings(workingDir: String)
         suspend fun openTerminal(workingDir: String)
         suspend fun openUrl(url: String)

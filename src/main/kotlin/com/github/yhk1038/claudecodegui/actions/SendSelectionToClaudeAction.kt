@@ -204,6 +204,7 @@ class SendSelectionToClaudeAction : AnAction() {
         override suspend fun refreshFiles(paths: List<String>) {}
         override suspend fun createSession(workingDir: String) {}
         override suspend fun openNewTab(workingDir: String) {}
+        override suspend fun openSession(sessionId: String, workingDir: String?) {}
         override suspend fun openSettings(workingDir: String) {}
         override suspend fun openTerminal(workingDir: String) {}
         override suspend fun openUrl(url: String) {}

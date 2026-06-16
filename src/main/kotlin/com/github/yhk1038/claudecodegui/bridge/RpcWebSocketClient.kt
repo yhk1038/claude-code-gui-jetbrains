@@ -234,6 +234,13 @@ class RpcWebSocketClient(
                 rpcHandler.openNewTab(workingDir)
                 buildJsonObject {}
             }
+            "OPEN_SESSION" -> {
+                val sessionId = params["sessionId"]?.jsonPrimitive?.content
+                    ?: throw IllegalArgumentException("Missing 'sessionId' param")
+                val workingDir = params["workingDir"]?.jsonPrimitive?.content
+                rpcHandler.openSession(sessionId, workingDir)
+                buildJsonObject {}
+            }
             "OPEN_SETTINGS" -> {
                 val workingDir = params["workingDir"]?.jsonPrimitive?.content ?: ""
                 logger.info("[DEBUG:RpcWS] OPEN_SETTINGS received, params=$params, resolved workingDir='$workingDir'")

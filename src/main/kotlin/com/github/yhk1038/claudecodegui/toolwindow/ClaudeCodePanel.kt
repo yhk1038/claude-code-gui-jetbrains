@@ -1049,6 +1049,15 @@ class ClaudeCodePanel(
                 }
             }
 
+            override suspend fun openSession(sessionId: String, workingDir: String?) {
+                ApplicationManager.getApplication().invokeLater {
+                    val targetProject = findProjectByBasePath(workingDir ?: "") ?: project
+                    // Always open the session in a fresh editor tab (new tabId).
+                    OpenClaudeCodeAction.openTab(targetProject, UUID.randomUUID().toString(), "/sessions/$sessionId")
+                    logger.info("Opened session tab (sessionId=$sessionId, workingDir=$workingDir)")
+                }
+            }
+
             override suspend fun openSettings(workingDir: String) {
                 ApplicationManager.getApplication().invokeLater {
                     val targetProject = findProjectByBasePath(workingDir) ?: project

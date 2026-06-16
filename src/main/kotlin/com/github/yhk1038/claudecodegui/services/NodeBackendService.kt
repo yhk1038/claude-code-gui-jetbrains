@@ -124,6 +124,10 @@ class NodeBackendService : Disposable {
                 any()?.openNewTab(workingDir) ?: warn("openNewTab")
             }
 
+            override suspend fun openSession(sessionId: String, workingDir: String?) {
+                any()?.openSession(sessionId, workingDir) ?: warn("openSession")
+            }
+
             override suspend fun openSettings(workingDir: String) {
                 any()?.openSettings(workingDir) ?: warn("openSettings")
             }
