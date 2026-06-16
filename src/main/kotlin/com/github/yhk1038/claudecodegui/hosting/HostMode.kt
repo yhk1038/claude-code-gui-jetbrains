@@ -12,5 +12,25 @@ enum class HostMode {
     EDITOR_TAB,
 
     /** Each chat session lives in a tool-window content tab. */
-    TOOL_WINDOW,
+    TOOL_WINDOW;
+
+    /**
+     * The kebab-case string stored under the `hostMode` settings key. The same
+     * whitelist is enforced by the backend `validateSetting` and the WebView.
+     */
+    fun toSetting(): String = when (this) {
+        EDITOR_TAB -> "editor-tab"
+        TOOL_WINDOW -> "tool-window"
+    }
+
+    companion object {
+        /**
+         * Parse the `hostMode` settings value. An unknown or missing value falls
+         * back to [EDITOR_TAB] — the safe default that preserves existing behaviour.
+         */
+        fun fromSetting(value: String?): HostMode = when (value) {
+            "tool-window" -> TOOL_WINDOW
+            else -> EDITOR_TAB
+        }
+    }
 }

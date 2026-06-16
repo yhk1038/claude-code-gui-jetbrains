@@ -1,5 +1,6 @@
 package com.github.yhk1038.claudecodegui.settings
 
+import com.github.yhk1038.claudecodegui.hosting.HostMode
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
@@ -39,7 +40,8 @@ class SettingsManager {
         "fontSize" to "글꼴 크기 (8~32)",
         "debugMode" to "디버그 모드 활성화",
         "logLevel" to """로그 레벨: "debug" | "info" | "warn" | "error"""",
-        "terminalApp" to """터미널 프로그램 (null이면 OS 기본 터미널)"""
+        "terminalApp" to """터미널 프로그램 (null이면 OS 기본 터미널)""",
+        "hostMode" to """채팅을 띄우는 자리: "editor-tab" | "tool-window""""
     )
 
     /** 기본값 맵 (순서 보존) */
@@ -50,7 +52,8 @@ class SettingsManager {
         "fontSize" to JsonPrimitive(13),
         "debugMode" to JsonPrimitive(false),
         "logLevel" to JsonPrimitive("info"),
-        "terminalApp" to JsonNull
+        "terminalApp" to JsonNull,
+        "hostMode" to JsonPrimitive("editor-tab")
     )
 
     /**
@@ -147,6 +150,15 @@ class SettingsManager {
      */
     fun isReady(): Boolean = synchronized(lock) {
         isLoaded
+    }
+
+    /**
+     * 현재 채팅 호스트 모드. `hostMode` 설정 값(`editor-tab` | `tool-window`)을
+     * [HostMode]로 파싱한다. 누락/이상값은 [HostMode.EDITOR_TAB]로 폴백.
+     */
+    fun getHostMode(): HostMode {
+        val raw = (get("hostMode") as? JsonPrimitive)?.contentOrNull
+        return HostMode.fromSetting(raw)
     }
 
     // ---- Private helpers (lock 내부에서만 호출) ----

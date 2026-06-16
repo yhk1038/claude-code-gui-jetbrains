@@ -1,5 +1,6 @@
 package com.github.yhk1038.claudecodegui.hosting
 
+import com.github.yhk1038.claudecodegui.settings.SettingsManager
 import com.intellij.openapi.project.Project
 
 /**
@@ -44,14 +45,14 @@ object ChatHostRouter {
     }
 
     /**
-     * The host to use right now.
+     * The host to use right now: read `hostMode` from settings and resolve it.
      *
-     * Phase 2 always returns the editor-tab host — the `hostMode` setting and
-     * its wiring arrive in Phase 3, and the tool-window host in Phase 4. The
-     * [project] parameter is part of the contract (multi-project routing reads
-     * the target project here) even though Phase 2 does not yet branch on it.
+     * The tool-window host does not exist until Phase 4, so [selectHost] degrades
+     * TOOL_WINDOW to the editor-tab host for now — the default `editor-tab` keeps
+     * behaviour unchanged regardless. The [project] parameter is part of the
+     * contract (multi-project routing reads the target project here).
      */
     @Suppress("UNUSED_PARAMETER")
     fun currentHost(project: Project): ChatHost =
-        selectHost(HostMode.EDITOR_TAB, EditorTabHost, toolWindowHost = null)
+        selectHost(SettingsManager.getInstance().getHostMode(), EditorTabHost, toolWindowHost = null)
 }
