@@ -8,11 +8,14 @@
     <depends optional="true" config-file="claudecode-jcef.xml">com.intellij.modules.jcef</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <!-- Sidebar button that opens Editor Tab -->
+        <!-- Sidebar button: opens an editor tab (EDITOR_TAB mode) or hosts chat
+             content tabs directly (TOOL_WINDOW mode). canCloseContents enables the
+             per-tab close button used in TOOL_WINDOW mode. -->
         <toolWindow
             id="Claude Code"
             anchor="right"
             icon="/icons/claudeCode.svg"
+            canCloseContents="true"
             factoryClass="com.github.yhk1038.claudecodegui.toolwindow.ClaudeCodeToolWindowFactory"/>
 
         <!-- Editor Tab -->
@@ -45,6 +48,10 @@
         <!-- Project service for editor tab state persistence -->
         <projectService
             serviceImplementation="com.github.yhk1038.claudecodegui.services.EditorTabStateService"/>
+
+        <!-- Project service hosting chat sessions in the tool window (TOOL_WINDOW mode) -->
+        <projectService
+            serviceImplementation="com.github.yhk1038.claudecodegui.hosting.ToolWindowHost"/>
 
         <!-- Project service for JCEF browser pooling (tab move/split preservation) -->
         <projectService

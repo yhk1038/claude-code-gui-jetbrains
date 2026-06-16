@@ -121,4 +121,24 @@ class ChatHostRouterTest {
             )
         }
     }
+
+    @Nested
+    inner class PlanHydrate {
+
+        @Test
+        fun `no persisted sessions opens one fresh session`() {
+            assertEquals(
+                ChatHostRouter.HydratePlan.FreshSession,
+                ChatHostRouter.planHydrate(openTabIds = emptyList(), activeTabId = null)
+            )
+        }
+
+        @Test
+        fun `persisted sessions are restored in restore order`() {
+            assertEquals(
+                ChatHostRouter.HydratePlan.Restore(listOf("a", "c", "b")),
+                ChatHostRouter.planHydrate(openTabIds = listOf("a", "b", "c"), activeTabId = "b")
+            )
+        }
+    }
 }

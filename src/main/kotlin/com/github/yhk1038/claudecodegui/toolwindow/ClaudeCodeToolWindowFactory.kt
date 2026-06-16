@@ -1,6 +1,9 @@
 package com.github.yhk1038.claudecodegui.toolwindow
 
 import com.github.yhk1038.claudecodegui.actions.OpenClaudeCodeAction
+import com.github.yhk1038.claudecodegui.hosting.HostMode
+import com.github.yhk1038.claudecodegui.hosting.ToolWindowHost
+import com.github.yhk1038.claudecodegui.settings.SettingsManager
 import com.github.yhk1038.claudecodegui.toolwindow.realization.ReentrancyGate
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
@@ -23,6 +26,16 @@ class ClaudeCodeToolWindowFactory : ToolWindowFactory, DumbAware {
     private val logger = Logger.getInstance(ClaudeCodeToolWindowFactory::class.java)
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
+        // TOOL_WINDOW mode: the tool window IS the chat host. Hydrate it (restore
+        // persisted sessions, or open one fresh session) and let it own its tabs.
+        // No "button trick", no auto-hide.
+        if (SettingsManager.getInstance().getHostMode() == HostMode.TOOL_WINDOW) {
+            ToolWindowHost.getInstance(project).hydrate(toolWindow)
+            return
+        }
+
+        // EDITOR_TAB mode (default): the tool window is just a stripe button that
+        // opens an editor tab and hides itself again.
         // Empty panel required by the ToolWindow content structure. Match the IDE
         // theme background so the brief flash during the open-tab "button" trick
         // does not expose the LAF default white on dark themes.

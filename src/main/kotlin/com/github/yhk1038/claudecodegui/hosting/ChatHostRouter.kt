@@ -45,14 +45,31 @@ object ChatHostRouter {
     }
 
     /**
-     * The host to use right now: read `hostMode` from settings and resolve it.
+     * What a host should do when its UI is first built (e.g. the tool window is
+     * opened for the first time):
      *
-     * The tool-window host does not exist until Phase 4, so [selectHost] degrades
-     * TOOL_WINDOW to the editor-tab host for now — the default `editor-tab` keeps
-     * behaviour unchanged regardless. The [project] parameter is part of the
-     * contract (multi-project routing reads the target project here).
+     *  - [FreshSession] — nothing was persisted, so open one brand-new session
+     *    (so the user lands on a usable chat rather than an empty container);
+     *  - [Restore] — re-open the persisted sessions in [planRestoreOrder].
      */
-    @Suppress("UNUSED_PARAMETER")
+    sealed interface HydratePlan {
+        object FreshSession : HydratePlan
+        data class Restore(val order: List<String>) : HydratePlan
+    }
+
+    fun planHydrate(openTabIds: List<String>, activeTabId: String?): HydratePlan =
+        if (openTabIds.isEmpty()) HydratePlan.FreshSession
+        else HydratePlan.Restore(planRestoreOrder(openTabIds, activeTabId))
+
+    /**
+     * The host to use right now: read `hostMode` from settings and resolve it to
+     * the matching host for [project] (multi-project: the tool-window host is a
+     * per-project service).
+     */
     fun currentHost(project: Project): ChatHost =
-        selectHost(SettingsManager.getInstance().getHostMode(), EditorTabHost, toolWindowHost = null)
+        selectHost(
+            SettingsManager.getInstance().getHostMode(),
+            EditorTabHost,
+            ToolWindowHost.getInstance(project),
+        )
 }
