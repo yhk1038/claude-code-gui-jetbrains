@@ -8,6 +8,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.IconLoader
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowManager
@@ -16,6 +17,7 @@ import com.intellij.ui.content.ContentFactory
 import com.intellij.ui.content.ContentManagerEvent
 import com.intellij.ui.content.ContentManagerListener
 import java.util.UUID
+import javax.swing.Icon
 
 /**
  * Hosts chat sessions in the **Claude Code** tool window's content tabs.
@@ -42,6 +44,7 @@ class ToolWindowHost(private val project: Project) : ChatHost {
             return
         }
         installCloseListener(toolWindow)
+        removePlaceholders(toolWindow)
 
         val existing = findContent(toolWindow, tabId)
         if (existing != null) {
@@ -72,6 +75,7 @@ class ToolWindowHost(private val project: Project) : ChatHost {
      */
     fun hydrate(toolWindow: ToolWindow) {
         installCloseListener(toolWindow)
+        removePlaceholders(toolWindow)
         if (toolWindow.contentManager.contentCount > 0) return
 
         val state = EditorTabStateService.getInstance(project)
@@ -111,9 +115,28 @@ class ToolWindowHost(private val project: Project) : ChatHost {
             virtualFile.currentPath = path
             state.updatePath(tabId, path)
         }
+        // Unread badge: when streaming ends on a tab that is NOT the selected one,
+        // swap its content icon to the unread variant. The selection listener
+        // restores the base icon when the user comes back (mirrors the editor tab).
+        var wasStreaming = false
+        panel.onStreamingStateChanged = { isStreaming ->
+            if (!isStreaming && wasStreaming) {
+                ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID)?.let { tw ->
+                    val tabContent = findContent(tw, tabId)
+                    if (tabContent != null && tw.contentManager.selectedContent !== tabContent) {
+                        tabContent.icon = UNREAD_ICON
+                    }
+                }
+            }
+            wasStreaming = isStreaming
+        }
 
         return ContentFactory.getInstance().createContent(panel, virtualFile.presentableName, false).apply {
             isCloseable = true
+            // SHOW_CONTENT_ICON is required for setIcon() to actually render on the
+            // tab label — without it the platform suppresses content tab icons.
+            putUserData(ToolWindow.SHOW_CONTENT_ICON, true)
+            icon = BASE_ICON
             putUserData(TAB_ID_KEY, tabId)
         }
     }
@@ -122,11 +145,18 @@ class ToolWindowHost(private val project: Project) : ChatHost {
         if (closeListenerInstalled) return
         closeListenerInstalled = true
 
+        // Hide the redundant "Claude Code" id label in the tool-window header — the
+        // content tab already shows the chat title. Uses the string key directly to
+        // avoid referencing the internal ToolWindowContentUi.HIDE_ID_LABEL constant.
+        toolWindow.component.putClientProperty("HideIdLabel", "true")
+
         toolWindow.contentManager.addContentManagerListener(object : ContentManagerListener {
             override fun selectionChanged(event: ContentManagerEvent) {
                 val tabId = event.content.getUserData(TAB_ID_KEY) ?: return
                 // Track the active tab so restart restore re-focuses the right one.
                 EditorTabStateService.getInstance(project).addTab(tabId)
+                // The user is now looking at this tab — clear any unread badge.
+                event.content.icon = BASE_ICON
             }
 
             override fun contentRemoved(event: ContentManagerEvent) {
@@ -136,13 +166,28 @@ class ToolWindowHost(private val project: Project) : ChatHost {
                 // Disposing the panel self-cleans: releaseRef (grace-period, harmless
                 // here) → removeTab + EditorTabStateService.removeTab + virtual-file
                 // cleanup. Closing the last tab leaves the tool window empty by design.
+                // Disposer.dispose is a no-op when already disposed, so no guard needed.
                 ApplicationManager.getApplication().invokeLater {
-                    if (!Disposer.isDisposed(panel)) {
-                        Disposer.dispose(panel)
-                    }
+                    Disposer.dispose(panel)
                 }
             }
         })
+    }
+
+    /**
+     * Remove any leftover placeholder content (the empty "Loading…" tab the
+     * factory adds for the EDITOR_TAB button trick). Placeholders carry no
+     * [TAB_ID_KEY]; real chat tabs always do. This keeps the tool window from
+     * showing an empty tab once it starts hosting chats.
+     */
+    private fun removePlaceholders(toolWindow: ToolWindow) {
+        val contentManager = toolWindow.contentManager
+        for (i in contentManager.contentCount - 1 downTo 0) {
+            val content = contentManager.getContent(i) ?: continue
+            if (content.getUserData(TAB_ID_KEY) == null) {
+                contentManager.removeContent(content, true)
+            }
+        }
     }
 
     private fun findContent(toolWindow: ToolWindow, tabId: String): Content? {
@@ -157,6 +202,11 @@ class ToolWindowHost(private val project: Project) : ChatHost {
     companion object {
         const val TOOL_WINDOW_ID = "Claude Code"
         private val TAB_ID_KEY = Key.create<String>("ClaudeCode.ToolWindow.TabId")
+
+        private val BASE_ICON: Icon =
+            IconLoader.getIcon("/icons/claudeCode.svg", ToolWindowHost::class.java)
+        private val UNREAD_ICON: Icon =
+            IconLoader.getIcon("/icons/claudeCode-unread.svg", ToolWindowHost::class.java)
 
         fun getInstance(project: Project): ToolWindowHost =
             project.getService(ToolWindowHost::class.java)
