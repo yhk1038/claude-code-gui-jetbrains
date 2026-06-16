@@ -50,9 +50,9 @@
         <projectService
             serviceImplementation="com.github.yhk1038.claudecodegui.services.ClaudeCodeBrowserService"/>
 
-        <!-- Restore editor tabs on project open -->
+        <!-- Restore persisted chat sessions into the current host on project open -->
         <postStartupActivity
-            implementation="com.github.yhk1038.claudecodegui.startup.EditorTabRestoreActivity"/>
+            implementation="com.github.yhk1038.claudecodegui.startup.ChatHostRestoreActivity"/>
 
         <!-- WebView resource server -->
         <httpRequestHandler
