@@ -83,56 +83,15 @@ intellijPlatform {
         name = "Claude Code with GUI"
         version = project.version.toString()
         description = providers.provider {
-            // README.md에서 마켓플레이스용 HTML 설명을 동적으로 생성
-            val readme = file("README.md").readText()
-            val lines = readme.lines()
-
-            // 헤더(h1)와 한 줄 설명 추출: 첫 번째 비어있지 않은 줄들
-            val titleLine = lines.firstOrNull { it.startsWith("# ") } ?: ""
-            val subtitleLine = lines.drop(1).firstOrNull { it.isNotBlank() && !it.startsWith("[![") && !it.startsWith("![") } ?: ""
-
-            // 추출할 섹션: Overview, Features, Requirements, Quick Start
-            val targetSections = setOf("Overview", "Features", "Requirements", "Quick Start")
-            val stopSection = "Changelog"
-
-            val sectionContent = StringBuilder()
-            var inTargetSection = false
-            var done = false
-
-            for (line in lines) {
-                if (done) break
-                // h2 섹션 시작 감지
-                val h2Match = Regex("""^## (.+)$""").find(line)
-                if (h2Match != null) {
-                    val sectionName = h2Match.groupValues[1].trim()
-                    if (sectionName == stopSection) {
-                        done = true
-                        break
-                    }
-                    inTargetSection = sectionName in targetSections
-                }
-                if (!inTargetSection) continue
-
-                // 제외 규칙: 배지, TODO 주석, 수평선
-                if (line.startsWith("[![") || line.startsWith("![")) continue
-                if (line.trimStart().startsWith("<!-- TODO")) continue
-                if (line.trim() == "---") continue
-
-                sectionContent.appendLine(line)
-            }
-
-            // 제목 블록 + 섹션 내용 조합
-            val fullContent = buildString {
-                if (titleLine.isNotBlank()) appendLine(titleLine)
-                if (subtitleLine.isNotBlank()) appendLine(subtitleLine)
-                appendLine()
-                append(sectionContent.toString().trimEnd())
-            }
+            // 마켓플레이스 전용 소개 문서(영어 원본)를 그대로 HTML로 변환.
+            // 언어별 번역본은 같은 폴더(docs/marketplaces/jetbrains/<lang>.md)에 있고,
+            // 본문 상단의 언어 링크 줄에서 GitHub 절대 URL로 이동한다.
+            val markdown = file("docs/marketplaces/jetbrains/en.md").readText()
 
             // Markdown → HTML 변환
             val parser = org.commonmark.parser.Parser.builder().build()
             val renderer = org.commonmark.renderer.html.HtmlRenderer.builder().build()
-            val document = parser.parse(fullContent)
+            val document = parser.parse(markdown)
             renderer.render(document)
         }.get()
         vendor {
