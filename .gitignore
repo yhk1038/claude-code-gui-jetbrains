@@ -70,3 +70,5 @@ backend/coverage/
 # Logs
 *.log
 npm-debug.log*
+
+www/
