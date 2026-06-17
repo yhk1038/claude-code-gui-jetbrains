@@ -22,6 +22,7 @@ import { AttachMenu } from './AttachMenu';
 import { ModelSwitchOverlay, SWITCH_MODEL_EVENT } from '@/pages/ChatPage/ModelSwitchOverlay';
 import { EFFORT_CYCLE_EVENT } from '@/commandPalette/sections/model/EffortItem';
 import { THINKING_TOGGLE_EVENT } from '@/commandPalette/sections/model/ThinkingItem';
+import { OPEN_SESSION_DROPDOWN_EVENT } from '@/commandPalette/sections/context/items';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 import { useEffort } from '@/hooks/useEffort';
 import { useMention } from './hooks/useMention';
@@ -145,6 +146,14 @@ export function ChatInput() {
     window.addEventListener('command-palette:attach-files', handleAttachFromPalette);
     return () => window.removeEventListener('command-palette:attach-files', handleAttachFromPalette);
   }, []);
+
+  // 커맨드 팔레트 "Resume conversation" 항목 연동: 입력창의 `/resume` 텍스트를 비운다.
+  // (드롭다운 열기·포커스는 SessionDropdown이 같은 이벤트를 수신해 처리한다.)
+  useEffect(() => {
+    const handleResumeFromPalette = () => onChange('');
+    window.addEventListener(OPEN_SESSION_DROPDOWN_EVENT, handleResumeFromPalette);
+    return () => window.removeEventListener(OPEN_SESSION_DROPDOWN_EVENT, handleResumeFromPalette);
+  }, [onChange]);
 
   // 커맨드 팔레트 "Switch model..." 항목 연동
   useEffect(() => {

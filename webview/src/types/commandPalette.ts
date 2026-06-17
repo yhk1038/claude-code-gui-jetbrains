@@ -40,6 +40,8 @@ export interface PanelItemBase {
   valueComponent?: () => React.ReactNode;
   disabled?: boolean;
   keepOpen?: boolean;
+  /** Hidden from the panel by default; only surfaced when the filter query matches its label. */
+  searchOnly?: boolean;
   textStyle?: {
     underline?: boolean;
     italic?: boolean;

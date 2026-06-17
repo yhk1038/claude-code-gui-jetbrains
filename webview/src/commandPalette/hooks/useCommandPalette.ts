@@ -17,18 +17,21 @@ export function useCommandPalette({ onChange, textareaRef }: UseCommandPaletteOp
   const [showSlashCommands, setShowSlashCommands] = useState(false);
 
   const filteredSections = useMemo(() => {
-    if (!filterQuery) return sections;
-
     const query = filterQuery.toLowerCase();
+    const hasQuery = query.length > 0;
+
     return sections
       .map((section, index) => {
-        const filteredItems = section.items.filter(item =>
-          item.label.toLowerCase().includes(query)
-        );
+        const filteredItems = section.items.filter(item => {
+          // searchOnly items stay hidden until the user types a matching query.
+          if (item.searchOnly && !hasQuery) return false;
+          if (hasQuery) return item.label.toLowerCase().includes(query);
+          return true;
+        });
         if (filteredItems.length === 0) return null;
         return {
           ...section,
-          showDividerAbove: index > 0,
+          showDividerAbove: hasQuery ? index > 0 : section.showDividerAbove,
           items: filteredItems,
         };
       })

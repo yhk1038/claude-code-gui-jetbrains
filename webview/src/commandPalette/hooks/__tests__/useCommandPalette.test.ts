@@ -257,4 +257,73 @@ describe('useCommandPalette', () => {
       expect(result.current.showSlashCommands).toBe(false);
     });
   });
+
+  // ──────────────────────────────────────────────────────
+  // searchOnly items — hidden by default, surfaced via search
+  // ──────────────────────────────────────────────────────
+
+  describe('searchOnly items', () => {
+    const sectionsWithSearchOnly: PanelSection[] = [
+      {
+        id: PanelSectionId.Context,
+        title: 'Context',
+        showDividerAbove: false,
+        items: [
+          {
+            id: 'normal',
+            label: 'Attach file',
+            type: PanelItemType.Action,
+            action: vi.fn(),
+          } as ActionItem,
+          {
+            id: 'resume',
+            label: 'Resume conversation',
+            type: PanelItemType.Action,
+            searchOnly: true,
+            action: vi.fn(),
+          } as ActionItem,
+        ],
+      },
+    ];
+
+    it('hides searchOnly items when filterQuery is empty', () => {
+      setupMockRegistry(sectionsWithSearchOnly);
+      const { result } = renderHook(() =>
+        useCommandPalette({ onChange, textareaRef }),
+      );
+
+      const items = result.current.filteredSections.flatMap(s => s.items);
+      expect(items.find(i => i.id === 'resume')).toBeUndefined();
+      expect(items.find(i => i.id === 'normal')).toBeDefined();
+    });
+
+    it('surfaces searchOnly items when filterQuery matches the label', () => {
+      setupMockRegistry(sectionsWithSearchOnly);
+      const { result } = renderHook(() =>
+        useCommandPalette({ onChange, textareaRef }),
+      );
+
+      act(() => {
+        result.current.setFilterQuery('res');
+      });
+
+      const items = result.current.filteredSections.flatMap(s => s.items);
+      expect(items.find(i => i.id === 'resume')).toBeDefined();
+    });
+
+    it('still hides searchOnly items when filterQuery matches a different item', () => {
+      setupMockRegistry(sectionsWithSearchOnly);
+      const { result } = renderHook(() =>
+        useCommandPalette({ onChange, textareaRef }),
+      );
+
+      act(() => {
+        result.current.setFilterQuery('attach');
+      });
+
+      const items = result.current.filteredSections.flatMap(s => s.items);
+      expect(items.find(i => i.id === 'resume')).toBeUndefined();
+      expect(items.find(i => i.id === 'normal')).toBeDefined();
+    });
+  });
 });

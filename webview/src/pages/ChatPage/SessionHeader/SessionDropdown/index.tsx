@@ -3,6 +3,7 @@ import { DropdownToggle } from './DropdownToggle';
 import { DropdownMenu } from './DropdownMenu';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useSessionList } from '@/components/SessionList/useSessionList';
+import { OPEN_SESSION_DROPDOWN_EVENT } from '@/commandPalette/sections/context/items';
 
 export function SessionDropdown() {
   const { currentSession, switchSession } = useSessionContext();
@@ -20,6 +21,17 @@ export function SessionDropdown() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const sessionTitle = currentSession?.title || 'Past Conversations';
+
+  // `/resume` slash command opens the dropdown so past conversations can be
+  // browsed and resumed. Issue #28.
+  useEffect(() => {
+    const handleOpenFromPalette = () => {
+      setSearchQuery('');
+      setIsOpen(true);
+    };
+    window.addEventListener(OPEN_SESSION_DROPDOWN_EVENT, handleOpenFromPalette);
+    return () => window.removeEventListener(OPEN_SESSION_DROPDOWN_EVENT, handleOpenFromPalette);
+  }, [setSearchQuery]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

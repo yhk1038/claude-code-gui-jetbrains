@@ -51,6 +51,8 @@ export interface CommandPaletteCommand {
   readonly disabled: boolean;
   readonly keepOpen?: boolean;
   readonly order?: number;
+  /** Hidden from the panel by default; only surfaced when the filter query matches its label. */
+  readonly searchOnly?: boolean;
 
   execute(): Promise<void>;
   bindKeyboard?(e: KeyboardEvent): boolean;
@@ -134,6 +136,7 @@ export class StaticItem implements CommandPaletteCommand {
   readonly disabled: boolean;
   readonly keepOpen?: boolean;
   readonly order?: number;
+  readonly searchOnly?: boolean;
 
   private action?: () => Promise<void>;
   private serviceAction?: (services: CommandPaletteServices) => Promise<void>;
@@ -148,6 +151,7 @@ export class StaticItem implements CommandPaletteCommand {
       disabled?: boolean;
       keepOpen?: boolean;
       order?: number;
+      searchOnly?: boolean;
       action?: () => Promise<void>;
       serviceAction?: (services: CommandPaletteServices) => Promise<void>;
     },
@@ -157,6 +161,7 @@ export class StaticItem implements CommandPaletteCommand {
     this.disabled = options?.disabled ?? true;
     this.keepOpen = options?.keepOpen;
     this.order = options?.order;
+    this.searchOnly = options?.searchOnly;
     this.action = options?.action;
     this.serviceAction = options?.serviceAction;
   }

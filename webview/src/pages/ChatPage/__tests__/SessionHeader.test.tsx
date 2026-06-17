@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent, within, act } from '@testing-library/react';
+import { OPEN_SESSION_DROPDOWN_EVENT } from '@/commandPalette/sections/context/items';
 import userEvent from '@testing-library/user-event';
 import { SessionHeader } from '../SessionHeader/index';
 import { SessionMetaDto } from '../../../dto';
@@ -112,6 +113,22 @@ describe('SessionHeader', () => {
     // 다시 클릭 → 드롭다운 닫힘
     await user.click(toggleButton);
     expect(screen.queryByPlaceholderText('Search sessions...')).not.toBeInTheDocument();
+  });
+
+  it('/resume 이벤트(open-session-dropdown) 디스패치 시 드롭다운이 열리고 검색창에 포커스', async () => {
+    render(<SessionHeader />);
+
+    // 초기 상태: 드롭다운 닫힘
+    expect(screen.queryByPlaceholderText('Search sessions...')).not.toBeInTheDocument();
+
+    // `/resume` 슬래시 커맨드가 디스패치하는 이벤트
+    act(() => {
+      window.dispatchEvent(new CustomEvent(OPEN_SESSION_DROPDOWN_EVENT));
+    });
+
+    const searchInput = screen.getByPlaceholderText('Search sessions...');
+    expect(searchInput).toBeInTheDocument();
+    expect(searchInput).toHaveFocus();
   });
 
   it('드롭다운 외부 클릭 시 드롭다운이 닫힘', async () => {
