@@ -19,6 +19,7 @@ export function commandToItem(cmd: CommandPaletteCommand): PanelItem {
     icon: cmd.icon,
     valueComponent: cmd.valueComponent,
     keepOpen: cmd.keepOpen,
+    searchOnly: cmd.searchOnly,
   };
   // getter 프록시: cmd.disabled가 런타임에 변경되면 PanelItem에도 반영
   Object.defineProperty(base, 'disabled', {
