@@ -169,6 +169,31 @@ describe('SessionHeader', () => {
     expect(screen.queryByPlaceholderText('Search sessions...')).not.toBeInTheDocument();
   });
 
+  it('드롭다운이 열린 상태에서 Cmd/Ctrl+Shift+P로 세션 목록을 새로고침', async () => {
+    const user = userEvent.setup();
+    render(<SessionHeader />);
+    await user.click(screen.getByRole('button', { name: /First Chat/i }));
+
+    mockLoadSessions.mockClear();
+    fireEvent.keyDown(window, { key: 'P', ctrlKey: true, shiftKey: true });
+
+    expect(mockLoadSessions).toHaveBeenCalledTimes(1);
+  });
+
+  it('세션 아이디(uuid)로 검색하면 해당 세션이 표시됨', async () => {
+    const user = userEvent.setup();
+    render(<SessionHeader />);
+    await user.click(screen.getByRole('button', { name: /First Chat/i }));
+
+    const searchInput = screen.getByPlaceholderText('Search sessions...');
+    await user.type(searchInput, 'session-3');
+
+    const dropdown = document.querySelector('.max-h-80');
+    expect(within(dropdown as HTMLElement).getByText('API Discussion')).toBeInTheDocument();
+    expect(within(dropdown as HTMLElement).queryByText('First Chat')).not.toBeInTheDocument();
+    expect(within(dropdown as HTMLElement).queryByText('Second Chat')).not.toBeInTheDocument();
+  });
+
   it('드롭다운 외부 클릭 시 드롭다운이 닫힘', async () => {
     const user = userEvent.setup();
     const { container } = render(<SessionHeader />);

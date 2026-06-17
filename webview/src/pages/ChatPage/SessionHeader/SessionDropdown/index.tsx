@@ -8,7 +8,7 @@ import { useChatInputFocus } from '@/contexts/ChatInputFocusContext';
 import { OPEN_SESSION_DROPDOWN_EVENT } from '@/commandPalette/sections/context/items';
 
 export function SessionDropdown() {
-  const { currentSession, switchSession } = useSessionContext();
+  const { currentSession, switchSession, loadSessions } = useSessionContext();
   const { focus: focusComposer } = useChatInputFocus();
   const {
     currentSessionId,
@@ -73,6 +73,20 @@ export function SessionDropdown() {
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [isOpen, setSearchQuery]);
+
+  // While the dropdown is open, Cmd/Ctrl+Shift+P refreshes the session list
+  // (same action as the refresh button in the search box).
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e: globalThis.KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'P' || e.key === 'p')) {
+        e.preventDefault();
+        loadSessions();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [isOpen, loadSessions]);
 
   const handleSelectSession = (sessionId: string) => {
     switchSession(sessionId);

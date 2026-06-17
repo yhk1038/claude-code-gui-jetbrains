@@ -26,15 +26,17 @@ export function useSessionList(): UseSessionListResult {
   const { confirmDialog, confirm } = useConfirmDialog();
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filter sessions using regex (falls back to substring match on invalid regex)
+  // Filter sessions by title or session id (uuid), using regex with a
+  // substring-match fallback on invalid regex.
   const filteredSessions = useMemo(() => {
     if (!searchQuery.trim()) return sessions;
     try {
       const regex = new RegExp(searchQuery, 'i');
-      return sessions.filter(s => regex.test(s.title));
+      return sessions.filter(s => regex.test(s.title) || regex.test(s.id));
     } catch {
+      const query = searchQuery.toLowerCase();
       return sessions.filter(s =>
-        s.title.toLowerCase().includes(searchQuery.toLowerCase())
+        s.title.toLowerCase().includes(query) || s.id.toLowerCase().includes(query)
       );
     }
   }, [sessions, searchQuery]);
