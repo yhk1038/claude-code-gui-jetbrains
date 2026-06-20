@@ -1,5 +1,9 @@
 import { InputBanner } from './InputBanner';
 
+// TODO: www web 배포 후 개인정보처리방침 URL로 교체 (예: https://<도메인>/privacy).
+// 빈 값이면 링크를 표시하지 않는다.
+const PRIVACY_POLICY_URL: string = '';
+
 interface Props {
   /** 수락 클릭. */
   onAccept: () => void;
@@ -20,7 +24,20 @@ export function TelemetryConsentBanner(props: Props) {
     <InputBanner
       message={
         <>
-          개인을 직접 식별하지 않는 <strong>사용 통계</strong>를 수집해 제품 개선에 사용해도 될까요?
+          제품 개선을 위한 사용 통계 수집을 허용하시겠습니까? 소스코드와 개인정보는 보내지 않으며, 설정에서 언제든 끌 수 있습니다.
+          {PRIVACY_POLICY_URL ? (
+            <>
+              {' '}
+              <a
+                href={PRIVACY_POLICY_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="text-text-link hover:underline"
+              >
+                개인정보처리방침
+              </a>
+            </>
+          ) : null}
         </>
       }
       actions={
