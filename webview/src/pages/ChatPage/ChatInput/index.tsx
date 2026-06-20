@@ -32,6 +32,7 @@ import { isMobile } from '@/config/environment';
 import { shouldSubmitOnEnter } from './shouldSubmitOnEnter';
 import { basename } from './basename';
 import { RichInput } from './RichInput';
+import { TelemetryConsentBanner } from '../TelemetryConsentBanner';
 import { getCaretOffset, setCaretOffset, getSelectionRange } from '@/utils/domSelection';
 
 interface NativeDropEntry {
@@ -78,6 +79,8 @@ export function ChatInput() {
   const lastMetaArrowTime = useRef<number>(0);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showModelSwitch, setShowModelSwitch] = useState(false);
+  // 텔레메트리 동의 배너 표시 여부 (임시 로컬 상태 — 체크리스트 5에서 profile 동의상태로 교체)
+  const [showConsent, setShowConsent] = useState(true);
 
   // Native (IDE/Swing) drag-and-drop bridge: Kotlin → Node backend → IPC NATIVE_DROP_ENTRIES.
   // Currently unused (CefDragHandler forwards drops to the page as HTML5 events instead),
@@ -490,6 +493,14 @@ export function ChatInput() {
 
   return (
     <div className="max-w-[44rem] mx-auto px-4 pb-[14px] pt-2">
+      {/* 텔레메트리 동의 인풋배너 (표시 조건·영속화는 체크리스트 5에서 profile 연결) */}
+      {showConsent && (
+        <TelemetryConsentBanner
+          onAccept={() => setShowConsent(false)}
+          onDecline={() => setShowConsent(false)}
+          onClose={() => setShowConsent(false)}
+        />
+      )}
       {/* 메인 인풋 컨테이너 — drag/drop은 window 레벨 리스너가 패널 전체에서 처리한다. */}
       <div
         className={`
