@@ -2,7 +2,7 @@ import { readProfile, ConsentStatus } from './profile';
 
 // ─── Telemetry transport (Rybbit) ────────────────────────────────────────────
 // Sends custom events / errors to the self-hosted Rybbit instance, but ONLY when
-// telemetry consent status is GRANTED. The API key is injected at build time
+// telemetry consent status is ACCEPTED. The API key is injected at build time
 // (esbuild define) — never committed as a source constant. The Bearer key makes
 // Rybbit treat these as trusted server-side ingestion (bypasses its bot filter).
 
@@ -24,7 +24,7 @@ export interface TelemetryProperties {
 }
 
 /**
- * 동의(GRANTED)일 때만 Rybbit으로 전송한다. 그 외(미응답·거절·철회)에는 아무것도 보내지 않는다.
+ * 동의(ACCEPTED)일 때만 Rybbit으로 전송한다. 그 외(미응답·거부·철회)에는 아무것도 보내지 않는다.
  * API key가 주입되지 않은 빌드(개발 등)에서도 전송하지 않는다. 전송 실패는 조용히 무시한다.
  */
 async function send(
@@ -34,7 +34,7 @@ async function send(
 ): Promise<void> {
   if (!RYBBIT_API_KEY) return; // 키 미주입 빌드 — 전송 안 함
   const profile = await readProfile();
-  if (profile.telemetryConsent.status !== ConsentStatus.GRANTED) return; // 미수락이면 전송 0
+  if (profile.telemetryConsent.status !== ConsentStatus.ACCEPTED) return; // 미수락이면 전송 0
 
   const body = {
     site_id: RYBBIT_SITE_ID,

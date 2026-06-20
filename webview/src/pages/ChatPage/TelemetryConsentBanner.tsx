@@ -10,7 +10,7 @@ interface Props {
   /** 수락 클릭. */
   onAccept: () => void;
   /** 거부 클릭. */
-  onDecline: () => void;
+  onDeny: () => void;
   /** X(닫기) 클릭 — 미응답 상태를 유지한 채 이 세션에서만 숨긴다. */
   onClose: () => void;
 }
@@ -22,7 +22,7 @@ interface Props {
  * 표시 여부·동의 영속화는 상위(profile 연결)에서 제어 — 이 컴포넌트는 표현만 담당한다.
  */
 export function TelemetryConsentBanner(props: Props) {
-  const { onAccept, onDecline, onClose } = props;
+  const { onAccept, onDeny, onClose } = props;
   const { scopeSettings } = useClaudeSettings();
   const copy = getConsentCopy(scopeSettings.language as string | undefined);
   return (
@@ -52,10 +52,10 @@ export function TelemetryConsentBanner(props: Props) {
         <>
           <button
             type="button"
-            onClick={onDecline}
+            onClick={onDeny}
             className="rounded px-2 py-1 text-[0.7692rem] font-medium text-text-tertiary hover:bg-state-info-bg transition-colors"
           >
-            {copy.decline}
+            {copy.deny}
           </button>
           <button
             type="button"

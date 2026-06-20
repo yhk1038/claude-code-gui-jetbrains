@@ -8,11 +8,11 @@ interface TestProfile {
   telemetryConsent: { status: string; decidedAt: string | null };
 }
 
-const CONSENT_ENUM = { PENDING: 'pending', GRANTED: 'granted', DENIED: 'denied' };
+const CONSENT_ENUM = { PENDING: 'pending', ACCEPTED: 'accepted', DENIED: 'denied' };
 
-const granted: TestProfile = {
+const accepted: TestProfile = {
   uuid: 'test-uuid',
-  telemetryConsent: { status: 'granted', decidedAt: '2026-01-01T00:00:00.000Z' },
+  telemetryConsent: { status: 'accepted', decidedAt: '2026-01-01T00:00:00.000Z' },
 };
 const denied: TestProfile = {
   uuid: 'test-uuid',
@@ -43,8 +43,8 @@ describe('telemetry consent gating', () => {
     vi.doUnmock('./profile');
   });
 
-  it('GRANTED + API key면 전송한다', async () => {
-    const { trackEvent, fetchMock } = await loadTelemetry(granted, 'test-key');
+  it('ACCEPTED + API key면 전송한다', async () => {
+    const { trackEvent, fetchMock } = await loadTelemetry(accepted, 'test-key');
     await trackEvent('e', { a: '1' });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
@@ -62,7 +62,7 @@ describe('telemetry consent gating', () => {
   });
 
   it('API key가 없으면(개발 빌드) 동의했어도 전송하지 않는다', async () => {
-    const { trackEvent, fetchMock } = await loadTelemetry(granted, '');
+    const { trackEvent, fetchMock } = await loadTelemetry(accepted, '');
     await trackEvent('e', {});
     expect(fetchMock).not.toHaveBeenCalled();
   });

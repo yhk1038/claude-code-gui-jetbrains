@@ -33,7 +33,7 @@ import { shouldSubmitOnEnter } from './shouldSubmitOnEnter';
 import { basename } from './basename';
 import { RichInput } from './RichInput';
 import { TelemetryConsentBanner } from '../TelemetryConsentBanner';
-import { useTelemetryConsent, ConsentStatus } from '@/hooks/useTelemetryConsent';
+import { useTelemetryConsent, ConsentStatus, ConsentSource } from '@/hooks/useTelemetryConsent';
 import { getCaretOffset, setCaretOffset, getSelectionRange } from '@/utils/domSelection';
 
 interface NativeDropEntry {
@@ -82,7 +82,7 @@ export function ChatInput() {
   const [showModelSwitch, setShowModelSwitch] = useState(false);
   // 텔레메트리 동의: profile 상태가 미응답(PENDING)일 때만 배너 노출. X 닫기는 이 세션에서만
   // 숨기고(consentDismissed), 새 세션 전환 시 다시 노출한다. 수락/거절하면 status가 바뀌어 영영 숨는다.
-  const { status: consentStatus, accept: acceptConsent, decline: declineConsent } = useTelemetryConsent();
+  const { status: consentStatus, accept: acceptConsent, deny: denyConsent } = useTelemetryConsent();
   const [consentDismissed, setConsentDismissed] = useState(false);
 
   // Native (IDE/Swing) drag-and-drop bridge: Kotlin → Node backend → IPC NATIVE_DROP_ENTRIES.
@@ -501,8 +501,8 @@ export function ChatInput() {
       {/* 텔레메트리 동의 인풋배너: 미응답(PENDING)이고 이 세션에서 닫지 않았을 때만 표시 */}
       {consentStatus === ConsentStatus.PENDING && !consentDismissed && (
         <TelemetryConsentBanner
-          onAccept={() => void acceptConsent()}
-          onDecline={() => void declineConsent()}
+          onAccept={() => void acceptConsent(ConsentSource.BANNER)}
+          onDeny={() => void denyConsent(ConsentSource.BANNER)}
           onClose={() => setConsentDismissed(true)}
         />
       )}

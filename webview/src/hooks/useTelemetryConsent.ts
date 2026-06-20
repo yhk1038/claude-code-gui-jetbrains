@@ -7,8 +7,14 @@ import { useBridgeContext } from '@/contexts/BridgeContext';
  */
 export enum ConsentStatus {
   PENDING = 'pending',
-  GRANTED = 'granted',
+  ACCEPTED = 'accepted',
   DENIED = 'denied',
+}
+
+/** 동의를 결정한 경로(이벤트 분석용). */
+export enum ConsentSource {
+  BANNER = 'banner',
+  SETTINGS = 'settings',
 }
 
 interface ConsentResponse {
@@ -16,7 +22,11 @@ interface ConsentResponse {
   decidedAt: string | null;
 }
 
-/** profile.json의 텔레메트리 동의 상태를 읽고, 수락/거절을 영속화하는 훅. */
+/**
+ * profile.json의 텔레메트리 동의 상태를 읽고, 수락(accept)/거부(deny)를 영속화하는 훅.
+ * 동의 변경 이벤트(accept/deny + source) 전송은 백엔드 핸들러가 처리한다
+ * (특히 deny는 저장 전에 전송해 철회 시점의 ACCEPTED 상태로 게이팅을 통과).
+ */
 export function useTelemetryConsent() {
   const { send } = useBridgeContext();
   const [status, setStatus] = useState<ConsentStatus | null>(null);
@@ -34,15 +44,21 @@ export function useTelemetryConsent() {
     void refresh();
   }, [refresh]);
 
-  const accept = useCallback(async () => {
-    const res = (await send('SET_TELEMETRY_CONSENT', { granted: true })) as ConsentResponse | null;
-    setStatus(res?.consentStatus ?? ConsentStatus.GRANTED);
-  }, [send]);
+  const accept = useCallback(
+    async (source: ConsentSource) => {
+      const res = (await send('SET_TELEMETRY_CONSENT', { accepted: true, source })) as ConsentResponse | null;
+      setStatus(res?.consentStatus ?? ConsentStatus.ACCEPTED);
+    },
+    [send],
+  );
 
-  const decline = useCallback(async () => {
-    const res = (await send('SET_TELEMETRY_CONSENT', { granted: false })) as ConsentResponse | null;
-    setStatus(res?.consentStatus ?? ConsentStatus.DENIED);
-  }, [send]);
+  const deny = useCallback(
+    async (source: ConsentSource) => {
+      const res = (await send('SET_TELEMETRY_CONSENT', { accepted: false, source })) as ConsentResponse | null;
+      setStatus(res?.consentStatus ?? ConsentStatus.DENIED);
+    },
+    [send],
+  );
 
-  return { status, accept, decline, refresh };
+  return { status, accept, deny, refresh };
 }

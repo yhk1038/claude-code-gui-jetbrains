@@ -7,7 +7,7 @@ import { randomUUID } from 'crypto';
 // ─── User profile (global, telemetry-independent) ────────────────────────────
 // `~/.claude-code-gui/profile.json` holds a per-install pseudonymous uuid and the
 // telemetry consent decision. The uuid is created for EVERY user regardless of
-// consent; nothing is transmitted unless consent status is GRANTED.
+// consent; nothing is transmitted unless consent status is ACCEPTED.
 
 const PROFILE_DIR = join(homedir(), '.claude-code-gui');
 const PROFILE_FILE = join(PROFILE_DIR, 'profile.json');
@@ -15,7 +15,7 @@ const PROFILE_FILE = join(PROFILE_DIR, 'profile.json');
 /** 텔레메트리 동의 상태. PENDING = 아직 수락/거절 중 무엇도 응답하지 않음. */
 export enum ConsentStatus {
   PENDING = 'pending',
-  GRANTED = 'granted',
+  ACCEPTED = 'accepted',
   DENIED = 'denied',
 }
 
@@ -40,7 +40,7 @@ function createDefaultProfile(): ProfileData {
 
 /** 저장된 status가 알 수 없는 값이면 PENDING으로 보정한다. */
 function normalizeStatus(status: ConsentStatus | undefined): ConsentStatus {
-  return status === ConsentStatus.GRANTED || status === ConsentStatus.DENIED
+  return status === ConsentStatus.ACCEPTED || status === ConsentStatus.DENIED
     ? status
     : ConsentStatus.PENDING;
 }
@@ -96,11 +96,11 @@ export async function readProfile(): Promise<ProfileData> {
   return ensureProfile();
 }
 
-/** 텔레메트리 동의/거절을 타임스탬프와 함께 기록한다. */
-export async function setTelemetryConsent(granted: boolean): Promise<ProfileData> {
+/** 텔레메트리 수락(accept)/거부(deny)를 타임스탬프와 함께 기록한다. */
+export async function setTelemetryConsent(accepted: boolean): Promise<ProfileData> {
   const profile = await ensureProfile();
   profile.telemetryConsent = {
-    status: granted ? ConsentStatus.GRANTED : ConsentStatus.DENIED,
+    status: accepted ? ConsentStatus.ACCEPTED : ConsentStatus.DENIED,
     decidedAt: new Date().toISOString(),
   };
   await writeProfile(profile);

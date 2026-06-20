@@ -1,14 +1,14 @@
 import { SettingSection, SettingRow } from '../common';
 import { ToggleSwitch } from '@/components/ToggleSwitch';
 import { ROUTE_META, Route } from '@/router/routes';
-import { useTelemetryConsent, ConsentStatus } from '@/hooks/useTelemetryConsent';
+import { useTelemetryConsent, ConsentStatus, ConsentSource } from '@/hooks/useTelemetryConsent';
 
 export function PrivacySettings() {
   const meta = ROUTE_META[Route.SETTINGS_PRIVACY];
   const {
     status: telemetryStatus,
     accept: acceptTelemetry,
-    decline: declineTelemetry,
+    deny: denyTelemetry,
   } = useTelemetryConsent();
 
   return (
@@ -21,12 +21,12 @@ export function PrivacySettings() {
           description="Sends usage statistics that do not directly identify you, to help improve the product. Source code and personal data are never sent. You can turn this off anytime."
         >
           <ToggleSwitch
-            checked={telemetryStatus === ConsentStatus.GRANTED}
+            checked={telemetryStatus === ConsentStatus.ACCEPTED}
             onChange={(checked) => {
               if (checked) {
-                void acceptTelemetry();
+                void acceptTelemetry(ConsentSource.SETTINGS);
               } else {
-                void declineTelemetry();
+                void denyTelemetry(ConsentSource.SETTINGS);
               }
             }}
             ariaLabel="Send usage statistics"
