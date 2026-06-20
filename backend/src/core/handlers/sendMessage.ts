@@ -3,6 +3,9 @@ import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { generateSessionId } from '../features/generateSessionId';
 import { ensureClaudeProcess, sendMessageToProcess } from '../claude-process';
+import { trackEvent } from '../features/telemetry';
+import { buildSettingsSnapshot } from '../features/settingsSnapshot';
+import { getPluginVersion } from './getVersion';
 
 export async function sendMessageHandler(
   connectionId: string,
@@ -22,6 +25,8 @@ export async function sendMessageHandler(
     return;
   }
   const inputMode = message.payload?.inputMode as string;
+  // sessionId가 없으면 이번 메시지로 새 세션이 생성된다 = 세션 시작.
+  const isNewSession = !msgSessionId;
   const resolvedSessionId = msgSessionId || generateSessionId();
   const attachments = message.payload?.attachments as Array<
     | { type: 'image'; fileName: string; mimeType: string; base64: string }
@@ -43,6 +48,13 @@ export async function sendMessageHandler(
         content: content.trim(),
         sessionId: resolvedSessionId,
       }, connectionId);
+
+      // 새 세션이 시작된 경우에만 활성/사용 신호를 보낸다(동의 시에만, 내부에서 게이팅).
+      // 설정 스냅샷은 평문이되 경로는 홈→'~' 치환, 세션 제목/내용은 절대 미포함.
+      if (isNewSession) {
+        const settings = await buildSettingsSnapshot(workingDir);
+        void trackEvent('session_started', { pluginVersion: getPluginVersion(), ...settings });
+      }
     }
   } catch (err) {
     // ensureClaudeProcess already broadcasts SERVICE_ERROR to the session.
