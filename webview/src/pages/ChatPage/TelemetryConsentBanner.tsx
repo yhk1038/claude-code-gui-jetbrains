@@ -1,4 +1,6 @@
 import { InputBanner } from './InputBanner';
+import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
+import { getConsentCopy } from './telemetryConsentMessages';
 
 // TODO: www web 배포 후 개인정보처리방침 URL로 교체 (예: https://<도메인>/privacy).
 // 빈 값이면 링크를 표시하지 않는다.
@@ -15,46 +17,52 @@ interface Props {
 
 /**
  * 텔레메트리 사용 통계 수집 동의를 묻는 인풋배너.
- * 거부(텍스트) · 수락(버튼) · X(닫기)로 구성된다. 표시 여부·동의 영속화는
- * 상위(profile 연결)에서 제어한다 — 이 컴포넌트는 표현만 담당한다.
+ * 제목(1줄) + 뮤트된 보조 설명(2줄) + 거부(텍스트)·수락(버튼)·X(닫기).
+ * 문구·버튼은 General 설정의 language에 맞춰 번역된다(이 배너가 i18n 첫 적용 사례).
+ * 표시 여부·동의 영속화는 상위(profile 연결)에서 제어 — 이 컴포넌트는 표현만 담당한다.
  */
 export function TelemetryConsentBanner(props: Props) {
   const { onAccept, onDecline, onClose } = props;
+  const { scopeSettings } = useClaudeSettings();
+  const copy = getConsentCopy(scopeSettings.language as string | undefined);
   return (
     <InputBanner
       message={
-        <>
-          제품 개선을 위한 사용 통계 수집을 허용하시겠습니까? 소스코드와 개인정보는 보내지 않으며, 설정에서 언제든 끌 수 있습니다.
-          {PRIVACY_POLICY_URL ? (
-            <>
-              {' '}
-              <a
-                href={PRIVACY_POLICY_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="text-text-link hover:underline"
-              >
-                개인정보처리방침
-              </a>
-            </>
-          ) : null}
-        </>
+        <div className="flex flex-col gap-0.5">
+          <span>{copy.title}</span>
+          <span className="text-text-tertiary text-[0.7211rem]">
+            {copy.subtitle}
+            {PRIVACY_POLICY_URL ? (
+              <>
+                {' '}
+                <a
+                  href={PRIVACY_POLICY_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-text-link hover:underline"
+                >
+                  {copy.privacyPolicy}
+                </a>
+              </>
+            ) : null}
+          </span>
+        </div>
       }
       actions={
         <>
           <button
             type="button"
             onClick={onDecline}
-            className="rounded px-2 py-1 text-[0.7692rem] font-medium text-text-link hover:bg-accent-primary hover:text-text-primary transition-colors"
+            className="rounded px-2 py-1 text-[0.7692rem] font-medium text-text-tertiary hover:bg-state-info-bg transition-colors"
           >
-            거부
+            {copy.decline}
           </button>
           <button
             type="button"
             onClick={onAccept}
-            className="rounded bg-surface-base px-3 py-1 text-[0.7692rem] font-medium text-text-link hover:bg-state-info-bg transition-colors"
+            className="rounded bg-surface-base px-3 py-1 text-[0.7692rem] font-medium text-text-link hover:bg-accent-primary hover:text-text-primary transition-colors"
           >
-            수락
+            {copy.accept}
           </button>
         </>
       }

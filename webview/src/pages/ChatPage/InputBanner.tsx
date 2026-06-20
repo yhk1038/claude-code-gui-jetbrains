@@ -18,14 +18,14 @@ export function InputBanner(props: Props) {
   const { message, actions, onClose } = props;
   return (
     <div className="mb-2 flex items-center gap-2 rounded-lg border border-border-subtle bg-surface-raised px-3 py-2 text-[0.8461rem]">
-      <span className="min-w-0 flex-1 text-text-primary">{message}</span>
+      <div className="min-w-0 flex-1 text-text-primary">{message}</div>
       {actions && <div className="flex flex-shrink-0 items-center gap-2">{actions}</div>}
       {onClose && (
         <button
           type="button"
           onClick={onClose}
           aria-label="닫기"
-          className="flex-shrink-0 rounded p-0.5 text-text-link hover:text-text-primary hover:bg-accent-primary transition-colors"
+          className="flex-shrink-0 rounded p-0.5 text-text-tertiary hover:bg-state-info-bg transition-colors"
         >
           <XMarkIcon className="h-4 w-4" />
         </button>
