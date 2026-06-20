@@ -15,6 +15,8 @@ await build({
   external: [],
   define: {
     '__PLUGIN_VERSION__': JSON.stringify(pkg.version),
+    // Telemetry API key injected at build time — never committed as a source constant.
+    'process.env.CCG_RYBBIT_API_KEY': JSON.stringify(process.env.CCG_RYBBIT_API_KEY ?? ''),
   },
   banner: {
     js: `import { createRequire } from 'node:module';\nconst require = createRequire(import.meta.url);`,
