@@ -5,6 +5,12 @@ import { readProfile, ConsentStatus } from './profile';
 // telemetry consent status is ACCEPTED. The API key is injected at build time
 // (esbuild define) — never committed as a source constant. The Bearer key makes
 // Rybbit treat these as trusted server-side ingestion (bypasses its bot filter).
+//
+// Transport rules (apply to EVERY event):
+//   1. Any error (network, fs, parsing, ...) is swallowed so it can never affect
+//      the app — the whole body is wrapped in a single try/catch.
+//   2. Callers MUST NOT await these functions or chain then/catch/finally. They
+//      are fire-and-forget; nothing depends on the transmission result.
 
 const RYBBIT_HOST = 'https://ccg-telemetry.01republic.io';
 const RYBBIT_SITE_ID = '2a8b407c8941';
@@ -23,30 +29,37 @@ export interface TelemetryProperties {
   [key: string]: string | number | boolean;
 }
 
+/** 전송 옵션. requireConsent=false는 동의 철회 사실처럼 "이전 동의 하에" 보내는 특수 경우에만 사용. */
+export interface TelemetryOptions {
+  requireConsent?: boolean;
+}
+
 /**
- * 동의(ACCEPTED)일 때만 Rybbit으로 전송한다. 그 외(미응답·거부·철회)에는 아무것도 보내지 않는다.
- * API key가 주입되지 않은 빌드(개발 등)에서도 전송하지 않는다. 전송 실패는 조용히 무시한다.
+ * 단일 try/catch로 감싸 어떤 에러도 앱에 새지 않게 한다(규칙 1). 호출자는 await하지
+ * 않으므로(규칙 2) 이 함수의 내부 await는 앱 실행을 지연시키지 않는다.
  */
 async function send(
   type: TrackType,
   eventName: string,
   properties: TelemetryProperties,
+  options: TelemetryOptions,
 ): Promise<void> {
-  if (!RYBBIT_API_KEY) return; // 키 미주입 빌드 — 전송 안 함
-  const profile = await readProfile();
-  if (profile.telemetryConsent.status !== ConsentStatus.ACCEPTED) return; // 미수락이면 전송 0
-
-  const body = {
-    site_id: RYBBIT_SITE_ID,
-    type,
-    event_name: eventName,
-    // Rybbit은 properties를 JSON 문자열로 받는다. 가명 식별자(uuid)를 함께 싣는다.
-    properties: JSON.stringify({ ...properties, uuid: profile.uuid }),
-    hostname: 'jetbrains.claude-code-gui.com',
-    pathname: '/',
-  };
-
   try {
+    if (!RYBBIT_API_KEY) return; // 키 미주입 빌드 — 전송 안 함
+    const profile = await readProfile();
+    const requireConsent = options.requireConsent ?? true;
+    if (requireConsent && profile.telemetryConsent.status !== ConsentStatus.ACCEPTED) return;
+
+    const body = {
+      site_id: RYBBIT_SITE_ID,
+      type,
+      event_name: eventName,
+      // Rybbit은 properties를 JSON 문자열로 받는다. 가명 식별자(uuid)를 함께 싣는다.
+      properties: JSON.stringify({ ...properties, uuid: profile.uuid }),
+      hostname: 'jetbrains.claude-code-gui.com',
+      pathname: '/',
+    };
+
     await fetch(TRACK_ENDPOINT, {
       method: 'POST',
       headers: {
@@ -56,25 +69,27 @@ async function send(
       body: JSON.stringify(body),
     });
   } catch {
-    // 텔레메트리 전송 실패는 사용자 경험에 영향을 주지 않도록 무시한다.
+    // 네트워크·파일·파싱 등 모든 에러를 흘린다(앱에 영향 0). 후속 작업 없음.
   }
 }
 
-/** 커스텀 이벤트를 전송한다(동의 시에만). */
-export async function trackEvent(
+/**
+ * 커스텀 이벤트를 전송한다. **호출 시 await/then/catch/finally 금지** — `void trackEvent(...)`.
+ * 기본은 동의(ACCEPTED) 시에만 전송. requireConsent=false는 철회 사실 전송 등 특수 경우 한정.
+ */
+export function trackEvent(
   eventName: string,
   properties: TelemetryProperties = {},
-): Promise<void> {
-  await send(TrackType.EVENT, eventName, properties);
+  options: TelemetryOptions = {},
+): void {
+  void send(TrackType.EVENT, eventName, properties, options);
 }
 
-/** 에러를 전송한다(동의 시에만). */
-export async function trackError(
+/** 에러를 전송한다. **호출 시 await/then/catch/finally 금지** — `void trackError(...)`. */
+export function trackError(
   error: Error,
   context: TelemetryProperties = {},
-): Promise<void> {
-  await send(TrackType.ERROR, error.name || 'Error', {
-    message: error.message,
-    ...context,
-  });
+  options: TelemetryOptions = {},
+): void {
+  void send(TrackType.ERROR, error.name || 'Error', { message: error.message, ...context }, options);
 }
