@@ -5,6 +5,7 @@ import { HostModeRow } from './HostModeRow';
 import { APP_NAME } from '@/config/app';
 import { ROUTE_META, Route } from '@/router/routes';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
+import { useTelemetryConsent, ConsentStatus } from '@/hooks/useTelemetryConsent';
 
 const NOT_SET_VALUE = '__NOT_SET__';
 
@@ -23,6 +24,7 @@ const LANGUAGE_OPTIONS = [
 export function GeneralSettings() {
   const meta = ROUTE_META[Route.SETTINGS_GENERAL];
   const { scopeSettings, updateSetting, scope, resetToGlobal } = useClaudeSettings();
+  const { status: telemetryStatus, accept: acceptTelemetry, decline: declineTelemetry } = useTelemetryConsent();
 
   const rawLanguage = scopeSettings.language as string | undefined;
   const isNotSet = rawLanguage === undefined && scope === 'project';
@@ -87,6 +89,25 @@ export function GeneralSettings() {
         </SettingRow>
 
         <HostModeRow />
+      </SettingSection>
+
+      <SettingSection title="Privacy">
+        <SettingRow
+          label="Send usage statistics"
+          description="Sends usage statistics that do not directly identify you, to help improve the product. You can turn this off anytime."
+        >
+          <ToggleSwitch
+            checked={telemetryStatus === ConsentStatus.GRANTED}
+            onChange={(checked) => {
+              if (checked) {
+                void acceptTelemetry();
+              } else {
+                void declineTelemetry();
+              }
+            }}
+            ariaLabel="Send usage statistics"
+          />
+        </SettingRow>
       </SettingSection>
     </div>
   );
