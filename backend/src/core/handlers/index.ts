@@ -13,6 +13,8 @@ import { deleteSessionHandler } from './deleteSession';
 import { renameSessionHandler } from './renameSession';
 import { getSettingsHandler } from './getSettings';
 import { saveSettingsHandler } from './saveSettings';
+import { getTelemetryConsentHandler } from './getTelemetryConsent';
+import { setTelemetryConsentHandler } from './setTelemetryConsent';
 import { getProjectsHandler } from './getProjects';
 import { getUsageHandler } from './getUsage';
 import { openFileHandler } from './openFile';
@@ -100,6 +102,12 @@ export async function handleMessage(
       break;
     case 'SAVE_SETTINGS':
       await saveSettingsHandler(connectionId, message, connections, bridge);
+      break;
+    case 'GET_TELEMETRY_CONSENT':
+      await getTelemetryConsentHandler(connectionId, message, connections, bridge);
+      break;
+    case 'SET_TELEMETRY_CONSENT':
+      await setTelemetryConsentHandler(connectionId, message, connections, bridge);
       break;
     case 'GET_PROJECTS':
       await getProjectsHandler(connectionId, message, connections, bridge);
