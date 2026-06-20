@@ -13,6 +13,7 @@ import { UsageSettings } from './Usage';
 import { ReleasesSettings } from './Releases';
 import { AccountSettings } from './Account';
 import { BrowserSettings } from './Browser';
+import { PrivacySettings } from './Privacy';
 
 /**
  * Settings 메인 컴포넌트 - 현재 라우트에 따라 적절한 설정 페이지 렌더링
@@ -33,6 +34,8 @@ export function SettingsPage() {
         return <AppearanceSettings />;
       case Route.SETTINGS_PERMISSIONS:
         return <PermissionsSettings />;
+      case Route.SETTINGS_PRIVACY:
+        return <PrivacySettings />;
       case Route.SETTINGS_CLI:
         return <CliSettings />;
       case Route.SETTINGS_ADVANCED:

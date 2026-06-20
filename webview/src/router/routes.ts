@@ -11,6 +11,7 @@ import {
   ArrowUpCircleIcon,
   ComputerDesktopIcon,
   BellIcon,
+  LockClosedIcon,
 } from '@heroicons/react/24/outline';
 import type { ComponentType, SVGProps } from 'react';
 
@@ -31,6 +32,7 @@ export enum IconName {
   ARROW_UP_CIRCLE = 'ArrowUpCircleIcon',
   COMPUTER_DESKTOP = 'ComputerDesktopIcon',
   BELL = 'BellIcon',
+  LOCK_CLOSED = 'LockClosedIcon',
 }
 
 /**
@@ -56,6 +58,7 @@ export enum Route {
   SETTINGS_BROWSER = 'settings/browser',
   SETTINGS_ACCOUNT = 'settings/account',
   SETTINGS_ABOUT = 'settings/about',
+  SETTINGS_PRIVACY = 'settings/privacy',
   SWITCH_ACCOUNT = 'switch-account',
 }
 
@@ -179,6 +182,13 @@ export const ROUTE_META: Record<Route, RouteMeta> = {
     description: 'Version and information',
     scopeSupport: 'none',
   },
+  [Route.SETTINGS_PRIVACY]: {
+    path: '/settings/privacy',
+    label: 'Privacy',
+    icon: IconName.LOCK_CLOSED,
+    description: 'Telemetry and privacy settings',
+    scopeSupport: 'none',
+  },
 };
 
 /**
@@ -197,6 +207,7 @@ export const ICON_COMPONENTS: Record<IconName, ComponentType<SVGProps<SVGSVGElem
   [IconName.ARROW_UP_CIRCLE]: ArrowUpCircleIcon,
   [IconName.COMPUTER_DESKTOP]: ComputerDesktopIcon,
   [IconName.BELL]: BellIcon,
+  [IconName.LOCK_CLOSED]: LockClosedIcon,
 };
 
 /**
@@ -280,6 +291,7 @@ export const SETTINGS_SUB_ROUTES: Route[] = [
   Route.SETTINGS_GENERAL,
   Route.SETTINGS_APPEARANCE,
   Route.SETTINGS_PERMISSIONS,
+  Route.SETTINGS_PRIVACY,
   Route.SETTINGS_CLI,
   // Route.SETTINGS_ADVANCED,  // TODO: not yet implemented
   Route.SETTINGS_BROWSER,
