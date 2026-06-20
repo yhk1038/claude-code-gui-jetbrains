@@ -21,6 +21,21 @@ const RYBBIT_API_KEY = process.env.CCG_RYBBIT_API_KEY ?? '';
 // 전송 자체 실패를 보고하는 에러 이벤트 이름. 무한루프 방지용 재귀 가드의 기준이 된다.
 const TRANSPORT_ERROR_EVENT = 'telemetry_transport_error';
 
+// 서버사이드 전송이라 실제 브라우저 UA가 없다. Rybbit은 UA로 device/os를 파싱하는데,
+// UA가 없으면 Mobile/Unknown으로 떨어진다. Bearer(신뢰 수집)에서는 user_agent override가
+// 허용되므로, OS에 맞는 데스크톱 UA를 보내 device=desktop과 OS를 정확히 잡게 한다.
+function buildUserAgent(): string {
+  switch (process.platform) {
+    case 'darwin':
+      return 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+    case 'win32':
+      return 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+    default:
+      return 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+  }
+}
+const RYBBIT_USER_AGENT = buildUserAgent();
+
 /** Rybbit track payload type. */
 enum TrackType {
   EVENT = 'custom_event',
@@ -63,10 +78,13 @@ async function send(
 
     const body = {
       site_id: RYBBIT_SITE_ID,
+      // user_id로 보내야 Rybbit이 "식별된 사용자"로 묶는다(가명 설치 ID). properties.uuid 아님.
+      user_id: profile.uuid,
+      // device/os 정확도를 위한 데스크톱 UA override(서버사이드 + Bearer라 허용됨).
+      user_agent: RYBBIT_USER_AGENT,
       type,
       event_name: eventName,
-      // Rybbit은 properties를 JSON 문자열로 받는다. 가명 식별자(uuid)를 함께 싣는다.
-      properties: JSON.stringify({ ...properties, uuid: profile.uuid }),
+      properties: JSON.stringify(properties),
       hostname: 'jetbrains.claude-code-gui.com',
       pathname: '/',
     };
