@@ -5,6 +5,7 @@ import { BrowserBridge } from './bridge/browser-bridge';
 import { JetBrainsBridge } from './bridge/jetbrains-bridge';
 import { handleMessage } from './core/handlers/index';
 import { initSettingsWatcher, stopSettingsWatcher } from './core/features/settings-watcher';
+import { ensureProfile } from './core/features/profile';
 import { restoreTunnelState } from './core/features/tunnel-manager';
 import { restoreSleepGuardState } from './core/features/sleep-guard';
 import { isJetBrainsMode, serverPort, webviewDir } from './config/environment';
@@ -130,6 +131,9 @@ async function main() {
   const logger = initLogger();
   await logger.init();
   logger.interceptConsole();
+
+  // 설치 단위 가명 식별자(uuid)를 동의 여부와 무관하게 보장한다.
+  await ensureProfile();
 
   // Load CLI path from settings before any handler can spawn claude
   await Claude.refresh();
