@@ -5,6 +5,7 @@ import { diagnoseAuthError } from './features/auth-diagnosis';
 import { getStrippableAuthEnvKeys } from './features/claude-settings';
 import { EditedFileTracker } from './features/editedFileTracker';
 import { isWslUncPath } from './wsl-path';
+import { trackError } from './features/telemetry';
 
 // Tracks files Claude edits so the IDE can be told to reload them once the
 // edit completes on disk. Shared across sessions — tool_use ids are unique.
@@ -134,6 +135,7 @@ export async function ensureClaudeProcess(
     });
     proc.on('error', (err) => {
       console.error('[node-backend]', 'Failed to start Claude CLI:', err);
+      trackError(err, { origin: 'claude_cli_spawn' });
       connections.broadcastToSession(targetSessionId, 'SERVICE_ERROR', {
         type: 'SPAWN_ERROR',
         reason: err.message,

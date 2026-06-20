@@ -3,7 +3,7 @@ import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { generateSessionId } from '../features/generateSessionId';
 import { ensureClaudeProcess, sendMessageToProcess } from '../claude-process';
-import { trackEvent } from '../features/telemetry';
+import { trackEvent, trackError } from '../features/telemetry';
 import { buildSettingsSnapshot } from '../features/settingsSnapshot';
 import { getPluginVersion } from './getVersion';
 
@@ -60,6 +60,7 @@ export async function sendMessageHandler(
     // ensureClaudeProcess already broadcasts SERVICE_ERROR to the session.
     // Log here to prevent unhandled rejection; do NOT re-throw.
     console.error('[node-backend]', 'sendMessage failed:', err);
+    trackError(err instanceof Error ? err : new Error(String(err)), { origin: 'sendMessage' });
   } finally {
     connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
   }

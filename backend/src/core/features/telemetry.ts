@@ -1,4 +1,5 @@
 import { readProfile, ConsentStatus } from './profile';
+import { homedir } from 'os';
 
 // ─── Telemetry transport (Rybbit) ────────────────────────────────────────────
 // Sends custom events / errors to the self-hosted Rybbit instance, but ONLY when
@@ -17,6 +18,8 @@ const RYBBIT_SITE_ID = '2a8b407c8941';
 const TRACK_ENDPOINT = `${RYBBIT_HOST}/api/track`;
 // Build-time injected via esbuild define. Empty in dev unless CCG_RYBBIT_API_KEY is set.
 const RYBBIT_API_KEY = process.env.CCG_RYBBIT_API_KEY ?? '';
+// 전송 자체 실패를 보고하는 에러 이벤트 이름. 무한루프 방지용 재귀 가드의 기준이 된다.
+const TRANSPORT_ERROR_EVENT = 'telemetry_transport_error';
 
 /** Rybbit track payload type. */
 enum TrackType {
@@ -34,9 +37,17 @@ export interface TelemetryOptions {
   requireConsent?: boolean;
 }
 
+/** 텍스트 내 홈 디렉토리 경로를 '~'로 치환한다(에러 메시지·스택의 username 등 개인정보 제거). */
+function sanitizeText(text: string): string {
+  const home = homedir();
+  return home.length > 0 ? text.split(home).join('~') : text;
+}
+
 /**
  * 단일 try/catch로 감싸 어떤 에러도 앱에 새지 않게 한다(규칙 1). 호출자는 await하지
  * 않으므로(규칙 2) 이 함수의 내부 await는 앱 실행을 지연시키지 않는다.
+ * 전송 자체가 실패하면 그 사실도 에러 이벤트(TRANSPORT_ERROR_EVENT)로 보고하되,
+ * 그 보고가 또 실패하면 재보고하지 않는다(재귀 가드).
  */
 async function send(
   type: TrackType,
@@ -68,8 +79,13 @@ async function send(
       },
       body: JSON.stringify(body),
     });
-  } catch {
-    // 네트워크·파일·파싱 등 모든 에러를 흘린다(앱에 영향 0). 후속 작업 없음.
+  } catch (err) {
+    // 전송 자체 에러도 디버깅용 에러 이벤트로 보고한다(재귀 가드: transport error 보고는 재시도 안 함).
+    if (eventName !== TRANSPORT_ERROR_EVENT) {
+      const message = err instanceof Error ? sanitizeText(err.message) : String(err);
+      void send(TrackType.ERROR, TRANSPORT_ERROR_EVENT, { message, failedEvent: eventName }, options);
+    }
+    // 그 외 모든 에러는 흘린다(앱에 영향 0).
   }
 }
 
@@ -85,11 +101,19 @@ export function trackEvent(
   void send(TrackType.EVENT, eventName, properties, options);
 }
 
-/** 에러를 전송한다. **호출 시 await/then/catch/finally 금지** — `void trackError(...)`. */
+/**
+ * 에러를 전송한다. **호출 시 await/then/catch/finally 금지** — `void trackError(...)`.
+ * Rybbit "오류" 대시보드가 props.message / props.stack을 추출하므로 그 키로 담는다.
+ * message·stack은 홈 경로를 '~'로 치환해 개인정보(경로 username 등)를 제거한다.
+ */
 export function trackError(
   error: Error,
   context: TelemetryProperties = {},
   options: TelemetryOptions = {},
 ): void {
-  void send(TrackType.ERROR, error.name || 'Error', { message: error.message, ...context }, options);
+  const props: TelemetryProperties = { message: sanitizeText(error.message || ''), ...context };
+  if (error.stack) {
+    props.stack = sanitizeText(error.stack);
+  }
+  void send(TrackType.ERROR, error.name || 'Error', props, options);
 }

@@ -6,7 +6,7 @@ import { JetBrainsBridge } from './bridge/jetbrains-bridge';
 import { handleMessage } from './core/handlers/index';
 import { initSettingsWatcher, stopSettingsWatcher } from './core/features/settings-watcher';
 import { ensureProfile } from './core/features/profile';
-import { trackEvent } from './core/features/telemetry';
+import { trackEvent, trackError } from './core/features/telemetry';
 import { getPluginVersion } from './core/handlers/getVersion';
 import { release } from 'os';
 import { restoreTunnelState } from './core/features/tunnel-manager';
@@ -137,6 +137,18 @@ async function main() {
 
   // 설치 단위 가명 식별자(uuid)를 동의 여부와 무관하게 보장한다.
   await ensureProfile();
+
+  // 예상 못한 전역 에러도 텔레메트리로 보고한다(보고·로깅만, 프로세스 동작은 기존 생존
+  // 스타일을 유지 — 강제 종료/재throw하지 않는다). 전송은 fire-and-forget.
+  process.on('uncaughtException', (err) => {
+    console.error('[node-backend]', 'uncaughtException:', err);
+    trackError(err, { origin: 'uncaughtException' });
+  });
+  process.on('unhandledRejection', (reason) => {
+    const err = reason instanceof Error ? reason : new Error(String(reason));
+    console.error('[node-backend]', 'unhandledRejection:', err);
+    trackError(err, { origin: 'unhandledRejection' });
+  });
 
   // 동의(ACCEPTED)한 사용자에 한해 앱 시작(활성) 이벤트를 보낸다. 미동의면 내부에서 no-op.
   // 부팅을 막지 않도록 await하지 않는다(전송 실패도 내부에서 무시).
