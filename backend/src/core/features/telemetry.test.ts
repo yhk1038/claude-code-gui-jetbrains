@@ -31,7 +31,11 @@ function mockCommonDeps() {
   }));
 }
 
-async function loadTelemetry(profile: TestProfile, apiKey: string, fetchImpl?: () => Promise<unknown>) {
+async function loadTelemetry(
+  profile: TestProfile,
+  apiKey: string,
+  fetchImpl?: (input: string, init: { body: string }) => Promise<unknown>,
+) {
   vi.resetModules();
   vi.stubEnv('CCG_RYBBIT_API_KEY', apiKey);
   vi.doMock('./profile', () => ({
@@ -108,7 +112,7 @@ describe('telemetry consent gating', () => {
     trackEvent('e', { big: 'x'.repeat(5000) });
     await flushTelemetry();
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const body = JSON.parse((fetchMock.mock.calls[0][1] as { body: string }).body);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(body.properties.length).toBeLessThanOrEqual(4096);
   });
 
