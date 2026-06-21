@@ -8,6 +8,7 @@ Thank you for your interest in contributing! This guide will help you get starte
 - [Project Architecture](#project-architecture)
 - [Development Setup](#development-setup)
 - [Build Commands](#build-commands)
+- [Build-time Environment Injection](docs/build-env-injection.md)
 - [Development Workflow](#development-workflow)
 - [Code Style](#code-style)
 - [Submitting Changes](#submitting-changes)

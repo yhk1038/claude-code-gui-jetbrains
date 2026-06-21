@@ -5,6 +5,82 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
+# ─── Build environment resolution (single decision point) ───────────────────
+# Maps each build command to a build environment, which selects which root .env
+# file the backend (esbuild) and webview (vite) load:
+#
+#   production   → dist, build-plugin            (.env.production)
+#   staging      → run-ide, run-ide-installed    (.env.staging)
+#   development  → everything else               (.env.development)
+#
+# An explicit BUILD_ENV in the caller's environment always wins, so a developer
+# can force any environment for any command (e.g. BUILD_ENV=production be-build).
+resolve_build_env() {
+  local cmd="$1"
+  if [[ -n "${BUILD_ENV:-}" ]]; then
+    echo "$BUILD_ENV"
+    return
+  fi
+  case "$cmd" in
+    dist|build-plugin)            echo "production" ;;
+    run-ide|run-ide-installed)    echo "staging" ;;
+    *)                            echo "development" ;;
+  esac
+}
+
+# BUILD_ENV doubles as vite's mode (vite.config.ts reads process.env.BUILD_ENV).
+BUILD_ENV="$(resolve_build_env "${1:-}")"
+export BUILD_ENV
+
+# ─── Build-time .env loading ────────────────────────────────────────────────
+# The root .env is the single source of build-time env. We load the resolved
+# environment's file (then plain .env as a fallback) and export its keys into the
+# environment, so the backend (esbuild) and webview (vite) receive them through
+# process.env — the single channel. The names of the loaded keys are collected
+# into BUILD_INJECT_KEYS so esbuild knows exactly which keys to bake into the
+# backend bundle (the webview filters by prefix on its own).
+export BUILD_INJECT_KEYS=""
+
+# Load a single .env file: export each KEY=VALUE line (skipping comments/blanks)
+# and record its key name. The first file to define a key wins, so an ambient or
+# environment-specific value is never clobbered by the plain .env fallback.
+load_env_file() {
+  local file="$1"
+  [[ -f "$file" ]] || return 0
+  while IFS= read -r raw || [[ -n "$raw" ]]; do
+    # Strip leading whitespace and an optional leading `export `.
+    local line="${raw#"${raw%%[![:space:]]*}"}"
+    line="${line#export }"
+    # Skip blanks and comments.
+    [[ -z "$line" || "$line" == \#* ]] && continue
+    # Must look like KEY=VALUE.
+    [[ "$line" == *=* ]] || continue
+    local key="${line%%=*}"
+    local val="${line#*=}"
+    # Trim trailing whitespace from key; strip surrounding quotes from value.
+    key="${key%"${key##*[![:space:]]}"}"
+    val="${val%\"}"; val="${val#\"}"
+    val="${val%\'}"; val="${val#\'}"
+    # Record the key name (deduped) so esbuild knows what to inject.
+    case " $BUILD_INJECT_KEYS " in
+      *" $key "*) ;;
+      *) BUILD_INJECT_KEYS="$BUILD_INJECT_KEYS $key" ;;
+    esac
+    # Preserve any value already set (env-specific file or ambient env).
+    if [[ -z "${!key:-}" ]]; then
+      export "$key=$val"
+    fi
+  done < "$file"
+}
+
+# Load environment-specific file first, then plain .env as a fallback for keys
+# the specific file did not define. (load_env_file never clobbers existing keys.)
+load_build_env() {
+  load_env_file "$ROOT/.env.$BUILD_ENV"
+  load_env_file "$ROOT/.env"
+}
+load_build_env
+
 usage() {
   cat <<'HELP'
 Usage: bash ./scripts/build.sh <command>

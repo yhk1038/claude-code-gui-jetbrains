@@ -63,9 +63,11 @@ backend/coverage/
 .direnv/
 
 # Environment (secrets)
+# Ignore every real .env file — they hold build-injected keys.
+# Only the committed .env.example template is tracked (see negation below).
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # Logs
 *.log
