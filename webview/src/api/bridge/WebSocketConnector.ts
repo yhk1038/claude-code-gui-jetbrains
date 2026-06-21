@@ -50,6 +50,13 @@ export class WebSocketConnector implements Connector {
       this.isConnecting = false;
       this.connected = true;
       this.notifyConnectionChange(true);
+      // 텔레메트리 client 식별용으로 브라우저 UA를 백엔드에 알린다(standalone 모드 의미).
+      // JetBrains 모드는 CCG_CLIENT_INFO env가 우선하므로 무해하다.
+      try {
+        ws.send(JSON.stringify({ type: 'CLIENT_INFO', payload: { userAgent: navigator.userAgent } }));
+      } catch {
+        // 전송 실패는 무시 — 텔레메트리는 앱 동작에 영향을 주지 않는다.
+      }
       onFirstConnect?.();
       // 첫 연결 후 이후 재연결에서는 호출하지 않도록 undefined 처리
       onFirstConnect = undefined;

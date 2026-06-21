@@ -21,7 +21,7 @@ export function getPluginVersion(): string {
   return JSON.parse(readFileSync(pkgPath, 'utf-8')).version;
 }
 
-async function getCliVersion(): Promise<string | null> {
+export async function getCliVersion(): Promise<string | null> {
   // Log detected path (non-blocking, for diagnostics)
   Claude.which().then(path => console.log('which claude\n', path ?? '(not found)', '\n'));
 

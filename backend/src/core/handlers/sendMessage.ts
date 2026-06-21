@@ -4,8 +4,6 @@ import type { IPCMessage } from '../types';
 import { generateSessionId } from '../features/generateSessionId';
 import { ensureClaudeProcess, sendMessageToProcess } from '../claude-process';
 import { trackEvent, trackError } from '../features/telemetry';
-import { buildSettingsSnapshot } from '../features/settingsSnapshot';
-import { getPluginVersion } from './getVersion';
 
 export async function sendMessageHandler(
   connectionId: string,
@@ -25,8 +23,9 @@ export async function sendMessageHandler(
     return;
   }
   const inputMode = message.payload?.inputMode as string;
-  // sessionId가 없으면 이번 메시지로 새 세션이 생성된다 = 세션 시작.
-  const isNewSession = !msgSessionId;
+  // 새 세션 여부는 webview가 판정해 payload로 알려준다. webview가 새 세션에도 sessionId를
+  // 미리 생성해 보내므로(ChatStreamContext), 백엔드에서 sessionId 유무로는 판정할 수 없다.
+  const isNewSession = message.payload?.isNewSession === true;
   const resolvedSessionId = msgSessionId || generateSessionId();
   const attachments = message.payload?.attachments as Array<
     | { type: 'image'; fileName: string; mimeType: string; base64: string }
@@ -50,10 +49,9 @@ export async function sendMessageHandler(
       }, connectionId);
 
       // 새 세션이 시작된 경우에만 활성/사용 신호를 보낸다(동의 시에만, 내부에서 게이팅).
-      // 설정 스냅샷은 평문이되 경로는 홈→'~' 치환, 세션 제목/내용은 절대 미포함.
+      // 공통 필드(os/버전 등)는 trackEvent가 자동으로 싣는다.
       if (isNewSession) {
-        const settings = await buildSettingsSnapshot(workingDir);
-        void trackEvent('session_started', { pluginVersion: getPluginVersion(), ...settings });
+        trackEvent('session_started');
       }
     }
   } catch (err) {

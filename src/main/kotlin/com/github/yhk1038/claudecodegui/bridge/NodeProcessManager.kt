@@ -1,6 +1,8 @@
 package com.github.yhk1038.claudecodegui.bridge
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationInfo
+import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.util.EnvironmentUtil
@@ -182,6 +184,11 @@ class NodeProcessManager(
             logger.info("Starting Node.js backend: node=$nodePath, backend=${backendFile.absolutePath}, webviewDir=${webviewDir?.absolutePath}")
 
             try {
+                // 텔레메트리 client 필드용 IDE 제품+버전+빌드 (예: "IntelliJ IDEA 2024.1.4 (IC-241.15989.149)").
+                // 백엔드 getClientInfo()가 CCG_CLIENT_INFO를 우선 사용한다.
+                val clientInfo = "${ApplicationNamesInfo.getInstance().fullProductName} " +
+                    "${ApplicationInfo.getInstance().fullVersion} (${ApplicationInfo.getInstance().build.asString()})"
+
                 val pb: ProcessBuilder
                 if (wslDistro != null) {
                     // WSL project root: launch the backend inside the distro via wsl.exe.
@@ -194,6 +201,7 @@ class NodeProcessManager(
                         ?: backendFile.absolutePath
                     val wslEnv = buildMap {
                         put("JETBRAINS_MODE", "true")
+                        put("CCG_CLIENT_INFO", clientInfo)
                         put("PORT", requestedPort.toString())
                         webviewDir?.let { wv ->
                             WslPathResolver.toWslPath(wv.absolutePath)?.let { put("WEBVIEW_DIR", it) }
@@ -206,6 +214,7 @@ class NodeProcessManager(
                     val env = buildMap {
                         putAll(EnvironmentUtil.getEnvironmentMap())
                         put("JETBRAINS_MODE", "true")
+                        put("CCG_CLIENT_INFO", clientInfo)
                         // Hand the backend the user's real shell PATH so anything it spawns
                         // (claude, npx, git) is found even when the IDE started from GUI (#59).
                         put("PATH", effectivePath())

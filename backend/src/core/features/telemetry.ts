@@ -1,5 +1,7 @@
 import { readProfile, ConsentStatus } from './profile';
-import { homedir } from 'os';
+import { homedir, release } from 'os';
+import { getPluginVersion, getCliVersion } from '../handlers/getVersion';
+import { basename } from 'path';
 
 // ─── Telemetry transport (Rybbit) ────────────────────────────────────────────
 // Sends custom events / errors to the self-hosted Rybbit instance, but ONLY when
@@ -12,6 +14,11 @@ import { homedir } from 'os';
 //      the app — the whole body is wrapped in a single try/catch.
 //   2. Callers MUST NOT await these functions or chain then/catch/finally. They
 //      are fire-and-forget; nothing depends on the transmission result.
+//
+// Every event also carries a fixed set of common fields (os, osVer, terminal,
+// pluginVer, claudeCliVer, client) merged in by send(). The full settings snapshot
+// is intentionally NOT sent: Rybbit /api/track caps properties at 2048 chars and has
+// no feature_flags field, so settings will move to our own api+Postgres later.
 
 const RYBBIT_HOST = 'https://ccg-telemetry.01republic.io';
 const RYBBIT_SITE_ID = '2a8b407c8941';
@@ -20,6 +27,21 @@ const TRACK_ENDPOINT = `${RYBBIT_HOST}/api/track`;
 const RYBBIT_API_KEY = process.env.CCG_RYBBIT_API_KEY ?? '';
 // 전송 자체 실패를 보고하는 에러 이벤트 이름. 무한루프 방지용 재귀 가드의 기준이 된다.
 const TRANSPORT_ERROR_EVENT = 'telemetry_transport_error';
+
+// 진행 중인 fire-and-forget 전송 추적. flushTelemetry()로 모두 끝날 때까지 기다릴 수 있다
+// (테스트 결정성 + 향후 graceful shutdown 시 pending 전송 비우기 용도).
+const inFlight = new Set<Promise<void>>();
+function fireAndForget(p: Promise<void>): void {
+  inFlight.add(p);
+  void p.finally(() => inFlight.delete(p));
+}
+
+/** 진행 중인 모든 텔레메트리 전송이 끝날 때까지 기다린다(transport_error 재귀 포함). */
+export async function flushTelemetry(): Promise<void> {
+  while (inFlight.size > 0) {
+    await Promise.allSettled([...inFlight]);
+  }
+}
 
 // 서버사이드 전송이라 실제 브라우저 UA가 없다. Rybbit은 UA로 device/os를 파싱하는데,
 // UA가 없으면 Mobile/Unknown으로 떨어진다. Bearer(신뢰 수집)에서는 user_agent override가
@@ -58,6 +80,92 @@ function sanitizeText(text: string): string {
   return home.length > 0 ? text.split(home).join('~') : text;
 }
 
+// Claude CLI 버전은 프로세스 spawn이라 비싸다. 1회 조회 후 캐싱한다(undefined=미조회).
+let cachedCliVersion: string | null | undefined;
+async function getCachedCliVersion(): Promise<string> {
+  if (cachedCliVersion === undefined) {
+    cachedCliVersion = await getCliVersion();
+  }
+  return cachedCliVersion ?? '';
+}
+
+// Standalone(브라우저) 모드에서 webview가 연결 시 전달하는 navigator.userAgent를 보관한다.
+// 브라우저 환경엔 env로 주입할 주체(Kotlin)가 없으므로 webview가 알려준다.
+let browserClient = '';
+
+/** webview(브라우저)가 알려준 클라이언트 식별자(UA 등)를 저장한다. */
+export function setBrowserClient(client: string): void {
+  browserClient = client;
+}
+
+/**
+ * 클라이언트(IDE/브라우저) 종류+빌드. 우선순위:
+ * 1) CCG_CLIENT_INFO env — JetBrains(Kotlin)가 제품+빌드를 주입.
+ * 2) webview가 전달한 브라우저 UA(setBrowserClient) — standalone 모드.
+ * 3) 모드만으로 fallback('jetbrains'/'browser').
+ */
+function getClientInfo(): string {
+  const explicit = process.env.CCG_CLIENT_INFO;
+  if (explicit && explicit.length > 0) return explicit;
+  if (browserClient.length > 0) return browserClient;
+  return process.env.JETBRAINS_MODE === 'true' ? 'jetbrains' : 'browser';
+}
+
+/**
+ * 사용자의 셸 종류(zsh/bash/powershell 등)를 감지한다. Unix는 $SHELL, Windows는
+ * PowerShell(PSModulePath 존재)/cmd($ComSpec)로 판별한다. 미확인이면 빈 문자열.
+ */
+function detectShell(): string {
+  if (process.platform === 'win32') {
+    if (process.env.PSModulePath) return 'powershell';
+    return process.env.ComSpec ? basename(process.env.ComSpec) : '';
+  }
+  return process.env.SHELL ? basename(process.env.SHELL) : '';
+}
+
+// Rybbit /api/track의 properties(JSON 문자열) 최대 길이.
+const PROPERTIES_MAX = 2048;
+const TRUNCATION_MARK = '…[truncated]';
+
+/**
+ * properties를 JSON 직렬화했을 때 2048자를 넘으면, 가장 긴 문자열 값부터 잘라 한도에 맞춘다.
+ * stack/detail 같은 큰 값이 전송 자체를 400으로 막는 것을 방지한다(어떤 키든 일괄 보장).
+ */
+function fitProperties(props: TelemetryProperties): TelemetryProperties {
+  if (JSON.stringify(props).length <= PROPERTIES_MAX) return props;
+  const out: TelemetryProperties = { ...props };
+  // 한도에 맞을 때까지 매번 가장 긴 문자열 값을 줄인다.
+  for (;;) {
+    const over = JSON.stringify(out).length - PROPERTIES_MAX;
+    if (over <= 0) break;
+    let key: string | undefined;
+    let maxLen = 0;
+    for (const [k, v] of Object.entries(out)) {
+      if (typeof v === 'string' && v.length > maxLen) { maxLen = v.length; key = k; }
+    }
+    if (key === undefined || maxLen <= TRUNCATION_MARK.length) break; // 더 줄일 문자열 없음
+    const current = out[key] as string;
+    const keepLen = Math.max(0, current.length - over - TRUNCATION_MARK.length);
+    out[key] = current.slice(0, keepLen) + TRUNCATION_MARK;
+  }
+  return out;
+}
+
+/**
+ * 모든 이벤트에 공통으로 실리는 properties 필드(고정 순서). settings 전체는 Rybbit
+ * /api/track 한도(properties 2048, feature_flags 미지원) 때문에 여기 싣지 않는다.
+ */
+function buildCommonFields(terminal: string, cliVer: string): TelemetryProperties {
+  return {
+    os: process.platform,
+    osVer: release(),
+    terminal,
+    pluginVer: getPluginVersion(),
+    claudeCliVer: cliVer,
+    client: getClientInfo(),
+  };
+}
+
 /**
  * 단일 try/catch로 감싸 어떤 에러도 앱에 새지 않게 한다(규칙 1). 호출자는 await하지
  * 않으므로(규칙 2) 이 함수의 내부 await는 앱 실행을 지연시키지 않는다.
@@ -74,22 +182,30 @@ async function send(
     if (!RYBBIT_API_KEY) return; // 키 미주입 빌드 — 전송 안 함
     const profile = await readProfile();
     const requireConsent = options.requireConsent ?? true;
-    if (requireConsent && profile.telemetryConsent.status !== ConsentStatus.ACCEPTED) return;
+    if (requireConsent && profile.telemetryConsent.status !== ConsentStatus.ACCEPTED) {
+      return;
+    }
+
+    // 공통 필드(고정 순서)를 먼저, 이벤트 고유 속성을 뒤에 둔다. settings 전체는 Rybbit
+    // /api/track 한도 때문에 싣지 않는다(추후 자체 api로 이전 — ccg-telemetry-settings).
+    const common = buildCommonFields(detectShell(), await getCachedCliVersion());
+    // 공통 + 이벤트 고유 속성을 합치고, properties 2048 한도에 맞게 큰 값(stack 등)을 자른다.
+    const merged = fitProperties({ ...common, ...properties });
 
     const body = {
       site_id: RYBBIT_SITE_ID,
-      // user_id로 보내야 Rybbit이 "식별된 사용자"로 묶는다(가명 설치 ID). properties.uuid 아님.
+      // user_id로 보내야 Rybbit이 "식별된 사용자"로 묶는다(가명 설치 ID).
       user_id: profile.uuid,
       // device/os 정확도를 위한 데스크톱 UA override(서버사이드 + Bearer라 허용됨).
       user_agent: RYBBIT_USER_AGENT,
       type,
       event_name: eventName,
-      properties: JSON.stringify(properties),
+      properties: JSON.stringify(merged),
       hostname: 'jetbrains.claude-code-gui.com',
       pathname: '/',
     };
 
-    await fetch(TRACK_ENDPOINT, {
+    const res = await fetch(TRACK_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -97,11 +213,22 @@ async function send(
       },
       body: JSON.stringify(body),
     });
+    // fetch는 4xx/5xx를 reject하지 않는다. 서버 거부(예: properties 초과 400)를 흘리지 않도록
+    // 명시적으로 확인해 transport error로 보고한다(재귀 가드: transport error 자신은 제외).
+    if (!res.ok && eventName !== TRANSPORT_ERROR_EVENT) {
+      const detail = sanitizeText(await res.text().catch(() => '')).slice(0, 300);
+      fireAndForget(send(
+        TrackType.ERROR,
+        TRANSPORT_ERROR_EVENT,
+        { message: `HTTP ${res.status}`, detail, failedEvent: eventName },
+        options,
+      ));
+    }
   } catch (err) {
     // 전송 자체 에러도 디버깅용 에러 이벤트로 보고한다(재귀 가드: transport error 보고는 재시도 안 함).
     if (eventName !== TRANSPORT_ERROR_EVENT) {
       const message = err instanceof Error ? sanitizeText(err.message) : String(err);
-      void send(TrackType.ERROR, TRANSPORT_ERROR_EVENT, { message, failedEvent: eventName }, options);
+      fireAndForget(send(TrackType.ERROR, TRANSPORT_ERROR_EVENT, { message, failedEvent: eventName }, options));
     }
     // 그 외 모든 에러는 흘린다(앱에 영향 0).
   }
@@ -116,7 +243,7 @@ export function trackEvent(
   properties: TelemetryProperties = {},
   options: TelemetryOptions = {},
 ): void {
-  void send(TrackType.EVENT, eventName, properties, options);
+  fireAndForget(send(TrackType.EVENT, eventName, properties, options));
 }
 
 /**
@@ -133,5 +260,5 @@ export function trackError(
   if (error.stack) {
     props.stack = sanitizeText(error.stack);
   }
-  void send(TrackType.ERROR, error.name || 'Error', props, options);
+  fireAndForget(send(TrackType.ERROR, error.name || 'Error', props, options));
 }

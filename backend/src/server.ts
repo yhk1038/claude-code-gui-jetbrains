@@ -7,8 +7,6 @@ import { handleMessage } from './core/handlers/index';
 import { initSettingsWatcher, stopSettingsWatcher } from './core/features/settings-watcher';
 import { ensureProfile } from './core/features/profile';
 import { trackEvent, trackError } from './core/features/telemetry';
-import { getPluginVersion } from './core/handlers/getVersion';
-import { release } from 'os';
 import { restoreTunnelState } from './core/features/tunnel-manager';
 import { restoreSleepGuardState } from './core/features/sleep-guard';
 import { isJetBrainsMode, serverPort, webviewDir } from './config/environment';
@@ -150,13 +148,9 @@ async function main() {
     trackError(err, { origin: 'unhandledRejection' });
   });
 
-  // 동의(ACCEPTED)한 사용자에 한해 앱 시작(활성) 이벤트를 보낸다. 미동의면 내부에서 no-op.
-  // 부팅을 막지 않도록 await하지 않는다(전송 실패도 내부에서 무시).
-  void trackEvent('app_started', {
-    pluginVersion: getPluginVersion(),
-    os: process.platform,
-    osVersion: release(),
-  });
+  // 동의(ACCEPTED)한 사용자에 한해 앱 시작(활성) 이벤트를 보낸다. 공통 필드(os/버전/설정 등)는
+  // trackEvent가 자동으로 싣는다. 미동의면 내부에서 no-op.
+  trackEvent('app_started');
 
   // Load CLI path from settings before any handler can spawn claude
   await Claude.refresh();
