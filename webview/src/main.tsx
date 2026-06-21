@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import { initLogForwarder } from './api/logging';
+import { installGlobalErrorHooks } from './api/errorReporting';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
@@ -8,6 +9,10 @@ import {isMobile} from "@/config/environment.ts";
 
 // 가능한 한 빨리 초기화하여 초기 로그도 캡처
 initLogForwarder();
+
+// 런타임 에러 / 미처리 promise 거부를 단일 보고 경로로 수렴시키는 전역 훅을 1회 등록한다
+// (프론트 error boundary 모델의 전역 절반). React 렌더 에러는 ErrorBoundary가 담당.
+installGlobalErrorHooks();
 
 // Detect mobile devices and scale up the zoom level for better readability
 if (isMobile()) {

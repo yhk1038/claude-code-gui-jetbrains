@@ -22,7 +22,14 @@ class RpcWebSocketClient(
     private val scope: CoroutineScope,
     private val rpcHandler: NodeProcessManager.RpcHandler,
     private val onPersistentFailure: (() -> Unit)? = null,
-    private val onConnected: (() -> Unit)? = null
+    private val onConnected: (() -> Unit)? = null,
+    /**
+     * Plugin error boundary hook: invoked when handling a Node→IDE RPC call throws, so the
+     * caught exception can be forwarded to the single Kotlin reporting point. The first arg
+     * is the throwable, the second a short `where` tag. Kept as a callback (not a direct
+     * NodeBackendService reference) to avoid a service↔client cycle and stay unit-testable.
+     */
+    private val onError: ((Throwable, String) -> Unit)? = null
 ) : Disposable {
 
     private val logger = Logger.getInstance(RpcWebSocketClient::class.java)
@@ -174,12 +181,20 @@ class RpcWebSocketClient(
                 try {
                     val result = dispatchRpc(method, params)
                     if (id != null) sendResult(ws, id, result)
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     logger.error("Error executing RPC method '$method'", e)
                     if (id != null) sendError(ws, id, -32000, e.message ?: "Internal error")
+                    // Plugin error boundary: an IDE-native RPC handler threw. Forward to the
+                    // single Kotlin reporting point (which hands it to Node).
+                    onError?.invoke(e, "RpcWebSocketClient.dispatch:$method")
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logger.warn("Failed to parse RPC message: ${message.take(200)}")
+                onError?.invoke(e, "RpcWebSocketClient.parse")
             }
         }
     }

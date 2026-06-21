@@ -58,6 +58,7 @@ import { findBackgroundTaskOutputPathHandler } from './findBackgroundTaskOutputP
 import { listSystemSoundsHandler } from './listSystemSounds';
 import { playSystemSoundHandler } from './playSystemSound';
 import { clientInfoHandler } from './clientInfo';
+import { clientErrorHandler } from './clientError';
 
 export async function handleMessage(
   connectionId: string,
@@ -238,6 +239,9 @@ export async function handleMessage(
       break;
     case 'CLIENT_INFO':
       clientInfoHandler(connectionId, message, connections, bridge);
+      break;
+    case 'CLIENT_ERROR':
+      clientErrorHandler(connectionId, message, connections, bridge);
       break;
     default:
       console.error('[node-backend]', `Unknown message type: ${message.type}`);

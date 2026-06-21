@@ -17,7 +17,7 @@ import { basename } from 'path';
 //
 // Every event also carries a fixed set of common fields (os, osVer, terminal,
 // pluginVer, claudeCliVer, client) merged in by send(). The full settings snapshot
-// is intentionally NOT sent: Rybbit /api/track caps properties at 2048 chars and has
+// is intentionally NOT sent: Rybbit /api/track caps properties at 4096 chars and has
 // no feature_flags field, so settings will move to our own api+Postgres later.
 
 const RYBBIT_HOST = 'https://ccg-telemetry.01republic.io';
@@ -123,21 +123,23 @@ function detectShell(): string {
   return process.env.SHELL ? basename(process.env.SHELL) : '';
 }
 
-// Rybbit /api/track의 properties(JSON 문자열) 최대 길이.
-const PROPERTIES_MAX = 2048;
+// Rybbit /api/track의 properties(JSON 문자열) 최대 길이. 서버 zod 스키마가 "at most 4096"으로
+// 거부하므로(실측 확인) 그 최대치에 맞춘다. 초과하면 가장 긴 값(stack 등)을 잘라 한도를 지킨다.
+const PROPERTIES_MAX = 4096;
 const TRUNCATION_MARK = '…[truncated]';
 
 /**
- * properties를 JSON 직렬화했을 때 2048자를 넘으면, 가장 긴 문자열 값부터 잘라 한도에 맞춘다.
+ * properties를 JSON 직렬화했을 때 4096자를 넘으면, 가장 긴 문자열 값부터 잘라 한도에 맞춘다.
  * stack/detail 같은 큰 값이 전송 자체를 400으로 막는 것을 방지한다(어떤 키든 일괄 보장).
  */
 function fitProperties(props: TelemetryProperties): TelemetryProperties {
   if (JSON.stringify(props).length <= PROPERTIES_MAX) return props;
   const out: TelemetryProperties = { ...props };
-  // 한도에 맞을 때까지 매번 가장 긴 문자열 값을 줄인다.
+  // 한도를 넘는 동안, 매번 가장 긴 문자열 값을 골라 "한도 안에 들어가는 최대 보존 길이"까지
+  // 이진 탐색으로 줄인다. 자를 양을 원본 문자열 길이가 아니라 **JSON 직렬화 길이**로 직접
+  // 판정하므로, stack의 '\n'이 JSON에서 '\\n'으로 늘어나도 한도(4096)를 알뜰히 채운다.
   for (;;) {
-    const over = JSON.stringify(out).length - PROPERTIES_MAX;
-    if (over <= 0) break;
+    if (JSON.stringify(out).length <= PROPERTIES_MAX) break;
     let key: string | undefined;
     let maxLen = 0;
     for (const [k, v] of Object.entries(out)) {
@@ -145,15 +147,25 @@ function fitProperties(props: TelemetryProperties): TelemetryProperties {
     }
     if (key === undefined || maxLen <= TRUNCATION_MARK.length) break; // 더 줄일 문자열 없음
     const current = out[key] as string;
-    const keepLen = Math.max(0, current.length - over - TRUNCATION_MARK.length);
-    out[key] = current.slice(0, keepLen) + TRUNCATION_MARK;
+    // out[key] = slice(0, mid) + mark 했을 때 전체가 한도 이하가 되는 최대 mid를 찾는다.
+    let lo = 0;
+    let hi = current.length - TRUNCATION_MARK.length;
+    while (lo < hi) {
+      const mid = Math.ceil((lo + hi) / 2);
+      out[key] = current.slice(0, mid) + TRUNCATION_MARK;
+      if (JSON.stringify(out).length <= PROPERTIES_MAX) lo = mid;
+      else hi = mid - 1;
+    }
+    out[key] = current.slice(0, lo) + TRUNCATION_MARK;
+    // mark만 남겨도(lo=0) 여전히 초과면, 다음 루프에서 이 값은 짧아져 다른(다음으로 긴) 값이
+    // 선택된다. 모든 값이 mark 이하로 줄어 더 못 줄이면 위 가드에서 멈춘다.
   }
   return out;
 }
 
 /**
  * 모든 이벤트에 공통으로 실리는 properties 필드(고정 순서). settings 전체는 Rybbit
- * /api/track 한도(properties 2048, feature_flags 미지원) 때문에 여기 싣지 않는다.
+ * /api/track 한도(properties 4096, feature_flags 미지원) 때문에 여기 싣지 않는다.
  */
 function buildCommonFields(terminal: string, cliVer: string): TelemetryProperties {
   return {
@@ -189,7 +201,7 @@ async function send(
     // 공통 필드(고정 순서)를 먼저, 이벤트 고유 속성을 뒤에 둔다. settings 전체는 Rybbit
     // /api/track 한도 때문에 싣지 않는다(추후 자체 api로 이전 — ccg-telemetry-settings).
     const common = buildCommonFields(detectShell(), await getCachedCliVersion());
-    // 공통 + 이벤트 고유 속성을 합치고, properties 2048 한도에 맞게 큰 값(stack 등)을 자른다.
+    // 공통 + 이벤트 고유 속성을 합치고, properties 4096 한도에 맞게 큰 값(stack 등)을 자른다.
     const merged = fitProperties({ ...common, ...properties });
 
     const body = {
@@ -261,4 +273,25 @@ export function trackError(
     props.stack = sanitizeText(error.stack);
   }
   fireAndForget(send(TrackType.ERROR, error.name || 'Error', props, options));
+}
+
+/**
+ * 백엔드 에러 보고의 **단일 진입점**(3-layer error boundary 모델의 backend boundary).
+ *
+ * 어디서 에러가 났든 — ws-server 통합 catch, 전역 uncaughtException/unhandledRejection,
+ * claude CLI 비동기 spawn/stream, webview(CLIENT_ERROR) / Kotlin(CLIENT_ERROR) 전달 — 모두
+ * 이 함수 하나를 통해서만 trackError를 부른다. "에러 날 만한 개별 지점마다 trackError를 박는"
+ * 방식을 없애고, 각 레이어 최상위로 전파된 에러를 한 곳에서 잡아 전송하기 위한 수렴점이다.
+ *
+ * 전송 자체(common fields / consent gating / fire-and-forget)는 trackError에 위임하며,
+ * 이 함수는 호출 방식만 통일한다 — telemetry transport 로직은 건드리지 않는다.
+ *
+ * `context.origin`(backend / webview / kotlin)과 `context.layer`로 어느 바운더리에서
+ * 잡혔는지를 항상 남긴다. 호출자는 await/then/catch 하지 않는다(fire-and-forget).
+ */
+export function reportBackendError(
+  error: Error,
+  context: TelemetryProperties = {},
+): void {
+  trackError(error, { origin: 'backend', ...context });
 }

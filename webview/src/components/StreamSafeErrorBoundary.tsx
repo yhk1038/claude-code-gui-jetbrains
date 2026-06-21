@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { reportClientError } from '@/api/errorReporting';
 
 interface SuppressedError {
   message: string;
@@ -66,6 +67,12 @@ export class StreamSafeErrorBoundary extends Component<Props, State> {
       errors.length,
       error.message,
     );
+
+    // Suppressed in the UI, but still reported via the single client reporting path.
+    reportClientError(error, {
+      source: 'render',
+      componentStack: info.componentStack ?? undefined,
+    });
   }
 
   render() {

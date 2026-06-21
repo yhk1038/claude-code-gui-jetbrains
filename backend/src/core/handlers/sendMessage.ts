@@ -3,7 +3,7 @@ import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { generateSessionId } from '../features/generateSessionId';
 import { ensureClaudeProcess, sendMessageToProcess } from '../claude-process';
-import { trackEvent, trackError } from '../features/telemetry';
+import { trackEvent } from '../features/telemetry';
 
 export async function sendMessageHandler(
   connectionId: string,
@@ -55,11 +55,15 @@ export async function sendMessageHandler(
       }
     }
   } catch (err) {
-    // ensureClaudeProcess already broadcasts SERVICE_ERROR to the session.
-    // Log here to prevent unhandled rejection; do NOT re-throw.
+    // ensureClaudeProcess already broadcasts SERVICE_ERROR to the session, so the
+    // user-facing error response is preserved. Telemetry reporting is intentionally
+    // NOT done here — it is unified at the ws-server handler boundary. Send the ACK
+    // first (the request is acknowledged regardless of outcome), then rethrow so the
+    // single backend error boundary reports it via reportBackendError.
     console.error('[node-backend]', 'sendMessage failed:', err);
-    trackError(err instanceof Error ? err : new Error(String(err)), { origin: 'sendMessage' });
-  } finally {
     connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
+    throw err;
   }
+  // ACK on the success path. (The catch path ACKs before rethrowing.)
+  connections.sendTo(connectionId, 'ACK', { requestId: message.requestId });
 }

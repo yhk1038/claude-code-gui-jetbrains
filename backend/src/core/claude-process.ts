@@ -5,7 +5,7 @@ import { diagnoseAuthError } from './features/auth-diagnosis';
 import { getStrippableAuthEnvKeys } from './features/claude-settings';
 import { EditedFileTracker } from './features/editedFileTracker';
 import { isWslUncPath } from './wsl-path';
-import { trackError } from './features/telemetry';
+import { reportBackendError } from './features/telemetry';
 
 // Tracks files Claude edits so the IDE can be told to reload them once the
 // edit completes on disk. Shared across sessions — tool_use ids are unique.
@@ -135,7 +135,10 @@ export async function ensureClaudeProcess(
     });
     proc.on('error', (err) => {
       console.error('[node-backend]', 'Failed to start Claude CLI:', err);
-      trackError(err, { origin: 'claude_cli_spawn' });
+      // No trackError here: this rejects the awaited spawn promise, so it propagates
+      // up through ensureClaudeProcess → sendMessageHandler → the ws-server handler
+      // boundary, which reports it once via reportBackendError. Reporting here too
+      // would double-count.
       connections.broadcastToSession(targetSessionId, 'SERVICE_ERROR', {
         type: 'SPAWN_ERROR',
         reason: err.message,
@@ -162,25 +165,36 @@ export async function ensureClaudeProcess(
   connections.broadcastToSession(targetSessionId, 'STREAM_START');
 
   proc.stdout?.on('data', (data: Buffer) => {
-    const chunk = data.toString();
-    console.error('[node-backend]', `RAW stdout: ${chunk.trimEnd()}`);
+    // claude CLI stdout streaming runs outside the handleMessage flow, so the ws-server
+    // handler boundary can't catch a throw here. Route any unexpected failure to the
+    // single backend error reporting point so this async path converges with the rest.
+    try {
+      const chunk = data.toString();
+      console.error('[node-backend]', `RAW stdout: ${chunk.trimEnd()}`);
 
-    const currentBuffer = connections.getBuffer(targetSessionId);
-    const newBuffer = currentBuffer + chunk;
+      const currentBuffer = connections.getBuffer(targetSessionId);
+      const newBuffer = currentBuffer + chunk;
 
-    const lines = newBuffer.split('\n');
-    connections.setBuffer(targetSessionId, lines.pop() ?? '');
+      const lines = newBuffer.split('\n');
+      connections.setBuffer(targetSessionId, lines.pop() ?? '');
 
-    for (const line of lines) {
-      if (!line.trim()) continue;
+      for (const line of lines) {
+        if (!line.trim()) continue;
 
-      try {
-        const event = JSON.parse(line) as Record<string, unknown>;
-        console.error('[node-backend]', `JSON event type: ${event.type}`);
-        handleStreamEvent(targetSessionId, event, connections, bridge);
-      } catch {
-        console.error('[node-backend]', `Non-JSON output (unexpected in stream-json mode): ${line}`);
+        try {
+          const event = JSON.parse(line) as Record<string, unknown>;
+          console.error('[node-backend]', `JSON event type: ${event.type}`);
+          handleStreamEvent(targetSessionId, event, connections, bridge);
+        } catch {
+          // Non-JSON line is expected noise (not an error) in stream-json mode — only log.
+          console.error('[node-backend]', `Non-JSON output (unexpected in stream-json mode): ${line}`);
+        }
       }
+    } catch (err) {
+      reportBackendError(err instanceof Error ? err : new Error(String(err)), {
+        layer: 'claude_stream',
+        phase: 'stdout',
+      });
     }
   });
 
@@ -191,46 +205,55 @@ export async function ensureClaudeProcess(
   });
 
   proc.on('close', (code) => {
-    console.error('[node-backend]', `Claude CLI process exited with code: ${code}`);
+    // Like the stdout handler, this close callback fires outside the handleMessage flow;
+    // converge any unexpected throw at the single backend error reporting point.
+    try {
+      console.error('[node-backend]', `Claude CLI process exited with code: ${code}`);
 
-    // 남은 버퍼 처리
-    const remainingBuffer = connections.getBuffer(targetSessionId);
-    if (remainingBuffer.trim()) {
-      try {
-        const event = JSON.parse(remainingBuffer) as Record<string, unknown>;
-        handleStreamEvent(targetSessionId, event, connections, bridge);
-      } catch {
-        console.error('[node-backend]', `Remaining buffer (non-JSON): ${remainingBuffer}`);
+      // 남은 버퍼 처리
+      const remainingBuffer = connections.getBuffer(targetSessionId);
+      if (remainingBuffer.trim()) {
+        try {
+          const event = JSON.parse(remainingBuffer) as Record<string, unknown>;
+          handleStreamEvent(targetSessionId, event, connections, bridge);
+        } catch {
+          console.error('[node-backend]', `Remaining buffer (non-JSON): ${remainingBuffer}`);
+        }
+        connections.setBuffer(targetSessionId, '');
       }
-      connections.setBuffer(targetSessionId, '');
-    }
 
-    // "already in use" 에러 감지 → spawnedSessions에 추가 (다음 시도에서 --resume 사용)
-    // 이 경우는 백엔드 콜드스타트 시 기존 세션에 접근할 때 발생
-    if (code !== 0 && stderrBuffer.includes('already in use')) {
-      spawnedSessions.add(targetSessionId);
-    }
+      // "already in use" 에러 감지 → spawnedSessions에 추가 (다음 시도에서 --resume 사용)
+      // 이 경우는 백엔드 콜드스타트 시 기존 세션에 접근할 때 발생
+      if (code !== 0 && stderrBuffer.includes('already in use')) {
+        spawnedSessions.add(targetSessionId);
+      }
 
-    // 비정상 종료 + result 미수신 → 에러 전파
-    if (code !== 0 && !sessionsWithResult.has(targetSessionId)) {
-      const errorMessage = stderrBuffer.trim() || `Claude CLI exited with code ${code}`;
-      connections.broadcastToSession(targetSessionId, 'SERVICE_ERROR', {
-        type: 'CLI_EXIT_ERROR',
-        reason: errorMessage,
-        error: errorMessage,
-        exitCode: code,
+      // 비정상 종료 + result 미수신 → 에러 전파
+      if (code !== 0 && !sessionsWithResult.has(targetSessionId)) {
+        const errorMessage = stderrBuffer.trim() || `Claude CLI exited with code ${code}`;
+        connections.broadcastToSession(targetSessionId, 'SERVICE_ERROR', {
+          type: 'CLI_EXIT_ERROR',
+          reason: errorMessage,
+          error: errorMessage,
+          exitCode: code,
+        });
+        // 인증 에러 진단
+        diagnoseAuthError(targetSessionId, errorMessage, connections).catch(() => {});
+      }
+
+      // 추적 정리
+      sessionsWithResult.delete(targetSessionId);
+
+      connections.broadcastToSession(targetSessionId, 'STREAM_END');
+
+      // 프로세스 참조만 해제 (세션 레코드는 유지 — 구독자가 아직 있을 수 있음)
+      connections.setProcess(targetSessionId, null);
+    } catch (err) {
+      reportBackendError(err instanceof Error ? err : new Error(String(err)), {
+        layer: 'claude_stream',
+        phase: 'close',
       });
-      // 인증 에러 진단
-      diagnoseAuthError(targetSessionId, errorMessage, connections).catch(() => {});
     }
-
-    // 추적 정리
-    sessionsWithResult.delete(targetSessionId);
-
-    connections.broadcastToSession(targetSessionId, 'STREAM_END');
-
-    // 프로세스 참조만 해제 (세션 레코드는 유지 — 구독자가 아직 있을 수 있음)
-    connections.setProcess(targetSessionId, null);
   });
 }
 

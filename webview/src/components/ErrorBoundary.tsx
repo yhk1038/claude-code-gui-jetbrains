@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { reportClientError } from '@/api/errorReporting';
 
 interface Props {
   children: ReactNode;
@@ -25,6 +26,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('[ErrorBoundary] Caught error:', error, info.componentStack);
+
+    // Frontend error boundary → single client reporting path (backend transmits).
+    reportClientError(error, {
+      source: 'render',
+      componentStack: info.componentStack ?? undefined,
+    });
 
     if (CHUNK_LOAD_PATTERN.test(error.message) && !this.chunkErrorRetried) {
       this.chunkErrorRetried = true;

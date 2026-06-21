@@ -12,6 +12,7 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import java.util.concurrent.ConcurrentHashMap
 
@@ -194,9 +195,15 @@ class NodeBackendService : Disposable {
                     portDeferred.complete(port)
                     logger.info("Node.js backend for '$basePath' started on port $port")
                     connect(port)
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     portDeferred.completeExceptionally(e)
                     logger.error("Failed to start Node.js backend for '$basePath'", e)
+                    // Plugin error boundary: a backend that failed to start is a plugin-side
+                    // failure worth reporting. Forward via any RPC-ready backend (this one
+                    // isn't connected, by definition of the failure).
+                    reportError(e, where = "NodeBackendService.start", projectBasePath = basePath)
                 }
             }
         }
@@ -208,6 +215,9 @@ class NodeBackendService : Disposable {
                 Router(),
                 onPersistentFailure = { restart() },
                 onConnected = { registerRoot() },
+                // Route RPC-handling failures to the single Kotlin reporting point. This
+                // backend is connected (the error came over its socket), so prefer it.
+                onError = { throwable, where -> reportError(throwable, where, basePath) },
             )
             rpcClient = client
             client.connect(port)
@@ -231,6 +241,9 @@ class NodeBackendService : Disposable {
             rpcClient?.sendNotification(method, params)
                 ?: logger.warn("Cannot send '$method' — RPC client not ready (basePath=$basePath)")
         }
+
+        /** True when this backend's RPC socket is connected and can forward a notification. */
+        fun isRpcReady(): Boolean = rpcClient != null
 
         suspend fun awaitPort(): Int = portDeferred.await()
 
@@ -296,6 +309,41 @@ class NodeBackendService : Disposable {
     fun sendNotification(projectBasePath: String, method: String, params: JsonObject) {
         backends[projectBasePath]?.sendNotification(method, params)
             ?: logger.warn("sendNotification: no backend for project root $projectBasePath")
+    }
+
+    /**
+     * The Kotlin (IDE plugin) error boundary's single reporting point. Forwards a
+     * caught top-level exception to the Node backend as a CLIENT_ERROR notification;
+     * Node converges it at its own single reporting point (reportBackendError,
+     * origin:'kotlin') and decides whether to transmit (consent gating lives there).
+     *
+     * Kotlin holds NO telemetry logic — it is only the transport that hands the error
+     * to Node (single-backend principle). This never throws: a failure to report must
+     * not cascade. [where] tags which plugin entry point caught it.
+     *
+     * Routing note: error reporting is backend-agnostic — any connected backend reaches
+     * the same telemetry sink — so we use [projectBasePath]'s backend when known, else
+     * fall back to the first RPC-ready backend. If none is connected yet, the report is
+     * dropped (Node's own boundaries still cover backend-side failures).
+     */
+    fun reportError(throwable: Throwable, where: String, projectBasePath: String? = null) {
+        try {
+            val target = projectBasePath?.let { backends[it] }
+                ?: backends.values.firstOrNull { it.isRpcReady() }
+            if (target == null) {
+                logger.warn("reportError($where): no RPC-ready backend to forward CLIENT_ERROR; dropping")
+                return
+            }
+            val params = buildJsonObject {
+                put("message", throwable.message ?: throwable.javaClass.simpleName)
+                put("stack", throwable.stackTraceToString())
+                put("where", where)
+            }
+            target.sendNotification("CLIENT_ERROR", params)
+        } catch (e: Exception) {
+            // Reporting must never cascade into another failure.
+            logger.warn("reportError($where) failed to forward CLIENT_ERROR", e)
+        }
     }
 
     /**

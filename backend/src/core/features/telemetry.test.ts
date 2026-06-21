@@ -103,13 +103,13 @@ describe('telemetry consent gating', () => {
     await flushTelemetry(); // unhandled rejection 없이 조용히 삼켜져야 한다
   });
 
-  it('properties가 2048자를 넘으면 잘라서 보낸다(fitProperties)', async () => {
+  it('properties가 4096자를 넘으면 잘라서 보낸다(fitProperties)', async () => {
     const { trackEvent, fetchMock, flushTelemetry } = await loadTelemetry(accepted, 'test-key');
     trackEvent('e', { big: 'x'.repeat(5000) });
     await flushTelemetry();
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const body = JSON.parse((fetchMock.mock.calls[0][1] as { body: string }).body);
-    expect(body.properties.length).toBeLessThanOrEqual(2048);
+    expect(body.properties.length).toBeLessThanOrEqual(4096);
   });
 
   it('서버가 거부(ok=false)하면 transport_error로 1회 재전송한다', async () => {

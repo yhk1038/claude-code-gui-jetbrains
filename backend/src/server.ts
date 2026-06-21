@@ -6,7 +6,7 @@ import { JetBrainsBridge } from './bridge/jetbrains-bridge';
 import { handleMessage } from './core/handlers/index';
 import { initSettingsWatcher, stopSettingsWatcher } from './core/features/settings-watcher';
 import { ensureProfile } from './core/features/profile';
-import { trackEvent, trackError } from './core/features/telemetry';
+import { trackEvent, reportBackendError } from './core/features/telemetry';
 import { restoreTunnelState } from './core/features/tunnel-manager';
 import { restoreSleepGuardState } from './core/features/sleep-guard';
 import { isJetBrainsMode, serverPort, webviewDir } from './config/environment';
@@ -136,16 +136,17 @@ async function main() {
   // 설치 단위 가명 식별자(uuid)를 동의 여부와 무관하게 보장한다.
   await ensureProfile();
 
-  // 예상 못한 전역 에러도 텔레메트리로 보고한다(보고·로깅만, 프로세스 동작은 기존 생존
-  // 스타일을 유지 — 강제 종료/재throw하지 않는다). 전송은 fire-and-forget.
+  // 백엔드 error boundary의 최상위(process-global) 절반. 핸들러 흐름 밖에서 터진 에러
+  // (예: 비동기 콜백의 미처리 throw)도 reportBackendError 단일 진입점으로 수렴시킨다.
+  // 보고·로깅만 하고 프로세스 동작은 기존 생존 스타일 유지 — 강제 종료/재throw하지 않는다.
   process.on('uncaughtException', (err) => {
     console.error('[node-backend]', 'uncaughtException:', err);
-    trackError(err, { origin: 'uncaughtException' });
+    reportBackendError(err, { layer: 'process', hook: 'uncaughtException' });
   });
   process.on('unhandledRejection', (reason) => {
     const err = reason instanceof Error ? reason : new Error(String(reason));
     console.error('[node-backend]', 'unhandledRejection:', err);
-    trackError(err, { origin: 'unhandledRejection' });
+    reportBackendError(err, { layer: 'process', hook: 'unhandledRejection' });
   });
 
   // 동의(ACCEPTED)한 사용자에 한해 앱 시작(활성) 이벤트를 보낸다. 공통 필드(os/버전/설정 등)는
@@ -174,6 +175,26 @@ async function main() {
   // against the panelId until the webview confirms the actual drop via NATIVE_DROP_FLUSH.
   // That ensures attach happens on release — not on hover — while still using the real
   // OS file paths.
+  // Kotlin (IDE plugin) error boundary → Node. The plugin's top-level catch forwards
+  // exceptions here as a CLIENT_ERROR JSON-RPC notification; we converge them at the
+  // single backend reporting point with origin:'kotlin'. Kotlin holds no telemetry
+  // logic (single-backend principle) — it is only the transport that hands the error
+  // to Node. Fire-and-forget; never throws back into the RPC reader.
+  (bridges[ClientEnv.JETBRAINS] as JetBrainsBridge).onNotification('CLIENT_ERROR', (_method, params) => {
+    const message = typeof params.message === 'string' && params.message.length > 0
+      ? params.message
+      : 'Unknown Kotlin error';
+    const error = new Error(message);
+    if (typeof params.stack === 'string' && params.stack.length > 0) {
+      error.stack = params.stack;
+    }
+    const context: Record<string, string> = { origin: 'kotlin', layer: 'plugin' };
+    if (typeof params.where === 'string' && params.where.length > 0) {
+      context.where = params.where;
+    }
+    reportBackendError(error, context);
+  });
+
   (bridges[ClientEnv.JETBRAINS] as JetBrainsBridge).onNotification('NATIVE_DROP', (_method, params) => {
     const panelId = typeof params.panelId === 'string' ? params.panelId : '';
     const entries = parseNativeDropEntries(params.entries);

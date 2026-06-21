@@ -9,6 +9,7 @@ import type { IPCMessage } from '../core/types';
 import { ClientEnv } from '../shared';
 import { getPluginVersion } from '../core/handlers/getVersion';
 import { cancelLogin } from '../core/handlers/login';
+import { reportBackendError } from '../core/features/telemetry';
 import { LogWebSocketServer } from '../logging/log-ws';
 
 const ALLOWED_WS_ORIGINS = new Set([
@@ -197,8 +198,15 @@ export function startWebSocketServer(
           return;
         }
         const bridge = bridges[connections.getClientEnv(connectionId)];
+        // Single backend error boundary for the handler layer: any handler that throws
+        // (or rejects) flows here, and reportBackendError is the ONLY place that reports it.
+        // Individual handlers must NOT call trackError themselves — they rethrow to here.
         Promise.resolve(handleMessage(connectionId, parsed, connections, bridge)).catch((err) => {
           console.error('[node-backend]', `Unhandled error in handleMessage (${parsed.type}):`, err);
+          reportBackendError(err instanceof Error ? err : new Error(String(err)), {
+            layer: 'handler',
+            messageType: parsed.type,
+          });
         });
       });
 
