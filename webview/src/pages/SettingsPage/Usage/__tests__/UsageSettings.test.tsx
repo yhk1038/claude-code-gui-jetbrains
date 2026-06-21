@@ -37,7 +37,7 @@ describe('UsageSettings', () => {
 
     render(<UsageSettings />);
 
-    expect(screen.queryByText(/Usage feature requires/i)).toBeNull();
+    expect(screen.queryByText(/A required dependency/i)).toBeNull();
     expect(screen.queryByText(/Failed to fetch/i)).toBeNull();
   });
 
@@ -53,7 +53,7 @@ describe('UsageSettings', () => {
 
     render(<UsageSettings />);
 
-    expect(screen.getByText(/Usage feature requires claude-code-battery CLI/i)).toBeInTheDocument();
+    expect(screen.getByText(/A required dependency/i)).toBeInTheDocument();
     expect(screen.getByText(/npm install -g claude-code-battery/)).toBeInTheDocument();
   });
 
@@ -70,7 +70,7 @@ describe('UsageSettings', () => {
     render(<UsageSettings />);
 
     expect(screen.getByText(/Network error reaching Anthropic API/i)).toBeInTheDocument();
-    expect(screen.queryByText(/Usage feature requires/i)).toBeNull();
+    expect(screen.queryByText(/A required dependency/i)).toBeNull();
   });
 
   it('clears error/errorKind when usage-data-updated event fires (cross-instance sync)', () => {
@@ -85,7 +85,7 @@ describe('UsageSettings', () => {
       refresh,
     });
     const { rerender } = render(<UsageSettings />);
-    expect(screen.getByText(/Usage feature requires/i)).toBeInTheDocument();
+    expect(screen.getByText(/A required dependency/i)).toBeInTheDocument();
 
     // 다른 인스턴스가 데이터를 성공적으로 가져오고 error/errorKind를 클리어한 상태로 변경
     vi.mocked(useUsageData).mockReturnValue({
@@ -99,7 +99,7 @@ describe('UsageSettings', () => {
     rerender(<UsageSettings />);
 
     // 에러 UI가 사라지고 정상 데이터 화면이 나타남
-    expect(screen.queryByText(/Usage feature requires/i)).toBeNull();
+    expect(screen.queryByText(/A required dependency/i)).toBeNull();
     expect(screen.queryByText(/Failed to fetch/i)).toBeNull();
   });
 });

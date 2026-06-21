@@ -31,10 +31,14 @@ export function CcbNotInstalledNotice(props: Props) {
   return (
     <div className="mb-6 p-4 bg-surface-raised border border-border-default rounded-lg">
       <h3 className="text-sm font-semibold text-text-primary mb-2">
-        Usage feature requires claude-code-battery CLI
+        A required dependency
       </h3>
       <p className="text-sm text-text-secondary mb-3">
-        Install it globally via npm to enable real-time usage tracking:
+        Due to marketplace policy, this feature cannot be bundled in. It is published as a
+        separate library that you need to install yourself.
+      </p>
+      <p className="text-sm text-text-secondary mb-3">
+        Install it globally via npm:
       </p>
       <div className="flex items-center gap-2 mb-3 p-2 bg-surface-base border border-border-default rounded font-mono text-xs text-text-secondary">
         <code className="flex-1">{INSTALL_CMD}</code>
@@ -46,7 +50,7 @@ export function CcbNotInstalledNotice(props: Props) {
         </button>
       </div>
       <p className="text-xs text-text-tertiary mb-3">
-        After installing, restart the IDE if it was running before the install.
+        After installing, click Retry below — no IDE restart needed.
       </p>
       <button
         onClick={onRetry}
