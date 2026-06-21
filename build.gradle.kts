@@ -106,6 +106,13 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
+            <h3>0.19.1 - Faster session switching & smarter usage hints</h3>
+            <ul>
+                <li>Jump between conversations faster: open the session dropdown with the new /resume command, navigate it entirely from the keyboard, and search instantly by session ID.</li>
+                <li>Switch accounts in seconds with the new /login command in the command palette.</li>
+                <li>Optional, consent-based usage analytics to help improve the plugin — off by default, sent only if you opt in.</li>
+                <li>Fixed the usage hint not showing in some shell locales. (#116)</li>
+            </ul>
             <h3>0.19.0 - Session panel & Sidebar chats now available!</h3>
             <ul>
                 <li>New session list panel on the left: browse all your Claude sessions and click one to open it in a new tab — even when no editor tab is open.</li>
