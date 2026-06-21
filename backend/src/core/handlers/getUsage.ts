@@ -33,12 +33,32 @@ interface UsageErrorInfo {
   message: string;
 }
 
-function classifyError(raw: string): UsageErrorInfo {
+interface ExecFileError extends Error {
+  // child_process surfaces the process exit code as a number (e.g. 127) and spawn
+  // failures as a string errno (e.g. 'ENOENT').
+  code?: number | string;
+}
+
+function classifyError(raw: string, code?: number | string): UsageErrorInfo {
   if (/npm[^a-z].*(?:command not found|not recognized)|(?:command not found|not recognized).*npm/i.test(raw)) {
     return { kind: 'npm_missing', message: 'Node.js / npm not found in PATH' };
   }
 
-  if (/spawn .*ENOENT|ENOENT/i.test(raw) || /could not determine executable to run/i.test(raw) || /command not found.*ccb|ccb.*not found|ccb.*not recognized/i.test(raw)) {
+  // exit code 127 = the shell could not find the command we asked it to run (`ccb`).
+  // This is the standard, locale-independent signal for a missing command: the shell's
+  // "command not found" text is localized (e.g. Russian "команда не найдена") and cannot
+  // be matched by an English regex, but the exit code is always 127. We additionally
+  // require the `ccb` token so an unrelated failure inside the command is not misattributed.
+  // The English text patterns remain as a fallback for paths where the exit code is
+  // unavailable (e.g. npm's "could not determine executable to run"). (issue #114)
+  //
+  // Note: ENOENT is intentionally NOT treated as ccb_missing. execFile spawns the shell,
+  // not ccb directly, so a missing ccb always surfaces as exit 127 — an ENOENT here means
+  // the shell binary itself is absent, a different failure.
+  const ccbMissingByCode = code === 127 && /\bccb\b/.test(raw);
+  const ccbMissingByText = /could not determine executable to run/i.test(raw)
+    || /command not found.*ccb|ccb.*not found|ccb.*not recognized/i.test(raw);
+  if (ccbMissingByCode || ccbMissingByText) {
     return { kind: 'ccb_missing', message: 'claude-code-battery CLI is not installed' };
   }
 
@@ -190,7 +210,8 @@ export async function getUsageHandler(
       usage,
     });
   } catch (err) {
-    const info = classifyError(err instanceof Error ? err.message : String(err));
+    const code = err instanceof Error ? (err as ExecFileError).code : undefined;
+    const info = classifyError(err instanceof Error ? err.message : String(err), code);
     lastErrorInfo = info;
     cachedAt = Date.now();
     connections.sendTo(connectionId, 'ACK', {

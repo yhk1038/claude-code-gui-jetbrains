@@ -126,11 +126,18 @@ describe('getUsageHandler', () => {
       }));
     });
 
-    it('should classify ENOENT (spawn failure) as ccb_missing', async () => {
+    // exit code 127 = the shell could not find the command. This is the standard,
+    // locale-independent signal for "ccb is not installed". The shell's "command not
+    // found" text is localized (e.g. Russian "команда не найдена") and cannot be matched
+    // by an English regex, but the exit code is always 127. (issue #114)
+    it('should classify exit code 127 as ccb_missing regardless of shell locale', async () => {
       const connections = createMockConnections();
       const message: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
-      const enoentErr = Object.assign(new Error('spawn ccb ENOENT'), { code: 'ENOENT' });
-      setupExecFileError(enoentErr);
+      const err = Object.assign(
+        new Error('Command failed: /bin/bash -l -i -c ccb oauth usage --json\nbash: no job control in this shell\nbash: ccb: команда не найдена'),
+        { code: 127 },
+      );
+      setupExecFileError(err);
 
       await getUsageHandler('conn-1', message, connections, mockBridge);
 
@@ -140,6 +147,21 @@ describe('getUsageHandler', () => {
         error_kind: 'ccb_missing',
         error: 'claude-code-battery CLI is not installed',
       }));
+    });
+
+    // ENOENT means the SHELL binary itself is missing, not ccb. execFile spawns the
+    // shell (not ccb directly), so a missing ccb surfaces as exit 127, never ENOENT.
+    // A broken-shell environment must not be mislabeled as "ccb not installed". (issue #114)
+    it('should NOT classify ENOENT (missing shell binary) as ccb_missing', async () => {
+      const connections = createMockConnections();
+      const message: IPCMessage = { type: 'GET_USAGE', payload: {}, timestamp: 0, requestId: 'req-1' };
+      const enoentErr = Object.assign(new Error('spawn /bin/bash ENOENT'), { code: 'ENOENT' });
+      setupExecFileError(enoentErr);
+
+      await getUsageHandler('conn-1', message, connections, mockBridge);
+
+      const call = (connections.sendTo as ReturnType<typeof vi.fn>).mock.calls.at(-1);
+      expect(call?.[2].error_kind).not.toBe('ccb_missing');
     });
 
     it('should classify npm "could not determine executable" as ccb_missing', async () => {
