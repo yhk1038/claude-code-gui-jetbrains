@@ -1,10 +1,7 @@
 import { InputBanner } from './InputBanner';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 import { getConsentCopy } from './telemetryConsentMessages';
-
-// TODO: www web 배포 후 개인정보처리방침 URL로 교체 (예: https://<도메인>/privacy).
-// 빈 값이면 링크를 표시하지 않는다.
-const PRIVACY_POLICY_URL: string = '';
+import { PRIVACY_POLICY_URL } from '@/config/app';
 
 interface Props {
   /** 수락 클릭. */
