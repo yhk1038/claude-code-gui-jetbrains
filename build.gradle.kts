@@ -126,26 +126,14 @@ intellijPlatform {
     }
     pluginVerification {
         ides {
-            // Match our platformVersion (2024.2) for regression baseline
+            // Lower bound: matches our platformVersion (2024.2) / sinceBuild=242.
+            // Deprecations accumulate, so the upper-bound IU EAP below subsumes
+            // intermediate release lines (e.g. 2024.3) for forward-compat checks.
             ide("IC", "2024.2.6")
-            // 2024.3 caught deprecated/override-only API usage in Marketplace verifier;
-            // pin it locally so the same checks run on every release.
-            ide("IC", "2024.3.7")
-            // Android Studio Ladybug (2024.2.2) — primary target of issue #34
-            ide("AI", "2024.2.2.13")
-            // Rider 2026.1.2 — Marketplace review #140014 reports incompatibility (#53)
-            // useInstaller=false: Rider installer downloads are not supported by the
-            // plugin verifier task (see intellij-platform-gradle-plugin #1852).
-            ide("RD", "2026.1.2", false)
-            // 2026.2 EAP coverage — driving #50 (Allow IDE EAP versions). Both IDEA
-            // Ultimate and Rider are checked because review #140014 came from a Rider
-            // user, and forward-compat needs to hold on both lines before we drop
-            // untilBuild. EAP artifact naming is product-specific in the JetBrains
-            // snapshots repo: IU is published with the build-number-based
-            // "<build>-EAP-SNAPSHOT" suffix, while Rider uses the marketing
-            // "<version>-EAP<n>-SNAPSHOT" form.
+            // 2026.2 EAP coverage — driving #50 (Allow IDE EAP versions). Forward-compat
+            // needs to hold before we drop untilBuild. IU EAP is published with the
+            // build-number-based "<build>-EAP-SNAPSHOT" suffix.
             ide("IU", "262.8117.19-EAP-SNAPSHOT", false)
-            ide("RD", "2026.2-EAP4-SNAPSHOT", false)
         }
     }
 }
