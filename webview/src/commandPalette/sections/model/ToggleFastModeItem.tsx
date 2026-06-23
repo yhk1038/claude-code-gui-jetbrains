@@ -3,7 +3,7 @@ import { StaticItem } from '../../types';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 import { useChatStreamContext } from '@/contexts/ChatStreamContext';
 import { useCliConfig } from '@/contexts/CliConfigContext';
-import { toModelAlias } from '@/types/models';
+import { resolveModelInfo } from '@/types/models';
 import type { ModelInfo } from '@/types/slashCommand';
 import { ToggleSwitch } from '@/components/ToggleSwitch';
 
@@ -14,8 +14,7 @@ function resolveActiveModel(
   sessionModel: string | null,
   settingsModel: string | null,
 ): ModelInfo | null {
-  const alias = sessionModel ?? (settingsModel ? toModelAlias(settingsModel) : 'default');
-  return models.find((m) => m.value === alias) ?? null;
+  return resolveModelInfo(models, sessionModel ?? settingsModel);
 }
 
 // disabled를 런타임에 동적으로 변경할 수 있도록 backing field + getter/setter 설정

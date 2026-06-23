@@ -82,6 +82,8 @@ interface SendMessagePayload {
   context: Array<Record<string, unknown>>;
   workingDir: string;
   inputMode: string;
+  /** User-selected model, used to spawn the CLI with `--model`. */
+  model?: string;
 }
 
 // NOTE: The legacy `MessageTypes` ambient constant was removed. The single

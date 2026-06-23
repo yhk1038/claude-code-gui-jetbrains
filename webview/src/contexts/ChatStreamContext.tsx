@@ -5,7 +5,6 @@ import { useTools } from '../hooks/useTools';
 import { useBridgeContext } from './BridgeContext';
 import { useSessionContext } from './SessionContext';
 import { LoadedMessageDto, Context, Attachment, SessionState } from '../types';
-import { toModelAlias } from '@/types/models';
 import { InputMode, InputModeValues } from '../types/chatInput';
 import { MessageType } from '@/shared';
 
@@ -19,6 +18,11 @@ interface QueuedMessage {
   context: Context[];
   workingDir: string;
   inputMode: InputMode;
+  // The user-selected model, sent so the backend can spawn the CLI with
+  // `--model`. This makes a model change take effect even when the previous
+  // process has exited (set_model can't reach a dead process). Omitted when no
+  // explicit model is selected (CLI uses its default).
+  model?: string;
 }
 
 interface ChatStreamContextType {
@@ -148,11 +152,14 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
     retry: chatStreamRetry,
   } = chatStream;
 
-  // systemInit 변경 시 sessionModel 동기화
+  // systemInit이 통보한 실제 모델을 sessionModel에 그대로 반영한다.
+  // alias로 축약하지 않는다(원본 보존) — 표시 시점에 resolveModelInfo가
+  // 정확 일치 → alias → default 순으로 매칭하므로, 통보값을 손실 없이
+  // 넘겨야 사용자가 고른 세분 모델("opusplan" 등)과 정확 일치할 기회가 남는다.
   useEffect(() => {
     if (chatStream.systemInit) {
       const rawModel = (chatStream.systemInit as Record<string, unknown>).model as string | null ?? null;
-      setSessionModel(rawModel ? toModelAlias(rawModel) : null);
+      setSessionModel(rawModel ?? null);
     }
   }, [chatStream.systemInit]);
 
@@ -235,6 +242,7 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
         context: context || [],
         workingDir: session.workingDirectory ?? '',
         inputMode,
+        model: sessionModel ?? undefined,
       };
 
       // 스트리밍 중이면 큐잉. stdin에 즉시 write하지 않는다.
@@ -254,7 +262,7 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
         console.error('[ChatStreamContext] Failed to send message to bridge:', error);
       });
     },
-    [addUserMessage, chatStream.isStreaming, bridge, session]
+    [addUserMessage, chatStream.isStreaming, bridge, session, sessionModel]
   );
 
   // 스트리밍 종료(result 수신) 시 큐잉된 메시지 자동 전송.

@@ -20,6 +20,7 @@ export function parseUserContent(content: string): {
   contexts: Context[];
   commandName?: string;
   hasLocalCommandCaveat?: boolean;
+  hasLocalCommandStdout?: boolean;
 } {
   const contexts: Context[] = [];
 
@@ -57,6 +58,7 @@ export function parseUserContent(content: string): {
   cleanText = cleanText.replace(/<local-command-caveat>[\s\S]*?<\/local-command-caveat>/g, '');
 
   // Step G: <command-message>, <command-args> 태그+내용 제거, <local-command-stdout> 태그만 제거(내용 보존)
+  const hasLocalCommandStdout = /<local-command-stdout>/.test(content);
   cleanText = cleanText.replace(/<command-message>[\s\S]*?<\/command-message>/g, '');
   cleanText = cleanText.replace(/<command-args>[\s\S]*?<\/command-args>/g, '');
   cleanText = cleanText.replace(/<\/?local-command-stdout>/g, '');
@@ -71,7 +73,7 @@ export function parseUserContent(content: string): {
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
-  return { text: cleanText, contexts, commandName, hasLocalCommandCaveat };
+  return { text: cleanText, contexts, commandName, hasLocalCommandCaveat, hasLocalCommandStdout };
 }
 
 /**

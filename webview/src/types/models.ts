@@ -1,3 +1,5 @@
+import type { ModelInfo } from './slashCommand';
+
 /**
  * CLI model alias ("default", "opus", "sonnet", "haiku") used by the
  * Claude Code CLI as the short form of `ModelInfo.value` in the
@@ -15,4 +17,72 @@ export function toModelAlias(value: string | null | undefined): string {
   if (value.includes('sonnet')) return 'sonnet';
   if (value.includes('haiku')) return 'haiku';
   return DEFAULT_MODEL_ALIAS;
+}
+
+/**
+ * Resolve the label to show for a model. The CLI's displayName hides the
+ * real model behind generic labels ("Default (recommended)", "Sonnet"),
+ * but the description's first "·"-separated segment carries the actual
+ * model, e.g. "Opus 4.8 with 1M context · Best for everyday tasks".
+ * Keep only the model name + version ("Opus 4.8"), dropping trailing
+ * qualifiers; fall back to the full segment, then to displayName.
+ */
+export function resolveModelLabel(info: ModelInfo): string {
+  const firstSegment = info.description?.split('·')[0]?.trim();
+  if (!firstSegment) return info.displayName;
+  const nameVersion = firstSegment.match(/^.+?\s[\d.]+/);
+  return nameVersion ? nameVersion[0].trim() : firstSegment;
+}
+
+/**
+ * Resolve the `ModelInfo` that best represents `current` within the CLI's
+ * model list, with graceful fallbacks so the model indicator never vanishes.
+ *
+ * `current` may be a precise list value the user picked ("opusplan",
+ * "sonnet[1m]"), a coarse alias the CLI handed back ("opus"), or even a raw
+ * full model id ("claude-opus-4-1-20250805") forwarded from `system/init`.
+ * The CLI's reported model and the selectable list use different granularity,
+ * so an exact match alone is too brittle — when it misses we widen the search
+ * rather than rendering nothing.
+ *
+ * Resolution order:
+ *  1. exact `value` match — preserves fine-grained user picks
+ *  2. alias-equivalence — same model family via `toModelAlias`
+ *  3. the `default` item — a sane visible fallback
+ *  4. `null` — caller renders a raw label of last resort
+ */
+export function resolveModelInfo(
+  models: ModelInfo[],
+  current: string | null | undefined,
+): ModelInfo | null {
+  if (models.length === 0) return null;
+  const target = current ?? DEFAULT_MODEL_ALIAS;
+
+  const exact = models.find((m) => m.value === target);
+  if (exact) return exact;
+
+  const targetAlias = toModelAlias(target);
+  const aliasMatch = models.find((m) => toModelAlias(m.value) === targetAlias);
+  if (aliasMatch) return aliasMatch;
+
+  const defaultItem = models.find((m) => m.value === DEFAULT_MODEL_ALIAS);
+  if (defaultItem) return defaultItem;
+
+  return null;
+}
+
+/**
+ * Turn a CLI `/model` echo line into a friendly notice label, or null if the
+ * text isn't a model-change line. Accepts both "Set model to <id>" and
+ * "Set model to <alias> (<id>)" shapes (and ignores any surrounding tags by
+ * matching only from "Set model to" up to the first "(" or a tag/end).
+ * The resulting label matches the one our local notification uses, so the two
+ * can be deduped by string equality.
+ */
+export function modelChangeLabel(text: string, models: ModelInfo[]): string | null {
+  const match = text.match(/Set model to (.+?)(?:\s*[(<]|$)/);
+  if (!match) return null;
+  const raw = match[1].trim();
+  const info = resolveModelInfo(models, raw);
+  return `Set model to ${info ? resolveModelLabel(info) : raw}`;
 }

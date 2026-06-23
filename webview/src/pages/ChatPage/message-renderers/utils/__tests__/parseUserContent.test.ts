@@ -76,4 +76,18 @@ describe('parseUserContent', () => {
     expect(result.text).toBe('');
     expect(result.contexts).toHaveLength(1);
   });
+
+  it('local-command-stdout이 있으면 플래그를 세우고 내용은 보존한다', () => {
+    const content = '<local-command-stdout>Set model to claude-opus-4-8[1m]</local-command-stdout>';
+    const result = parseUserContent(content);
+
+    expect(result.hasLocalCommandStdout).toBe(true);
+    expect(result.text).toBe('Set model to claude-opus-4-8[1m]');
+  });
+
+  it('local-command-stdout이 없으면 플래그가 거짓이다', () => {
+    const result = parseUserContent('일반 사용자 메시지');
+
+    expect(result.hasLocalCommandStdout).toBe(false);
+  });
 });

@@ -5,7 +5,7 @@ import { useBridge } from '@/hooks/useBridge';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useCliConfig } from '@/contexts/CliConfigContext';
 import { LoadedMessageType } from '@/types';
-import { DEFAULT_MODEL_ALIAS } from '@/types/models';
+import { DEFAULT_MODEL_ALIAS, resolveModelInfo, resolveModelLabel } from '@/types/models';
 import type { ModelInfo } from '@/types/slashCommand';
 import { MessageType } from '@/shared';
 
@@ -23,7 +23,7 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   const models: ModelInfo[] = controlResponse?.response?.response?.models ?? [];
-  const currentModel = sessionModel ?? DEFAULT_MODEL_ALIAS;
+  const currentInfo = resolveModelInfo(models, sessionModel ?? DEFAULT_MODEL_ALIAS);
   const isMac = navigator.platform.toUpperCase().includes('MAC');
 
   useEffect(() => {
@@ -49,16 +49,15 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
   const handleSelect = async (value: string) => {
     setSessionModel(value);
 
+    // Instant local feedback (same label & dedup behavior as the rotate path):
+    // the CLI's `/model` echo only appears on the next send, so this shows the
+    // change immediately; UserMessageRenderer dedupes the echo against it.
     const info = models.find((m) => m.value === value);
-    const notificationText = info
-      ? `Set model to ${info.displayName}`
-      : `Set model to ${value}`;
-
     appendMessage({
       type: LoadedMessageType.Notification,
       uuid: crypto.randomUUID(),
       timestamp: new Date().toISOString(),
-      summary: notificationText,
+      summary: `Set model to ${info ? resolveModelLabel(info) : value}`,
     });
 
     if (currentSessionId) {
@@ -97,7 +96,7 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
         {models.length === 0 ? (
           <div className="px-2 py-1 text-[0.9230rem] text-text-tertiary">Loading models…</div>
         ) : models.map((m) => {
-          const selected = currentModel === m.value;
+          const selected = m.value === currentInfo?.value;
           return (
             <button
               key={m.value}

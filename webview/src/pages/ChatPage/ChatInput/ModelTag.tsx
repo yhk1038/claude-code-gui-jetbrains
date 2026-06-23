@@ -5,7 +5,7 @@ import { useCliConfig } from '@/contexts/CliConfigContext';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useBridge } from '@/hooks/useBridge';
 import { SWITCH_MODEL_EVENT } from '@/pages/ChatPage/ModelSwitchOverlay';
-import { DEFAULT_MODEL_ALIAS } from '@/types/models';
+import { DEFAULT_MODEL_ALIAS, resolveModelInfo, resolveModelLabel, toModelAlias } from '@/types/models';
 import { LoadedMessageType } from '@/types';
 import type { ModelInfo } from '@/types/slashCommand';
 import { MessageType } from '@/shared';
@@ -14,18 +14,15 @@ import { MessageType } from '@/shared';
 export const ROTATE_MODEL_EVENT = 'rotate-model';
 
 /**
- * Resolve the label to show for a model. The CLI's displayName hides the
- * real model behind generic labels ("Default (recommended)", "Sonnet"),
- * but the description's first "·"-separated segment carries the actual
- * model, e.g. "Opus 4.8 with 1M context · Best for everyday tasks".
- * Keep only the model name + version ("Opus 4.8"), dropping trailing
- * qualifiers; fall back to the full segment, then to displayName.
+ * Last-resort label when `current` can't be matched to any list item — e.g.
+ * the CLI reported a model family the selectable list doesn't carry. Humanize
+ * the coarse alias ("opus" → "Opus") so the indicator stays meaningful instead
+ * of vanishing; fall back to the raw value if even the family is unknown.
  */
-function resolveModelLabel(info: ModelInfo): string {
-  const firstSegment = info.description?.split('·')[0]?.trim();
-  if (!firstSegment) return info.displayName;
-  const nameVersion = firstSegment.match(/^.+?\s[\d.]+/);
-  return nameVersion ? nameVersion[0].trim() : firstSegment;
+function fallbackModelLabel(current: string): string {
+  const alias = toModelAlias(current);
+  if (alias === DEFAULT_MODEL_ALIAS) return current;
+  return alias.charAt(0).toUpperCase() + alias.slice(1);
 }
 
 /**
@@ -48,11 +45,16 @@ export function ModelTag() {
   useEffect(() => {
     const handleRotate = () => {
       if (models.length === 0) return;
-      const current = sessionModel ?? DEFAULT_MODEL_ALIAS;
-      const idx = models.findIndex((m) => m.value === current);
+      const info = resolveModelInfo(models, sessionModel ?? DEFAULT_MODEL_ALIAS);
+      const idx = info ? models.indexOf(info) : -1;
       const next = models[(idx + 1) % models.length];
 
       setSessionModel(next.value);
+      // Instant local feedback. The CLI's `/model` echo only appears once a
+      // message is sent (and not at all if the process has exited), so this is
+      // what makes the change visible immediately. The echo is deduped against
+      // this notification in UserMessageRenderer, so they never double up; on
+      // reload this (ephemeral) notification is gone and the echo takes over.
       appendMessage({
         type: LoadedMessageType.Notification,
         uuid: crypto.randomUUID(),
@@ -66,9 +68,15 @@ export function ModelTag() {
     return () => window.removeEventListener(ROTATE_MODEL_EVENT, handleRotate);
   }, [models, sessionModel, setSessionModel, appendMessage, currentSessionId, send]);
 
+  // Models not loaded yet — nothing meaningful to show. The CLI config arrives
+  // shortly and fills this in; this is the ONLY case where the tag is hidden.
+  if (models.length === 0) return null;
+
   const current = sessionModel ?? DEFAULT_MODEL_ALIAS;
-  const info = models.find((m) => m.value === current);
-  if (!info?.displayName) return null;
+  const info = resolveModelInfo(models, current);
+  // Once models are loaded the tag always renders: a matched label when we can
+  // resolve the model, otherwise a humanized fallback so it never disappears.
+  const label = info ? resolveModelLabel(info) : fallbackModelLabel(current);
 
   const handleClick = () => {
     window.dispatchEvent(new CustomEvent(SWITCH_MODEL_EVENT));
@@ -79,7 +87,7 @@ export function ModelTag() {
 
   return (
     <Tag title={`Switch model (${rotateHint})`} onClick={handleClick}>
-      <span>{resolveModelLabel(info)}</span>
+      <span>{label}</span>
     </Tag>
   );
 }

@@ -24,6 +24,7 @@ export async function sendMessageHandler(
     return;
   }
   const inputMode = message.payload?.inputMode as string;
+  const model = message.payload?.model as string | undefined;
   // 새 세션 여부는 webview가 판정해 payload로 알려준다. webview가 새 세션에도 sessionId를
   // 미리 생성해 보내므로(ChatStreamContext), 백엔드에서 sessionId 유무로는 판정할 수 없다.
   const isNewSession = message.payload?.isNewSession === true;
@@ -38,7 +39,7 @@ export async function sendMessageHandler(
     if (content || (attachments && attachments.length > 0)) {
       // Subscribe and ensure process is running (waits for spawn)
       connections.subscribe(connectionId, resolvedSessionId);
-      await ensureClaudeProcess(connections, connectionId, workingDir, resolvedSessionId, inputMode, bridge);
+      await ensureClaudeProcess(connections, connectionId, workingDir, resolvedSessionId, inputMode, bridge, model);
 
       // Send content to process stdin
       sendMessageToProcess(connections, resolvedSessionId, content, attachments);

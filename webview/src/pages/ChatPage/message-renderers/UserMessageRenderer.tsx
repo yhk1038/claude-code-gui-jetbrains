@@ -10,7 +10,11 @@ import { parseUserContent } from './utils/parseUserContent';
 import { tokenizeMessagePaths } from './utils/tokenizeMessagePaths';
 import { MessagePathChip } from './components/MessagePathChip';
 import { InterruptedMessageRenderer } from './InterruptedMessageRenderer';
+import { NotificationLine } from './NotificationMessageRenderer';
 import { MessageBox } from './components/MessageBox';
+import { useCliConfig } from '@/contexts/CliConfigContext';
+import { modelChangeLabel } from '@/types/models';
+import type { ModelInfo } from '@/types/slashCommand';
 
 interface UserMessageRendererProps {
   message: LoadedMessageDto;
@@ -21,6 +25,7 @@ const INTERRUPTED_FOR_TOOL_USE_TEXT = '[Request interrupted by user for tool use
 
 export const UserMessageRenderer: React.FC<UserMessageRendererProps> = ({ message }) => {
   const { copied, copy } = useCopyToClipboard();
+  const { controlResponse } = useCliConfig();
   const parsedContent = parseUserContent(getTextContent(message));
 
   const imageBlocks = useMemo(() => {
@@ -51,6 +56,29 @@ export const UserMessageRenderer: React.FC<UserMessageRendererProps> = ({ messag
   // Skip rendering for local-command-caveat without text or command name
   if (parsedContent.hasLocalCommandCaveat && !parsedContent.text && !parsedContent.commandName) {
     return null;
+  }
+
+  // A model change (we trigger it via set_model) surfaces as a `/model` command
+  // output: live sends arrive as a local-command-stdout echo ("Set model to
+  // <id>"); reloads replay the same change wrapped as a `/model` command entry.
+  // Render BOTH as one centered notice with a friendly model label — never as a
+  // left-side bubble and never split into two — so it reads identically live
+  // and on reload.
+  if (parsedContent.hasLocalCommandStdout || parsedContent.commandName === 'model') {
+    const models: ModelInfo[] = controlResponse?.response?.response?.models ?? [];
+    const label = modelChangeLabel(parsedContent.text, models);
+    // Always render the echo at its correct chronological position. The matching
+    // ephemeral local notification (added on model switch for instant feedback)
+    // hides itself once this echo exists — see NotificationMessageRenderer — so
+    // they converge to a single centered line at the right spot.
+    if (label) {
+      return <NotificationLine text={label} />;
+    }
+    // A `/model` entry with no parseable model line carries no useful text —
+    // drop the redundant bubble rather than show an empty notice.
+    if (parsedContent.commandName === 'model') {
+      return null;
+    }
   }
 
   // Render command-name style messages

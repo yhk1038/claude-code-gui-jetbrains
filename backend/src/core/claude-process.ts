@@ -20,6 +20,48 @@ const INPUT_MODE_TO_CLI_FLAG: Record<string, string> = {
   auto_edit: 'acceptEdits',
 };
 
+/**
+ * Build the argv for spawning the Claude CLI in interactive print mode.
+ * Extracted as a pure function so the flag composition (session flag,
+ * permission mode, pinned model) is unit-testable without spawning a process.
+ */
+export function buildClaudeArgs(
+  sessionFlag: string,
+  targetSessionId: string,
+  inputMode: string,
+  model?: string,
+): string[] {
+  const args: string[] = [
+    '-p',
+    '--output-format',
+    'stream-json',
+    '--input-format',
+    'stream-json',
+    '--verbose',
+    '--include-partial-messages',
+    '--permission-prompt-tool',
+    'stdio',
+    sessionFlag,
+    targetSessionId,
+  ];
+
+  const cliFlag = INPUT_MODE_TO_CLI_FLAG[inputMode];
+  if (cliFlag) {
+    args.push('--permission-mode', cliFlag);
+  }
+
+  // Pin the user-selected model so the spawn honors it even when the previous
+  // process has exited — set_model only reaches a live process, so without this
+  // a model picked while idle would be lost and the CLI would fall back to its
+  // default. 'default' is that very fallback, so passing it is redundant; omit
+  // it to avoid handing the CLI a no-op alias.
+  if (model && model !== 'default') {
+    args.push('--model', model);
+  }
+
+  return args;
+}
+
 // result 이벤트 수신 여부 추적 (비정상 종료 시 에러 전파 판단용)
 const sessionsWithResult = new Set<string>();
 
@@ -47,6 +89,7 @@ export async function ensureClaudeProcess(
   targetSessionId: string,
   inputMode: string,
   bridge: Bridge,
+  model?: string,
 ): Promise<void> {
   // Standalone mode on Windows can't reach a WSL project's tooling: cmd.exe rejects
   // the UNC cwd and the CLI would use PowerShell instead of bash. Guide the user to
@@ -83,24 +126,7 @@ export async function ensureClaudeProcess(
   console.error('[node-backend]', `Working directory: ${workingDir}`);
   console.error('[node-backend]', `Session: ${targetSessionId} (${sessionFlag})`);
 
-  const args: string[] = [
-    '-p',
-    '--output-format',
-    'stream-json',
-    '--input-format',
-    'stream-json',
-    '--verbose',
-    '--include-partial-messages',
-    '--permission-prompt-tool',
-    'stdio',
-    sessionFlag,
-    targetSessionId,
-  ];
-
-  const cliFlag = INPUT_MODE_TO_CLI_FLAG[inputMode];
-  if (cliFlag) {
-    args.push('--permission-mode', cliFlag);
-  }
+  const args = buildClaudeArgs(sessionFlag, targetSessionId, inputMode, model);
 
   console.error('[node-backend]', `Command: ${Claude.command} ${args.join(' ')}`);
 
