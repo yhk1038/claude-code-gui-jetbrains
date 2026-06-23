@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { homedir } from 'os';
+import { getClaudeConfigDir } from './claudeConfigDir';
 
 /** OS 중립적 경로 정규화: 비영문자/비숫자를 모두 '-'로 치환 */
 export function normalizeProjectPath(workingDir: string): string {
@@ -7,5 +7,5 @@ export function normalizeProjectPath(workingDir: string): string {
 }
 
 export async function getProjectSessionsPath(workingDir: string): Promise<string> {
-  return join(homedir(), '.claude', 'projects', normalizeProjectPath(workingDir));
+  return join(getClaudeConfigDir(), 'projects', normalizeProjectPath(workingDir));
 }

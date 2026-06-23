@@ -3,6 +3,7 @@ import { join } from 'path';
 import { homedir } from 'os';
 import { readMergedSettings } from './settings';
 import { readMergedClaudeSettings } from './claude-settings';
+import { getClaudeConfigDir } from './claudeConfigDir';
 
 const DEBOUNCE_MS = 300;
 
@@ -31,7 +32,7 @@ export class SettingsFileWatcher {
    * Call this once on server startup.
    */
   startGlobalWatchers(): void {
-    const claudeDir = join(homedir(), '.claude');
+    const claudeDir = getClaudeConfigDir();
     const appDir = join(homedir(), '.claude-code-gui');
 
     this.watchDir(claudeDir, 'settings.json', async () => {
