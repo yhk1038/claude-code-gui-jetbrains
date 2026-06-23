@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, act, waitFor } from '@testing-library/react';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { SettingsProvider } from '../SettingsContext';
 import { SettingKey, ThemeMode } from '@/types/settings';
 import { _resetRuntimeCache } from '@/config/environment';
+import { createTestQueryClient } from '@/hooks/queries/__tests__/testQueryClient';
 
 // ---------------------------------------------------------------------------
 // Bridge / WorkingDir mocks (minimal — enough for SettingsProvider to mount)
@@ -108,10 +110,13 @@ function seedTheme(theme: ThemeMode) {
 
 function renderWithTheme(theme: ThemeMode) {
   seedTheme(theme);
+  const client = createTestQueryClient();
   return render(
-    <SettingsProvider>
-      <div data-testid="child">child</div>
-    </SettingsProvider>,
+    <QueryClientProvider client={client}>
+      <SettingsProvider>
+        <div data-testid="child">child</div>
+      </SettingsProvider>
+    </QueryClientProvider>,
   );
 }
 

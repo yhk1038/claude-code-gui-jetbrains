@@ -1,15 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useBridgeContext } from '@/contexts/BridgeContext';
-
-// Raw data from backend (matches ClaudeAuthStatus + profile API additions)
-interface RawAccountData {
-  loggedIn?: boolean;
-  authMethod?: string;       // "claude.ai", "github.com", "api-key", etc.
-  email?: string | null;
-  subscriptionType?: string | null;  // "max", "pro", "team", "enterprise", "claude_api", or null
-  orgId?: string | null;
-  orgName?: string | null;
-}
+import { useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { MessageType } from '@/shared';
+import { useAccountQuery } from '@/hooks/queries/useAccountQuery';
 
 // Display-ready data for the UI
 interface AccountInfo {
@@ -46,38 +38,28 @@ function formatPlan(raw: string | null | undefined): string | null {
 }
 
 export function useAccountData(): UseAccountDataReturn {
-  const { isConnected, send } = useBridgeContext();
-  const [data, setData] = useState<AccountInfo | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const accountQuery = useAccountQuery();
 
-  const fetchAccount = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const result = await send('GET_ACCOUNT', {});
-      if (result.status === 'ok' && result.account) {
-        const rawData = result.account as RawAccountData;
-        setData({
-          authMethod: formatAuthMethod(rawData.authMethod),
-          email: rawData.email ?? null,
-          plan: formatPlan(rawData.subscriptionType),
-        });
-      } else {
-        setError(result.error as string | null ?? 'Failed to fetch account data');
+  // Shares the `[GET_ACCOUNT]` cache with AuthContext, so opening this modal no
+  // longer fires its own GET_ACCOUNT — it reads the already-fetched snapshot.
+  const raw = accountQuery.data?.account;
+  const data: AccountInfo | null = raw
+    ? {
+        authMethod: formatAuthMethod(raw.authMethod),
+        email: raw.email ?? null,
+        plan: formatPlan(raw.subscriptionType),
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [send]);
+    : null;
 
-  useEffect(() => {
-    if (isConnected) {
-      fetchAccount();
-    }
-  }, [isConnected, fetchAccount]);
+  const refetch = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: [MessageType.GET_ACCOUNT] });
+  }, [queryClient]);
 
-  return { data, isLoading, error, refetch: fetchAccount };
+  return {
+    data,
+    isLoading: accountQuery.isLoading,
+    error: accountQuery.isError ? (accountQuery.error?.message ?? 'Unknown error') : null,
+    refetch,
+  };
 }

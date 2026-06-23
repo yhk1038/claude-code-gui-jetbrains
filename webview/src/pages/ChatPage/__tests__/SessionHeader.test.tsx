@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, within, act } from '@testing-library/react';
 import { OPEN_SESSION_DROPDOWN_EVENT } from '@/commandPalette/sections/context/items';
 import userEvent from '@testing-library/user-event';
+import { useState, type ReactNode } from 'react';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { createTestQueryClient } from '@/hooks/queries/__tests__/testQueryClient';
 import { SessionHeader } from '../SessionHeader/index';
 import { SessionMetaDto } from '../../../dto';
 import type { SessionState } from '../../../types';
@@ -73,6 +76,12 @@ vi.mock('../../../contexts/ChatStreamContext', () => ({
   }),
 }));
 
+// TokenBatteryButton → useUsageData → useUsageQuery needs a QueryClient.
+function queryWrapper({ children }: { children: ReactNode }) {
+  const [client] = useState(() => createTestQueryClient());
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+}
+
 beforeEach(() => {
   mockSwitchSession.mockReset();
   mockLoadSessions.mockReset();
@@ -100,7 +109,7 @@ beforeEach(() => {
 describe('SessionHeader', () => {
   it('드롭다운 토글 버튼 클릭 시 드롭다운이 열림/닫힘', async () => {
     const user = userEvent.setup();
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
 
     // 초기 상태: 드롭다운 닫힘
     expect(screen.queryByPlaceholderText('Search sessions...')).not.toBeInTheDocument();
@@ -116,7 +125,7 @@ describe('SessionHeader', () => {
   });
 
   it('/resume 이벤트(open-session-dropdown) 디스패치 시 드롭다운이 열리고 검색창에 포커스', async () => {
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
 
     // 초기 상태: 드롭다운 닫힘
     expect(screen.queryByPlaceholderText('Search sessions...')).not.toBeInTheDocument();
@@ -133,7 +142,7 @@ describe('SessionHeader', () => {
 
   it('방향키(ArrowDown)로 세션을 이동하고 Enter로 진입', async () => {
     const user = userEvent.setup();
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
     await user.click(screen.getByRole('button', { name: /First Chat/i }));
     const searchInput = screen.getByPlaceholderText('Search sessions...');
 
@@ -147,7 +156,7 @@ describe('SessionHeader', () => {
 
   it('하이라이트된 세션이 없을 때 Enter는 아무 세션도 진입하지 않음', async () => {
     const user = userEvent.setup();
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
     await user.click(screen.getByRole('button', { name: /First Chat/i }));
     const searchInput = screen.getByPlaceholderText('Search sessions...');
 
@@ -159,7 +168,7 @@ describe('SessionHeader', () => {
 
   it('Escape로 드롭다운이 닫힘', async () => {
     const user = userEvent.setup();
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
     await user.click(screen.getByRole('button', { name: /First Chat/i }));
     const searchInput = screen.getByPlaceholderText('Search sessions...');
     expect(searchInput).toBeInTheDocument();
@@ -171,7 +180,7 @@ describe('SessionHeader', () => {
 
   it('드롭다운이 열린 상태에서 Cmd/Ctrl+Shift+P로 세션 목록을 새로고침', async () => {
     const user = userEvent.setup();
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
     await user.click(screen.getByRole('button', { name: /First Chat/i }));
 
     mockLoadSessions.mockClear();
@@ -182,7 +191,7 @@ describe('SessionHeader', () => {
 
   it('세션 아이디(uuid)로 검색하면 해당 세션이 표시됨', async () => {
     const user = userEvent.setup();
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
     await user.click(screen.getByRole('button', { name: /First Chat/i }));
 
     const searchInput = screen.getByPlaceholderText('Search sessions...');
@@ -196,7 +205,7 @@ describe('SessionHeader', () => {
 
   it('드롭다운 외부 클릭 시 드롭다운이 닫힘', async () => {
     const user = userEvent.setup();
-    const { container } = render(<SessionHeader />);
+    const { container } = render(<SessionHeader />, { wrapper: queryWrapper });
 
     // 드롭다운 열기
     const toggleButton = screen.getByRole('button', { name: /First Chat/i });
@@ -210,7 +219,7 @@ describe('SessionHeader', () => {
 
   it('세션 목록을 올바르게 렌더링', async () => {
     const user = userEvent.setup();
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
 
     // 드롭다운 열기
     await user.click(screen.getByRole('button', { name: /First Chat/i }));
@@ -224,7 +233,7 @@ describe('SessionHeader', () => {
 
   it('검색어 입력 시 필터링된 세션 목록 표시', async () => {
     const user = userEvent.setup();
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
 
     // 드롭다운 열기
     await user.click(screen.getByRole('button', { name: /First Chat/i }));
@@ -242,7 +251,7 @@ describe('SessionHeader', () => {
 
   it('검색어가 없을 때 "No matching sessions" 메시지 표시', async () => {
     const user = userEvent.setup();
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
 
     // 드롭다운 열기
     await user.click(screen.getByRole('button', { name: /First Chat/i }));
@@ -259,7 +268,7 @@ describe('SessionHeader', () => {
     const user = userEvent.setup();
     mockSessionCtxValue.sessions = [];
     mockSessionCtxValue.currentSession = null;
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
 
     // 드롭다운 열기 (세션 없으면 제목이 Past Conversations)
     await user.click(screen.getByRole('button', { name: /Past Conversations/i }));
@@ -270,7 +279,7 @@ describe('SessionHeader', () => {
 
   it('세션 클릭 시 switchSession 호출 및 드롭다운 닫힘', async () => {
     const user = userEvent.setup();
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
 
     // 드롭다운 열기
     await user.click(screen.getByRole('button', { name: /First Chat/i }));
@@ -292,7 +301,7 @@ describe('SessionHeader', () => {
 
   it('새 탭 버튼 클릭 시 openNewTab 호출', async () => {
     const user = userEvent.setup();
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
 
     // 새 탭 버튼 클릭
     const newTabButton = screen.getByTitle('Open New Tab');
@@ -305,7 +314,7 @@ describe('SessionHeader', () => {
   it('새 탭 버튼이 항상 활성화되어 있음', () => {
     mockSessionCtxValue.currentSessionId = null;
     mockSessionCtxValue.currentSession = null;
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
 
     // 버튼이 활성화되어 있음 확인
     const newTabButton = screen.getByTitle('Open New Tab');
@@ -314,7 +323,7 @@ describe('SessionHeader', () => {
 
   it('현재 세션이 하이라이트 스타일로 표시', async () => {
     const user = userEvent.setup();
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
 
     // 드롭다운 열기
     await user.click(screen.getByRole('button', { name: /First Chat/i }));
@@ -331,7 +340,7 @@ describe('SessionHeader', () => {
 
   it('비활성 세션은 다른 스타일로 표시', async () => {
     const user = userEvent.setup();
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
 
     // 드롭다운 열기
     await user.click(screen.getByRole('button', { name: /First Chat/i }));
@@ -348,7 +357,7 @@ describe('SessionHeader', () => {
 
   it('세션 제목이 없을 때 "Past Conversations" 표시', () => {
     mockSessionCtxValue.currentSession = null;
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
 
     // "Past Conversations" 표시 확인
     expect(screen.getByText('Past Conversations')).toBeInTheDocument();
@@ -356,7 +365,7 @@ describe('SessionHeader', () => {
 
   it('세션에 updatedAt이 있을 때 상대 시간 표시', async () => {
     const user = userEvent.setup();
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
 
     // 드롭다운 열기
     await user.click(screen.getByRole('button', { name: /First Chat/i }));
@@ -374,7 +383,7 @@ describe('SessionHeader', () => {
 
   it('regex 검색이 올바르게 작동', async () => {
     const user = userEvent.setup();
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
 
     // 드롭다운 열기
     await user.click(screen.getByRole('button', { name: /First Chat/i }));
@@ -391,7 +400,7 @@ describe('SessionHeader', () => {
 
   it('잘못된 regex 검색어일 때 fallback으로 includes 검색', async () => {
     const user = userEvent.setup();
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
 
     // 드롭다운 열기
     await user.click(screen.getByRole('button', { name: /First Chat/i }));
@@ -406,7 +415,7 @@ describe('SessionHeader', () => {
 
   it('검색어 초기화 시 모든 세션이 다시 표시', async () => {
     const user = userEvent.setup();
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
 
     // 드롭다운 열기
     await user.click(screen.getByRole('button', { name: /First Chat/i }));
@@ -430,7 +439,7 @@ describe('SessionHeader', () => {
 
   it('세션 선택 시 검색어 초기화', async () => {
     const user = userEvent.setup();
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
 
     // 드롭다운 열기
     await user.click(screen.getByRole('button', { name: /First Chat/i }));
@@ -458,7 +467,7 @@ describe('SessionHeader', () => {
 describe('SessionHeader - 날짜별 그룹화', () => {
   it('세션이 올바른 그룹 라벨 아래에 표시됨', async () => {
     const user = userEvent.setup();
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
 
     await user.click(screen.getByRole('button', { name: /First Chat/i }));
 
@@ -474,7 +483,7 @@ describe('SessionHeader - 날짜별 그룹화', () => {
 
   it('검색 필터링 후에도 그룹화가 적용됨', async () => {
     const user = userEvent.setup();
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
 
     await user.click(screen.getByRole('button', { name: /First Chat/i }));
     await user.type(screen.getByPlaceholderText('Search sessions...'), 'API');
@@ -490,7 +499,7 @@ describe('SessionHeader - 날짜별 그룹화', () => {
       ...mockSessions,
       { id: 'session-4', title: 'Old Session', updatedAt: undefined as unknown as Date, createdAt: daysAgo(400), messageCount: 1 },
     ];
-    render(<SessionHeader />);
+    render(<SessionHeader />, { wrapper: queryWrapper });
 
     await user.click(screen.getByRole('button', { name: /First Chat/i }));
 

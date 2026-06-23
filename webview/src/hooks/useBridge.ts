@@ -5,7 +5,7 @@ type MessageHandler = (message: IPCMessage) => void;
 
 interface UseBridgeReturn {
   isConnected: boolean;
-  send: (type: string, payload: Record<string, unknown>) => Promise<any>;
+  send: <T = any>(type: string, payload?: Record<string, unknown>) => Promise<T>;
   subscribe: (type: string, handler: MessageHandler) => () => void;
   lastError: Error | null;
 }

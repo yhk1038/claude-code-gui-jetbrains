@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { createTestQueryClient } from '@/hooks/queries/__tests__/testQueryClient';
 
 const { mockSend } = vi.hoisted(() => ({ mockSend: vi.fn() }));
 let connected = true;
@@ -11,7 +13,14 @@ vi.mock('../BridgeContext', () => ({
 
 import { AuthProvider, useAuthContext } from '../AuthContext';
 
-const wrapper = ({ children }: { children: ReactNode }) => <AuthProvider>{children}</AuthProvider>;
+const wrapper = ({ children }: { children: ReactNode }) => {
+  const [client] = useState(() => createTestQueryClient());
+  return (
+    <QueryClientProvider client={client}>
+      <AuthProvider>{children}</AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 describe('AuthContext', () => {
   beforeEach(() => {

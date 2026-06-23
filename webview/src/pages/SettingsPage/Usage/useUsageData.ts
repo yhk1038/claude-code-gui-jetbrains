@@ -1,7 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useBridgeContext } from '@/contexts/BridgeContext';
 import { useChatStreamContext } from '@/contexts/ChatStreamContext';
 import type { UsageResponse, UsageErrorKind } from '@/types/usage';
+import { MessageType } from '@/shared';
+import { useUsageQuery, normalizeUsage, type RawUsageResponse } from '@/hooks/queries/useUsageQuery';
 
 interface UseUsageDataReturn {
   data: UsageResponse | null;
@@ -12,77 +15,35 @@ interface UseUsageDataReturn {
   refresh: () => Promise<void>;
 }
 
-interface FetchUsageOptions {
-  force?: boolean;
-}
-
-const ERROR_KINDS: ReadonlyArray<UsageErrorKind> = ['ccb_missing', 'npm_missing', 'auth', 'network', 'unknown'];
-
 export function useUsageData(): UseUsageDataReturn {
-  const { isConnected, send } = useBridgeContext();
+  const { send } = useBridgeContext();
+  const queryClient = useQueryClient();
   const { messages } = useChatStreamContext();
-  const [data, setData] = useState<UsageResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [errorKind, setErrorKind] = useState<UsageErrorKind | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const usageQuery = useUsageQuery();
 
-  const fetchUsage = useCallback(async (options?: FetchUsageOptions) => {
-    setIsLoading(true);
-    setError(null);
-    setErrorKind(null);
-    try {
-      const result = await send('GET_USAGE', { force: options?.force === true });
-      if (result.usage) {
-        setData(result.usage as UsageResponse);
-        setLastUpdated(new Date());
-        window.dispatchEvent(new CustomEvent('usage-data-updated', { detail: result.usage }));
-      }
-      if (result.status !== 'ok') {
-        setError(result.error || 'Failed to fetch usage data');
-        const raw = (result as { error_kind?: string }).error_kind;
-        const kind = ERROR_KINDS.includes(raw as UsageErrorKind) ? (raw as UsageErrorKind) : null;
-        setErrorKind(kind);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-      setErrorKind(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [send]);
-
-  // 초기 연결 시 fetch
+  // Re-fetch on conversation changes (new message, session switch, clear). The
+  // shared cache means every useUsageData consumer reacts to one refetch — the
+  // old `usage-data-updated` CustomEvent that hand-rolled cross-instance sync is
+  // no longer needed.
   useEffect(() => {
-    if (isConnected) {
-      fetchUsage();
-    }
-  }, [isConnected, fetchUsage]);
-
-  // 다른 인스턴스가 fetch 성공 시 데이터 동기화
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const customEvent = e as CustomEvent<UsageResponse>;
-      setData(customEvent.detail);
-      setLastUpdated(new Date());
-      setError(null);
-      setErrorKind(null);
-    };
-    window.addEventListener('usage-data-updated', handler);
-    return () => window.removeEventListener('usage-data-updated', handler);
-  }, []);
-
-  // messages 변경 시(새 메시지 수신, 세션 복원, 클리어) refresh
-  useEffect(() => {
-    if (isConnected) {
-      fetchUsage();
-    }
-  // fetchUsage는 send가 안정적인 한 변하지 않으므로 의존성에서 제외해도 무방하나,
-  // eslint 규칙 준수를 위해 포함. messages.length만 감지 대상으로 삼음.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    void queryClient.invalidateQueries({ queryKey: [MessageType.GET_USAGE] });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length]);
 
-  const refresh = useCallback(() => fetchUsage({ force: true }), [fetchUsage]);
+  // Explicit refresh bypasses the backend's usage cache (force: true). Write the
+  // result straight into the shared cache so all consumers update at once.
+  const refresh = useCallback(async () => {
+    const result = (await send(MessageType.GET_USAGE, { force: true })) as RawUsageResponse;
+    queryClient.setQueryData([MessageType.GET_USAGE], normalizeUsage(result));
+  }, [send, queryClient]);
 
-  return { data, isLoading, error, errorKind, lastUpdated, refresh };
+  const result = usageQuery.data;
+  return {
+    data: result?.usage ?? null,
+    isLoading: usageQuery.isLoading,
+    error: result?.error ?? (usageQuery.isError ? (usageQuery.error?.message ?? 'Unknown error') : null),
+    errorKind: result?.errorKind ?? null,
+    lastUpdated: usageQuery.dataUpdatedAt ? new Date(usageQuery.dataUpdatedAt) : null,
+    refresh,
+  };
 }

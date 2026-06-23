@@ -1,5 +1,7 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
-import { useBridgeContext } from './BridgeContext';
+import { createContext, useContext, useCallback, useEffect, ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { MessageType } from '@/shared';
+import { useAccountQuery } from '@/hooks/queries/useAccountQuery';
 
 interface AuthContextValue {
   /** null = not yet determined; true/false = known login state. */
@@ -21,51 +23,32 @@ interface AuthProviderProps {
  * Used to (a) gate chat entry for logged-out users and (b) auto-hide the inline
  * login CTA once the user is authenticated. Re-checks on window focus so a login
  * that completes in the browser is reflected without a manual refresh.
+ *
+ * Backed by the shared `useAccountQuery` so this provider and the account modal
+ * share one GET_ACCOUNT request/cache instead of each fetching independently.
  */
 export function AuthProvider(props: AuthProviderProps) {
   const { children } = props;
-  const { isConnected, send } = useBridgeContext();
-  const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
+  const queryClient = useQueryClient();
+  const accountQuery = useAccountQuery();
 
-  // Single-flight guard: a focus ping-pong can fire window 'focus' dozens of times
-  // per second; without this, each one launches a concurrent GET_ACCOUNT, and the
-  // CLI buckles under the burst and returns status='error' — which used to be read
-  // as "logged out". Collapsing to one in-flight request keeps the burst harmless.
-  const inFlightRef = useRef(false);
+  // Derive login state from the shared query:
+  // - data present  → resolved loggedIn (status='error' resolves to false)
+  // - no data yet   → undetermined (null): either still pending, or a transport
+  //   failure rejected with no prior success — never flip a known state on it.
+  const loggedIn: boolean | null = accountQuery.data ? accountQuery.data.loggedIn : null;
 
   const refetch = useCallback(async () => {
-    if (inFlightRef.current) return;
-    inFlightRef.current = true;
-    try {
-      const result = await send('GET_ACCOUNT', {});
-      if (result?.status === 'ok' && result.account) {
-        const account = result.account as { loggedIn?: boolean };
-        setLoggedIn(account.loggedIn === true);
-      } else {
-        // status 'error' is ambiguous: it can mean credentials-not-found (truly
-        // logged out) OR a transient CLI failure (e.g. concurrent invocations).
-        // Never flip an already-known-logged-in user to logged out on it; only an
-        // undetermined (null) state resolves to false. A real logout surfaces as a
-        // status 'ok' with loggedIn:false, which the branch above handles.
-        setLoggedIn((prev) => (prev === true ? true : false));
-      }
-    } catch {
-      // Transient failure (e.g. socket hiccup): keep the prior known state.
-    } finally {
-      inFlightRef.current = false;
-    }
-  }, [send]);
-
-  useEffect(() => {
-    if (isConnected) void refetch();
-  }, [isConnected, refetch]);
+    await queryClient.invalidateQueries({ queryKey: [MessageType.GET_ACCOUNT] });
+  }, [queryClient]);
 
   useEffect(() => {
     // Debounce window-focus re-checks: coalesce a focus storm into at most one
-    // re-check per second so a focus ping-pong cannot stampede GET_ACCOUNT.
+    // re-check per second. react-query's in-flight dedup makes any residual
+    // overlap harmless (it no longer needs the old manual single-flight guard).
     let timer: number | null = null;
     const onFocus = () => {
-      if (!isConnected || timer !== null) return;
+      if (timer !== null) return;
       timer = window.setTimeout(() => {
         timer = null;
         void refetch();
@@ -76,7 +59,7 @@ export function AuthProvider(props: AuthProviderProps) {
       window.removeEventListener('focus', onFocus);
       if (timer !== null) window.clearTimeout(timer);
     };
-  }, [isConnected, refetch]);
+  }, [refetch]);
 
   return (
     <AuthContext.Provider value={{ loggedIn, refetch }}>

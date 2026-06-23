@@ -1,7 +1,9 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ClaudeSettingsState, DEFAULT_CLAUDE_SETTINGS } from '@/types/claude-settings';
-import { useBridge } from '@/hooks/useBridge';
+import { useBridgeContext } from '@/contexts/BridgeContext';
 import { useWorkingDir } from '@/contexts/WorkingDirContext';
+import { MessageType } from '@/shared';
 
 interface ClaudeSettingsContextValue {
   settings: ClaudeSettingsState;
@@ -16,6 +18,13 @@ interface ClaudeSettingsContextValue {
   refreshSettings: () => Promise<void>;
 }
 
+interface ClaudeSettingsResponse {
+  status?: string;
+  settings?: ClaudeSettingsState;
+  overrides?: string[];
+  error?: string;
+}
+
 const ClaudeSettingsContext = createContext<ClaudeSettingsContextValue | null>(null);
 
 interface ClaudeSettingsProviderProps {
@@ -23,149 +32,121 @@ interface ClaudeSettingsProviderProps {
 }
 
 export function ClaudeSettingsProvider({ children }: ClaudeSettingsProviderProps) {
-  const [settings, setSettings] = useState<ClaudeSettingsState>(DEFAULT_CLAUDE_SETTINGS);
-  const [isLoading, setIsLoading] = useState(true);
-  const [overrides, setOverrides] = useState<string[]>([]);
-  const [scopeSettings, setScopeSettings] = useState<Partial<ClaudeSettingsState>>({});
-  const [scope, setScope] = useState<'global' | 'project'>('global');
-  const { isConnected, send, subscribe } = useBridge();
+  const { isConnected, send, subscribe } = useBridgeContext();
   const { workingDirectory } = useWorkingDir();
+  const queryClient = useQueryClient();
+  const [scope, setScope] = useState<'global' | 'project'>('global');
 
-  // Load settings from bridge
-  const loadFromBridge = useCallback(async (): Promise<boolean> => {
-    const maxRetries = 3;
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      try {
-        const response = await send('GET_CLAUDE_SETTINGS', { workingDir: workingDirectory });
-        if (response?.settings) {
-          setSettings(response.settings as ClaudeSettingsState);
-          if (response?.overrides) {
-            setOverrides(response.overrides as string[]);
-          }
-          return true;
-        }
-      } catch (error) {
-        if (attempt < maxRetries - 1) {
-          await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
-        } else {
-          console.warn('[ClaudeSettingsContext] Failed to load settings from bridge after retries');
-        }
-      }
-    }
-    return false;
-  }, [send, workingDirectory]);
+  // queryKey base is the message type itself (see CLAUDE.md consistent-naming).
+  // 'merged' is the effective settings the app consumes; the scope variant is the
+  // raw per-scope values the settings page edits.
+  const mergedKey = [MessageType.GET_CLAUDE_SETTINGS, 'merged', workingDirectory] as const;
+  const scopeKey = [MessageType.GET_CLAUDE_SETTINGS, scope, workingDirectory] as const;
 
-  // Load scope-specific (raw) settings for settings page display
-  const loadScopeSettings = useCallback(async (targetScope: 'global' | 'project') => {
-    try {
-      const response = await send('GET_CLAUDE_SETTINGS', {
-        workingDir: workingDirectory,
-        scope: targetScope,
-      });
-      if (response?.settings) {
-        setScopeSettings(response.settings as Partial<ClaudeSettingsState>);
-      }
-    } catch (error) {
-      console.warn('[ClaudeSettingsContext] Failed to load scope settings:', error);
-    }
-  }, [send, workingDirectory]);
+  const mergedQuery = useQuery<ClaudeSettingsResponse>({
+    queryKey: mergedKey,
+    queryFn: () => send<ClaudeSettingsResponse>(MessageType.GET_CLAUDE_SETTINGS, { workingDir: workingDirectory }),
+    enabled: isConnected,
+  });
 
-  // Initial load on mount
-  useEffect(() => {
-    loadFromBridge().finally(() => setIsLoading(false));
-  }, [loadFromBridge]);
+  const scopeQuery = useQuery<ClaudeSettingsResponse>({
+    queryKey: scopeKey,
+    queryFn: () => send<ClaudeSettingsResponse>(MessageType.GET_CLAUDE_SETTINGS, { workingDir: workingDirectory, scope }),
+    enabled: isConnected,
+  });
 
-  // Reload scope-specific settings when scope changes or connection established
-  useEffect(() => {
-    if (isConnected) {
-      loadScopeSettings(scope);
-    }
-  }, [isConnected, scope, loadScopeSettings]);
+  const settings = mergedQuery.data?.settings ?? DEFAULT_CLAUDE_SETTINGS;
+  const overrides = mergedQuery.data?.overrides ?? [];
+  const scopeSettings = scopeQuery.data?.settings ?? {};
+  const isLoading = mergedQuery.isLoading;
 
-  // Listen for external changes from backend
+  // External changes pushed by the backend: patch the merged cache in place and
+  // invalidate every GET_CLAUDE_SETTINGS variant so scope reads re-sync.
   useEffect(() => {
     if (!isConnected) return;
-
-    const unsubscribe = subscribe('CLAUDE_SETTINGS_CHANGED', (message) => {
+    const unsubscribe = subscribe(MessageType.CLAUDE_SETTINGS_CHANGED, (message) => {
       const payload = message.payload as Record<string, unknown>;
       const newSettings = payload?.settings as ClaudeSettingsState | undefined;
       const newOverrides = payload?.overrides as string[] | undefined;
       if (newSettings) {
-        console.log('[ClaudeSettingsContext] Settings changed externally:', newSettings);
-        setSettings(newSettings);
+        queryClient.setQueryData<ClaudeSettingsResponse>(
+          [MessageType.GET_CLAUDE_SETTINGS, 'merged', workingDirectory],
+          (old) => ({ ...old, settings: newSettings, ...(newOverrides ? { overrides: newOverrides } : {}) }),
+        );
       }
-      if (newOverrides) setOverrides(newOverrides);
-      loadScopeSettings(scope);
+      // Mark scope variants stale without an immediate refetch — they re-sync on
+      // next access, so an external change never triggers a redundant GET.
+      queryClient.invalidateQueries({ queryKey: [MessageType.GET_CLAUDE_SETTINGS], refetchType: 'none' });
     });
-
     return unsubscribe;
-  }, [isConnected, subscribe, scope, loadScopeSettings]);
+  }, [isConnected, subscribe, queryClient, workingDirectory]);
 
-  // Update individual setting using current scope
+  const persist = useCallback(
+    async <K extends keyof ClaudeSettingsState>(key: K, value: ClaudeSettingsState[K] | null, targetScope: 'global' | 'project') => {
+      const response = await send<ClaudeSettingsResponse>(MessageType.SAVE_CLAUDE_SETTINGS, {
+        key, value, scope: targetScope, workingDir: workingDirectory,
+      });
+      if (response?.status === 'error') throw new Error(response.error || 'Save failed');
+    },
+    [send, workingDirectory],
+  );
+
+  // Update at the current scope with an optimistic merged-cache patch.
   const updateSetting = useCallback(
     async <K extends keyof ClaudeSettingsState>(key: K, value: ClaudeSettingsState[K]) => {
-      const previousSettings = settings;
-      const newSettings = { ...settings, [key]: value };
-      setSettings(newSettings); // optimistic update
-
+      const key1 = [MessageType.GET_CLAUDE_SETTINGS, 'merged', workingDirectory];
+      const previous = queryClient.getQueryData<ClaudeSettingsResponse>(key1);
+      queryClient.setQueryData<ClaudeSettingsResponse>(key1, (old) => ({
+        ...old,
+        settings: { ...(old?.settings ?? DEFAULT_CLAUDE_SETTINGS), [key]: value },
+      }));
       try {
-        if (!isConnected) {
-          throw new Error('Bridge not connected');
-        }
-        const response = await send('SAVE_CLAUDE_SETTINGS', { key, value, scope, workingDir: workingDirectory });
-        if (response?.status === 'error') {
-          throw new Error(response.error || 'Save failed');
-        }
-        loadScopeSettings(scope);
-        return;
+        if (!isConnected) throw new Error('Bridge not connected');
+        await persist(key, value, scope);
+        queryClient.invalidateQueries({ queryKey: [MessageType.GET_CLAUDE_SETTINGS] });
       } catch (error) {
+        queryClient.setQueryData(key1, previous); // rollback
         console.warn('[ClaudeSettingsContext] Failed to save setting:', error);
-        setSettings(previousSettings);
         throw error;
       }
     },
-    [settings, isConnected, send, scope, workingDirectory, loadScopeSettings],
+    [queryClient, isConnected, persist, scope, workingDirectory],
   );
 
-  // Update individual setting with explicit scope
   const updateSettingWithScope = useCallback(
     async <K extends keyof ClaudeSettingsState>(key: K, value: ClaudeSettingsState[K], targetScope: 'global' | 'project') => {
-      const previousSettings = settings;
-      const newSettings = { ...settings, [key]: value };
-      setSettings(newSettings);
+      const key1 = [MessageType.GET_CLAUDE_SETTINGS, 'merged', workingDirectory];
+      const previous = queryClient.getQueryData<ClaudeSettingsResponse>(key1);
+      queryClient.setQueryData<ClaudeSettingsResponse>(key1, (old) => ({
+        ...old,
+        settings: { ...(old?.settings ?? DEFAULT_CLAUDE_SETTINGS), [key]: value },
+      }));
       try {
         if (!isConnected) throw new Error('Not connected');
-        const response = await send('SAVE_CLAUDE_SETTINGS', { key, value, scope: targetScope, workingDir: workingDirectory });
-        if (response?.status === 'error') throw new Error(response.error || 'Save failed');
+        await persist(key, value, targetScope);
+        queryClient.invalidateQueries({ queryKey: [MessageType.GET_CLAUDE_SETTINGS] });
       } catch (error) {
+        queryClient.setQueryData(key1, previous);
         console.warn('[ClaudeSettingsContext] Failed to save setting with scope:', error);
-        setSettings(previousSettings);
       }
     },
-    [settings, isConnected, send, workingDirectory],
+    [queryClient, isConnected, persist, workingDirectory],
   );
 
-  // Remove a project override, reverting to global value
+  // Remove a project override, reverting to the global value.
   const resetToGlobal = useCallback(async <K extends keyof ClaudeSettingsState>(key: K) => {
     if (!isConnected || !workingDirectory) return;
     try {
-      await send('SAVE_CLAUDE_SETTINGS', { key, value: null, scope: 'project', workingDir: workingDirectory });
-      await loadFromBridge();
-      await loadScopeSettings(scope);
+      await persist(key, null, 'project');
+      queryClient.invalidateQueries({ queryKey: [MessageType.GET_CLAUDE_SETTINGS] });
     } catch (error) {
       console.warn('[ClaudeSettingsContext] Failed to reset setting to global:', error);
     }
-  }, [isConnected, send, workingDirectory, loadFromBridge, scope, loadScopeSettings]);
+  }, [isConnected, persist, workingDirectory, queryClient]);
 
-  // Refresh settings
   const refreshSettings = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      await loadFromBridge();
-    } finally {
-      setIsLoading(false);
-    }
-  }, [loadFromBridge]);
+    await queryClient.invalidateQueries({ queryKey: [MessageType.GET_CLAUDE_SETTINGS] });
+  }, [queryClient]);
 
   return (
     <ClaudeSettingsContext.Provider value={{

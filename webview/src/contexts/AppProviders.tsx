@@ -1,5 +1,7 @@
 import { ReactNode, useCallback, useEffect, useRef } from 'react';
 import { BrowserRouter } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '@/lib/queryClient';
 import { BridgeProvider, useBridgeContext } from './BridgeContext';
 import { ApiProvider, useApiContext } from './ApiContext';
 import { SessionProvider, useSessionContext } from './SessionContext';
@@ -16,6 +18,7 @@ import { CommandPaletteProvider } from '../commandPalette/CommandPaletteProvider
 import { useApi } from './ApiContext';
 import { SessionState } from '../types';
 import type { LoadedMessageDto } from '../types';
+import { MessageType } from '@/shared';
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -101,7 +104,7 @@ function SessionLoader({ children }: { children: ReactNode }) {
 
   // 3. Subscribe to SESSION_LOADED — with sessionId guard against stale responses
   useEffect(() => {
-    return subscribe('SESSION_LOADED', (message) => {
+    return subscribe(MessageType.SESSION_LOADED, (message) => {
       if (message.payload?.messages) {
         const rawMessages = message.payload.messages as LoadedMessageDto[];
         const sid = message.payload?.sessionId as string | undefined;
@@ -203,23 +206,25 @@ function ChatProviderBridge(props: ChatProviderBridgeProps) {
 export function AppProviders({ children }: AppProvidersProps) {
   return (
     <BridgeProvider>
-      <BrowserRouter>
-        <ApiProvider>
-          <WorkingDirProvider>
-            <CliConfigProvider>
-            <SettingsProvider>
-              <ClaudeSettingsProvider>
-                <AuthProvider>
-                  <SessionProvider>
-                    <ChatProviderBridge>{children}</ChatProviderBridge>
-                  </SessionProvider>
-                </AuthProvider>
-              </ClaudeSettingsProvider>
-            </SettingsProvider>
-          </CliConfigProvider>
-          </WorkingDirProvider>
-        </ApiProvider>
-      </BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <ApiProvider>
+            <WorkingDirProvider>
+              <CliConfigProvider>
+              <SettingsProvider>
+                <ClaudeSettingsProvider>
+                  <AuthProvider>
+                    <SessionProvider>
+                      <ChatProviderBridge>{children}</ChatProviderBridge>
+                    </SessionProvider>
+                  </AuthProvider>
+                </ClaudeSettingsProvider>
+              </SettingsProvider>
+            </CliConfigProvider>
+            </WorkingDirProvider>
+          </ApiProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
     </BridgeProvider>
   );
 }

@@ -1,8 +1,10 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SettingsState, DEFAULT_SETTINGS, SettingKey, ThemeMode } from '@/types/settings';
 import { useBridgeContext } from '@/contexts/BridgeContext';
 import { useWorkingDir } from '@/contexts/WorkingDirContext';
 import { isJetBrains, getIdeTheme, subscribeIdeTheme } from '@/config/environment';
+import { MessageType } from '@/shared';
 
 interface SettingsContextValue {
   settings: SettingsState;
@@ -17,95 +19,68 @@ interface SettingsContextValue {
   refreshSettings: () => Promise<void>;
 }
 
+interface SettingsResponse {
+  status?: string;
+  settings?: SettingsState;
+  overrides?: string[];
+  error?: string;
+}
+
 const SettingsContext = createContext<SettingsContextValue | null>(null);
 
 const STORAGE_KEY = 'claude-code-settings';
+
+/** Read settings from localStorage. Used as react-query placeholderData so the
+ * UI paints last-known settings instantly (no flash) while the bridge load runs. */
+function readLocalStorageSettings(): SettingsState | undefined {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
+  } catch {
+    console.warn('Failed to load settings from localStorage');
+  }
+  return undefined;
+}
+
+function writeLocalStorageSettings(settings: SettingsState): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  } catch {
+    /* ignore localStorage write error */
+  }
+}
 
 interface SettingsProviderProps {
   children: ReactNode;
 }
 
 export function SettingsProvider({ children }: SettingsProviderProps) {
-  const [settings, setSettings] = useState<SettingsState>(DEFAULT_SETTINGS);
-  const [isLoading, setIsLoading] = useState(true);
-  const [overrides, setOverrides] = useState<string[]>([]);
-  const [scopeSettings, setScopeSettings] = useState<Partial<SettingsState>>({});
-  const [scope, setScope] = useState<'global' | 'project'>('global');
   const { isConnected, send, subscribe } = useBridgeContext();
   const { workingDirectory } = useWorkingDir();
+  const queryClient = useQueryClient();
+  const [scope, setScope] = useState<'global' | 'project'>('global');
 
-  // Load settings from bridge
-  const loadFromBridge = useCallback(async (): Promise<boolean> => {
-    const maxRetries = 3;
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      try {
-        const response = await send('GET_SETTINGS', { workingDir: workingDirectory });
-        if (response?.settings) {
-          setSettings(response.settings as SettingsState);
-          if (response?.overrides) {
-            setOverrides(response.overrides as string[]);
-          }
-          return true;
-        }
-      } catch (error) {
-        if (attempt < maxRetries - 1) {
-          await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
-        } else {
-          console.warn('Failed to load settings from bridge after retries');
-        }
-      }
-    }
-    return false;
-  }, [send, workingDirectory]);
+  const mergedQuery = useQuery<SettingsResponse>({
+    queryKey: [MessageType.GET_SETTINGS, 'merged', workingDirectory],
+    queryFn: () => send<SettingsResponse>(MessageType.GET_SETTINGS, { workingDir: workingDirectory }),
+    enabled: isConnected,
+    // localStorage as instant placeholder (prevents flash before bridge load).
+    placeholderData: () => {
+      const ls = readLocalStorageSettings();
+      return ls ? { settings: ls } : undefined;
+    },
+  });
 
-  // Load settings from localStorage
-  const loadFromLocalStorage = useCallback(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setSettings({ ...DEFAULT_SETTINGS, ...parsed });
-      }
-    } catch (error) {
-      console.warn('Failed to load settings from localStorage');
-    }
-  }, []);
+  const scopeQuery = useQuery<SettingsResponse>({
+    queryKey: [MessageType.GET_SETTINGS, scope, workingDirectory],
+    queryFn: () => send<SettingsResponse>(MessageType.GET_SETTINGS, { workingDir: workingDirectory, scope }),
+    enabled: isConnected,
+  });
 
-  // Load scope-specific (raw) settings for settings page display
-  const loadScopeSettings = useCallback(async (targetScope: 'global' | 'project') => {
-    try {
-      const response = await send('GET_SETTINGS', {
-        workingDir: workingDirectory,
-        scope: targetScope,
-      });
-      if (response?.settings) {
-        setScopeSettings(response.settings as Partial<SettingsState>);
-      }
-    } catch (error) {
-      console.warn('Failed to load scope settings:', error);
-    }
-  }, [send, workingDirectory]);
-
-  // Initial: load from localStorage immediately (prevent flash)
-  useEffect(() => {
-    loadFromLocalStorage();
-    setIsLoading(false);
-  }, [loadFromLocalStorage]);
-
-  // On bridge connection: override with bridge settings
-  useEffect(() => {
-    if (isConnected) {
-      setIsLoading(true);
-      loadFromBridge().finally(() => setIsLoading(false));
-    }
-  }, [isConnected, loadFromBridge]);
-
-  // Reload scope-specific settings when scope changes or connection established
-  useEffect(() => {
-    if (isConnected) {
-      loadScopeSettings(scope);
-    }
-  }, [isConnected, scope, loadScopeSettings]);
+  const settings = mergedQuery.data?.settings ?? DEFAULT_SETTINGS;
+  const overrides = mergedQuery.data?.overrides ?? [];
+  const scopeSettings = scopeQuery.data?.settings ?? {};
+  const isLoading = mergedQuery.isLoading && !mergedQuery.data;
 
   // Apply font size to root element so rem-based sizes scale globally
   useEffect(() => {
@@ -168,95 +143,97 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     return () => mq.removeEventListener('change', handler);
   }, [settings]);
 
-  // Subscribe to external settings changes from backend
+  // External changes pushed by the backend: patch the merged cache and
+  // invalidate every GET_SETTINGS variant so scope reads re-sync.
   useEffect(() => {
     if (!isConnected) return;
-    const unsubscribe = subscribe('SETTINGS_CHANGED', (message) => {
+    const unsubscribe = subscribe(MessageType.SETTINGS_CHANGED, (message) => {
       const payload = message.payload as Record<string, unknown>;
       const newSettings = payload?.settings as SettingsState | undefined;
       const newOverrides = payload?.overrides as string[] | undefined;
-      if (newSettings) setSettings(newSettings);
-      if (newOverrides) setOverrides(newOverrides);
-      loadScopeSettings(scope);
+      if (newSettings) {
+        queryClient.setQueryData<SettingsResponse>(
+          [MessageType.GET_SETTINGS, 'merged', workingDirectory],
+          (old) => ({ ...old, settings: newSettings, ...(newOverrides ? { overrides: newOverrides } : {}) }),
+        );
+      }
+      // Mark scope variants stale without an immediate refetch — they re-sync on
+      // next access, so an external change never triggers a redundant GET.
+      queryClient.invalidateQueries({ queryKey: [MessageType.GET_SETTINGS], refetchType: 'none' });
     });
     return unsubscribe;
-  }, [isConnected, subscribe, scope, loadScopeSettings]);
+  }, [isConnected, subscribe, queryClient, workingDirectory]);
 
-  // Update individual setting using current scope
-  const updateSetting = useCallback(async <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => {
-    const previousSettings = settings;
-    const newSettings = { ...settings, [key]: value };
-    setSettings(newSettings); // optimistic update
+  // Optimistically patch the merged cache, persist via bridge, and mirror to
+  // localStorage. When the bridge is unavailable, fall back to localStorage only.
+  const applyOptimistic = useCallback(
+    <K extends keyof SettingsState>(key: K, value: SettingsState[K]): { mergedKey: unknown[]; previous: SettingsResponse | undefined; next: SettingsState } => {
+      const mergedKey = [MessageType.GET_SETTINGS, 'merged', workingDirectory];
+      const previous = queryClient.getQueryData<SettingsResponse>(mergedKey);
+      const next = { ...(previous?.settings ?? DEFAULT_SETTINGS), [key]: value };
+      queryClient.setQueryData<SettingsResponse>(mergedKey, (old) => ({ ...old, settings: next }));
+      return { mergedKey, previous, next };
+    },
+    [queryClient, workingDirectory],
+  );
 
-    try {
-      if (isConnected) {
-        const response = await send('SAVE_SETTINGS', { key, value, scope, workingDir: workingDirectory });
-        if (response?.status === 'error') {
-          throw new Error(response.error || 'Save failed');
+  const updateSetting = useCallback(
+    async <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => {
+      const { mergedKey, previous, next } = applyOptimistic(key, value);
+      try {
+        if (isConnected) {
+          const response = await send<SettingsResponse>(MessageType.SAVE_SETTINGS, { key, value, scope, workingDir: workingDirectory });
+          if (response?.status === 'error') throw new Error(response.error || 'Save failed');
+          writeLocalStorageSettings(next);
+          queryClient.invalidateQueries({ queryKey: [MessageType.GET_SETTINGS] });
+          return;
         }
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
-        } catch { /* ignore localStorage error */ }
-        loadScopeSettings(scope);
+      } catch (error) {
+        // Bridge failed: keep the optimistic value but persist to localStorage.
+        console.warn('Failed to save setting via bridge, falling back to localStorage:', error);
+        writeLocalStorageSettings(next);
         return;
       }
-    } catch (error) {
-      console.warn('Failed to save setting via bridge, falling back to localStorage:', error);
+      // Bridge not connected: localStorage fallback (rollback cache if it fails).
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
-      } catch { /* ignore */ }
-      return;
-    }
+        writeLocalStorageSettings(next);
+      } catch {
+        queryClient.setQueryData(mergedKey, previous);
+      }
+    },
+    [applyOptimistic, isConnected, send, scope, workingDirectory, queryClient],
+  );
 
-    // Bridge not connected: localStorage fallback
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
-    } catch (error) {
-      console.warn('Failed to save settings to localStorage');
-      setSettings(previousSettings);
-    }
-  }, [settings, isConnected, send, scope, workingDirectory, loadScopeSettings]);
+  const updateSettingWithScope = useCallback(
+    async <K extends keyof SettingsState>(key: K, value: SettingsState[K], targetScope: 'global' | 'project') => {
+      const { mergedKey, previous, next } = applyOptimistic(key, value);
+      try {
+        if (!isConnected) throw new Error('Not connected');
+        const response = await send<SettingsResponse>(MessageType.SAVE_SETTINGS, { key, value, scope: targetScope, workingDir: workingDirectory });
+        if (response?.status === 'error') throw new Error(response.error || 'Save failed');
+        writeLocalStorageSettings(next);
+        queryClient.invalidateQueries({ queryKey: [MessageType.GET_SETTINGS] });
+      } catch (error) {
+        queryClient.setQueryData(mergedKey, previous);
+        console.warn('Failed to save setting:', error);
+      }
+    },
+    [applyOptimistic, isConnected, send, workingDirectory, queryClient],
+  );
 
-  // Update individual setting with explicit scope
-  const updateSettingWithScope = useCallback(async <K extends keyof SettingsState>(
-    key: K, value: SettingsState[K], targetScope: 'global' | 'project'
-  ) => {
-    const previousSettings = settings;
-    const newSettings = { ...settings, [key]: value };
-    setSettings(newSettings);
-    try {
-      if (!isConnected) throw new Error('Not connected');
-      const response = await send('SAVE_SETTINGS', { key, value, scope: targetScope, workingDir: workingDirectory });
-      if (response?.status === 'error') throw new Error(response.error || 'Save failed');
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings)); } catch { /* ignore */ }
-    } catch (error) {
-      console.warn('Failed to save setting:', error);
-      setSettings(previousSettings);
-    }
-  }, [settings, isConnected, send, workingDirectory]);
-
-  // Remove a project override, reverting to global value
   const resetToGlobal = useCallback(async <K extends keyof SettingsState>(key: K) => {
     if (!isConnected || !workingDirectory) return;
     try {
-      await send('SAVE_SETTINGS', { key, value: null, scope: 'project', workingDir: workingDirectory });
-      await loadFromBridge();
-      await loadScopeSettings(scope);
+      await send<SettingsResponse>(MessageType.SAVE_SETTINGS, { key, value: null, scope: 'project', workingDir: workingDirectory });
+      queryClient.invalidateQueries({ queryKey: [MessageType.GET_SETTINGS] });
     } catch (error) {
       console.warn('Failed to reset setting to global:', error);
     }
-  }, [isConnected, send, workingDirectory, loadFromBridge, scope, loadScopeSettings]);
+  }, [isConnected, send, workingDirectory, queryClient]);
 
-  // Refresh settings
   const refreshSettings = useCallback(async () => {
-    setIsLoading(true);
-    if (isConnected) {
-      await loadFromBridge();
-    } else {
-      loadFromLocalStorage();
-    }
-    setIsLoading(false);
-  }, [isConnected, loadFromBridge, loadFromLocalStorage]);
+    await queryClient.invalidateQueries({ queryKey: [MessageType.GET_SETTINGS] });
+  }, [queryClient]);
 
   return (
     <SettingsContext.Provider value={{
