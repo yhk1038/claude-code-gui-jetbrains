@@ -218,6 +218,14 @@ class NodeProcessManager(
                         // Hand the backend the user's real shell PATH so anything it spawns
                         // (claude, npx, git) is found even when the IDE started from GUI (#59).
                         put("PATH", effectivePath())
+                        // Same gap for CLAUDE_CONFIG_DIR: when a user exports it from their
+                        // interactive rc to point the CLI at a non-default data dir, a
+                        // GUI-launched IDE never sourced that rc, so the backend would read
+                        // sessions/settings from ~/.claude and find nothing (#117). Capture it
+                        // from the shell and override only when the shell actually set it.
+                        ShellPathResolver.resolveEnvVar("CLAUDE_CONFIG_DIR")?.let {
+                            put("CLAUDE_CONFIG_DIR", it)
+                        }
                         if (webviewDir != null) {
                             put("WEBVIEW_DIR", webviewDir.absolutePath)
                         }
