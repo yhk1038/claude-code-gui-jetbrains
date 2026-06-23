@@ -121,7 +121,7 @@ describe('useCommandPalette', () => {
   // ──────────────────────────────────────────────────────
 
   describe('handlePanelItemExecute', () => {
-    it('does not call onChange when keepOpen=false item is executed', () => {
+    it('clears the input (onChange "") when keepOpen=false item is executed', () => {
       const { result } = renderHook(() =>
         useCommandPalette({ onChange, textareaRef }),
       );
@@ -140,7 +140,8 @@ describe('useCommandPalette', () => {
       });
 
       expect(actionFn).toHaveBeenCalledTimes(1);
-      expect(onChange).not.toHaveBeenCalled();
+      // The "/query" the user typed to open the panel must be cleared from the input.
+      expect(onChange).toHaveBeenCalledWith('');
       expect(result.current.showSlashCommands).toBe(false);
     });
 
@@ -208,7 +209,7 @@ describe('useCommandPalette', () => {
   // ──────────────────────────────────────────────────────
 
   describe('executeAndClear (via handleSlashKeyDown Enter)', () => {
-    it('does not call onChange when selected item is executed', () => {
+    it('clears the input (onChange "") when selected item is executed', () => {
       // Use sections that have a selectable Action item
       const actionFn = vi.fn();
       const sectionsWithItem: PanelSection[] = [
@@ -253,7 +254,8 @@ describe('useCommandPalette', () => {
       });
 
       expect(actionFn).toHaveBeenCalledTimes(1);
-      expect(onChange).not.toHaveBeenCalled();
+      // Enter-executing a panel item clears the "/query" from the input too.
+      expect(onChange).toHaveBeenCalledWith('');
       expect(result.current.showSlashCommands).toBe(false);
     });
   });

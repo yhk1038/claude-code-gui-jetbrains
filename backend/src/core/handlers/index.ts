@@ -25,6 +25,7 @@ import { createSessionHandler } from './createSession';
 import { openNewTabHandler } from './openNewTab';
 import { openSessionHandler } from './openSession';
 import { openSettingsHandler } from './openSettings';
+import { restartBackendHandler } from './restartBackend';
 import { openTerminalHandler } from './openTerminal';
 import { getVersionHandler } from './getVersion';
 import { getAccountHandler } from './getAccount';
@@ -140,6 +141,9 @@ export async function handleMessage(
       break;
     case 'OPEN_SETTINGS':
       await openSettingsHandler(connectionId, message, connections, bridge);
+      break;
+    case 'RESTART_BACKEND':
+      restartBackendHandler(connectionId, message, connections, bridge);
       break;
     case 'OPEN_TERMINAL':
       await openTerminalHandler(connectionId, message, connections, bridge);

@@ -3,10 +3,21 @@
 # PORT:n handshake, open the browser, and pass through logs until node exits.
 # Sourced by spawn/index.sh.
 
-# Spawn node backend.mjs, wait for "PORT:n" handshake, print URL + open
-# browser, then pass through stdout/stderr until node exits.
-_spawn_backend_and_open_browser() {
+# Exit code the backend uses to request a respawn.
+# Must match RESTART_EXIT_CODE in backend/src/config/environment.ts.
+readonly _CCG_RESTART_EXIT_CODE=75
+
+# Minimum seconds between successive restarts (crash-loop guard).
+readonly _CCG_RESTART_MIN_INTERVAL=2
+
+# _spawn_one_iteration <cache_dir> <first_run>
+#   Spawns node backend.mjs once. Blocks until node exits.
+#   Outputs log lines (including PORT:n handshake) to stdout.
+#   Browser is opened only when first_run=1.
+#   Returns node's exit code.
+_spawn_one_iteration() {
   local cache_dir=$1
+  local first_run=$2
   local backend="$cache_dir/backend.mjs"
   local webview="$cache_dir/webview"
   local cwd_url
@@ -19,12 +30,7 @@ _spawn_backend_and_open_browser() {
   mkfifo "$fifo"
 
   # Start node directly (no wrapping subshell) so $! is node's actual PID.
-  # Wrapping in a subshell made $pid the subshell's id, so kill -TERM never
-  # reached node, leaving the backend alive and the reader blocked on fifo EOF.
-  #
-  # </dev/null detaches stdin: the backend cannot put the terminal into raw
-  # mode and swallow Ctrl+C as a literal 0x03 byte. The user's ^C reliably
-  # reaches our shell's SIGINT handler instead.
+  # </dev/null detaches stdin: the backend cannot swallow Ctrl+C as 0x03.
   WEBVIEW_DIR="$webview" node "$backend" </dev/null >"$fifo" 2>&1 &
   local pid=$!
 
@@ -38,36 +44,69 @@ _spawn_backend_and_open_browser() {
         port_seen=1
         local url="${cwd_url/localhost:19836/localhost:$port}"
         printf '%s\n' "$(t backend_started "$port")"
-        printf '%s\n' "$(t opening_browser "$url")"
-        _open_browser "$url"
+        if (( first_run )); then
+          printf '%s\n' "$(t opening_browser "$url")"
+          _open_browser "$url"
+        fi
       fi
       printf '%s\n' "$line"
     done <"$fifo"
   ) &
   local reader_pid=$!
 
-  # Reset any inherited disposition before installing our handler. If ccg
-  # was launched in a context where SIGINT/SIGTERM came in as SIG_IGN
-  # (e.g. via a background pipeline, under `set +m`, or in some launcher
-  # scenarios), a plain `trap "…" INT` would silently no-op because bash
-  # refuses to install a trap on a signal that's already SIG_IGN. Reset
-  # disposition first, then install — handler fires reliably either way.
+  # Reset any inherited disposition before installing our handler.
   trap - INT TERM
 
-  # On Ctrl+C: SIGKILL both node and the reader immediately.
-  # SIGTERM would trigger node's own shutdown handler, which waits up to 5
-  # seconds for logger flush — feels like a hang to the user. ccg's lifecycle
-  # is "foreground in this terminal", so the user pressing Ctrl+C means
-  # "stop right now"; standalone has no persistent state to flush gracefully.
+  # On Ctrl+C/SIGTERM: SIGKILL both node and the reader immediately.
   # shellcheck disable=SC2064
   trap "_kill_pid -KILL '$pid' 2>/dev/null || true; \
         _kill_pid -KILL '$reader_pid' 2>/dev/null || true; \
         rm -f '$fifo'; exit 130" INT TERM
 
-  # Wait for node to exit normally, then drain remaining reader output.
+  # Wait for node to exit, then drain remaining reader output.
   wait "$pid"
   local rc=$?
   wait "$reader_pid" 2>/dev/null || true
   rm -f "$fifo"
+
+  # Restore trap so the caller's loop can re-install cleanly on next iteration.
+  trap - INT TERM
+
   return $rc
+}
+
+# Spawn node backend.mjs, wait for "PORT:n" handshake, print URL + open
+# browser, then pass through stdout/stderr until node exits.
+# On exit code 75 (RESTART_EXIT_CODE), respawn (without reopening the browser).
+# A crash-loop guard aborts if restarts happen too quickly.
+_spawn_backend_and_open_browser() {
+  local cache_dir=$1
+  local first_run=1
+  local last_start rc
+
+  while true; do
+    last_start=$(date +%s)
+    rc=0
+
+    # Capture exit code without triggering set -e on nonzero returns.
+    _spawn_one_iteration "$cache_dir" "$first_run" || rc=$?
+
+    if [[ "$rc" -ne "$_CCG_RESTART_EXIT_CODE" ]]; then
+      # Normal exit or unrelated error — propagate the exit code.
+      return $rc
+    fi
+
+    # Crash-loop guard: abort if the backend exited too quickly.
+    local now elapsed
+    now=$(date +%s)
+    elapsed=$(( now - last_start ))
+    if [[ "$elapsed" -lt "$_CCG_RESTART_MIN_INTERVAL" ]]; then
+      printf '%s\n' "$(t err_restart_loop)" >&2
+      return 1
+    fi
+
+    printf '%s\n' "$(t backend_restarting)"
+    first_run=0
+    # Loop: respawn on same port, browser already open.
+  done
 }

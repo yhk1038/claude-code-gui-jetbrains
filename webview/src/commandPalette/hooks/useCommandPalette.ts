@@ -122,7 +122,10 @@ export function useCommandPalette({ onChange, textareaRef }: UseCommandPaletteOp
     executeSelectedItem();
     setShowSlashCommands(false);
     resetSelection();
-  }, [executeSelectedItem, resetSelection]);
+    // Clear the "/command" text the user typed to open the panel — the item has
+    // run, so leaving it behind would strand a stale query in the input.
+    onChange('');
+  }, [executeSelectedItem, resetSelection, onChange]);
 
   const closePanel = useCallback(() => {
     setShowSlashCommands(false);
@@ -194,12 +197,15 @@ export function useCommandPalette({ onChange, textareaRef }: UseCommandPaletteOp
 
   const handlePanelItemExecute = useCallback((item: PanelItem) => {
     if (item.type === PanelItemType.Action || item.type === PanelItemType.Command) {
-      (item as any).action?.();
+      (item as ActionItem | CommandItem).action();
     }
     if (item.keepOpen) return;
     setShowSlashCommands(false);
     resetSelection();
-  }, [resetSelection]);
+    // Mirror executeAndClear: clicking a panel item also clears the "/command"
+    // query the user typed, so it doesn't linger in the input after the action.
+    onChange('');
+  }, [resetSelection, onChange]);
 
   const handleSlashButtonClick = useCallback(() => {
     if (!showSlashCommands) {

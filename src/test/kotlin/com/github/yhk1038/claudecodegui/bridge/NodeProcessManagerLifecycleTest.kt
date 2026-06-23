@@ -58,4 +58,45 @@ class NodeProcessManagerLifecycleTest {
         assertNull(mgr.recentStderr(), "no stderr should be collected before start")
         mgr.dispose()
     }
+
+    // ─── Unified restart signal (exit code 75) ──────────────────────────
+
+    @Test
+    fun `restart exit code constant matches the backend contract`() {
+        // The backend signals "respawn me on the same port" with this exact code
+        // (backend/src/config/environment.ts: RESTART_EXIT_CODE = 75). If they drift,
+        // the IDE side silently stops respawning on the backend's restart request.
+        assertEquals(75, NodeProcessManager.RESTART_EXIT_CODE)
+    }
+
+    @Test
+    fun `shouldRequestRestart is true only for code 75 on a non-dispose exit`() {
+        // The unified restart rule: respawn iff the backend exited with RESTART_EXIT_CODE
+        // AND the exit was not an intentional dispose. This is the whole gating policy
+        // behind onRestartRequested, kept pure so it is verified without spawning Node.
+        assertTrue(
+            NodeProcessManager.shouldRequestRestart(75, disposed = false),
+            "exit 75 from a live backend must request a restart",
+        )
+    }
+
+    @Test
+    fun `shouldRequestRestart is false when the exit was caused by dispose`() {
+        // dispose() destroys the process and sets lifecycle = DEAD up front, so the exit
+        // must be suppressed even if the code happened to be 75 — we are killing it on
+        // purpose, not honouring a restart request.
+        assertFalse(
+            NodeProcessManager.shouldRequestRestart(75, disposed = true),
+            "a dispose-driven exit must never trigger a respawn",
+        )
+    }
+
+    @Test
+    fun `shouldRequestRestart is false for ordinary exit codes`() {
+        // A normal/graceful exit (0) or a SIGTERM exit (128+15 = 143, what destroy()
+        // typically yields) is not the restart signal and must not respawn.
+        assertFalse(NodeProcessManager.shouldRequestRestart(0, disposed = false))
+        assertFalse(NodeProcessManager.shouldRequestRestart(143, disposed = false))
+        assertFalse(NodeProcessManager.shouldRequestRestart(1, disposed = false))
+    }
 }

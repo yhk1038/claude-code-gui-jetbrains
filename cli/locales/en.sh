@@ -107,6 +107,10 @@ MSG_en_help_self_update_body="  ccg self-update             Re-run the install s
 MSG_en_help_uninstall_header="ccg uninstall — remove ccg from this machine"
 MSG_en_help_uninstall_body="  ccg uninstall             Remove ccg from this machine (binary, runtimes, PATH entry).\n  ccg uninstall -h, --help  Show this help."
 
+# Restart loop (standalone foreground)
+MSG_en_backend_restarting="Backend exited with restart signal. Restarting..."
+MSG_en_err_restart_loop="Backend restarted too quickly (crash loop detected). Aborting."
+
 # Generic
 MSG_en_abort="Aborted."
 MSG_en_unknown_command="Unknown command: %s"

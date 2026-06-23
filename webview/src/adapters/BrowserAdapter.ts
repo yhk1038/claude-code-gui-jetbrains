@@ -77,4 +77,9 @@ export class BrowserAdapter implements IdeAdapter {
     window.open(url, '_blank');
     console.log('[BrowserAdapter] Opened URL in new tab:', url);
   }
+
+  async restartBackend(): Promise<void> {
+    await getBridge().request('RESTART_BACKEND');
+    console.log('[BrowserAdapter] Sent RESTART_BACKEND via WebSocket bridge');
+  }
 }

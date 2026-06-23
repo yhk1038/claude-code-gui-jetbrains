@@ -61,6 +61,15 @@ export interface IdeAdapter {
   openUrl(url: string): Promise<void>;
 
   /**
+   * Trigger a backend restart.
+   * - In JetBrains: Sends RESTART_BACKEND so the backend exits with the unified
+   *   restart code and the IDE respawns it.
+   * - In Browser: Same — sends RESTART_BACKEND so the backend restarts itself.
+   * Behaves identically in both runtimes; no environment-specific branching.
+   */
+  restartBackend(): Promise<void>;
+
+  /**
    * Check if the adapter is ready to use
    */
   isReady(): boolean;

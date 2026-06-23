@@ -36,6 +36,9 @@ function makeServices(overrides: {
       openSettings: vi.fn().mockResolvedValue(undefined),
       openTerminal: vi.fn().mockResolvedValue(undefined),
     },
+    ui: {
+      confirm: vi.fn().mockResolvedValue(true),
+    },
   };
   return { services, sendMessage };
 }

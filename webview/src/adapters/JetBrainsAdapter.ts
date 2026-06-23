@@ -44,4 +44,9 @@ export class JetBrainsAdapter implements IdeAdapter {
     await getBridge().request('OPEN_URL', { url });
     console.log('[JetBrainsAdapter] Sent OPEN_URL via WebSocket bridge:', url);
   }
+
+  async restartBackend(): Promise<void> {
+    await getBridge().request('RESTART_BACKEND');
+    console.log('[JetBrainsAdapter] Sent RESTART_BACKEND via WebSocket bridge');
+  }
 }
