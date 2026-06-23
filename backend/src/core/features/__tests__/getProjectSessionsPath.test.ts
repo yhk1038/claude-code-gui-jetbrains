@@ -1,7 +1,34 @@
-import { describe, it, expect } from 'vitest';
-import { normalizeProjectPath } from '../getProjectSessionsPath';
+import { describe, it, expect, afterEach } from 'vitest';
+import { homedir } from 'os';
+import { join } from 'path';
+import { getProjectSessionsPath, normalizeProjectPath } from '../getProjectSessionsPath';
 
 describe('getProjectSessionsPath', () => {
+  describe('data directory resolution', () => {
+    const original = process.env.CLAUDE_CONFIG_DIR;
+
+    afterEach(() => {
+      if (original === undefined) delete process.env.CLAUDE_CONFIG_DIR;
+      else process.env.CLAUDE_CONFIG_DIR = original;
+    });
+
+    it('resolves under ~/.claude/projects by default', async () => {
+      delete process.env.CLAUDE_CONFIG_DIR;
+      const result = await getProjectSessionsPath('/home/user/project');
+      expect(result).toBe(
+        join(homedir(), '.claude', 'projects', '-home-user-project'),
+      );
+    });
+
+    it('honors a custom CLAUDE_CONFIG_DIR (issue #117)', async () => {
+      process.env.CLAUDE_CONFIG_DIR = join('D:', 'Claude');
+      const result = await getProjectSessionsPath('/home/user/project');
+      expect(result).toBe(
+        join('D:', 'Claude', 'projects', '-home-user-project'),
+      );
+    });
+  });
+
   describe('normalizeProjectPath()', () => {
     it('should replace forward slashes with hyphens', () => {
       expect(normalizeProjectPath('/home/user/project')).toBe('-home-user-project');

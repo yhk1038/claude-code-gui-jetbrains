@@ -1,8 +1,8 @@
 import { createReadStream } from 'fs';
 import { readFile, readdir } from 'fs/promises';
 import { join } from 'path';
-import { homedir } from 'os';
 import { createInterface } from 'readline';
+import { getClaudeConfigDir } from './claudeConfigDir';
 
 interface ProjectEntry {
   name: string;       // 폴더 이름 (프로젝트 이름)
@@ -113,7 +113,7 @@ async function buildEntriesFromJsonl(folderPath: string): Promise<ProjectEntry[]
 
 export async function getProjectsList(): Promise<ProjectEntry[]> {
   try {
-    const projectsDir = join(homedir(), '.claude', 'projects');
+    const projectsDir = join(getClaudeConfigDir(), 'projects');
     const entries = await readdir(projectsDir, { withFileTypes: true });
 
     const projects: ProjectEntry[] = [];

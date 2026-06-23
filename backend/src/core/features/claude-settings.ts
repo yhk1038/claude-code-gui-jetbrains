@@ -1,10 +1,10 @@
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync, watch } from 'fs';
 import { join, dirname } from 'path';
-import { homedir } from 'os';
+import { getClaudeConfigDir } from './claudeConfigDir';
 
-const CLAUDE_SETTINGS_FILE = join(homedir(), '.claude', 'settings.json');
-const CLAUDE_SETTINGS_LOCAL_FILE = join(homedir(), '.claude', 'settings.local.json');
+const claudeSettingsFile = () => join(getClaudeConfigDir(), 'settings.json');
+const claudeSettingsLocalFile = () => join(getClaudeConfigDir(), 'settings.local.json');
 
 function deepMergeSettings(
   base: Record<string, unknown>,
@@ -53,8 +53,8 @@ async function readJsonFileSafe(filePath: string): Promise<Record<string, unknow
  */
 export async function readClaudeSettings(): Promise<Record<string, unknown>> {
   try {
-    const base = await readJsonFileSafe(CLAUDE_SETTINGS_FILE);
-    const local = await readJsonFileSafe(CLAUDE_SETTINGS_LOCAL_FILE);
+    const base = await readJsonFileSafe(claudeSettingsFile());
+    const local = await readJsonFileSafe(claudeSettingsLocalFile());
     return { ...base, ...local };
   } catch (err) {
     console.error('[node-backend]', 'Failed to read Claude settings:', err);
@@ -99,20 +99,20 @@ export async function saveClaudeSetting(
   value: unknown,
 ): Promise<{ status: 'ok' | 'error'; error?: string }> {
   try {
-    await mkdir(join(homedir(), '.claude'), { recursive: true });
+    await mkdir(getClaudeConfigDir(), { recursive: true });
 
     if (value === null || value === undefined) {
-      await removeKeyFromJsonFile(CLAUDE_SETTINGS_FILE, key);
-      await removeKeyFromJsonFile(CLAUDE_SETTINGS_LOCAL_FILE, key);
+      await removeKeyFromJsonFile(claudeSettingsFile(), key);
+      await removeKeyFromJsonFile(claudeSettingsLocalFile(), key);
       return { status: 'ok' };
     }
 
     // Write to the file where the key currently lives (local takes priority)
-    const localSettings = await readJsonFileSafe(CLAUDE_SETTINGS_LOCAL_FILE);
+    const localSettings = await readJsonFileSafe(claudeSettingsLocalFile());
     if (key in localSettings) {
-      await writeKeyToJsonFile(CLAUDE_SETTINGS_LOCAL_FILE, key, value);
+      await writeKeyToJsonFile(claudeSettingsLocalFile(), key, value);
     } else {
-      await writeKeyToJsonFile(CLAUDE_SETTINGS_FILE, key, value);
+      await writeKeyToJsonFile(claudeSettingsFile(), key, value);
     }
     return { status: 'ok' };
   } catch (err) {
@@ -273,7 +273,7 @@ export function watchClaudeSettingsFile(onFileChange: (settings: Record<string, 
   }
 
   try {
-    const settingsDir = join(homedir(), '.claude');
+    const settingsDir = getClaudeConfigDir();
 
     watcherInstance = watch(settingsDir, async (eventType, filename) => {
       // Only watch settings.json file
@@ -297,7 +297,7 @@ export function watchClaudeSettingsFile(onFileChange: (settings: Record<string, 
       }, DEBOUNCE_MS);
     });
 
-    console.log('[node-backend]', `Watching ${CLAUDE_SETTINGS_FILE} for changes`);
+    console.log('[node-backend]', `Watching ${claudeSettingsFile()} for changes`);
   } catch (err) {
     console.error('[node-backend]', 'Failed to start Claude settings file watcher:', err);
   }

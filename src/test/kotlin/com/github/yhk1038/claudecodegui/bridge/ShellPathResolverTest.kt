@@ -76,15 +76,65 @@ class ShellPathResolverTest {
     }
 
     @Nested
+    inner class MarkerFor {
+        @Test
+        fun `should sandwich the variable name between the base marker`() {
+            assertEquals("MARKPATHMARK", ShellPathResolver.markerFor("MARK", "PATH"))
+            assertEquals(
+                "MARKCLAUDE_CONFIG_DIRMARK",
+                ShellPathResolver.markerFor("MARK", "CLAUDE_CONFIG_DIR"),
+            )
+        }
+
+        @Test
+        fun `should produce distinct markers per variable so values never collide`() {
+            val a = ShellPathResolver.markerFor("M", "PATH")
+            val b = ShellPathResolver.markerFor("M", "CLAUDE_CONFIG_DIR")
+            assertNotEquals(a, b)
+            assertFalse(a.contains(b) || b.contains(a))
+        }
+    }
+
+    @Nested
     inner class BuildShellCommand {
         @Test
-        fun `should wrap printenv PATH with the marker on both sides`() {
-            val cmd = ShellPathResolver.buildShellCommand("MARK")
-            // command printenv bypasses aliases/functions; markers sandwich the value.
-            assertTrue(cmd.contains("printf 'MARK'"), "command was: $cmd")
+        fun `should wrap each variable in its own per-variable marker pair`() {
+            val cmd = ShellPathResolver.buildShellCommand("MARK", listOf("PATH", "CLAUDE_CONFIG_DIR"))
+            // command printenv bypasses aliases/functions; per-variable markers sandwich each value.
             assertTrue(cmd.contains("command printenv PATH"), "command was: $cmd")
-            // marker must appear exactly twice so the extractor can find a pair
-            assertEquals(2, Regex("MARK").findAll(cmd).count())
+            assertTrue(cmd.contains("command printenv CLAUDE_CONFIG_DIR"), "command was: $cmd")
+            // each variable's marker must appear exactly twice so the extractor can find a pair
+            assertEquals(2, Regex("MARKPATHMARK").findAll(cmd).count())
+            assertEquals(2, Regex("MARKCLAUDE_CONFIG_DIRMARK").findAll(cmd).count())
+        }
+
+        @Test
+        fun `should extract each value from a combined output using its own marker`() {
+            val cmd = ShellPathResolver.buildShellCommand("M", listOf("PATH", "CLAUDE_CONFIG_DIR"))
+            assertTrue(cmd.isNotBlank())
+            // Simulate the shell having printed both values back, in order.
+            val output = "noise" +
+                "MPATHM/usr/bin:/binMPATHM" +
+                "MCLAUDE_CONFIG_DIRM/data/claudeMCLAUDE_CONFIG_DIRM" +
+                "tail"
+            assertEquals(
+                "/usr/bin:/bin",
+                ShellPathResolver.extractBetweenMarkers(output, ShellPathResolver.markerFor("M", "PATH")),
+            )
+            assertEquals(
+                "/data/claude",
+                ShellPathResolver.extractBetweenMarkers(output, ShellPathResolver.markerFor("M", "CLAUDE_CONFIG_DIR")),
+            )
+        }
+
+        @Test
+        fun `should yield an empty string for an unset variable (markers present, value blank)`() {
+            // `command printenv` prints nothing for an unset var, so the markers wrap "".
+            val output = "MCLAUDE_CONFIG_DIRMMCLAUDE_CONFIG_DIRM"
+            assertEquals(
+                "",
+                ShellPathResolver.extractBetweenMarkers(output, ShellPathResolver.markerFor("M", "CLAUDE_CONFIG_DIR")),
+            )
         }
     }
 
