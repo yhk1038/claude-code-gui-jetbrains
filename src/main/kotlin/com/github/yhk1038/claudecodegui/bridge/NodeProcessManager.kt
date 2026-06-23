@@ -61,6 +61,15 @@ class NodeProcessManager(
      * thread. See issue #97.
      */
     private val onProgress: ((LoadingPhase) -> Unit)? = null,
+    /**
+     * Invoked when the backend Node process exits with [RESTART_EXIT_CODE] (the unified
+     * "restart the plugin backend" signal) and the exit was NOT caused by [dispose].
+     * The managing side (NodeBackendService) responds by respawning the backend on the
+     * same port. A SIGTERM/normal exit (e.g. from [dispose]) does not carry code 75, so
+     * this never fires for an intentional shutdown. Called off the EDT inside the start()
+     * coroutine; the listener is responsible for marshalling to the UI thread if needed.
+     */
+    private val onRestartRequested: (() -> Unit)? = null,
 ) : Disposable {
 
     private val logger = Logger.getInstance(NodeProcessManager::class.java)
@@ -105,6 +114,14 @@ class NodeProcessManager(
 
     @Volatile
     private var lifecycle = Lifecycle.STARTING
+
+    // True once dispose() has run. dispose() destroys the process (typically SIGTERM →
+    // exit 143), and also sets lifecycle = DEAD up front — so the natural exit observed
+    // by proc.waitFor() can't be distinguished from a restart-signalled exit by lifecycle
+    // alone. This flag lets the exit handler suppress the restart callback for an
+    // intentional dispose, while still respawning on a genuine RESTART_EXIT_CODE.
+    @Volatile
+    private var disposed = false
 
     /** True only once the process has actually started and later exited (or failed to start). */
     val isDead: Boolean
@@ -283,6 +300,19 @@ class NodeProcessManager(
                     _portDeferred.completeExceptionally(
                         IllegalStateException("Node.js process exited before printing PORT (exit code: $exitCode)")
                     )
+                }
+
+                // Unified restart signal: the backend self-exits with RESTART_EXIT_CODE to
+                // ask its managing side to respawn it on the same port. Only honour it for a
+                // non-dispose exit (dispose() also sets lifecycle = DEAD, so check `disposed`).
+                if (shouldRequestRestart(exitCode, disposed)) {
+                    logger.info("Node.js backend requested restart (exit code $exitCode)")
+                    try {
+                        onRestartRequested?.invoke()
+                    } catch (e: Exception) {
+                        // A restart callback failure must not escape the start() coroutine.
+                        logger.warn("onRestartRequested callback threw", e)
+                    }
                 }
             } catch (e: CancellationException) {
                 // Normal shutdown
@@ -841,6 +871,10 @@ class NodeProcessManager(
 
     override fun dispose() {
         logger.info("Disposing NodeProcessManager")
+        // Mark disposed BEFORE destroying the process: the exit observed by proc.waitFor()
+        // in start() must see this flag set, so it suppresses the restart callback for this
+        // intentional shutdown rather than respawning a backend we're trying to kill.
+        disposed = true
         lifecycle = Lifecycle.DEAD
 
         stdoutJob?.cancel()
@@ -875,5 +909,23 @@ class NodeProcessManager(
     companion object {
         // How many recent stderr lines to retain for startup-failure diagnostics (#97).
         private const val MAX_STDERR_LINES = 30
+
+        /**
+         * Unified "restart the plugin backend" exit code. The Node backend self-exits with
+         * this code to ask its managing side to respawn it on the same port. MUST stay in
+         * sync with backend `RESTART_EXIT_CODE` (backend/src/config/environment.ts) and the
+         * ccg standalone launcher (cli/lib/spawn/foreground.sh).
+         */
+        const val RESTART_EXIT_CODE = 75
+
+        /**
+         * Decide whether a backend exit should trigger a respawn. A restart is requested
+         * only when the process exited with [RESTART_EXIT_CODE] AND the exit was not caused
+         * by an intentional [dispose] (which destroys the process and would otherwise be
+         * mistaken for a restart request). Pure function so the gating is unit-testable
+         * without spawning a real Node process.
+         */
+        fun shouldRequestRestart(exitCode: Int, disposed: Boolean): Boolean =
+            exitCode == RESTART_EXIT_CODE && !disposed
     }
 }

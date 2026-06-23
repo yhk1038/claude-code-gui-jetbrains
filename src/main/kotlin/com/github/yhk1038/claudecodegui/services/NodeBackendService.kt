@@ -185,6 +185,11 @@ class NodeBackendService : Disposable {
                 wslDistro = wsl?.distro,
                 wslCwd = wsl?.linuxPath,
                 onProgress = ::emitProgress,
+                // Unified restart signal: when the backend self-exits with RESTART_EXIT_CODE
+                // (and not via dispose), respawn it on the same port. restart() is
+                // @Synchronized and runs stop()+start(), so it can't re-enter the start()
+                // that is still in progress, and lastPort is reused for a seamless reconnect.
+                onRestartRequested = { restart() },
             )
             nodeProcessManager = manager
             manager.start()

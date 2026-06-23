@@ -55,6 +55,41 @@ describe('ConfirmDialog', () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
+  it('does not globally force-confirm on Enter — the focused button handles it', () => {
+    // Regression guard: a global Enter handler that always called onConfirm meant
+    // Enter triggered confirm even when the user had Cancel focused. With focus
+    // trapped inside the dialog, Enter must be left to the focused button instead.
+    const onConfirm = vi.fn();
+    render(<ConfirmDialog {...baseProps} onConfirm={onConfirm} />);
+
+    fireEvent.keyDown(window, { key: 'Enter' });
+
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it('focuses the confirm button on mount so Enter activates the dialog, not the chat input', () => {
+    render(<ConfirmDialog {...baseProps} />);
+
+    expect(screen.getByRole('button', { name: 'Confirm' })).toHaveFocus();
+  });
+
+  it('restores focus to the opener (e.g. chat input) when the dialog closes', () => {
+    const opener = document.createElement('button');
+    document.body.appendChild(opener);
+    opener.focus();
+    expect(opener).toHaveFocus();
+
+    const { unmount } = render(<ConfirmDialog {...baseProps} />);
+    // Dialog took focus while open
+    expect(screen.getByRole('button', { name: 'Confirm' })).toHaveFocus();
+
+    unmount();
+    // Focus handed back to the opener on close (confirm or cancel both unmount)
+    expect(opener).toHaveFocus();
+
+    document.body.removeChild(opener);
+  });
+
   it('calls onCancel when the Escape key is pressed', () => {
     const onCancel = vi.fn();
     render(<ConfirmDialog {...baseProps} onCancel={onCancel} />);

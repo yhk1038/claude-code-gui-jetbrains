@@ -5,6 +5,7 @@ import {
 } from '@/types/commandPalette';
 import { SessionState, Context } from '@/types';
 import { InputMode } from '@/types/chatInput';
+import type { ConfirmOptions } from '@/components/ConfirmDialog/useConfirmDialog';
 
 /**
  * Services injected by CommandPaletteRegistry into commands.
@@ -35,6 +36,9 @@ export interface CommandPaletteServices {
     openNewTab: () => Promise<void>;
     openSettings: () => Promise<void>;
     openTerminal: (workingDir: string) => Promise<void>;
+  };
+  ui: {
+    confirm: (options: ConfirmOptions) => Promise<boolean>;
   };
 }
 

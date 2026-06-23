@@ -27,6 +27,17 @@ export const ccgClientInfo = process.env.CCG_CLIENT_INFO ?? '';
 const DEFAULT_PORT = 19836;
 export const serverPort = parseInt(process.env.PORT ?? String(DEFAULT_PORT), 10);
 
+// ── 재기동 신호 ─────────────────────────────────────────
+// "플러그인 재기동"의 통일 신호. 프론트엔드 실행환경(브라우저 환경/JetBrains)이나
+// 백엔드 관리 주체(Kotlin/ccg)와 무관하게, Node가 이 종료코드로 스스로 exit하면
+// 그 Node를 spawn한 관리 주체가 같은 포트로 respawn한다. 분기 없는 단일 규칙.
+//   - JetBrains: NodeProcessManager가 proc.waitFor()==이 값을 감지해 BackendInstance.restart()
+//   - ccg standalone: cli/lib/spawn/foreground.sh가 wait 종료코드==이 값에서 respawn
+//   - dev(be-dev, `node --watch`): self-exit는 자동 재시작하지 않으므로(파일 변경 시에만
+//     재시작) 재기동은 best-effort다 — 개발 전용 한계이며 고객 경로(JetBrains/ccg)는 무관.
+// 이 값을 바꾸면 cli/lib/spawn/foreground.sh의 동일 리터럴도 함께 바꿔야 한다.
+export const RESTART_EXIT_CODE = 75;
+
 function resolveWebviewDir(): string | undefined {
   if (process.env.WEBVIEW_DIR) return process.env.WEBVIEW_DIR;
   if (isJetBrainsMode) return undefined;

@@ -4,6 +4,7 @@ import { useChatInputState } from '@/contexts/ChatInputStateContext';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useCliConfig } from '@/contexts/CliConfigContext';
 import { getAdapter } from '@/adapters';
+import { useConfirmDialog } from '@/components/ConfirmDialog/useConfirmDialog';
 import { SWITCH_MODEL_EVENT } from '@/pages/ChatPage/ModelSwitchOverlay';
 import { ROTATE_MODEL_EVENT } from '@/pages/ChatPage/ChatInput/ModelTag';
 import { PanelSection } from '@/types/commandPalette';
@@ -52,6 +53,7 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
   const chatInputState = useChatInputState();
   const session = useSessionContext();
   const { controlResponse } = useCliConfig();
+  const { confirmDialog, confirm } = useConfirmDialog();
 
   // Services ref - always points to current React state
   const servicesRef = useRef<CommandPaletteServices>({
@@ -80,6 +82,9 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
       openNewTab: () => getAdapter().openNewTab(),
       openSettings: () => getAdapter().openSettings(),
       openTerminal: (workingDir) => getAdapter().openTerminal(workingDir),
+    },
+    ui: {
+      confirm,
     },
   });
 
@@ -110,6 +115,9 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
       openNewTab: () => getAdapter().openNewTab(),
       openSettings: () => getAdapter().openSettings(),
       openTerminal: (workingDir) => getAdapter().openTerminal(workingDir),
+    },
+    ui: {
+      confirm,
     },
   };
 
@@ -210,6 +218,7 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
 
   return (
     <CommandPaletteRegistryContext.Provider value={contextValue}>
+      {confirmDialog}
       {children}
     </CommandPaletteRegistryContext.Provider>
   );

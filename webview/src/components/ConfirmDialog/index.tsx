@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Portal } from '../Portal';
 
 interface Props {
@@ -22,15 +22,55 @@ export function ConfirmDialog(props: Props) {
     onCancel,
   } = props;
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const confirmButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Focus management for the lifetime of the dialog:
+  //  1. Remember the opener (typically the chat input) BEFORE moving focus, so
+  //     we can hand it back on close. Captured here — not via autoFocus — because
+  //     autoFocus runs before effects and would make us record the confirm button.
+  //  2. Move focus to the confirm button, and trap it: the chat input underneath
+  //     runs auto-focus timers (session change, window focus, …) that would yank
+  //     focus back, leaving the dialog non-keyboard-operable and routing Enter to
+  //     the input. If focus escapes the dialog while open, pull it back.
+  //  3. On close (confirm OR cancel), restore focus to the opener so typing can
+  //     resume immediately.
   useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    confirmButtonRef.current?.focus();
+
+    const handleFocusIn = (e: FocusEvent) => {
+      const dialog = dialogRef.current;
+      if (dialog && e.target instanceof Node && !dialog.contains(e.target)) {
+        confirmButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener('focusin', handleFocusIn);
+
+    return () => {
+      document.removeEventListener('focusin', handleFocusIn);
+      if (previouslyFocused?.isConnected) {
+        previouslyFocused.focus();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    // Only Escape is intercepted globally (capture phase, so it beats the chat
+    // input underneath). Enter is deliberately NOT handled here: focus is trapped
+    // inside the dialog, so Enter natively activates whichever button is focused —
+    // Confirm or Cancel. Intercepting it would force-confirm even when the user
+    // has Cancel focused.
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
         onCancel();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, true);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keydown', handleKeyDown, true);
     };
   }, [onCancel]);
 
@@ -53,6 +93,7 @@ export function ConfirmDialog(props: Props) {
         onClick={handleBackdropClick}
       >
         <div
+          ref={dialogRef}
           role="dialog"
           className="bg-surface-raised border border-border-default rounded-xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-4"
         >
@@ -66,6 +107,7 @@ export function ConfirmDialog(props: Props) {
               {cancelLabel}
             </button>
             <button
+              ref={confirmButtonRef}
               className={confirmButtonClass}
               onClick={onConfirm}
             >

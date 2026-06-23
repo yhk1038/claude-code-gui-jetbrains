@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { ConfirmDialog } from './index';
 
-interface ConfirmOptions {
+export interface ConfirmOptions {
   title: string;
   message: string;
   confirmLabel?: string;
