@@ -2,7 +2,7 @@ import React from 'react';
 import {LoadedMessageDto} from '../../../types';
 import {ToolUseBlockDto} from '../../../dto/message/ContentBlockDto';
 import {ToolRendererMap} from "./ToolRenderers";
-import {ToolHeader, ToolWrapper} from "./ToolRenderers/common";
+import {ToolHeader, ToolWrapper, ToolStatusContext, toolStatus} from "./ToolRenderers/common";
 import {GenericMcpRenderer} from "./ToolRenderers/Mcp/Generic";
 import {isMcpToolName} from "./ToolRenderers/Mcp/Generic/cursorMcp";
 import {StreamSafeErrorBoundary} from "@/components/StreamSafeErrorBoundary";
@@ -16,29 +16,38 @@ export const ToolRenderer: React.FC<ToolRendererProps> = ({toolUse, message}) =>
     const toolResult = toolUse.tool_result as LoadedMessageDto | undefined;
     const renderKey = JSON.stringify(toolUse.input ?? {});
 
-    const Renderer = ToolRendererMap.get(toolUse.name)
+    const Renderer = ToolRendererMap.get(toolUse.name);
+
+    let body: React.ReactNode;
     if (Renderer) {
-        return (
+        body = (
             <StreamSafeErrorBoundary renderKey={renderKey}>
                 <Renderer toolUse={toolUse} toolResult={toolResult} message={message} />
             </StreamSafeErrorBoundary>
         );
-    }
-
-    // No dedicated renderer: any `mcp__server__tool` call falls back to the
-    // generic MCP renderer (Cursor-equivalent). Only truly non-MCP unknowns
-    // keep the bare "unknown" header — its console.log is the fast-report hook.
-    if (isMcpToolName(toolUse.name)) {
-        return (
+    } else if (isMcpToolName(toolUse.name)) {
+        // No dedicated renderer: any `mcp__server__tool` call falls back to the
+        // generic MCP renderer (Cursor-equivalent).
+        body = (
             <StreamSafeErrorBoundary renderKey={renderKey}>
                 <GenericMcpRenderer toolUse={toolUse} toolResult={toolResult} message={message} />
             </StreamSafeErrorBoundary>
         );
+    } else {
+        // Truly non-MCP unknown — bare header; its console.log is the fast-report hook.
+        body = (
+            <ToolWrapper message={message} onClick={() => console.log(toolUse)}>
+                <ToolHeader name={toolUse.name} description={'unknown'} />
+            </ToolWrapper>
+        );
     }
 
+    // Provide the tool's status so every ToolWrapper colors its bullet
+    // (success/error/progress/pending) without each renderer threading a prop.
+    // A result-less call under a streaming message reads as in-progress.
     return (
-        <ToolWrapper message={message} onClick={() => console.log(toolUse)}>
-            <ToolHeader name={toolUse.name} description={'unknown'} />
-        </ToolWrapper>
+        <ToolStatusContext.Provider value={toolStatus(toolResult, message?.isStreaming ?? false)}>
+            {body}
+        </ToolStatusContext.Provider>
     );
 };

@@ -3,8 +3,10 @@ import {ContextPills} from "@/pages/ChatPage/message-renderers";
 import type {LoadedMessageDto} from "@/types";
 import {cn} from "@/utils/cn.ts";
 import {AnyContentBlockDto, ContentBlockType, TextBlockDto, ToolResultBlockDto} from "@/dto/message/ContentBlockDto";
+import {useToolStatus} from "./toolStatus";
 
 export * from './RendererProps';
+export * from './toolStatus';
 
 /**
  * Extract displayable text from a tool_result (OUT) message.
@@ -34,12 +36,18 @@ export const ToolWrapper = (props: {
     children?: ReactNode;
 }) => {
     const {message, groupClassName = '', className = '', onClick, children} = props;
+    const status = useToolStatus();
+    const bulletColor =
+        status === 'success' ? 'text-state-success-fg'
+        : status === 'error' ? 'text-state-error-fg'
+        : status === 'progress' ? 'text-text-secondary animate-pulse'
+        : 'text-text-tertiary';
 
     return (
         <div className={cn(`group pt-2 pb-4 pl-6 pr-3`, groupClassName)}>
             <div className="flex items-start gap-3">
-                {/* Bullet indicator */}
-                <span className="text-text-tertiary mt-[3px] text-[0.6923rem]">●</span>
+                {/* Bullet indicator — colored by tool status (success/error/pending) */}
+                <span className={cn('mt-[3px] text-[0.6923rem]', bulletColor)}>●</span>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
