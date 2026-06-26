@@ -18,6 +18,20 @@ function asString(value: unknown): string {
     return typeof value === 'string' ? value : '';
 }
 
+/**
+ * Sensitive-label tools add a Trash/Spam label to a message or thread. The
+ * concrete label is carried in labelOption ('TRASH' | 'SPAM'); any other value
+ * falls back to a neutral phrasing so the card never shows an empty header.
+ */
+function sensitiveAction(target: string): ActionDescriptionFn {
+    return (input) => {
+        const option = asString(input.labelOption);
+        if (option === 'TRASH') return `Move ${target} to Trash`;
+        if (option === 'SPAM') return `Mark ${target} as Spam`;
+        return `Apply sensitive label to ${target}`;
+    };
+}
+
 export const GmailActionDescriptions: Record<string, ActionDescriptionFn> = {
     label_thread: (input) => `Add ${labelCount(input)} label(s) to thread`,
     unlabel_thread: (input) => `Remove ${labelCount(input)} label(s) from thread`,
@@ -32,6 +46,8 @@ export const GmailActionDescriptions: Record<string, ActionDescriptionFn> = {
         return name ? `Update label: ${name}` : 'Update label';
     },
     delete_label: () => 'Delete label',
+    apply_sensitive_message_label: sensitiveAction('message'),
+    apply_sensitive_thread_label: sensitiveAction('thread'),
 };
 
 /**

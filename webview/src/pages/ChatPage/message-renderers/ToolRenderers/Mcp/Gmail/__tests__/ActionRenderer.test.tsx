@@ -65,6 +65,51 @@ describe('GmailActionRenderer', () => {
         expect(screen.getByText(/Delete label/)).toBeInTheDocument();
     });
 
+    it('describes apply_sensitive_message_label as moving the message to Trash', () => {
+        render(
+            <GmailActionRenderer
+                toolUse={makeToolUse(
+                    {messageId: 'm1', labelOption: 'TRASH'},
+                    `${P}apply_sensitive_message_label`
+                )}
+            />
+        );
+        expect(screen.getByText(/Move message to Trash/)).toBeInTheDocument();
+    });
+
+    it('describes apply_sensitive_message_label as marking the message as Spam', () => {
+        render(
+            <GmailActionRenderer
+                toolUse={makeToolUse(
+                    {messageId: 'm1', labelOption: 'SPAM'},
+                    `${P}apply_sensitive_message_label`
+                )}
+            />
+        );
+        expect(screen.getByText(/Mark message as Spam/)).toBeInTheDocument();
+    });
+
+    it('describes apply_sensitive_thread_label as moving the thread to Trash', () => {
+        render(
+            <GmailActionRenderer
+                toolUse={makeToolUse(
+                    {threadId: 't1', labelOption: 'TRASH'},
+                    `${P}apply_sensitive_thread_label`
+                )}
+            />
+        );
+        expect(screen.getByText(/Move thread to Trash/)).toBeInTheDocument();
+    });
+
+    it('falls back to a generic description when labelOption is unknown', () => {
+        render(
+            <GmailActionRenderer
+                toolUse={makeToolUse({threadId: 't1'}, `${P}apply_sensitive_thread_label`)}
+            />
+        );
+        expect(screen.getByText(/Apply sensitive label to thread/)).toBeInTheDocument();
+    });
+
     it('renders the IN body with the input', () => {
         render(
             <GmailActionRenderer

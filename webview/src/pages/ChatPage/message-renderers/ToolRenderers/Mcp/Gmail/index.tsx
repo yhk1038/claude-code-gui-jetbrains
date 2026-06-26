@@ -24,4 +24,6 @@ export const GmailRenderers: Array<[string, FC<RendererProps>]> = [
     [`${P}create_label`, GmailActionRenderer],
     [`${P}update_label`, GmailActionRenderer],
     [`${P}delete_label`, GmailActionRenderer],
+    [`${P}apply_sensitive_message_label`, GmailActionRenderer],
+    [`${P}apply_sensitive_thread_label`, GmailActionRenderer],
 ];
