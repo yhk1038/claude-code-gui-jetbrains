@@ -767,4 +767,95 @@ describe('useChatStream', () => {
       expect(assistantMsg.message?.content).toEqual([{ type: 'text', text: 'ABC' }]);
     });
   });
+
+  describe('thinking token estimate & duration', () => {
+    // Helper: open a thinking block at content index 0.
+    function startThinkingBlock(emit: (t: string, p: Record<string, unknown>) => void) {
+      act(() => {
+        emit(MessageType.CLI_EVENT, {
+          type: 'stream_event',
+          event: { type: 'content_block_start', index: 0, content_block: { type: 'thinking', thinking: '' } },
+        });
+      });
+    }
+
+    it('system/thinking_tokens 수신 시 활성 thinking 블록에 estimatedTokens가 반영된다', () => {
+      const { bridge, emit } = createMockBridge();
+      const { result } = renderHook(() => useChatStream({ bridge }));
+
+      startThinkingBlock(emit);
+
+      act(() => {
+        emit(MessageType.CLI_EVENT, { type: 'system', subtype: 'thinking_tokens', estimated_tokens: 28, estimated_tokens_delta: 27 });
+        emit(MessageType.CLI_EVENT, { type: 'stream_event', event: { type: 'content_block_delta', index: 0, delta: { type: 'thinking_delta', thinking: 'The' } } });
+        flushRAF();
+      });
+
+      const block = result.current.messages[0].message?.content as unknown as Array<Record<string, unknown>>;
+      expect(block[0]).toMatchObject({ type: 'thinking', thinking: 'The', estimatedTokens: 28 });
+    });
+
+    it('마지막 thinking_tokens 값이 누적 절대값으로 유지된다', () => {
+      const { bridge, emit } = createMockBridge();
+      const { result } = renderHook(() => useChatStream({ bridge }));
+
+      startThinkingBlock(emit);
+
+      act(() => {
+        emit(MessageType.CLI_EVENT, { type: 'system', subtype: 'thinking_tokens', estimated_tokens: 28 });
+        flushRAF();
+      });
+      act(() => {
+        emit(MessageType.CLI_EVENT, { type: 'system', subtype: 'thinking_tokens', estimated_tokens: 288 });
+        flushRAF();
+      });
+
+      const block = result.current.messages[0].message?.content as unknown as Array<Record<string, unknown>>;
+      expect(block[0]).toMatchObject({ estimatedTokens: 288 });
+    });
+
+    it('content_block_stop 시 thinking 블록에 durationMillis가 기록된다', () => {
+      const { bridge, emit } = createMockBridge();
+      const { result } = renderHook(() => useChatStream({ bridge }));
+
+      startThinkingBlock(emit);
+      act(() => {
+        emit(MessageType.CLI_EVENT, { type: 'stream_event', event: { type: 'content_block_delta', index: 0, delta: { type: 'thinking_delta', thinking: 'done' } } });
+        flushRAF();
+      });
+      act(() => {
+        emit(MessageType.CLI_EVENT, { type: 'stream_event', event: { type: 'content_block_stop', index: 0 } });
+      });
+
+      const block = result.current.messages[0].message?.content as unknown as Array<Record<string, unknown>>;
+      expect(typeof block[0].durationMillis).toBe('number');
+      expect(block[0].durationMillis as number).toBeGreaterThanOrEqual(0);
+    });
+
+    it('assistant 이벤트가 content_block_stop보다 먼저 와도 durationMillis가 기록된다 (인덱스 ref 리셋 회귀 방지)', () => {
+      const { bridge, emit } = createMockBridge();
+      const { result } = renderHook(() => useChatStream({ bridge }));
+
+      startThinkingBlock(emit);
+      act(() => {
+        emit(MessageType.CLI_EVENT, { type: 'stream_event', event: { type: 'content_block_delta', index: 0, delta: { type: 'thinking_delta', thinking: 'done' } } });
+        flushRAF();
+      });
+      // Real CLI ordering: the `assistant` event (final blocks) lands BEFORE the
+      // thinking content_block_stop and resets the active-block index refs.
+      act(() => {
+        emit(MessageType.CLI_EVENT, {
+          type: 'assistant',
+          message: { id: 'msg_1', content: [{ type: 'thinking', thinking: 'done' }] },
+        });
+      });
+      act(() => {
+        emit(MessageType.CLI_EVENT, { type: 'stream_event', event: { type: 'content_block_stop', index: 0 } });
+      });
+
+      const block = result.current.messages[0].message?.content as unknown as Array<Record<string, unknown>>;
+      expect(block[0]).toMatchObject({ type: 'thinking' });
+      expect(typeof block[0].durationMillis).toBe('number');
+    });
+  });
 });

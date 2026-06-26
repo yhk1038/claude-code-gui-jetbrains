@@ -49,11 +49,14 @@ export const AssistantMessageRenderer: React.FC<AssistantMessageRendererProps> =
               ) : (
                   blocks.map((block, index) => {
                     if (block.type === ContentBlockType.Thinking) {
+                      const thinkingBlock = block as ThinkingBlockDto;
                       return (
                           <ThinkingStreamingMessage
                               key={`${message.uuid}-thinking-${index}`}
-                              thinking={(block as ThinkingBlockDto).thinking}
+                              thinking={thinkingBlock.thinking}
                               isStreaming={message.isStreaming ?? false}
+                              estimatedTokens={thinkingBlock.estimatedTokens}
+                              durationMillis={thinkingBlock.durationMillis}
                               className="text-text-primary text-[1rem] leading-relaxed"
                               message={message}
                           />

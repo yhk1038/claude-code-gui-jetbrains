@@ -77,6 +77,18 @@ export class ThinkingBlockDto extends ContentBlockDto {
   override type = ContentBlockType.Thinking as const;
   thinking!: string;
   signature?: string;
+  /**
+   * Runtime-only: live cumulative thinking-token estimate, fed from the CLI's
+   * `{type:"system", subtype:"thinking_tokens"}` stream events. Present only
+   * while the block is streaming; not part of the persisted JSONL.
+   */
+  estimatedTokens?: number;
+  /**
+   * Runtime-only: wall-clock duration (ms) of the thinking block, measured from
+   * its `content_block_start` to `content_block_stop`. Set once the block ends;
+   * its presence marks the block as "done thinking".
+   */
+  durationMillis?: number;
 }
 
 /**

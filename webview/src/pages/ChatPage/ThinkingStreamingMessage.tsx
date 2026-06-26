@@ -5,10 +5,15 @@ import {isInsideCodeBlock, isMarkdownComplete} from '../../utils/markdownParser'
 import './streaming.css';
 import {ToolWrapper} from "@/pages/ChatPage/message-renderers/ToolRenderers/common";
 import {useChatStreamContext} from '../../contexts/ChatStreamContext';
+import {formatThinkingTokens} from '../../utils/formatThinkingTokens';
 
 interface ThinkingStreamingMessageProps {
     thinking: string;
     isStreaming: boolean;
+    /** Live cumulative thinking-token estimate (shown only while actively thinking). */
+    estimatedTokens?: number;
+    /** Wall-clock duration (ms); its presence means the block is done thinking. */
+    durationMillis?: number;
     className?: string;
     message?: import('../../types').LoadedMessageDto;
 }
@@ -41,11 +46,23 @@ function normalizeRelativeUrls(markdown: string): string {
 export const ThinkingStreamingMessage: React.FC<ThinkingStreamingMessageProps> = ({
     thinking,
     isStreaming,
+    estimatedTokens,
+    durationMillis,
     className = '',
     message,
 }) => {
     const [shouldAnimate, setShouldAnimate] = useState(isStreaming);
     const { isThinkingExpanded, toggleThinkingExpanded } = useChatStreamContext();
+
+    // The block is "still thinking" until its duration is stamped at content_block_stop.
+    const isThinking = durationMillis === undefined && isStreaming;
+    const label = durationMillis !== undefined
+        ? `Thought for ${Math.round(durationMillis / 1000)}s`
+        : isThinking
+            ? 'Thinking...'
+            : 'Thinking';
+    // Live token count is only meaningful while actively thinking.
+    const tokenText = isThinking ? formatThinkingTokens(estimatedTokens) : null;
 
     // Handle streaming animation
     useEffect(() => {
@@ -63,13 +80,14 @@ export const ThinkingStreamingMessage: React.FC<ThinkingStreamingMessageProps> =
 
     return (
         <ToolWrapper message={message} className="mt-0">
-            <div className={`text-text-primary/40 streaming-message ${className}`} onClick={() => console.log(thinking)}>
+            <div className={`text-text-primary/40 streaming-message ${className}`}>
                 <div>
                     <div className="mb-0.5 cursor-pointer" onClick={toggleThinkingExpanded}>
                         <div className="italic text-text-primary/50 flex items-center gap-1">
-                            Thinking{isStreaming ? '...' : ''}
-                            <span
-                                className={`inline-block transition-transform duration-200 text-[0.7em] ${isThinkingExpanded ? 'rotate-180' : ''}`}>▼</span>
+                            {label}
+                            {tokenText && (
+                                <span className="not-italic tabular-nums opacity-80">· {tokenText}</span>
+                            )}
                         </div>
                     </div>
 

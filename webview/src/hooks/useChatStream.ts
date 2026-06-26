@@ -162,6 +162,8 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
   const pendingThinkingRef = useRef<string>('');
   const pendingInputJsonRef = useRef<string>('');              // RAF 프레임 간 input_json_delta 축적용
   const accumulatedInputJsonRef = useRef<string>('');          // 현재 tool_use 블록의 전체 누적 input JSON 문자열
+  const pendingThinkingTokensRef = useRef<number | null>(null); // system/thinking_tokens의 누적 추정치 (RAF flush에서 반영)
+  const thinkingStartAtRef = useRef<number | null>(null);      // 활성 thinking 블록의 시작 시각 (duration 측정용)
   const rafIdRef = useRef<number | null>(null);
   const streamingMessageIdRef = useRef<string | null>(null); // setState 비동기 대응
   const activeBlockIndexRef = useRef<number>(-1);             // 현재 스트리밍 중인 content block의 stream index
@@ -231,11 +233,13 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
     const textDelta = pendingTextRef.current;
     const thinkingDelta = pendingThinkingRef.current;
     const inputJsonDelta = pendingInputJsonRef.current;
-    if (!textDelta && !thinkingDelta && !inputJsonDelta) return;
+    const thinkingTokens = pendingThinkingTokensRef.current;
+    if (!textDelta && !thinkingDelta && !inputJsonDelta && thinkingTokens === null) return;
 
     pendingTextRef.current = '';
     pendingThinkingRef.current = '';
     pendingInputJsonRef.current = '';
+    pendingThinkingTokensRef.current = null;
 
     setMessages(prev => prev.map(msg => {
       if (msg.uuid !== msgId) return msg;
@@ -244,15 +248,24 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
         ? [...msg.message!.content]
         : [];
 
-      // Append thinking delta to the active thinking block (index-based)
-      if (thinkingDelta) {
+      // Append thinking delta to the active thinking block (index-based),
+      // and fold in the latest live token estimate when present.
+      if (thinkingDelta || thinkingTokens !== null) {
         const idx = activeThinkingBlockIndexRef.current;
         if (idx >= 0 && idx < currentBlocks.length && currentBlocks[idx].type === ContentBlockType.Thinking) {
           const block = currentBlocks[idx] as ThinkingBlockDto;
-          currentBlocks[idx] = { ...block, thinking: block.thinking + thinkingDelta };
-        } else {
+          currentBlocks[idx] = {
+            ...block,
+            thinking: thinkingDelta ? block.thinking + thinkingDelta : block.thinking,
+            ...(thinkingTokens !== null ? { estimatedTokens: thinkingTokens } : {}),
+          };
+        } else if (thinkingDelta) {
           // Fallback: no active thinking block yet, create one
-          currentBlocks.push({ type: ContentBlockType.Thinking, thinking: thinkingDelta } as ThinkingBlockDto);
+          currentBlocks.push({
+            type: ContentBlockType.Thinking,
+            thinking: thinkingDelta,
+            ...(thinkingTokens !== null ? { estimatedTokens: thinkingTokens } : {}),
+          } as ThinkingBlockDto);
           activeThinkingBlockIndexRef.current = currentBlocks.length - 1;
         }
       }
@@ -302,6 +315,8 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
     pendingThinkingRef.current = '';
     pendingInputJsonRef.current = '';
     accumulatedInputJsonRef.current = '';
+    pendingThinkingTokensRef.current = null;
+    thinkingStartAtRef.current = null;
     activeBlockIndexRef.current = -1;
     activeTextBlockIndexRef.current = -1;
     activeThinkingBlockIndexRef.current = -1;
@@ -578,6 +593,17 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
         if (cliEvent.subtype === 'init') {
           setSystemInit(cliEvent as Record<string, unknown>);
         }
+        // Live thinking-token estimate: the CLI emits cumulative counts on a
+        // dedicated `system/thinking_tokens` event (no block index — always the
+        // currently active thinking block). Stash it for the next RAF flush so
+        // it lands on the same frame as the thinking text deltas.
+        if (cliEvent.subtype === 'thinking_tokens') {
+          const estimate = cliEvent.estimated_tokens;
+          if (typeof estimate === 'number') {
+            pendingThinkingTokensRef.current = estimate;
+            scheduleFlush();
+          }
+        }
         onSystemMessageRef.current?.(cliEvent as Record<string, unknown>);
         return;
       }
@@ -633,6 +659,8 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
               const newBlock: ThinkingBlockDto = { type: ContentBlockType.Thinking, thinking: contentBlock.thinking ?? '' } as ThinkingBlockDto;
               currentBlocks.push(newBlock);
               activeThinkingBlockIndexRef.current = currentBlocks.length - 1;
+              // Mark the start so we can report "Thought for Ns" when the block stops.
+              thinkingStartAtRef.current = Date.now();
             }
 
             return { ...msg, message: { ...msg.message!, content: currentBlocks } };
@@ -644,8 +672,34 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
         if (streamEventType === 'content_block_stop') {
           activeBlockIndexRef.current = -1;
           // Flush any remaining delta for the completed block
-          if (pendingTextRef.current || pendingThinkingRef.current || pendingInputJsonRef.current) {
+          if (pendingTextRef.current || pendingThinkingRef.current || pendingInputJsonRef.current || pendingThinkingTokensRef.current !== null) {
             flushPendingDeltas();
+          }
+          // Stamp the thinking block's duration once it closes. We key off
+          // thinkingStartAtRef (set at the thinking content_block_start) rather
+          // than activeThinkingBlockIndexRef, because the `assistant` event
+          // arrives *before* this content_block_stop and resets the index ref —
+          // so we instead find the latest not-yet-stamped thinking block.
+          const startedAt = thinkingStartAtRef.current;
+          if (startedAt !== null) {
+            const durationMillis = Date.now() - startedAt;
+            const msgId = streamingMessageIdRef.current;
+            thinkingStartAtRef.current = null;
+            activeThinkingBlockIndexRef.current = -1;
+            if (msgId) {
+              setMessages(prev => prev.map(msg => {
+                if (msg.uuid !== msgId) return msg;
+                const blocks = Array.isArray(msg.message?.content) ? [...msg.message!.content] : [];
+                for (let i = blocks.length - 1; i >= 0; i--) {
+                  const block = blocks[i];
+                  if (block.type === ContentBlockType.Thinking && (block as ThinkingBlockDto).durationMillis === undefined) {
+                    blocks[i] = { ...(block as ThinkingBlockDto), durationMillis };
+                    return { ...msg, message: { ...msg.message!, content: blocks } };
+                  }
+                }
+                return msg;
+              }));
+            }
           }
           return;
         }
