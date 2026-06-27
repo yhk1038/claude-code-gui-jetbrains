@@ -15,7 +15,13 @@ vi.mock('fs', () => ({
 // are not exported, we test them indirectly through saveSettingToFile and readSettingsFile.
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
-import { readSettingsFile, saveSettingToFile } from '../settings';
+import {
+  readSettingsFile,
+  saveSettingToFile,
+  readMergedSettings,
+  resolveClaudeConfigDirOverride,
+  saveEnvVarToScope,
+} from '../settings';
 
 const mockReadFile = vi.mocked(readFile);
 const mockWriteFile = vi.mocked(writeFile);
@@ -152,6 +158,34 @@ describe('settings', () => {
       expect(result.status).toBe('error');
       expect(result.error).toContain('hostMode must be one of');
     });
+
+    it('should accept an env object of string values', async () => {
+      const result = await saveSettingToFile('env', { CLAUDE_CONFIG_DIR: '/home/u/.claude-work' });
+      expect(result.status).toBe('ok');
+    });
+
+    it('should accept an empty env object', async () => {
+      const result = await saveSettingToFile('env', {});
+      expect(result.status).toBe('ok');
+    });
+
+    it('should reject env that is not an object', async () => {
+      const result = await saveSettingToFile('env', 'CLAUDE_CONFIG_DIR=/x');
+      expect(result.status).toBe('error');
+      expect(result.error).toContain('env must be an object');
+    });
+
+    it('should reject env that is an array', async () => {
+      const result = await saveSettingToFile('env', ['/x']);
+      expect(result.status).toBe('error');
+      expect(result.error).toContain('env must be an object');
+    });
+
+    it('should reject env with a non-string value', async () => {
+      const result = await saveSettingToFile('env', { CLAUDE_CONFIG_DIR: 123 });
+      expect(result.status).toBe('error');
+      expect(result.error).toContain('must be a string');
+    });
   });
 
   describe('readSettingsFile()', () => {
@@ -172,6 +206,7 @@ describe('settings', () => {
         logLevel: 'info',
         terminalApp: null,
         hostMode: 'editor-tab',
+        env: {},
       });
       expect(mockWriteFile).toHaveBeenCalled();
     });
@@ -241,7 +276,18 @@ export default {
         logLevel: 'info',
         terminalApp: null,
         hostMode: 'editor-tab',
+        env: {},
       });
+    });
+
+    it('should parse an env object from the settings file', async () => {
+      mockExistsSync.mockReturnValue(true);
+      mockReadFile.mockResolvedValue(
+        `export default { env: { CLAUDE_CONFIG_DIR: "/home/u/.claude-work" } };`,
+      );
+
+      const result = await readSettingsFile();
+      expect(result.env).toEqual({ CLAUDE_CONFIG_DIR: '/home/u/.claude-work' });
     });
 
     it('should handle trailing commas in JS object', async () => {
@@ -254,6 +300,95 @@ export default {
       const result = await readSettingsFile();
       expect(result.theme).toBe('dark');
       expect(result.fontSize).toBe(14);
+    });
+  });
+
+  describe('env merge and resolution', () => {
+    beforeEach(() => {
+      mockMkdir.mockResolvedValue(undefined);
+      mockWriteFile.mockResolvedValue(undefined);
+      mockExistsSync.mockReturnValue(true);
+    });
+
+    // global lives in ~/.claude-code-gui/settings.js, project in
+    // <proj>/.claude-code-gui/settings.json — route the mock by file extension.
+    function mockGlobalAndProjectEnv(globalEnv: unknown, projectEnv: unknown) {
+      mockReadFile.mockImplementation((async (p: string) => {
+        if (String(p).endsWith('.js')) {
+          return `export default { env: ${JSON.stringify(globalEnv)} };`;
+        }
+        return JSON.stringify({ env: projectEnv });
+      }) as unknown as typeof readFile);
+    }
+
+    it('deep-merges env: project keys override global, other global keys preserved', async () => {
+      mockGlobalAndProjectEnv(
+        { A: 'g', CLAUDE_CONFIG_DIR: '/global' },
+        { CLAUDE_CONFIG_DIR: '/project' },
+      );
+
+      const { settings } = await readMergedSettings('/proj');
+      expect(settings.env).toEqual({ A: 'g', CLAUDE_CONFIG_DIR: '/project' });
+    });
+
+    it('resolveClaudeConfigDirOverride prefers project over global', async () => {
+      mockGlobalAndProjectEnv(
+        { CLAUDE_CONFIG_DIR: '/global' },
+        { CLAUDE_CONFIG_DIR: '/project' },
+      );
+
+      const value = await resolveClaudeConfigDirOverride('/proj');
+      expect(value).toBe('/project');
+    });
+
+    it('resolveClaudeConfigDirOverride falls back to global when project has none', async () => {
+      mockGlobalAndProjectEnv({ CLAUDE_CONFIG_DIR: '/global' }, {});
+
+      const value = await resolveClaudeConfigDirOverride('/proj');
+      expect(value).toBe('/global');
+    });
+
+    it('resolveClaudeConfigDirOverride returns null when no override is set', async () => {
+      mockReadFile.mockImplementation((async () => `export default {};`) as unknown as typeof readFile);
+
+      const value = await resolveClaudeConfigDirOverride();
+      expect(value).toBeNull();
+    });
+  });
+
+  describe('saveEnvVarToScope', () => {
+    beforeEach(() => {
+      mockMkdir.mockResolvedValue(undefined);
+    });
+
+    it('writes an env var into global settings', async () => {
+      mockExistsSync.mockReturnValue(false);
+      let written = '';
+      mockWriteFile.mockImplementation((async (_p: string, content: string) => {
+        written = String(content);
+      }) as unknown as typeof writeFile);
+
+      const result = await saveEnvVarToScope('CLAUDE_CONFIG_DIR', '/home/u/.claude-work', 'global');
+
+      expect(result.status).toBe('ok');
+      expect(written).toContain('CLAUDE_CONFIG_DIR');
+      expect(written).toContain('/home/u/.claude-work');
+    });
+
+    it('removes an env var when value is null', async () => {
+      mockExistsSync.mockReturnValue(true);
+      mockReadFile.mockResolvedValue(
+        `export default { env: { CLAUDE_CONFIG_DIR: "/home/u/.claude-work" } };`,
+      );
+      let written = '';
+      mockWriteFile.mockImplementation((async (_p: string, content: string) => {
+        written = String(content);
+      }) as unknown as typeof writeFile);
+
+      const result = await saveEnvVarToScope('CLAUDE_CONFIG_DIR', null, 'global');
+
+      expect(result.status).toBe('ok');
+      expect(written).not.toContain('.claude-work');
     });
   });
 });

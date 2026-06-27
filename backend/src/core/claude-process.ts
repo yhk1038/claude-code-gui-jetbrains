@@ -130,6 +130,10 @@ export async function ensureClaudeProcess(
 
   console.error('[node-backend]', `Command: ${Claude.command} ${args.join(' ')}`);
 
+  // Load this project's CLAUDE_CONFIG_DIR (project > global) onto process.env before
+  // spawning, so the CLI resolves the right Claude data dir for THIS workingDir. (#123)
+  await Claude.applyConfigDir(workingDir);
+
   // Strip OAuth env inherited from parent (e.g. Claude Desktop spawning the IDE) so the
   // CLI falls through to its keychain-based auth, which can refresh expired tokens.
   // User-pinned keys in Claude settings are preserved by getStrippableAuthEnvKeys().

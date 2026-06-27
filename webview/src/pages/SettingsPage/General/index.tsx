@@ -2,6 +2,7 @@ import { SettingSection, SettingRow } from '../common';
 import { Select, type SelectOption } from '@/components/Select';
 import { ToggleSwitch } from '@/components/ToggleSwitch';
 import { HostModeRow } from './HostModeRow';
+import { ClaudeConfigDirRow } from './ClaudeConfigDirRow';
 import { APP_NAME } from '@/config/app';
 import { ROUTE_META, Route } from '@/router/routes';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
@@ -87,6 +88,8 @@ export function GeneralSettings() {
         </SettingRow>
 
         <HostModeRow />
+
+        <ClaudeConfigDirRow />
       </SettingSection>
     </div>
   );

@@ -2,6 +2,7 @@ import { useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useBridgeContext } from '@/contexts/BridgeContext';
 import { useChatStreamContext } from '@/contexts/ChatStreamContext';
+import { useWorkingDir } from '@/contexts/WorkingDirContext';
 import type { UsageResponse, UsageErrorKind } from '@/types/usage';
 import { MessageType } from '@/shared';
 import { useUsageQuery, normalizeUsage, type RawUsageResponse } from '@/hooks/queries/useUsageQuery';
@@ -19,6 +20,7 @@ export function useUsageData(): UseUsageDataReturn {
   const { send } = useBridgeContext();
   const queryClient = useQueryClient();
   const { messages } = useChatStreamContext();
+  const { workingDirectory } = useWorkingDir();
   const usageQuery = useUsageQuery();
 
   // Re-fetch on conversation changes (new message, session switch, clear). The
@@ -33,9 +35,13 @@ export function useUsageData(): UseUsageDataReturn {
   // Explicit refresh bypasses the backend's usage cache (force: true). Write the
   // result straight into the shared cache so all consumers update at once.
   const refresh = useCallback(async () => {
-    const result = (await send(MessageType.GET_USAGE, { force: true })) as RawUsageResponse;
-    queryClient.setQueryData([MessageType.GET_USAGE], normalizeUsage(result));
-  }, [send, queryClient]);
+    const result = (await send(MessageType.GET_USAGE, {
+      force: true,
+      workingDir: workingDirectory ?? undefined,
+    })) as RawUsageResponse;
+    // Write into THIS project's cache entry (keyed by workingDir), matching useUsageQuery.
+    queryClient.setQueryData([MessageType.GET_USAGE, workingDirectory], normalizeUsage(result));
+  }, [send, queryClient, workingDirectory]);
 
   const result = usageQuery.data;
   return {

@@ -29,6 +29,12 @@ export async function getAccountHandler(
   connections: ConnectionManager,
   _bridge: Bridge,
 ): Promise<void> {
+  // Resolve this context's CLAUDE_CONFIG_DIR onto process.env so `auth status` reports
+  // the profile for the active workingDir (project > global), matching chat. Only when a
+  // workingDir is supplied — otherwise keep the already-active context. (#123)
+  const workingDir = (message.payload as { workingDir?: string })?.workingDir;
+  if (workingDir) await Claude.applyConfigDir(workingDir);
+
   const authStatus = await runClaudeAuthStatus();
 
   if (!authStatus) {

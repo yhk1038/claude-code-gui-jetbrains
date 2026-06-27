@@ -2,6 +2,7 @@ import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { MessageType } from '../../shared';
+import { Claude } from '../claude';
 import { sendMessageHandler } from './sendMessage';
 import { stopGenerationHandler } from './stopGeneration';
 import { stopSessionHandler } from './stopSession';
@@ -14,6 +15,8 @@ import { deleteSessionHandler } from './deleteSession';
 import { renameSessionHandler } from './renameSession';
 import { getSettingsHandler } from './getSettings';
 import { saveSettingsHandler } from './saveSettings';
+import { getClaudeConfigDirHandler } from './getClaudeConfigDir';
+import { saveClaudeConfigDirHandler } from './saveClaudeConfigDir';
 import { getTelemetryConsentHandler } from './getTelemetryConsent';
 import { setTelemetryConsentHandler } from './setTelemetryConsent';
 import { getProjectsHandler } from './getProjects';
@@ -70,6 +73,14 @@ export async function handleMessage(
 ): Promise<void> {
   console.error('[node-backend]', `Received: ${message.type}`);
 
+  // Project the active context's CLAUDE_CONFIG_DIR onto process.env up front, so every
+  // handler that reads Claude data (sessions, projects) or spawns a child (claude/ccb)
+  // resolves the right profile for this workingDir. Messages without a workingDir leave
+  // the current context untouched — the project picker (getProjects) sets global itself,
+  // and usage/account intentionally keep whatever context is already active. (#123)
+  const ctxWorkingDir = (message.payload as { workingDir?: string } | undefined)?.workingDir;
+  if (ctxWorkingDir) await Claude.applyConfigDir(ctxWorkingDir);
+
   switch (message.type) {
     case MessageType.SEND_MESSAGE:
       await sendMessageHandler(connectionId, message, connections, bridge);
@@ -106,6 +117,12 @@ export async function handleMessage(
       break;
     case MessageType.SAVE_SETTINGS:
       await saveSettingsHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.GET_CLAUDE_CONFIG_DIR:
+      await getClaudeConfigDirHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.SAVE_CLAUDE_CONFIG_DIR:
+      await saveClaudeConfigDirHandler(connectionId, message, connections, bridge);
       break;
     case MessageType.GET_TELEMETRY_CONSENT:
       await getTelemetryConsentHandler(connectionId, message, connections, bridge);
