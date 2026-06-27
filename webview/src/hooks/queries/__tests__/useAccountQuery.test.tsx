@@ -10,6 +10,10 @@ vi.mock('@/contexts/BridgeContext', () => ({
   useBridgeContext: () => ({ isConnected: connected, send: mockSend, subscribe: vi.fn(), lastError: null }),
 }));
 
+vi.mock('@/contexts/WorkingDirContext', () => ({
+  useWorkingDir: () => ({ workingDirectory: null }),
+}));
+
 import { useAccountQuery, type AccountQueryResult } from '../useAccountQuery';
 
 function Consumer() {

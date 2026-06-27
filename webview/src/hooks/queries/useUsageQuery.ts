@@ -1,5 +1,6 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { useBridgeContext } from '@/contexts/BridgeContext';
+import { useWorkingDir } from '@/contexts/WorkingDirContext';
 import type { UsageResponse, UsageErrorKind } from '@/types/usage';
 import { MessageType } from '@/shared';
 
@@ -48,11 +49,19 @@ export function normalizeUsage(result: RawUsageResponse): UsageQueryResult {
  */
 export function useUsageQuery(): UseQueryResult<UsageQueryResult, Error> {
   const { isConnected, send } = useBridgeContext();
+  const { workingDirectory } = useWorkingDir();
 
+  // Key by workingDir so each project's usage is cached separately and the request
+  // carries its workingDir — the backend resolves CLAUDE_CONFIG_DIR per project. (#123)
   return useQuery<UsageQueryResult, Error>({
-    queryKey: [MessageType.GET_USAGE],
+    queryKey: [MessageType.GET_USAGE, workingDirectory],
     enabled: isConnected,
     queryFn: async () =>
-      normalizeUsage((await send(MessageType.GET_USAGE, { force: false })) as RawUsageResponse),
+      normalizeUsage(
+        (await send(MessageType.GET_USAGE, {
+          force: false,
+          workingDir: workingDirectory ?? undefined,
+        })) as RawUsageResponse,
+      ),
   });
 }

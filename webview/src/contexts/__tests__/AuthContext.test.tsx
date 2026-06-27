@@ -11,6 +11,10 @@ vi.mock('../BridgeContext', () => ({
   useBridgeContext: () => ({ isConnected: connected, send: mockSend, subscribe: vi.fn(), lastError: null }),
 }));
 
+vi.mock('@/contexts/WorkingDirContext', () => ({
+  useWorkingDir: () => ({ workingDirectory: null }),
+}));
+
 import { AuthProvider, useAuthContext } from '../AuthContext';
 
 const wrapper = ({ children }: { children: ReactNode }) => {

@@ -1,5 +1,6 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { useBridgeContext } from '@/contexts/BridgeContext';
+import { useWorkingDir } from '@/contexts/WorkingDirContext';
 import { MessageType } from '@/shared';
 
 /**
@@ -44,12 +45,17 @@ interface RawAccountResponse {
  */
 export function useAccountQuery(): UseQueryResult<AccountQueryResult, Error> {
   const { isConnected, send } = useBridgeContext();
+  const { workingDirectory } = useWorkingDir();
 
+  // Key by workingDir and pass it along, so `auth status` reports the profile for the
+  // active project (the backend resolves CLAUDE_CONFIG_DIR per project). (#123)
   return useQuery<AccountQueryResult, Error>({
-    queryKey: [MessageType.GET_ACCOUNT],
+    queryKey: [MessageType.GET_ACCOUNT, workingDirectory],
     enabled: isConnected,
     queryFn: async () => {
-      const result = (await send(MessageType.GET_ACCOUNT, {})) as RawAccountResponse;
+      const result = (await send(MessageType.GET_ACCOUNT, {
+        workingDir: workingDirectory ?? undefined,
+      })) as RawAccountResponse;
       if (result?.status === 'ok' && result.account) {
         return { loggedIn: result.account.loggedIn === true, account: result.account };
       }
