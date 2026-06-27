@@ -17,6 +17,7 @@ const DEFAULT_SETTINGS: Record<string, unknown> = {
   logLevel: 'info',
   terminalApp: null,
   hostMode: 'editor-tab',
+  env: {},
 };
 
 const COMMENT_MAP: Record<string, string> = {
@@ -29,6 +30,7 @@ const COMMENT_MAP: Record<string, string> = {
   logLevel: '로그 레벨: "debug" | "info" | "warn" | "error"',
   terminalApp: '터미널 프로그램 (null이면 OS 기본 터미널)',
   hostMode: '채팅을 띄우는 자리: "editor-tab" | "tool-window"',
+  env: '자식 프로세스(claude, ccb)에 주입할 환경 변수. 예: { CLAUDE_CONFIG_DIR: "..." }',
 };
 
 function generateSettingsContent(settings: Record<string, unknown>): string {
@@ -142,8 +144,27 @@ function validateSetting(key: string, value: unknown): string | null {
         return 'hostMode must be one of "editor-tab", "tool-window"';
       }
       break;
+    case 'env': {
+      if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+        return 'env must be an object of string values';
+      }
+      for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+        if (typeof v !== 'string') {
+          return `env.${k} must be a string`;
+        }
+      }
+      break;
+    }
   }
   return null;
+}
+
+/** Coerce an unknown settings value into a string-keyed env record (or {}). */
+function asEnvRecord(value: unknown): Record<string, string> {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value as Record<string, string>;
+  }
+  return {};
 }
 
 /**
@@ -172,10 +193,51 @@ export async function readMergedSettings(projectPath?: string): Promise<{ settin
   }
   const projectSettings = await readProjectSettings(projectPath);
   const overrides = Object.keys(projectSettings);
-  return {
-    settings: { ...globalSettings, ...projectSettings },
-    overrides,
-  };
+  const merged: Record<string, unknown> = { ...globalSettings, ...projectSettings };
+  // env is the one nested key we merge by sub-key (Claude's own order: global env,
+  // then project env overriding individual keys) rather than replacing wholesale —
+  // otherwise a project that sets one var would wipe the user's global vars.
+  merged.env = { ...asEnvRecord(globalSettings.env), ...asEnvRecord(projectSettings.env) };
+  return { settings: merged, overrides };
+}
+
+/**
+ * Resolve the effective CLAUDE_CONFIG_DIR override declared in the plugin settings
+ * `env` map (project takes priority over global). Returns null when unset, so callers
+ * can fall back to process.env / the default ~/.claude.
+ */
+export async function resolveClaudeConfigDirOverride(projectPath?: string): Promise<string | null> {
+  const { settings } = await readMergedSettings(projectPath);
+  const value = asEnvRecord(settings.env).CLAUDE_CONFIG_DIR;
+  return typeof value === 'string' && value.trim() !== '' ? value : null;
+}
+
+/**
+ * Set or remove a single variable inside the `env` map at the given scope, preserving
+ * the other variables. Passing value === null removes the variable.
+ */
+export async function saveEnvVarToScope(
+  name: string,
+  value: string | null,
+  scope: 'global' | 'project',
+  projectPath?: string,
+): Promise<SaveResult> {
+  if (scope === 'project' && !projectPath) {
+    return { status: 'error', error: 'projectPath required for project scope' };
+  }
+
+  const source = scope === 'project'
+    ? await readProjectSettings(projectPath as string)
+    : await readSettingsFile();
+  const currentEnv = { ...asEnvRecord(source.env) };
+
+  if (value === null) {
+    delete currentEnv[name];
+  } else {
+    currentEnv[name] = value;
+  }
+
+  return saveSettingToScope('env', currentEnv, scope, projectPath);
 }
 
 /**

@@ -59,6 +59,10 @@ export enum MessageType {
   GET_CLAUDE_SETTINGS = 'GET_CLAUDE_SETTINGS',
   /** Persist a single Claude Code setting at a given scope. */
   SAVE_CLAUDE_SETTINGS = 'SAVE_CLAUDE_SETTINGS',
+  /** Read the effective CLAUDE_CONFIG_DIR: active value, per-scope plugin settings, and the value inherited from the environment at startup. inbound webview→backend */
+  GET_CLAUDE_CONFIG_DIR = 'GET_CLAUDE_CONFIG_DIR',
+  /** Persist CLAUDE_CONFIG_DIR into the plugin settings `env` map at a scope (global/project) and re-apply it. inbound webview→backend */
+  SAVE_CLAUDE_CONFIG_DIR = 'SAVE_CLAUDE_CONFIG_DIR',
   /** Set the active model for the session/CLI. */
   SET_MODEL = 'SET_MODEL',
   /** Read the CLI control configuration (slash commands, etc.). */

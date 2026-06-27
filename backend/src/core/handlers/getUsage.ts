@@ -2,6 +2,7 @@ import { execFile } from 'child_process';
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
+import { Claude } from '../claude';
 import { MessageType } from '../../shared';
 
 interface UsageBucket {
@@ -142,6 +143,7 @@ export async function getUsageHandler(
   _bridge: Bridge,
 ): Promise<void> {
   const force = (message.payload as { force?: boolean })?.force === true;
+  const workingDir = (message.payload as { workingDir?: string })?.workingDir;
 
   if (!force && Date.now() - cachedAt < CACHE_TTL_MS && (cachedUsage !== null || lastErrorInfo !== null)) {
     if (cachedUsage !== null) {
@@ -192,6 +194,11 @@ export async function getUsageHandler(
     }
 
     const runPromise = (async () => {
+      // Resolve this context's CLAUDE_CONFIG_DIR onto process.env before invoking ccb,
+      // so the usage child reads credentials from the same profile as chat. Only when a
+      // workingDir is supplied — otherwise keep whatever context is already active so we
+      // don't clobber it back to global. (#123)
+      if (workingDir) await Claude.applyConfigDir(workingDir);
       const usage = await runCcbUsage();
       cachedUsage = usage;
       cachedAt = Date.now();

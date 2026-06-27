@@ -14,6 +14,8 @@ import { deleteSessionHandler } from './deleteSession';
 import { renameSessionHandler } from './renameSession';
 import { getSettingsHandler } from './getSettings';
 import { saveSettingsHandler } from './saveSettings';
+import { getClaudeConfigDirHandler } from './getClaudeConfigDir';
+import { saveClaudeConfigDirHandler } from './saveClaudeConfigDir';
 import { getTelemetryConsentHandler } from './getTelemetryConsent';
 import { setTelemetryConsentHandler } from './setTelemetryConsent';
 import { getProjectsHandler } from './getProjects';
@@ -106,6 +108,12 @@ export async function handleMessage(
       break;
     case MessageType.SAVE_SETTINGS:
       await saveSettingsHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.GET_CLAUDE_CONFIG_DIR:
+      await getClaudeConfigDirHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.SAVE_CLAUDE_CONFIG_DIR:
+      await saveClaudeConfigDirHandler(connectionId, message, connections, bridge);
       break;
     case MessageType.GET_TELEMETRY_CONSENT:
       await getTelemetryConsentHandler(connectionId, message, connections, bridge);

@@ -7,6 +7,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 // Mock readSettingsFile to avoid file system access
 vi.mock('../features/settings', () => ({
   readSettingsFile: vi.fn().mockResolvedValue({ cliPath: null }),
+  resolveClaudeConfigDirOverride: vi.fn().mockResolvedValue(null),
 }));
 
 // Mock child_process so we can inspect the options passed to spawn/execFile
@@ -51,8 +52,26 @@ describe('Claude', () => {
   });
 
   describe('refresh()', () => {
+    const originalConfigDir = process.env.CLAUDE_CONFIG_DIR;
+
+    afterEach(async () => {
+      const settings = await import('../features/settings');
+      vi.mocked(settings.resolveClaudeConfigDirOverride).mockResolvedValue(null);
+      if (originalConfigDir === undefined) delete process.env.CLAUDE_CONFIG_DIR;
+      else process.env.CLAUDE_CONFIG_DIR = originalConfigDir;
+    });
+
     it('should load settings without throwing', async () => {
       await expect(Claude.refresh()).resolves.not.toThrow();
+    });
+
+    it('applies the settings CLAUDE_CONFIG_DIR override onto process.env (#123)', async () => {
+      const settings = await import('../features/settings');
+      vi.mocked(settings.resolveClaudeConfigDirOverride).mockResolvedValueOnce('/custom/.claude-work');
+
+      await Claude.refresh('/some/project');
+
+      expect(process.env.CLAUDE_CONFIG_DIR).toBe('/custom/.claude-work');
     });
   });
 
