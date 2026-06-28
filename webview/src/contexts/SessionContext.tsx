@@ -28,6 +28,8 @@ interface SessionContextValue {
   inputMode: InputMode;
   setInputMode: (mode: InputMode) => void;
   cycleInputMode: () => void;
+  /** 현재 가용한 모드 목록 (모드 선택 패널이 표시할 항목) */
+  availableModes: InputMode[];
   /** 설정값에서 로드된 초기 모드를 동기화 (사용자가 직접 변경하지 않은 경우에만 적용) */
   syncInitialInputMode: (initialMode: InputMode) => void;
   /** CLI가 통보한 실제 적용 모드(system/init.permissionMode)를 반영. 사용자 변경 플래그는 건드리지 않는다. */
@@ -101,15 +103,20 @@ export function SessionProvider({ children }: SessionProviderProps) {
     setInputModeState(newMode);
   }, []);
 
+  // 현재 가용한 모드 목록(순환·선택 패널이 공유한다).
+  const availableModes = useMemo(
+    () => getAvailableModes(bypassDisabled, autoModeAvailable),
+    [bypassDisabled, autoModeAvailable],
+  );
+
   const cycleInputMode = useCallback(() => {
     hasUserChangedMode.current = true;
     setInputModeState((current) => {
-      const modes = getAvailableModes(bypassDisabled, autoModeAvailable);
-      const currentIndex = modes.indexOf(current);
-      const nextIndex = (currentIndex + 1) % modes.length;
-      return modes[nextIndex];
+      const currentIndex = availableModes.indexOf(current);
+      const nextIndex = (currentIndex + 1) % availableModes.length;
+      return availableModes[nextIndex];
     });
-  }, [bypassDisabled, autoModeAvailable]);
+  }, [availableModes]);
 
   const syncInitialInputMode = useCallback((initialMode: InputMode) => {
     if (!hasUserChangedMode.current) {
@@ -340,6 +347,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
     inputMode,
     setInputMode,
     cycleInputMode,
+    availableModes,
     syncInitialInputMode,
     syncEffectiveMode,
     modeResetTrigger,
