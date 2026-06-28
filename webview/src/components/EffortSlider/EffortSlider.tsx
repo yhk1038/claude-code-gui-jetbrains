@@ -13,26 +13,40 @@ const SPAN = '(100% - var(--thumb-size) - 2 * var(--thumb-inset))';
 /**
  * Effort level slider, ported from the Claude Code (Cursor) extension's
  * effort toggle (its `g$` component). A horizontal track with one notch per
- * level and a draggable thumb; clicking or dragging picks a level by
- * position. Levels come from {@link buildEffortLevels} — `[auto, …supported]` —
- * so `auto` is the leftmost stop. The ultracode step is intentionally omitted
- * (we don't wire up the workflows flag it depends on).
+ * level and a draggable thumb; clicking or dragging picks a level by position.
+ *
+ * When ultracode is available, a synthetic top step is appended (rendered
+ * purple): landing on it engages ultracode (xhigh effort + workflows) instead
+ * of setting a plain effort level. The level steps are the model's
+ * `supportedEffortLevels`; `auto` is only the unset-state label, never a step.
  *
  * Returns null when the current model doesn't support effort, so callers can
  * drop it in unconditionally.
  */
 export function EffortSlider(props: Props) {
   const { className } = props;
-  const { supportsEffort, levels: supported, current, setLevel } = useEffort();
-  // Tracks the level index the active drag last applied, so pointermove only
+  const {
+    supportsEffort,
+    levels: supported,
+    current,
+    setLevel,
+    ultracodeAvailable,
+    ultracodeEnabled,
+    enableUltracode,
+  } = useEffort();
+  // Tracks the step index the active drag last applied, so pointermove only
   // writes settings when the index actually changes.
   const dragIndexRef = useRef<number | undefined>(undefined);
 
   if (!supportsEffort) return null;
 
   const levels = buildEffortLevels(supported);
-  const count = levels.length;
-  const currentIndex = Math.max(0, levels.findIndex((l) => l.key === current));
+  // Total steps = real levels + (ultracode ? 1 trailing step : 0).
+  const count = levels.length + (ultracodeAvailable ? 1 : 0);
+  const ultracodeIndex = ultracodeAvailable ? count - 1 : -1;
+  const currentIndex = ultracodeEnabled
+    ? ultracodeIndex
+    : Math.max(0, levels.findIndex((l) => l.key === current));
   const ratio = count > 1 ? currentIndex / (count - 1) : 0;
 
   const thumbLeft = `calc(var(--thumb-inset) + ${ratio} * ${SPAN})`;
@@ -48,6 +62,10 @@ export function EffortSlider(props: Props) {
   };
 
   const applyIndex = (i: number) => {
+    if (i === ultracodeIndex) {
+      enableUltracode();
+      return;
+    }
     const level = levels[i];
     if (level) setLevel(level.key);
   };
@@ -72,11 +90,19 @@ export function EffortSlider(props: Props) {
     dragIndexRef.current = undefined;
   };
 
+  const rootClass = [
+    'effort-slider',
+    ultracodeEnabled && 'effort-slider--ultracode',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <button
       type="button"
-      className={className ? `effort-slider ${className}` : 'effort-slider'}
-      title="Click or drag to set effort level"
+      className={rootClass}
+      title={ultracodeAvailable ? 'Click or drag to set effort level (top step = ultracode)' : 'Click or drag to set effort level'}
       onMouseDown={(e) => e.preventDefault()}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -84,16 +110,17 @@ export function EffortSlider(props: Props) {
       onPointerCancel={endDrag}
       onLostPointerCapture={endDrag}
       // Stop the click from bubbling to a parent row handler (the slash-command
-      // row's onClick cycles effort) — the slider already applied the level.
+      // row's onClick cycles effort) — the slider already applied the step.
       onClick={(e) => e.stopPropagation()}
     >
       <span className="effort-slider__fill" style={{ width: fillWidth }} />
-      {levels.map((level, i) => {
+      {Array.from({ length: count }, (_, i) => {
         const r = count > 1 ? i / (count - 1) : 0;
+        const isUltracodeNotch = i === ultracodeIndex;
         return (
           <span
-            key={level.key}
-            className="effort-slider__notch"
+            key={i}
+            className={isUltracodeNotch ? 'effort-slider__notch effort-slider__notch--ultracode' : 'effort-slider__notch'}
             style={{ left: notchLeft(r) }}
           />
         );

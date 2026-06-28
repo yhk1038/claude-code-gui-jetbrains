@@ -88,6 +88,50 @@ export function parseEffortLevel(
   return supported.includes(value) ? value : EFFORT_AUTO;
 }
 
+// ─── Ultracode ───────────────────────────────────────────────────────────────
+// Ultracode is a synthetic step above the real effort levels: it means "xhigh
+// effort + standing workflow orchestration". It's not an effortLevel value — the
+// Cursor extension layers it as the slider's top notch, gated on the model
+// supporting xhigh and the Workflows feature not being disabled.
+
+export const ULTRACODE_LABEL = 'Ultracode - xhigh + workflows';
+
+/** The effort level ultracode pins (and the gate for its availability). */
+export const ULTRACODE_EFFORT = 'xhigh';
+
+export function isUltracodeAvailable(
+  supported: string[],
+  disableWorkflows: boolean | undefined,
+): boolean {
+  if (disableWorkflows === true) return false;
+  return supported.includes(ULTRACODE_EFFORT);
+}
+
+export type EffortStep =
+  | { kind: 'level'; key: string }
+  | { kind: 'ultracode' };
+
+/**
+ * The next step when cycling effort with Shift+Tab / Enter. Mirrors the Cursor
+ * extension: the steps are the supported levels plus, when available, a trailing
+ * ultracode step. Wraps ultracode (or the last level) back to the first level.
+ */
+export function nextEffortStep(
+  current: string | null | undefined,
+  ultracodeEnabled: boolean,
+  supported: string[],
+  ultracodeAvailable: boolean,
+): EffortStep {
+  const count = supported.length + (ultracodeAvailable ? 1 : 0);
+  if (count === 0) return { kind: 'level', key: '' };
+  // ultracode occupies the last index; otherwise locate the current level
+  // (unset/auto → -1 so it advances to the first level).
+  const idx = ultracodeEnabled ? count - 1 : current ? supported.indexOf(current) : -1;
+  const next = (idx + 1) % count;
+  if (ultracodeAvailable && next === count - 1) return { kind: 'ultracode' };
+  return { kind: 'level', key: supported[next] };
+}
+
 export interface ModelEffortConfig {
   supportsEffort: boolean;
   levels: string[];

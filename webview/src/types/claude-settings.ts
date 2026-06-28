@@ -24,6 +24,8 @@ export interface ClaudeSettingsState {
   model: string | null; // full model ID like 'claude-opus-4-6' or null for default
   language: string | null; // Claude's preferred response language (e.g., "korean", "japanese")
   effortLevel: string | null; // CLI effort level — values sourced from ModelInfo.supportedEffortLevels; null = auto
+  ultracode?: boolean | null; // xhigh effort + standing workflow orchestration; the slider's top step (null = off/cleared)
+  disableWorkflows?: boolean; // CLI-owned: when true, the Workflows feature (and ultracode) is unavailable
   alwaysThinkingEnabled: boolean; // extended thinking always on
   preferFastMode: boolean; // fast output mode (Opus 4.6 only)
   useCtrlEnterToSend: boolean; // when true, Ctrl/Cmd+Enter sends; plain Enter inserts a newline

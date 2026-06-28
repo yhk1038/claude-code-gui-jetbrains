@@ -5,6 +5,8 @@ import {
   getEffortDef,
   nextEffortLevel,
   parseEffortLevel,
+  isUltracodeAvailable,
+  nextEffortStep,
 } from '../effort';
 
 // Mirrors the Claude Code CLI: effort levels are low/medium/high/xhigh (+max
@@ -71,5 +73,44 @@ describe('parseEffortLevel', () => {
 
   it('keeps a supported value as-is', () => {
     expect(parseEffortLevel('xhigh', SUPPORTED)).toBe('xhigh');
+  });
+});
+
+// Ultracode = a synthetic top step above xhigh (xhigh effort + workflows).
+// Available only when the model supports xhigh AND workflows aren't disabled.
+describe('isUltracodeAvailable', () => {
+  it('is available when xhigh is supported and workflows are not disabled', () => {
+    expect(isUltracodeAvailable(SUPPORTED, false)).toBe(true);
+    expect(isUltracodeAvailable(SUPPORTED, undefined)).toBe(true);
+  });
+
+  it('is unavailable when the model has no xhigh level', () => {
+    expect(isUltracodeAvailable(['low', 'medium', 'high', 'max'], false)).toBe(false);
+  });
+
+  it('is unavailable when workflows are disabled', () => {
+    expect(isUltracodeAvailable(SUPPORTED, true)).toBe(false);
+  });
+});
+
+describe('nextEffortStep', () => {
+  it('advances unset → first level', () => {
+    expect(nextEffortStep(null, false, SUPPORTED, true)).toEqual({ kind: 'level', key: 'low' });
+  });
+
+  it('advances between levels', () => {
+    expect(nextEffortStep('high', false, SUPPORTED, true)).toEqual({ kind: 'level', key: 'xhigh' });
+  });
+
+  it('advances max → ultracode when ultracode is available', () => {
+    expect(nextEffortStep('max', false, SUPPORTED, true)).toEqual({ kind: 'ultracode' });
+  });
+
+  it('advances max → first level when ultracode is NOT available', () => {
+    expect(nextEffortStep('max', false, SUPPORTED, false)).toEqual({ kind: 'level', key: 'low' });
+  });
+
+  it('advances ultracode → first level (wraps back into the level set)', () => {
+    expect(nextEffortStep('xhigh', true, SUPPORTED, true)).toEqual({ kind: 'level', key: 'low' });
   });
 });

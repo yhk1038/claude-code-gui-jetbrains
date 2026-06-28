@@ -510,6 +510,11 @@ body {
   padding: 0;
 }
 
+.effort-slider {
+  /* Ultracode accent (the top step), mirroring Cursor's purple --app-ultracode-color. */
+  --effort-ultracode: #a78bfa;
+}
+
 .effort-slider__fill {
   position: absolute;
   top: 0;
@@ -517,7 +522,12 @@ body {
   left: 0;
   background: var(--accent-primary);
   border-radius: calc(var(--track-height) / 2);
-  transition: width 0.15s;
+  transition: width 0.15s, background 0.15s;
+}
+
+/* When ultracode is engaged the whole fill bar turns purple. */
+.effort-slider--ultracode .effort-slider__fill {
+  background: var(--effort-ultracode);
 }
 
 .effort-slider__notch {
@@ -528,6 +538,11 @@ body {
   border-radius: 50%;
   background: color-mix(in srgb, var(--text-secondary) 40%, transparent);
   transform: translate(-50%, -50%);
+}
+
+/* The ultracode top notch is always purple to signal the extra step. */
+.effort-slider__notch--ultracode {
+  background: var(--effort-ultracode);
 }
 
 .effort-slider__thumb {

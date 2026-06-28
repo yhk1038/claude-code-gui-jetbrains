@@ -4,9 +4,12 @@ import { useCliConfig } from '@/contexts/CliConfigContext';
 import {
   EFFORT_AUTO,
   EffortLevelDef,
+  ULTRACODE_EFFORT,
+  ULTRACODE_LABEL,
   getEffortDef,
   getModelEffortConfig,
-  nextEffortLevel,
+  isUltracodeAvailable,
+  nextEffortStep,
   parseEffortLevel,
 } from '@/types/effort';
 
@@ -15,22 +18,32 @@ export interface UseEffortReturn {
   levels: string[];
   current: string;
   def: EffortLevelDef;
+  /** Whether the model+settings allow the ultracode top step. */
+  ultracodeAvailable: boolean;
+  /** Whether ultracode is currently engaged. */
+  ultracodeEnabled: boolean;
   cycle: () => void;
   setLevel: (key: string) => void;
+  enableUltracode: () => void;
 }
 
 /**
  * Resolves the current model's effort configuration from the CLI's
- * `control_response` and the user's settings, and exposes a `cycle`
- * helper that advances to the next supported level (wrapping to auto).
+ * `control_response` and the user's settings, and exposes helpers to change it.
  *
- * Keeps the model → levels inference in one place so UI consumers
- * (command palette row, keyboard handler, future surfaces) don't
- * reimplement it.
+ * Keeps the model → levels inference in one place so UI consumers (command
+ * palette row, Modes panel, keyboard handler) don't reimplement it.
  *
- * `cycle` advances to the next level (wrapping to auto) — used by the
- * keyboard/Enter path. `setLevel` jumps straight to a chosen level —
- * used by the slider's click/drag, where the user picks a position.
+ * - `cycle` advances to the next step (Shift+Tab / Enter), including the
+ *   ultracode top step when available, wrapping back to the first level.
+ * - `setLevel` jumps straight to a chosen level (slider click/drag), clearing
+ *   ultracode if it was on.
+ * - `enableUltracode` engages ultracode = xhigh effort + the workflows flag.
+ *
+ * Note on persistence: the Cursor extension applies ultracode as a session-only
+ * flag via a runtime control. Our CLI exposes no such control (only
+ * set_model/set_permission_mode/set_max_thinking_tokens), so we persist
+ * `ultracode` to settings.json — it stays on until toggled off.
  */
 export function useEffort(): UseEffortReturn {
   const { settings, updateSetting } = useClaudeSettings();
@@ -38,20 +51,54 @@ export function useEffort(): UseEffortReturn {
 
   const { supportsEffort, levels } = getModelEffortConfig(controlResponse, settings.model);
   const current = parseEffortLevel(settings.effortLevel, levels);
-  const def = getEffortDef(current, levels);
 
-  const cycle = useCallback(() => {
-    if (!supportsEffort) return;
-    const next = nextEffortLevel(settings.effortLevel, levels);
-    void updateSetting('effortLevel', next);
-  }, [supportsEffort, levels, settings.effortLevel, updateSetting]);
+  const ultracodeAvailable =
+    supportsEffort && isUltracodeAvailable(levels, settings.disableWorkflows);
+  const ultracodeEnabled = ultracodeAvailable && settings.ultracode === true;
+
+  const def: EffortLevelDef = ultracodeEnabled
+    ? { key: 'ultracode', label: ULTRACODE_LABEL, filledDots: levels.length, totalDots: levels.length }
+    : getEffortDef(current, levels);
+
+  const enableUltracode = useCallback(() => {
+    if (!ultracodeAvailable) return;
+    // Order mirrors Cursor: pin xhigh effort first, then raise the flag.
+    void (async () => {
+      await updateSetting('effortLevel', ULTRACODE_EFFORT);
+      await updateSetting('ultracode', true);
+    })();
+  }, [ultracodeAvailable, updateSetting]);
 
   const setLevel = useCallback((key: string) => {
     if (!supportsEffort) return;
-    // `auto` is the plugin-side sentinel — persist it as `null` (CLI default),
-    // mirroring nextEffortLevel's contract so settings stay consistent.
-    void updateSetting('effortLevel', key === EFFORT_AUTO ? null : key);
-  }, [supportsEffort, updateSetting]);
+    void (async () => {
+      // Clear the ultracode flag first if it was engaged, mirroring Cursor's
+      // setEffortLevel (which writes ultracode:null before the new level).
+      if (settings.ultracode === true) await updateSetting('ultracode', null);
+      // `auto` is the plugin-side sentinel — persist it as `null` (CLI default).
+      await updateSetting('effortLevel', key === EFFORT_AUTO ? null : key);
+    })();
+  }, [supportsEffort, settings.ultracode, updateSetting]);
 
-  return { supportsEffort, levels, current, def, cycle, setLevel };
+  const cycle = useCallback(() => {
+    if (!supportsEffort) return;
+    const step = nextEffortStep(settings.effortLevel, ultracodeEnabled, levels, ultracodeAvailable);
+    if (step.kind === 'ultracode') {
+      enableUltracode();
+    } else {
+      setLevel(step.key);
+    }
+  }, [supportsEffort, settings.effortLevel, ultracodeEnabled, levels, ultracodeAvailable, enableUltracode, setLevel]);
+
+  return {
+    supportsEffort,
+    levels,
+    current,
+    def,
+    ultracodeAvailable,
+    ultracodeEnabled,
+    cycle,
+    setLevel,
+    enableUltracode,
+  };
 }
