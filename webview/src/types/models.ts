@@ -72,6 +72,26 @@ export function resolveModelInfo(
 }
 
 /**
+ * Whether auto permission mode should be offered for the current model.
+ *
+ * The CLI gates auto on model, version, plan, provider and admin policy, then
+ * surfaces the model dimension as `ModelInfo.supportsAutoMode` (true for
+ * supported models, absent/false otherwise — e.g. Haiku). Admin policy is the
+ * separate `permissions.disableAutoMode` setting. This is only a *prediction*
+ * for whether to show the option; the real applied mode comes from
+ * `system/init.permissionMode`.
+ */
+export function isAutoModeAvailable(
+  models: ModelInfo[],
+  currentModel: string | null | undefined,
+  disableAutoMode: string | undefined,
+): boolean {
+  if (disableAutoMode === 'disable') return false;
+  const info = resolveModelInfo(models, currentModel);
+  return info?.supportsAutoMode === true;
+}
+
+/**
  * Turn a CLI `/model` echo line into a friendly notice label, or null if the
  * text isn't a model-change line. Accepts both "Set model to <id>" and
  * "Set model to <alias> (<id>)" shapes (and ignores any surrounding tags by

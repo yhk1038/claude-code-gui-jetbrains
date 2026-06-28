@@ -1,10 +1,39 @@
 import { describe, it, expect } from 'vitest';
-import { toModelAlias, resolveModelInfo, modelChangeLabel, DEFAULT_MODEL_ALIAS } from '../models';
+import { toModelAlias, resolveModelInfo, modelChangeLabel, isAutoModeAvailable, DEFAULT_MODEL_ALIAS } from '../models';
 import type { ModelInfo } from '../slashCommand';
 
 function model(value: string, displayName = value): ModelInfo {
   return { value, displayName, description: `${displayName} desc` };
 }
+
+function modelWithAuto(value: string, supportsAutoMode: boolean): ModelInfo {
+  return { value, displayName: value, description: `${value} desc`, supportsAutoMode };
+}
+
+describe('isAutoModeAvailable', () => {
+  const models = [
+    modelWithAuto('default', true),
+    modelWithAuto('sonnet', true),
+    { value: 'haiku', displayName: 'haiku', description: 'haiku desc' }, // supportsAutoMode absent (false)
+  ];
+
+  it('is true when the current model supports auto and policy allows it', () => {
+    expect(isAutoModeAvailable(models, 'sonnet', undefined)).toBe(true);
+    expect(isAutoModeAvailable(models, 'default', undefined)).toBe(true);
+  });
+
+  it('is false when the current model does not support auto', () => {
+    expect(isAutoModeAvailable(models, 'haiku', undefined)).toBe(false);
+  });
+
+  it('is false when admin policy disables auto mode', () => {
+    expect(isAutoModeAvailable(models, 'sonnet', 'disable')).toBe(false);
+  });
+
+  it('is false when no model info resolves (empty list)', () => {
+    expect(isAutoModeAvailable([], 'sonnet', undefined)).toBe(false);
+  });
+});
 
 describe('toModelAlias', () => {
   it('maps full model ids to a coarse alias', () => {

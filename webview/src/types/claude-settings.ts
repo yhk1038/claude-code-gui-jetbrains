@@ -12,6 +12,8 @@
 export interface PermissionsConfig {
   defaultMode?: string;
   disableBypassPermissionsMode?: string;
+  /** Admin policy: when "disable", auto mode is unavailable regardless of model support. */
+  disableAutoMode?: string;
   allow?: string[];
   deny?: string[];
   ask?: string[];

@@ -18,6 +18,7 @@ const INPUT_MODE_TO_CLI_FLAG: Record<string, string> = {
   bypass: 'bypassPermissions',
   ask_before_edit: 'default',
   auto_edit: 'acceptEdits',
+  auto: 'auto',
 };
 
 /**

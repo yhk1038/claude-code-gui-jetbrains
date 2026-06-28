@@ -30,8 +30,18 @@ interface SessionContextValue {
   cycleInputMode: () => void;
   /** 설정값에서 로드된 초기 모드를 동기화 (사용자가 직접 변경하지 않은 경우에만 적용) */
   syncInitialInputMode: (initialMode: InputMode) => void;
+  /** CLI가 통보한 실제 적용 모드(system/init.permissionMode)를 반영. 사용자 변경 플래그는 건드리지 않는다. */
+  syncEffectiveMode: (mode: InputMode) => void;
   /** 세션 전환 시 초기 모드 재동기화를 트리거하기 위한 카운터 */
   modeResetTrigger: number;
+
+  // Auto mode availability (CLI가 결정 — ChatStream에서 푸시)
+  autoModeAvailable: boolean;
+  setAutoModeAvailable: (available: boolean) => void;
+  /** auto 요청이 CLI에서 강등됐을 때 인풋배너로 안내할지 여부 */
+  autoFallbackNotice: boolean;
+  notifyAutoFallback: () => void;
+  dismissAutoFallback: () => void;
 
   // Actions
   navigateToSession: (sessionId: string) => void;
@@ -82,6 +92,10 @@ export function SessionProvider({ children }: SessionProviderProps) {
   // addNewSession 시 URL 변경으로 인한 모드 리셋을 건너뛰기 위한 플래그
   const skipNextModeReset = useRef(false);
 
+  // Auto mode 가용성/강등 안내 상태
+  const [autoModeAvailable, setAutoModeAvailable] = useState(false);
+  const [autoFallbackNotice, setAutoFallbackNotice] = useState(false);
+
   const setInputMode = useCallback((newMode: InputMode) => {
     hasUserChangedMode.current = true;
     setInputModeState(newMode);
@@ -90,12 +104,12 @@ export function SessionProvider({ children }: SessionProviderProps) {
   const cycleInputMode = useCallback(() => {
     hasUserChangedMode.current = true;
     setInputModeState((current) => {
-      const modes = getAvailableModes(bypassDisabled);
+      const modes = getAvailableModes(bypassDisabled, autoModeAvailable);
       const currentIndex = modes.indexOf(current);
       const nextIndex = (currentIndex + 1) % modes.length;
       return modes[nextIndex];
     });
-  }, [bypassDisabled]);
+  }, [bypassDisabled, autoModeAvailable]);
 
   const syncInitialInputMode = useCallback((initialMode: InputMode) => {
     if (!hasUserChangedMode.current) {
@@ -103,8 +117,19 @@ export function SessionProvider({ children }: SessionProviderProps) {
     }
   }, []);
 
+  // CLI가 통보한 실제 적용 모드를 반영한다(진실원). 사용자가 무엇을 골랐는지(hasUserChangedMode)는
+  // 보존하되, 화면에 보이는 모드는 CLI가 실제 적용한 것과 일치시킨다.
+  const syncEffectiveMode = useCallback((mode: InputMode) => {
+    setInputModeState(mode);
+  }, []);
+
+  const notifyAutoFallback = useCallback(() => setAutoFallbackNotice(true), []);
+  const dismissAutoFallback = useCallback(() => setAutoFallbackNotice(false), []);
+
   // Reset input mode when session changes (URL-driven)
   useEffect(() => {
+    // 강등 안내는 세션과 무관하게 항상 새 세션에서 초기화한다.
+    setAutoFallbackNotice(false);
     if (skipNextModeReset.current) {
       skipNextModeReset.current = false;
       return;
@@ -316,7 +341,13 @@ export function SessionProvider({ children }: SessionProviderProps) {
     setInputMode,
     cycleInputMode,
     syncInitialInputMode,
+    syncEffectiveMode,
     modeResetTrigger,
+    autoModeAvailable,
+    setAutoModeAvailable,
+    autoFallbackNotice,
+    notifyAutoFallback,
+    dismissAutoFallback,
     navigateToSession,
     navigateToNewSession,
     loadSessions,

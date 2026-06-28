@@ -33,6 +33,7 @@ import { shouldSubmitOnEnter } from './shouldSubmitOnEnter';
 import { basename } from './basename';
 import { RichInput } from './RichInput';
 import { TelemetryConsentBanner } from '../TelemetryConsentBanner';
+import { InputBanner } from '../InputBanner';
 import { useTelemetryConsent, ConsentStatus, ConsentSource } from '@/hooks/useTelemetryConsent';
 import { getCaretOffset, setCaretOffset, getSelectionRange } from '@/utils/domSelection';
 import { MessageType } from '@/shared';
@@ -44,7 +45,7 @@ interface NativeDropEntry {
 
 export function ChatInput() {
   const { textareaRef } = useChatInputFocus();
-  const { currentSessionId, sessionState, workingDirectory, inputMode: mode, cycleInputMode: cycleMode, syncInitialInputMode, modeResetTrigger } = useSessionContext();
+  const { currentSessionId, sessionState, workingDirectory, inputMode: mode, cycleInputMode: cycleMode, syncInitialInputMode, modeResetTrigger, autoFallbackNotice, dismissAutoFallback } = useSessionContext();
   const chatStream = useChatStreamContext();
   const { handleSubmit: onSubmit, isStreaming, stop: onStop } = chatStream;
   const { input: value, setInput: onChange } = useChatInputState();
@@ -505,6 +506,13 @@ export function ChatInput() {
           onAccept={() => void acceptConsent(ConsentSource.BANNER)}
           onDeny={() => void denyConsent(ConsentSource.BANNER)}
           onClose={() => setConsentDismissed(true)}
+        />
+      )}
+      {/* Auto mode 강등 안내: auto를 요청했으나 CLI가 이 환경에서 미지원이라 기본 모드로 적용한 경우 */}
+      {autoFallbackNotice && (
+        <InputBanner
+          message="Auto mode isn't available here — using the default permission mode instead."
+          onClose={dismissAutoFallback}
         />
       )}
       {/* 메인 인풋 컨테이너 — drag/drop은 window 레벨 리스너가 패널 전체에서 처리한다. */}

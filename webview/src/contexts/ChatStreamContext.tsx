@@ -4,8 +4,11 @@ import { useDiffs } from '../hooks/useDiffs';
 import { useTools } from '../hooks/useTools';
 import { useBridgeContext } from './BridgeContext';
 import { useSessionContext } from './SessionContext';
+import { useCliConfig } from './CliConfigContext';
+import { useClaudeSettings } from './ClaudeSettingsContext';
 import { LoadedMessageDto, Context, Attachment, SessionState } from '../types';
-import { InputMode, InputModeValues } from '../types/chatInput';
+import { InputMode, InputModeValues, CLI_FLAG_TO_INPUT_MODE } from '../types/chatInput';
+import { isAutoModeAvailable } from '../types/models';
 import { MessageType } from '@/shared';
 
 /** 스트리밍 중 큐잉된 메시지의 bridge payload */
@@ -91,6 +94,8 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
   const { children, setInput, inputRef } = props;
   const bridge = useBridgeContext();
   const session = useSessionContext();
+  const { controlResponse } = useCliConfig();
+  const { settings: claudeSettings } = useClaudeSettings();
   const tools = useTools();
   const diffs = useDiffs();
 
@@ -100,6 +105,8 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
 
   // EnterPlanMode 진입 전의 모드를 저장 (ExitPlanMode 시 복원용)
   const prePlanModeRef = useRef<InputMode | null>(null);
+  // 마지막으로 전송한 inputMode. CLI가 통보한 실제 적용 모드와 비교해 auto 강등을 감지한다.
+  const lastSentModeRef = useRef<InputMode | null>(null);
 
   // 스트리밍 중 새 메시지가 들어오면 여기에 큐잉.
   // 현재 턴이 자연스럽게 완료(result)된 후 자동으로 flush된다.
@@ -152,16 +159,42 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
     retry: chatStreamRetry,
   } = chatStream;
 
-  // systemInit이 통보한 실제 모델을 sessionModel에 그대로 반영한다.
-  // alias로 축약하지 않는다(원본 보존) — 표시 시점에 resolveModelInfo가
-  // 정확 일치 → alias → default 순으로 매칭하므로, 통보값을 손실 없이
-  // 넘겨야 사용자가 고른 세분 모델("opusplan" 등)과 정확 일치할 기회가 남는다.
+  // Auto mode 가용성: CLI가 모델 메타로 내려주는 supportsAutoMode + 관리자 정책
+  // (disableAutoMode)로 결정한다. 모델 이름을 하드코딩하지 않는다 — 서버가 모델·버전·
+  // 플랜·제공자를 종합 판정한 결과가 supportsAutoMode 한 플래그에 담겨 온다.
+  const autoModeAvailable = useMemo(() => {
+    const models = controlResponse?.response?.response?.models ?? [];
+    // 실행 중인 모델(sessionModel, systemInit 통보)을 우선하되, 메시지 전송 전(새 세션)에는
+    // 사용자가 고른 모델(claudeSettings.model)로 예측한다 — 전송 전 haiku 선택도 즉시 반영.
+    const currentModel = sessionModel ?? claudeSettings.model;
+    return isAutoModeAvailable(models, currentModel, claudeSettings.permissions?.disableAutoMode);
+  }, [controlResponse, sessionModel, claudeSettings.model, claudeSettings.permissions?.disableAutoMode]);
+
   useEffect(() => {
-    if (chatStream.systemInit) {
-      const rawModel = (chatStream.systemInit as Record<string, unknown>).model as string | null ?? null;
-      setSessionModel(rawModel ?? null);
+    session.setAutoModeAvailable(autoModeAvailable);
+  }, [autoModeAvailable, session.setAutoModeAvailable]);
+
+  // systemInit이 통보한 실제 모델/권한모드를 반영한다(진실원).
+  // - model: sessionModel에 그대로(원본 보존) — 표시 시 resolveModelInfo가 매칭.
+  // - permissionMode: CLI가 실제 적용한 모드. auto를 요청했어도 미지원이면 CLI가
+  //   default로 강등하고 그 결과를 여기로 통보한다. 화면 모드를 진실에 맞추고,
+  //   강등이면 인풋배너로 안내한다.
+  useEffect(() => {
+    if (!chatStream.systemInit) return;
+    const init = chatStream.systemInit as Record<string, unknown>;
+
+    const rawModel = (init.model as string | null) ?? null;
+    setSessionModel(rawModel);
+
+    const pm = init.permissionMode as string | undefined;
+    const effectiveMode = pm ? CLI_FLAG_TO_INPUT_MODE[pm] : undefined;
+    if (effectiveMode) {
+      session.syncEffectiveMode(effectiveMode);
+      if (lastSentModeRef.current === InputModeValues.AUTO && effectiveMode !== InputModeValues.AUTO) {
+        session.notifyAutoFallback();
+      }
     }
-  }, [chatStream.systemInit]);
+  }, [chatStream.systemInit, session.syncEffectiveMode, session.notifyAutoFallback]);
 
   // 모든 세션별 상태를 한 번에 리셋하는 통합 함수
   const resetForSessionSwitch = useCallback(() => {
@@ -233,6 +266,9 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
 
       // Add to local chat state (항상 — UI에는 즉시 표시)
       addUserMessage(content, context, attachments);
+
+      // 강등 감지를 위해 이번에 요청한 모드를 기록한다(systemInit 수신 시 비교).
+      lastSentModeRef.current = inputMode;
 
       const payload: QueuedMessage = {
         sessionId,
