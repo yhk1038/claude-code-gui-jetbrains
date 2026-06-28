@@ -52,6 +52,8 @@ export interface CommandPaletteCommand {
   readonly type: PanelItemType;
   readonly icon?: IconType;
   readonly valueComponent?: () => React.ReactNode;
+  /** Rendered right after the label (secondary color), e.g. Effort's "(Extra high)". */
+  readonly labelSuffix?: () => React.ReactNode;
   readonly disabled: boolean;
   readonly keepOpen?: boolean;
   readonly order?: number;
@@ -155,6 +157,7 @@ export class StaticItem implements CommandPaletteCommand {
     options?: {
       icon?: IconType;
       valueComponent?: () => React.ReactNode;
+      labelSuffix?: () => React.ReactNode;
       disabled?: boolean;
       keepOpen?: boolean;
       order?: number;
@@ -166,6 +169,7 @@ export class StaticItem implements CommandPaletteCommand {
   ) {
     this.icon = options?.icon;
     this.valueComponent = options?.valueComponent;
+    this.labelSuffix = options?.labelSuffix;
     this.disabled = options?.disabled ?? true;
     this.keepOpen = options?.keepOpen;
     this.order = options?.order;
@@ -177,6 +181,7 @@ export class StaticItem implements CommandPaletteCommand {
 
   readonly icon?: IconType;
   readonly valueComponent?: () => React.ReactNode;
+  readonly labelSuffix?: () => React.ReactNode;
 
   /** @internal Called by CommandPaletteRegistry to inject service accessor */
   _bind(getServices: () => CommandPaletteServices): void {

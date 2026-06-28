@@ -1,33 +1,30 @@
 import { StaticItem } from '../../types';
 import { useEffort } from '@/hooks/useEffort';
+import { EffortSlider } from '@/components/EffortSlider';
 
 export const EFFORT_CYCLE_EVENT = 'effort-cycle';
 
-const EffortDots = () => {
+// Shown right after the "Effort" label, e.g. "(Extra high)" — matches the
+// Cursor extension's labelSuffix. Hidden when the model has no effort support.
+const EffortLabelSuffix = () => {
   const { supportsEffort, def } = useEffort();
   if (!supportsEffort) return null;
+  return <>({def.label})</>;
+};
 
-  return (
-    <span className="text-text-secondary flex items-center gap-1">
-      <span className="text-[1.2307rem] font-bold tracking-tighter pb-[1px] flex">
-        {Array.from({ length: def.totalDots }, (_, i) => (
-          <span
-            key={i}
-            className={i < def.filledDots ? 'text-text-secondary' : 'text-text-disabled'}
-          >
-            {'\u2022'}
-          </span>
-        ))}
-      </span>
-      <span className="text-[0.8461rem]">{def.label}</span>
-    </span>
-  );
+const EffortValue = () => {
+  const { supportsEffort } = useEffort();
+  if (!supportsEffort) return null;
+  return <EffortSlider />;
 };
 
 export const effortItem = new StaticItem('effort', 'Effort', {
   disabled: false,
   keepOpen: true,
-  valueComponent: () => <EffortDots />,
+  labelSuffix: () => <EffortLabelSuffix />,
+  valueComponent: () => <EffortValue />,
+  // Row click / Enter cycles to the next level; the slider handles direct
+  // selection (and stops its own click from reaching this row handler).
   action: async () => {
     window.dispatchEvent(new CustomEvent(EFFORT_CYCLE_EVENT));
   },

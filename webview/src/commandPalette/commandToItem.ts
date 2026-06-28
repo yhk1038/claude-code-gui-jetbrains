@@ -18,6 +18,7 @@ export function commandToItem(cmd: CommandPaletteCommand): PanelItem {
     type: cmd.type,
     icon: cmd.icon,
     valueComponent: cmd.valueComponent,
+    labelSuffix: cmd.labelSuffix,
     keepOpen: cmd.keepOpen,
     searchOnly: cmd.searchOnly,
     keywords: cmd.keywords,

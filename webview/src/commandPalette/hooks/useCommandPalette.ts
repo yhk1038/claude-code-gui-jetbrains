@@ -142,7 +142,17 @@ export function useCommandPalette({ onChange, textareaRef }: UseCommandPaletteOp
       const hasItems = filteredSections.some(s => s.items.length > 0);
       if (hasItems) {
         e.preventDefault();
-        executeAndClear();
+        const selectedItem = filteredSections[selectedSectionIndex]?.items[selectedItemIndex];
+        if (selectedItem?.keepOpen) {
+          // keepOpen items (e.g. Effort) act in place: run the action but keep
+          // the panel open and the typed "/query" intact, so pressing Enter
+          // repeatedly cycles the value — matching the click behavior. Without
+          // this, Enter would advance one step then close the panel, which
+          // read as "nothing happens" (issue #121).
+          executeSelectedItem();
+        } else {
+          executeAndClear();
+        }
         return true;
       }
       // No matching command — close panel, let normal submit handle it
@@ -178,7 +188,7 @@ export function useCommandPalette({ onChange, textareaRef }: UseCommandPaletteOp
     }
 
     return false;
-  }, [showSlashCommands, filteredSections, selectedSectionIndex, selectedItemIndex, executeAndClear, closePanel, moveSelection, onChange]);
+  }, [showSlashCommands, filteredSections, selectedSectionIndex, selectedItemIndex, executeSelectedItem, executeAndClear, closePanel, moveSelection, onChange]);
 
   const detectSlashCommand = useCallback((newValue: string) => {
     // Show panel only while typing the command name itself. As soon as

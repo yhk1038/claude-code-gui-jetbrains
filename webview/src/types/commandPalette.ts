@@ -38,6 +38,8 @@ export interface PanelItemBase {
   type: PanelItemType;
   icon?: IconType;
   valueComponent?: () => React.ReactNode;
+  /** Rendered right after the label (secondary color), e.g. Effort's "(Extra high)". */
+  labelSuffix?: () => React.ReactNode;
   disabled?: boolean;
   keepOpen?: boolean;
   /** Hidden from the panel by default; only surfaced when the filter query matches its label. */

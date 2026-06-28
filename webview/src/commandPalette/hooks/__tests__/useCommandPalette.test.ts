@@ -258,6 +258,57 @@ describe('useCommandPalette', () => {
       expect(onChange).toHaveBeenCalledWith('');
       expect(result.current.showSlashCommands).toBe(false);
     });
+
+    it('keeps the panel open and the query intact for a keepOpen item (issue #121)', () => {
+      // Effort is a keepOpen item: pressing Enter should run its action and
+      // leave the panel open so repeated Enter cycles the value, instead of
+      // advancing once and closing (which read as "nothing happens").
+      const actionFn = vi.fn();
+      const sectionsWithKeepOpen: PanelSection[] = [
+        {
+          id: PanelSectionId.Model,
+          title: 'Model',
+          showDividerAbove: false,
+          items: [
+            {
+              id: 'effort',
+              label: 'Effort',
+              type: PanelItemType.Action,
+              keepOpen: true,
+              action: actionFn,
+            } as ActionItem,
+          ],
+        },
+      ];
+
+      setupMockRegistry(sectionsWithKeepOpen);
+
+      const { result } = renderHook(() =>
+        useCommandPalette({ onChange, textareaRef }),
+      );
+
+      act(() => {
+        result.current.handleSlashButtonClick();
+      });
+
+      vi.clearAllMocks();
+
+      const enterEvent = {
+        key: 'Enter',
+        shiftKey: false,
+        nativeEvent: { isComposing: false },
+        preventDefault: vi.fn(),
+      } as unknown as import('react').KeyboardEvent<HTMLElement>;
+
+      act(() => {
+        result.current.handleSlashKeyDown(enterEvent, '/effort');
+      });
+
+      expect(actionFn).toHaveBeenCalledTimes(1);
+      // Panel stays open and the input is NOT cleared.
+      expect(onChange).not.toHaveBeenCalled();
+      expect(result.current.showSlashCommands).toBe(true);
+    });
   });
 
   // ──────────────────────────────────────────────────────

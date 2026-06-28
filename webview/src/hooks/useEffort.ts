@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 import { useCliConfig } from '@/contexts/CliConfigContext';
 import {
+  EFFORT_AUTO,
   EffortLevelDef,
   getEffortDef,
   getModelEffortConfig,
@@ -15,6 +16,7 @@ export interface UseEffortReturn {
   current: string;
   def: EffortLevelDef;
   cycle: () => void;
+  setLevel: (key: string) => void;
 }
 
 /**
@@ -25,6 +27,10 @@ export interface UseEffortReturn {
  * Keeps the model → levels inference in one place so UI consumers
  * (command palette row, keyboard handler, future surfaces) don't
  * reimplement it.
+ *
+ * `cycle` advances to the next level (wrapping to auto) — used by the
+ * keyboard/Enter path. `setLevel` jumps straight to a chosen level —
+ * used by the slider's click/drag, where the user picks a position.
  */
 export function useEffort(): UseEffortReturn {
   const { settings, updateSetting } = useClaudeSettings();
@@ -40,5 +46,12 @@ export function useEffort(): UseEffortReturn {
     void updateSetting('effortLevel', next);
   }, [supportsEffort, levels, settings.effortLevel, updateSetting]);
 
-  return { supportsEffort, levels, current, def, cycle };
+  const setLevel = useCallback((key: string) => {
+    if (!supportsEffort) return;
+    // `auto` is the plugin-side sentinel — persist it as `null` (CLI default),
+    // mirroring nextEffortLevel's contract so settings stay consistent.
+    void updateSetting('effortLevel', key === EFFORT_AUTO ? null : key);
+  }, [supportsEffort, updateSetting]);
+
+  return { supportsEffort, levels, current, def, cycle, setLevel };
 }

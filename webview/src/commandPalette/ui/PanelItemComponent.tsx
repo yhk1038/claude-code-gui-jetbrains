@@ -56,8 +56,8 @@ export const PanelItemComponent = React.forwardRef<HTMLDivElement, Props>((props
       )}
       style={{ height: 'var(--item-height, 28px)' }}
     >
-      {/* Left side: label */}
-      <div className="flex min-w-0 flex-1 items-center gap-2">
+      {/* Left side: label (+ optional suffix, e.g. Effort's "(Extra high)") */}
+      <div className="flex min-w-0 flex-1 items-center gap-1.5">
         <span
           className={cn(
             'overflow-hidden whitespace-nowrap text-ellipsis transition-colors duration-100',
@@ -73,6 +73,14 @@ export const PanelItemComponent = React.forwardRef<HTMLDivElement, Props>((props
         >
           {item.label}
         </span>
+        {item.labelSuffix && (
+          <span
+            className="flex-shrink-0 text-[var(--secondary-text-color)]"
+            style={{ fontSize: 'var(--item-size, 13px)' }}
+          >
+            {item.labelSuffix()}
+          </span>
+        )}
       </div>
 
       {/* Right side: secondary label / toggle / icon */}
