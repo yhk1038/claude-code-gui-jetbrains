@@ -7,6 +7,7 @@ export const InputModeValues = {
   BYPASS: 'bypass',
   ASK_BEFORE_EDIT: 'ask_before_edit',
   AUTO_EDIT: 'auto_edit',
+  AUTO: 'auto',
 } as const;
 
 export type InputMode = typeof InputModeValues[keyof typeof InputModeValues];
@@ -29,7 +30,7 @@ export const INPUT_MODES: Record<InputMode, InputModeConfig> = {
     id: 'plan',
     icon: 'tasklist',
     label: 'Plan mode',
-    description: 'Claude will explore the code and present a plan before editing. Click, or press Shift+Tab, to switch modes.',
+    description: 'Claude will explore the code and present a plan before editing',
     borderColor: 'border-blue-500/50',
     borderColorFocused: 'border-blue-500',
     outline: 'outline-blue-500/15',
@@ -37,11 +38,23 @@ export const INPUT_MODES: Record<InputMode, InputModeConfig> = {
     hoverBg: 'hover:bg-surface-hover',
     sendButtonBg: 'bg-blue-500',
   },
+  auto: {
+    id: 'auto',
+    icon: 'sparkle',
+    label: 'Auto mode',
+    description: 'Claude will automatically choose the best permission mode for each task',
+    borderColor: 'border-red-500/50',
+    borderColorFocused: 'border-red-500',
+    outline: 'outline-red-500/15',
+    textColor: 'text-red-500',
+    hoverBg: 'hover:bg-state-error-bg',
+    sendButtonBg: 'bg-red-500',
+  },
   bypass: {
     id: 'bypass',
     icon: 'zap',
     label: 'Bypass permissions',
-    description: 'Claude Code will not ask for your approval before running potentially dangerous commands.',
+    description: 'Claude will not ask for approval before running potentially dangerous commands',
     borderColor: 'border-red-500/50',
     borderColorFocused: 'border-red-500',
     outline: 'outline-red-500/15',
@@ -53,7 +66,7 @@ export const INPUT_MODES: Record<InputMode, InputModeConfig> = {
     id: 'ask_before_edit',
     icon: 'comment-discussion',
     label: 'Ask before edits',
-    description: 'Claude will ask before each edit. Click, or press Shift+Tab, to switch modes.',
+    description: 'Claude will ask for approval before making each edit',
     borderColor: 'border-orange-500/50',
     borderColorFocused: 'border-orange-500',
     outline: 'outline-orange-500/15',
@@ -65,7 +78,7 @@ export const INPUT_MODES: Record<InputMode, InputModeConfig> = {
     id: 'auto_edit',
     icon: 'robot',
     label: 'Edit automatically',
-    description: 'Claude will edit your selected text or the whole file. Click, or press Shift+Tab, to switch modes.',
+    description: 'Claude will edit your selected text or the whole file',
     borderColor: 'border-gray-400/50',
     borderColorFocused: 'border-gray-400',
     outline: 'outline-gray-400/15',
@@ -75,21 +88,29 @@ export const INPUT_MODES: Record<InputMode, InputModeConfig> = {
   },
 };
 
-// 모드 순환 순서
+// 모드 순환 순서. auto는 가용할 때만 노출되며, 공식 CLI 순환을 따라 맨 끝에 둔다.
 export const MODE_CYCLE: InputMode[] = [
   InputModeValues.PLAN,
+  InputModeValues.AUTO,
   InputModeValues.BYPASS,
   InputModeValues.ASK_BEFORE_EDIT,
   InputModeValues.AUTO_EDIT,
 ];
 
 /**
- * Returns available input modes.
- * When bypassDisabled is true, bypass mode is excluded from the cycle.
+ * Returns available input modes for the cycle/menu.
+ * - bypass is excluded when `bypassDisabled` (policy).
+ * - auto is excluded unless `autoAvailable` — the CLI gates auto on model
+ *   (`supportsAutoMode`), version, plan, provider and admin policy, surfaced to
+ *   us as a single availability flag. Defaults to false so callers without that
+ *   context (e.g. settings page) never show auto.
  */
-export function getAvailableModes(bypassDisabled: boolean): InputMode[] {
-  if (bypassDisabled) return MODE_CYCLE.filter(mode => mode !== InputModeValues.BYPASS);
-  return MODE_CYCLE;
+export function getAvailableModes(bypassDisabled: boolean, autoAvailable = false): InputMode[] {
+  return MODE_CYCLE.filter(mode => {
+    if (mode === InputModeValues.BYPASS && bypassDisabled) return false;
+    if (mode === InputModeValues.AUTO && !autoAvailable) return false;
+    return true;
+  });
 }
 
 /**
@@ -100,6 +121,7 @@ export const INPUT_MODE_TO_CLI_FLAG: Record<InputMode, string> = {
   [InputModeValues.BYPASS]: 'bypassPermissions',
   [InputModeValues.ASK_BEFORE_EDIT]: 'default',
   [InputModeValues.AUTO_EDIT]: 'acceptEdits',
+  [InputModeValues.AUTO]: 'auto',
 } as const;
 
 /**
@@ -110,6 +132,7 @@ export const CLI_FLAG_TO_INPUT_MODE: Record<string, InputMode> = {
   bypassPermissions: InputModeValues.BYPASS,
   default: InputModeValues.ASK_BEFORE_EDIT,
   acceptEdits: InputModeValues.AUTO_EDIT,
+  auto: InputModeValues.AUTO,
 } as const;
 
 // ============================================

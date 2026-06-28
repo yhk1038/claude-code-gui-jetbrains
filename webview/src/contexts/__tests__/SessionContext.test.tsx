@@ -346,6 +346,73 @@ describe('SessionContext', () => {
     });
   });
 
+  describe('auto mode - 노출/동기화/강등', () => {
+    it('autoModeAvailable이 false면 cycle이 auto를 건너뛴다', async () => {
+      let capturedCtx: ReturnType<typeof useSessionContext> | null = null;
+      render(
+        <SessionProvider>
+          <TestConsumer onMount={(ctx) => { capturedCtx = ctx; }} />
+        </SessionProvider>
+      );
+
+      // 기본 ask_before_edit → cycle 한 바퀴 돌려도 auto에 도달하지 않아야 함
+      const seen = new Set<string>();
+      for (let i = 0; i < 5; i++) {
+        act(() => { capturedCtx?.cycleInputMode(); });
+        seen.add(capturedCtx!.inputMode);
+      }
+      expect(seen.has('auto')).toBe(false);
+    });
+
+    it('autoModeAvailable이 true면 cycle에 auto가 포함된다', async () => {
+      let capturedCtx: ReturnType<typeof useSessionContext> | null = null;
+      render(
+        <SessionProvider>
+          <TestConsumer onMount={(ctx) => { capturedCtx = ctx; }} />
+        </SessionProvider>
+      );
+
+      act(() => { capturedCtx?.setAutoModeAvailable(true); });
+
+      const seen = new Set<string>();
+      for (let i = 0; i < 6; i++) {
+        act(() => { capturedCtx?.cycleInputMode(); });
+        seen.add(capturedCtx!.inputMode);
+      }
+      expect(seen.has('auto')).toBe(true);
+    });
+
+    it('syncEffectiveMode가 inputMode를 CLI 적용 모드로 반영한다', async () => {
+      let capturedCtx: ReturnType<typeof useSessionContext> | null = null;
+      render(
+        <SessionProvider>
+          <TestConsumer onMount={(ctx) => { capturedCtx = ctx; }} />
+        </SessionProvider>
+      );
+
+      act(() => { capturedCtx?.syncEffectiveMode('auto'); });
+      expect(capturedCtx!.inputMode).toBe('auto');
+
+      act(() => { capturedCtx?.syncEffectiveMode('ask_before_edit'); });
+      expect(capturedCtx!.inputMode).toBe('ask_before_edit');
+    });
+
+    it('notifyAutoFallback/dismissAutoFallback이 배너 상태를 토글한다', async () => {
+      let capturedCtx: ReturnType<typeof useSessionContext> | null = null;
+      render(
+        <SessionProvider>
+          <TestConsumer onMount={(ctx) => { capturedCtx = ctx; }} />
+        </SessionProvider>
+      );
+
+      expect(capturedCtx!.autoFallbackNotice).toBe(false);
+      act(() => { capturedCtx?.notifyAutoFallback(); });
+      expect(capturedCtx!.autoFallbackNotice).toBe(true);
+      act(() => { capturedCtx?.dismissAutoFallback(); });
+      expect(capturedCtx!.autoFallbackNotice).toBe(false);
+    });
+  });
+
   describe('workingDirectory - WorkingDirContext 연동', () => {
     it('useWorkingDir의 workingDirectory가 SessionContext에 노출됨', async () => {
       mockWorkingDirectory = '/projects/my-app';

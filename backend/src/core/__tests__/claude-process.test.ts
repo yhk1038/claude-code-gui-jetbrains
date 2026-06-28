@@ -31,6 +31,9 @@ describe('buildClaudeArgs', () => {
     expect(buildClaudeArgs('--resume', 's', 'auto_edit')).toEqual(
       expect.arrayContaining(['--permission-mode', 'acceptEdits']),
     );
+    expect(buildClaudeArgs('--resume', 's', 'auto')).toEqual(
+      expect.arrayContaining(['--permission-mode', 'auto']),
+    );
   });
 
   it('omits --permission-mode for an unknown inputMode', () => {

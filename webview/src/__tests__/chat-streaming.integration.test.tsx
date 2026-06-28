@@ -39,6 +39,8 @@ const mockSession = {
   workingDirectory: '/test',
   inputMode: 'ask_before_edit' as const,
   modeResetTrigger: 0,
+  autoModeAvailable: false,
+  autoFallbackNotice: false,
   loadSessions: vi.fn(),
   resetToNewSession: vi.fn(),
   openNewTab: vi.fn(),
@@ -54,12 +56,26 @@ const mockSession = {
   setInputMode: vi.fn(),
   cycleInputMode: vi.fn(),
   syncInitialInputMode: vi.fn(),
+  syncEffectiveMode: vi.fn(),
+  setAutoModeAvailable: vi.fn(),
+  notifyAutoFallback: vi.fn(),
+  dismissAutoFallback: vi.fn(),
   isNewlyCreatedSession: vi.fn().mockReturnValue(false),
 };
 
 vi.mock('../contexts/SessionContext', () => ({
   useSessionContext: () => mockSession,
   SessionProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
+vi.mock('../contexts/CliConfigContext', () => ({
+  useCliConfig: () => ({ controlResponse: null, isLoading: false, refresh: vi.fn() }),
+  CliConfigProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
+vi.mock('../contexts/ClaudeSettingsContext', () => ({
+  useClaudeSettings: () => ({ settings: { permissions: {} } }),
+  ClaudeSettingsProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 function TestWrapper({ children }: { children: React.ReactNode }) {

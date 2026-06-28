@@ -4,6 +4,7 @@ import { useCommandPalette } from '@/commandPalette/hooks/useCommandPalette';
 import { PanelSectionId, PanelItemType, CommandItem } from '@/types/commandPalette';
 import { INPUT_MODES, CLI_FLAG_TO_INPUT_MODE } from '../../../types/chatInput';
 import { InputModeTag } from './InputModeTag';
+import { ModeSelectPanel } from './ModeSelectPanel';
 import { ActionButtons } from './ActionButtons';
 import { useChatInputFocus } from '../../../contexts/ChatInputFocusContext';
 import { useInputHistory } from './hooks/useInputHistory';
@@ -33,6 +34,7 @@ import { shouldSubmitOnEnter } from './shouldSubmitOnEnter';
 import { basename } from './basename';
 import { RichInput } from './RichInput';
 import { TelemetryConsentBanner } from '../TelemetryConsentBanner';
+import { InputBanner } from '../InputBanner';
 import { useTelemetryConsent, ConsentStatus, ConsentSource } from '@/hooks/useTelemetryConsent';
 import { getCaretOffset, setCaretOffset, getSelectionRange } from '@/utils/domSelection';
 import { MessageType } from '@/shared';
@@ -44,7 +46,7 @@ interface NativeDropEntry {
 
 export function ChatInput() {
   const { textareaRef } = useChatInputFocus();
-  const { currentSessionId, sessionState, workingDirectory, inputMode: mode, cycleInputMode: cycleMode, syncInitialInputMode, modeResetTrigger } = useSessionContext();
+  const { currentSessionId, sessionState, workingDirectory, inputMode: mode, cycleInputMode: cycleMode, setInputMode, availableModes, syncInitialInputMode, modeResetTrigger, autoFallbackNotice, dismissAutoFallback } = useSessionContext();
   const chatStream = useChatStreamContext();
   const { handleSubmit: onSubmit, isStreaming, stop: onStop } = chatStream;
   const { input: value, setInput: onChange } = useChatInputState();
@@ -81,6 +83,27 @@ export function ChatInput() {
   const lastMetaArrowTime = useRef<number>(0);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showModelSwitch, setShowModelSwitch] = useState(false);
+  const [showModePanel, setShowModePanel] = useState(false);
+  const modePanelRef = useRef<HTMLDivElement>(null);
+
+  // 모드 선택 패널: 바깥 클릭 / Esc 로 닫는다.
+  useEffect(() => {
+    if (!showModePanel) return;
+    const onDocClick = (e: globalThis.MouseEvent) => {
+      if (modePanelRef.current && !modePanelRef.current.contains(e.target as Node)) {
+        setShowModePanel(false);
+      }
+    };
+    const onEsc = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') setShowModePanel(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onEsc);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onEsc);
+    };
+  }, [showModePanel]);
   // 텔레메트리 동의: profile 상태가 미응답(PENDING)일 때만 배너 노출. X 닫기는 이 세션에서만
   // 숨기고(consentDismissed), 새 세션 전환 시 다시 노출한다. 수락/거절하면 status가 바뀌어 영영 숨는다.
   const { status: consentStatus, accept: acceptConsent, deny: denyConsent } = useTelemetryConsent();
@@ -507,6 +530,13 @@ export function ChatInput() {
           onClose={() => setConsentDismissed(true)}
         />
       )}
+      {/* Auto mode 강등 안내: auto를 요청했으나 CLI가 이 환경에서 미지원이라 기본 모드로 적용한 경우 */}
+      {autoFallbackNotice && (
+        <InputBanner
+          message="Auto mode isn't available here — using the default permission mode instead."
+          onClose={dismissAutoFallback}
+        />
+      )}
       {/* 메인 인풋 컨테이너 — drag/drop은 window 레벨 리스너가 패널 전체에서 처리한다. */}
       <div
         className={`
@@ -587,7 +617,18 @@ export function ChatInput() {
         <div className="flex items-center justify-between px-[5px] py-[3px] h-[35px]">
           {/* 좌측: 모드 태그 + 파일 태그들 */}
           <div className="flex items-center gap-4">
-            <InputModeTag mode={mode} onClick={cycleMode} />
+            <div className="relative" ref={modePanelRef}>
+              {showModePanel && (
+                <div className="absolute bottom-full left-0 z-30 mb-2">
+                  <ModeSelectPanel
+                    modes={availableModes}
+                    currentMode={mode}
+                    onSelect={(m) => { setInputMode(m); setShowModePanel(false); }}
+                  />
+                </div>
+              )}
+              <InputModeTag mode={mode} onClick={() => setShowModePanel((v) => !v)} />
+            </div>
             <ContextWindowTag onClick={handleCompact} disabled={isStreaming} />
           </div>
 
