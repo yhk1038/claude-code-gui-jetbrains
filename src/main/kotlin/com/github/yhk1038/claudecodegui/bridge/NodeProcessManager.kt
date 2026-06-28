@@ -123,6 +123,13 @@ class NodeProcessManager(
     @Volatile
     private var disposed = false
 
+    // Temp dirs extracted from the plugin JAR for THIS instance (#120). Set ONLY when we
+    // actually extracted to java.io.tmpdir (production); left null in dev mode, where the
+    // backend/webview paths point at the source tree and must never be deleted. Passed to
+    // the backend as cleanup env so Node removes them on its own clean exit.
+    private var extractedBackendDir: File? = null
+    private var extractedWebviewDir: File? = null
+
     /** True only once the process has actually started and later exited (or failed to start). */
     val isDead: Boolean
         get() = lifecycle == Lifecycle.DEAD
@@ -223,6 +230,14 @@ class NodeProcessManager(
                         webviewDir?.let { wv ->
                             WslPathResolver.toWslPath(wv.absolutePath)?.let { put("WEBVIEW_DIR", it) }
                         }
+                        // Self-cleanup of JAR-extracted temp dirs on clean exit (#120).
+                        // Set only for production extractions; absent in dev (source tree).
+                        extractedWebviewDir?.let { d ->
+                            WslPathResolver.toWslPath(d.absolutePath)?.let { put("CLEANUP_TEMP_WEBVIEW_DIR", it) }
+                        }
+                        extractedBackendDir?.let { d ->
+                            WslPathResolver.toWslPath(d.absolutePath)?.let { put("CLEANUP_TEMP_BACKEND_DIR", it) }
+                        }
                     }
                     val cmd = WslPathResolver.buildWslNodeCommand(wslDistro, wslCwd, wslEnv, linuxBackend)
                     logger.info("Starting WSL backend (distro=$wslDistro, cwd=$wslCwd): ${cmd.joinToString(" ")}")
@@ -246,6 +261,11 @@ class NodeProcessManager(
                         if (webviewDir != null) {
                             put("WEBVIEW_DIR", webviewDir.absolutePath)
                         }
+                        // Self-cleanup of JAR-extracted temp dirs on clean exit (#120).
+                        // Set only for production extractions; absent in dev (source tree),
+                        // so the backend never deletes the source webview/dist or backend.mjs.
+                        extractedWebviewDir?.let { put("CLEANUP_TEMP_WEBVIEW_DIR", it.absolutePath) }
+                        extractedBackendDir?.let { put("CLEANUP_TEMP_BACKEND_DIR", it.absolutePath) }
                         // Dynamic port: backend binds an OS-assigned free port when this is 0
                         // and reports the real port via its PORT:{n} stdout line. Lets one
                         // backend per IDE project root coexist without a fixed-port clash (#57).
@@ -608,6 +628,8 @@ class NodeProcessManager(
                     }
                 }
                 logger.info("Extracted backend.mjs to: ${targetFile.absolutePath}")
+                // Production extraction only — mark this temp dir for self-cleanup (#120).
+                extractedBackendDir = tempDir
                 return targetFile
             }
 
@@ -715,6 +737,9 @@ class NodeProcessManager(
             }
 
             logger.info("Extracted WebView resources to: ${tempDir.absolutePath}")
+            // Production extraction only — mark this temp dir for self-cleanup (#120).
+            // (Dev mode returns the source webview/dist above and never reaches here.)
+            extractedWebviewDir = tempDir
             tempDir
         } catch (e: Exception) {
             logger.error("Failed to extract WebView resources", e)

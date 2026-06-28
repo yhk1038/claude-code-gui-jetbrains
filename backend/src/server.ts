@@ -9,6 +9,7 @@ import { ensureProfile } from './core/features/profile';
 import { trackEvent, reportBackendError } from './core/features/telemetry';
 import { restoreTunnelState } from './core/features/tunnel-manager';
 import { restoreSleepGuardState } from './core/features/sleep-guard';
+import { cleanupExtractedTempDirs } from './core/features/temp-cleanup';
 import { isJetBrainsMode, serverPort, webviewDir } from './config/environment';
 import { initLogger, getLogger } from './logging';
 import { LogWebSocketServer } from './logging/log-ws';
@@ -127,6 +128,22 @@ async function main() {
   process.on('SIGPIPE', () => {}); // Ignore SIGPIPE signal
   process.stdout.on('error', () => {}); // Ignore stdout EPIPE
   process.stderr.on('error', () => {}); // Ignore stderr EPIPE
+
+  // On clean exit, remove the temp dirs the JetBrains plugin extracted from its JAR
+  // for this instance (#120). Kotlin only sets these env vars when it actually
+  // extracted to a temp dir (production); in dev mode WEBVIEW_DIR/backend point at
+  // the source tree and these vars are intentionally absent, so we register nothing
+  // and never touch the source. Standalone mode also never sets them.
+  // process.on('exit') runs synchronously after every shutdown path
+  // (idle shutdown, SIGTERM/SIGINT) converges on process.exit(0), and by then every
+  // client (IDE JCEF + any browser) has disconnected — no webview can break.
+  const cleanupDirs = [
+    process.env.CLEANUP_TEMP_WEBVIEW_DIR,
+    process.env.CLEANUP_TEMP_BACKEND_DIR,
+  ].filter((d): d is string => Boolean(d));
+  if (cleanupDirs.length > 0) {
+    process.on('exit', () => cleanupExtractedTempDirs(cleanupDirs));
+  }
 
   // 1. Logger 즉시 초기화 (부트스트랩 로그도 파일에 기록)
   const logger = initLogger();
