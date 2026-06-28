@@ -31,8 +31,6 @@ export function ModeSelectPanel(props: Props) {
       {modes.map((m) => {
         const config = INPUT_MODES[m];
         const selected = m === currentMode;
-        // 패널 자체가 전환 UI이므로 설명 끝의 "Click, or press Shift+Tab…" 안내는 뗀다.
-        const description = config.description.replace(/\s*Click, or press Shift\+Tab, to switch modes\.\s*$/, '');
         return (
           <button
             key={m}
@@ -47,7 +45,7 @@ export function ModeSelectPanel(props: Props) {
             </span>
             <div className="min-w-0 flex-1">
               <div className="text-[0.9rem] font-medium text-text-primary">{config.label}</div>
-              <div className="text-[0.8rem] text-text-tertiary">{description}</div>
+              <div className="text-[0.8rem] text-text-tertiary">{config.description}</div>
             </div>
             {selected && <CheckIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-text-secondary" />}
           </button>
