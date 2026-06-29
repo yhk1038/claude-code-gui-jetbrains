@@ -22,6 +22,16 @@ function getWorkflowTracker(connections: ConnectionManager): WorkflowProgressTra
   return workflowTracker;
 }
 
+/**
+ * Settle a session's still-running background workflows as `stopped` and push a
+ * final update to the webview. Called when the user interrupts/stops generation
+ * — the CLI process stays alive, so a stopped workflow would otherwise never
+ * receive a terminal task_notification and hang on "running" in the panel.
+ */
+export function stopWorkflowsForSession(sessionId: string): void {
+  workflowTracker?.stopRunning(sessionId);
+}
+
 // InputMode -> CLI --permission-mode flag mapping
 const INPUT_MODE_TO_CLI_FLAG: Record<string, string> = {
   plan: 'plan',

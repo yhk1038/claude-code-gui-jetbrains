@@ -478,10 +478,41 @@ export class WorkflowProgressTracker {
     );
   }
 
+  /**
+   * Settle a still-running workflow as `stopped` and push a final update.
+   * No-op once the workflow has reached a terminal status (completed/failed/
+   * stopped), so a normal `task_notification` finish is never overwritten.
+   */
+  private settleStopped(entry: WatchEntry): void {
+    if (entry.task.status !== 'running') return;
+    const t = entry.task;
+    t.status = 'stopped';
+    t.endedAt = Date.now();
+    for (const a of t.agents) if (a.status !== 'done') a.status = 'done';
+    t.usage = { ...t.usage, durationMs: t.usage?.durationMs ?? t.endedAt - t.startedAt };
+    this.broadcast(entry);
+  }
+
+  /**
+   * Settle every still-running workflow of a session as `stopped` (e.g. the user
+   * interrupted generation). Entries are KEPT — the CLI process is still alive,
+   * so the panel keeps showing them under "Finished" rather than dropping them.
+   */
+  stopRunning(sessionId: string): void {
+    for (const entry of this.entries.values()) {
+      if (entry.sessionId === sessionId) this.settleStopped(entry);
+    }
+  }
+
   /** Forget all workflows for a session (on CLI process close). */
   stopSession(sessionId: string): void {
     for (const [key, entry] of this.entries) {
-      if (entry.sessionId === sessionId) this.entries.delete(key);
+      if (entry.sessionId !== sessionId) continue;
+      // The process is gone, so a still-running workflow can never reach a
+      // terminal task_notification — settle + broadcast it as stopped before
+      // dropping the entry, otherwise the webview hangs it on "running" forever.
+      this.settleStopped(entry);
+      this.entries.delete(key);
     }
   }
 }

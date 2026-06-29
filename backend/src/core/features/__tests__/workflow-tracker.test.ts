@@ -2,7 +2,9 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { reconstructWorkflowTasks } from '../workflow-tracker';
+import { reconstructWorkflowTasks, WorkflowProgressTracker } from '../workflow-tracker';
+import type { ConnectionManager } from '../../../ws/connection-manager';
+import type { WorkflowTask } from '../../../shared';
 
 let dir: string;
 let transcriptDir: string;
@@ -123,5 +125,71 @@ describe('reconstructWorkflowTasks', () => {
       { type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text: 'hi' }] } },
     ]);
     expect(tasks).toEqual([]);
+  });
+});
+
+describe('WorkflowProgressTracker stop handling', () => {
+  /** Capture WORKFLOW_PROGRESS broadcasts into a flat list. */
+  function makeTracker() {
+    const broadcasts: WorkflowTask[] = [];
+    const connections = {
+      broadcastToSession: (_sessionId: string, _type: string, payload: Record<string, unknown>) => {
+        broadcasts.push(JSON.parse(JSON.stringify(payload)) as WorkflowTask);
+      },
+    } as unknown as ConnectionManager;
+    const tracker = WorkflowProgressTracker.create(connections);
+    return { tracker, broadcasts, last: () => broadcasts[broadcasts.length - 1] };
+  }
+
+  const startedEvent = {
+    type: 'system',
+    subtype: 'task_started',
+    tool_use_id: 'toolu_1',
+    task_id: 'w1',
+    workflow_name: 'demo-flow',
+  };
+
+  it('settles a running workflow as stopped on interrupt (stopRunning) and broadcasts it', () => {
+    const { tracker, last } = makeTracker();
+    tracker.handleEvent('s1', startedEvent);
+    expect(last().status).toBe('running');
+
+    tracker.stopRunning('s1');
+    const t = last();
+    expect(t.status).toBe('stopped');
+    expect(t.endedAt).toBeGreaterThan(0);
+    expect(t.usage?.durationMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it('does not overwrite a completed workflow when stopped afterwards', () => {
+    const { tracker, last } = makeTracker();
+    tracker.handleEvent('s1', startedEvent);
+    tracker.handleEvent('s1', {
+      type: 'system',
+      subtype: 'task_notification',
+      tool_use_id: 'toolu_1',
+      status: 'completed',
+    });
+    expect(last().status).toBe('completed');
+
+    tracker.stopRunning('s1');
+    expect(last().status).toBe('completed');
+  });
+
+  it('only touches workflows of the targeted session', () => {
+    const { tracker, broadcasts } = makeTracker();
+    tracker.handleEvent('s1', startedEvent);
+    tracker.handleEvent('s2', { ...startedEvent, tool_use_id: 'toolu_2' });
+
+    tracker.stopRunning('s1');
+    const s2 = broadcasts.filter((b) => b.toolUseId === 'toolu_2');
+    expect(s2.every((b) => b.status === 'running')).toBe(true);
+  });
+
+  it('settles still-running workflows on process close (stopSession)', () => {
+    const { tracker, last } = makeTracker();
+    tracker.handleEvent('s1', startedEvent);
+    tracker.stopSession('s1');
+    expect(last().status).toBe('stopped');
   });
 });

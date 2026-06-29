@@ -12,6 +12,9 @@ interface WorkflowStateValue {
   finishedTasks: WorkflowTask[];
   /** Drop finished workflows (the panel's "Clear" action). */
   clearFinished: () => void;
+  /** Drop a single workflow by tool_use id (the per-row "✕" — also clears a
+   *  workflow stuck on "running" when the runtime lost its final event). */
+  dismissTask: (toolUseId: string) => void;
   // Background tasks panel UI state
   panelOpen: boolean;
   /** Open the panel; pass a toolUseId to scroll/highlight that workflow. */
@@ -71,6 +74,13 @@ export function WorkflowStateProvider({ children }: { children: ReactNode }) {
         setTaskMap((prev) => {
           const next = new Map<string, WorkflowTask>();
           for (const [k, v] of prev) if (v.status === 'running') next.set(k, v);
+          return next;
+        }),
+      dismissTask: (id) =>
+        setTaskMap((prev) => {
+          if (!prev.has(id)) return prev;
+          const next = new Map(prev);
+          next.delete(id);
           return next;
         }),
       panelOpen,

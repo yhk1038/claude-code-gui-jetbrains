@@ -16,7 +16,17 @@ function useNow(active: boolean): number {
     return now;
 }
 
-function WorkflowTaskRow({ task, now, focused }: { task: WorkflowTask; now: number; focused: boolean }) {
+function WorkflowTaskRow({
+    task,
+    now,
+    focused,
+    onDismiss,
+}: {
+    task: WorkflowTask;
+    now: number;
+    focused: boolean;
+    onDismiss: (toolUseId: string) => void;
+}) {
     const ref = useRef<HTMLDivElement>(null);
     useEffect(() => {
         if (focused) ref.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -43,6 +53,13 @@ function WorkflowTaskRow({ task, now, focused }: { task: WorkflowTask; now: numb
                     {task.name}
                 </div>
                 <span className={`text-[0.8461rem] shrink-0 ${statusColor}`}>{task.status}</span>
+                <button
+                    onClick={() => onDismiss(task.toolUseId)}
+                    className="shrink-0 p-0.5 rounded hover:bg-surface-hover transition-colors"
+                    title={isRunning ? 'Dismiss (clears a stuck workflow)' : 'Dismiss'}
+                >
+                    <XMarkIcon className="w-3.5 h-3.5 text-text-tertiary hover:text-text-secondary" />
+                </button>
             </div>
 
             <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.8461rem] text-text-primary/60">
@@ -122,7 +139,7 @@ function WorkflowTaskRow({ task, now, focused }: { task: WorkflowTask; now: numb
 }
 
 export function BackgroundTasksPanel() {
-    const { panelOpen, closePanel, runningTasks, finishedTasks, clearFinished, focusedToolUseId } =
+    const { panelOpen, closePanel, runningTasks, finishedTasks, clearFinished, dismissTask, focusedToolUseId } =
         useWorkflowState();
     const [showFinished, setShowFinished] = useState(true);
     const now = useNow(panelOpen && runningTasks.length > 0);
@@ -169,6 +186,7 @@ export function BackgroundTasksPanel() {
                                     task={t}
                                     now={now}
                                     focused={t.toolUseId === focusedToolUseId}
+                                    onDismiss={dismissTask}
                                 />
                             ))}
                         </section>
@@ -197,6 +215,7 @@ export function BackgroundTasksPanel() {
                                         task={t}
                                         now={now}
                                         focused={t.toolUseId === focusedToolUseId}
+                                        onDismiss={dismissTask}
                                     />
                                 ))}
                         </section>

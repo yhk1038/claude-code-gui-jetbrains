@@ -1,7 +1,7 @@
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
-import { sendInterruptToProcess } from '../claude-process';
+import { sendInterruptToProcess, stopWorkflowsForSession } from '../claude-process';
 import { MessageType } from '../../shared';
 
 export function stopGenerationHandler(
@@ -21,6 +21,9 @@ export function stopGenerationHandler(
         console.error('[node-backend]', `Interrupt failed, falling back to SIGTERM for ${sessionId}`);
         session.process.kill('SIGTERM');
       }
+      // Settle any background workflows the interrupt just cancelled so the panel
+      // doesn't leave them hanging on "running".
+      stopWorkflowsForSession(sessionId);
     }
   }
   connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
