@@ -59,6 +59,10 @@ export function newAccountId(): string {
 }
 
 async function writeAtomic0600(target: string, content: string): Promise<void> {
+  // NOTE: On Windows, POSIX mode 0o600 is not enforced by the filesystem (NTFS
+  // ignores the mode bits). Security on Windows relies entirely on the user's ACL.
+  // The CLI shares this same limitation and does not apply any Windows-specific ACL
+  // hardening either, so our behaviour matches.
   await mkdir(dirname(target), { recursive: true });
   const temp = `${target}.${randomUUID()}.tmp`;
   try {

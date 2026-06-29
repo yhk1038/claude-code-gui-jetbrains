@@ -43,9 +43,12 @@ export async function getAllUsageHandler(
     // Resolve active email
     let liveEmail: string | null = null;
     try {
-      const { stdout } = await Claude.exec(['auth', 'status'], { timeout: 8000 });
-      if (stdout.trim()) {
-        const authStatus = JSON.parse(stdout.trim());
+      const { stdout } = await Claude.exec(['auth', 'status', '--json'], { timeout: 8000 });
+      // Extract the JSON object to guard against shell banner noise on Windows/Linux
+      // that can prefix or suffix the actual JSON output.
+      const match = stdout.match(/\{[\s\S]*\}/);
+      if (match) {
+        const authStatus = JSON.parse(match[0]);
         liveEmail = authStatus?.email || null;
       }
     } catch {

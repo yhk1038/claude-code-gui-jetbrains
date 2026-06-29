@@ -4,7 +4,7 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { join, dirname } from 'path';
 import { homedir, userInfo } from 'os';
-import { randomUUID } from 'crypto';
+import { randomUUID, createHash } from 'crypto';
 import { getClaudeConfigDir } from './claudeConfigDir';
 
 const execFileAsync = promisify(execFile);
@@ -24,23 +24,30 @@ const execFileAsync = promisify(execFile);
  * SECURITY: the credential blob carries a live OAuth token. It is NEVER logged.
  */
 
-// macOS Keychain entry the bundled claude-agent-sdk reads/writes. The suffix-less
-// service name is used when the default config dir is active (no CLAUDE_CONFIG_DIR).
-const MAC_KEYCHAIN_SERVICE = 'Claude Code-credentials';
-const KEYCHAIN_ACCOUNT_PATTERN = /^[a-zA-Z0-9._-]+$/;
-
 const isMac = (): boolean => process.platform === 'darwin';
 
 /**
- * Mirror the bundled SDK's keychain account selection: prefer $USER, fall back to
- * the OS login name, and use "claude-code-user" if neither is a safe label.
+ * macOS Keychain service name the bundled claude-agent-sdk reads/writes.
+ * Mirrors the CLI: bare "Claude Code-credentials" with the default config dir,
+ * but suffixed with `-<sha256(configDir)[0:8]>` when CLAUDE_CONFIG_DIR is set.
  */
-function macKeychainAccount(): string {
+export function macKeychainService(): string {
+  if (!process.env.CLAUDE_CONFIG_DIR) return 'Claude Code-credentials';
+  const hash = createHash('sha256').update(getClaudeConfigDir()).digest('hex').substring(0, 8);
+  return `Claude Code-credentials-${hash}`;
+}
+
+/**
+ * macOS Keychain account label, matching the bundled SDK: $USER, then the OS
+ * login name, then "claude-code-user". No filtering — the CLI uses $USER verbatim
+ * and the value is passed as an execFile arg (never through a shell).
+ */
+export function macKeychainAccount(): string {
   const envUser = process.env.USER;
-  if (envUser && KEYCHAIN_ACCOUNT_PATTERN.test(envUser)) return envUser;
+  if (envUser) return envUser;
   try {
     const name = userInfo().username;
-    if (name && KEYCHAIN_ACCOUNT_PATTERN.test(name)) return name;
+    if (name) return name;
   } catch {
     /* userInfo can throw on some sandboxes */
   }
@@ -65,6 +72,10 @@ function globalConfigFilePath(): string {
 }
 
 async function writeAtomic0600(target: string, content: string): Promise<void> {
+  // NOTE: On Windows, POSIX mode 0o600 is not enforced by the filesystem (NTFS
+  // ignores the mode bits). Security on Windows relies entirely on the user's ACL.
+  // The CLI shares this same limitation and does not apply any Windows-specific ACL
+  // hardening either, so our behaviour matches.
   await mkdir(dirname(target), { recursive: true });
   const temp = `${target}.${randomUUID()}.tmp`;
   try {
@@ -86,7 +97,7 @@ export async function readLiveCredentials(): Promise<string> {
       const { stdout } = await execFileAsync('/usr/bin/security', [
         'find-generic-password',
         '-a', macKeychainAccount(),
-        '-s', MAC_KEYCHAIN_SERVICE,
+        '-s', macKeychainService(),
         '-w',
       ]);
       return stdout.trim();
@@ -109,7 +120,7 @@ export async function writeLiveCredentials(blob: string): Promise<void> {
     await execFileAsync('/usr/bin/security', [
       'add-generic-password',
       '-U',
-      '-s', MAC_KEYCHAIN_SERVICE,
+      '-s', macKeychainService(),
       '-a', macKeychainAccount(),
       '-w', blob,
     ]);
@@ -125,7 +136,7 @@ export async function clearLiveCredentials(): Promise<void> {
       await execFileAsync('/usr/bin/security', [
         'delete-generic-password',
         '-a', macKeychainAccount(),
-        '-s', MAC_KEYCHAIN_SERVICE,
+        '-s', macKeychainService(),
       ]);
     } catch (err) {
       // Exit 44 = item not found, which is fine (already absent). Anything else

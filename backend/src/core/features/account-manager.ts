@@ -37,9 +37,13 @@ interface ClaudeAuthStatus {
 /** Run `claude auth status` for the live account. Null when it fails / not JSON. */
 async function runAuthStatus(): Promise<ClaudeAuthStatus | null> {
   try {
-    const { stdout } = await Claude.exec(['auth', 'status'], { timeout: 8000 });
-    if (!stdout.trim()) return null;
-    return JSON.parse(stdout.trim()) as ClaudeAuthStatus;
+    const { stdout } = await Claude.exec(['auth', 'status', '--json'], { timeout: 8000 });
+    // Extract the JSON object from stdout to guard against shell banner noise
+    // (e.g. Windows Console banners, .bashrc printf sequences) that can prefix
+    // or suffix the actual JSON output.
+    const match = stdout.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    return JSON.parse(match[0]) as ClaudeAuthStatus;
   } catch {
     return null;
   }
