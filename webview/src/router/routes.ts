@@ -296,8 +296,8 @@ export const SETTINGS_SUB_ROUTES: Route[] = [
   // Route.SETTINGS_ADVANCED,  // TODO: not yet implemented
   Route.SETTINGS_BROWSER,
   Route.SETTINGS_ACCOUNT,
-  Route.SETTINGS_TUNNEL,
   Route.SETTINGS_USAGE,
+  Route.SETTINGS_TUNNEL,
   Route.SETTINGS_RELEASES,
   Route.SETTINGS_ABOUT,
 ];
