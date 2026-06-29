@@ -38,8 +38,10 @@ function WorkflowTaskRow({
     const durationMs =
         task.usage?.durationMs ?? (isRunning ? now - task.startedAt : undefined);
     const duration = formatDuration(durationMs);
+    // Authoritative workflow-level total first; per-agent sum is only a fallback
+    // (see WorkflowRenderer) so the header stays consistent with the agent table.
     const liveTokens = task.agents.reduce((sum, a) => sum + (a.tokens || 0), 0);
-    const tokens = formatTokens(liveTokens || task.usage?.subagentTokens);
+    const tokens = formatTokens(task.usage?.subagentTokens || liveTokens);
 
     return (
         <div

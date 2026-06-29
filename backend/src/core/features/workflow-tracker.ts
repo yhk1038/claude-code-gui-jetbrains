@@ -129,9 +129,11 @@ interface AgentStats {
 
 /**
  * Compute a subagent's stats from its transcript. Tokens are the last assistant
- * turn's billed input + cache-creation + output (matches the official UI's
- * order of magnitude); tools = count of tool_use blocks; duration = span of
- * timestamps. Approximate by design — see the file header limitation note.
+ * turn's full context — input + cache-creation + cache-read + output — which
+ * matches the live `task_progress` per-agent figure (cache-read dominates a
+ * subagent's turn via context reuse, so it must be counted, else reload reads
+ * ~30x low). tools = count of tool_use blocks; duration = span of timestamps.
+ * Approximate by design — see the file header limitation note.
  */
 async function computeAgentStats(file: string): Promise<AgentStats> {
   if (!existsSync(file)) return { tokens: 0, tools: 0, durationMs: 0 };
@@ -164,7 +166,10 @@ async function computeAgentStats(file: string): Promise<AgentStats> {
     }
   }
   const tokens = lastUsage
-    ? num(lastUsage['input_tokens']) + num(lastUsage['cache_creation_input_tokens']) + num(lastUsage['output_tokens'])
+    ? num(lastUsage['input_tokens']) +
+      num(lastUsage['cache_creation_input_tokens']) +
+      num(lastUsage['cache_read_input_tokens']) +
+      num(lastUsage['output_tokens'])
     : 0;
   const durationMs = firstTs !== undefined && lastTs !== undefined ? lastTs - firstTs : 0;
   return { tokens, tools, durationMs };
