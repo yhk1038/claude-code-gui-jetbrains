@@ -53,6 +53,7 @@ export function useAccounts(): UseAccountsResult {
   const invalidateAll = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: [MessageType.GET_ACCOUNTS] });
     void queryClient.invalidateQueries({ queryKey: [MessageType.GET_ACCOUNT] });
+    void queryClient.invalidateQueries({ queryKey: [MessageType.GET_USAGE] });
     void queryClient.invalidateQueries({ queryKey: [MessageType.GET_ALL_USAGE] });
   }, [queryClient]);
 

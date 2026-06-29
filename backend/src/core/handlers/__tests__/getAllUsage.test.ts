@@ -10,11 +10,6 @@ vi.mock('../../claude', () => ({
 
 vi.mock('../../features/account-store', () => ({
   readRegistry: vi.fn(),
-  readSnapshot: vi.fn(),
-}));
-
-vi.mock('../../features/account-usage', () => ({
-  usageForSnapshot: vi.fn(),
 }));
 
 vi.mock('../getUsage', () => ({
@@ -24,8 +19,7 @@ vi.mock('../getUsage', () => ({
 
 import { getAllUsageHandler } from '../getAllUsage';
 import { Claude } from '../../claude';
-import { readRegistry, readSnapshot } from '../../features/account-store';
-import { usageForSnapshot } from '../../features/account-usage';
+import { readRegistry } from '../../features/account-store';
 import { runCcbUsage } from '../getUsage';
 import type { ConnectionManager } from '../../../ws/connection-manager';
 import type { Bridge } from '../../../bridge/bridge-interface';
@@ -34,8 +28,6 @@ import { MessageType } from '../../../shared';
 
 const mockExec = vi.mocked(Claude.exec);
 const mockReadRegistry = vi.mocked(readRegistry);
-const mockReadSnapshot = vi.mocked(readSnapshot);
-const mockUsageForSnapshot = vi.mocked(usageForSnapshot);
 const mockRunCcbUsage = vi.mocked(runCcbUsage);
 
 function createMockConnections() {
@@ -51,7 +43,7 @@ describe('getAllUsageHandler', () => {
     vi.clearAllMocks();
   });
 
-  it('handles active account via ccb and inactive via snapshot usage fetch', async () => {
+  it('returns active account usage via ccb and inactive account usage from registry cache', async () => {
     const connections = createMockConnections();
     const message: IPCMessage = {
       type: MessageType.GET_ALL_USAGE,
@@ -66,7 +58,7 @@ describe('getAllUsageHandler', () => {
       stderr: '',
     });
 
-    // Registry contains active account + another inactive saved account
+    // Inactive account has a cached usage entry from when it was last active
     mockReadRegistry.mockResolvedValue({
       current: 'acc-active',
       accounts: {
@@ -79,6 +71,8 @@ describe('getAllUsageHandler', () => {
           authMethod: null,
           createdAt: 0,
           updatedAt: 0,
+          usageCached: null,
+          usageCachedAt: 0,
         },
         'acc-inactive': {
           id: 'acc-inactive',
@@ -89,11 +83,17 @@ describe('getAllUsageHandler', () => {
           authMethod: null,
           createdAt: 0,
           updatedAt: 0,
+          usageCached: {
+            five_hour: { utilization: 0.8, resets_at: '2026-06-29T21:30:41Z' },
+            seven_day: null,
+            seven_day_sonnet: null,
+            seven_day_opus: null,
+          },
+          usageCachedAt: 1000,
         },
       },
     });
 
-    // Live usage response
     mockRunCcbUsage.mockResolvedValue({
       five_hour: { utilization: 0.2, resets_at: '2026-06-29T21:30:41Z' },
       seven_day: null,
@@ -103,22 +103,6 @@ describe('getAllUsageHandler', () => {
       seven_day_cowork: null,
       iguana_necktie: null,
       extra_usage: null,
-    });
-
-    // Inactive snapshot + usageForSnapshot response
-    mockReadSnapshot.mockResolvedValue({
-      credentials: '{}',
-      oauthAccount: null,
-    });
-    mockUsageForSnapshot.mockResolvedValue({
-      usage: {
-        five_hour: { utilization: 0.8, resets_at: '2026-06-29T21:30:41Z' },
-        seven_day: null,
-        seven_day_sonnet: null,
-        seven_day_opus: null,
-      },
-      error: null,
-      errorKind: null,
     });
 
     await getAllUsageHandler('conn-1', message, connections, mockBridge);
@@ -147,6 +131,81 @@ describe('getAllUsageHandler', () => {
             }),
           }),
         ],
+      }),
+    );
+  });
+
+  it('returns error for inactive account with no cached usage', async () => {
+    const connections = createMockConnections();
+    const message: IPCMessage = {
+      type: MessageType.GET_ALL_USAGE,
+      payload: { force: true },
+      timestamp: 0,
+      requestId: 'req-no-cache',
+    };
+
+    mockExec.mockResolvedValue({
+      stdout: JSON.stringify({ email: 'active@example.com' }),
+      stderr: '',
+    });
+
+    mockReadRegistry.mockResolvedValue({
+      current: 'acc-active',
+      accounts: {
+        'acc-active': {
+          id: 'acc-active',
+          emailAddress: 'active@example.com',
+          displayName: 'Active User',
+          organizationName: null,
+          subscriptionType: null,
+          authMethod: null,
+          createdAt: 0,
+          updatedAt: 0,
+          usageCached: null,
+          usageCachedAt: 0,
+        },
+        'acc-inactive': {
+          id: 'acc-inactive',
+          emailAddress: 'inactive@example.com',
+          displayName: 'Inactive User',
+          organizationName: null,
+          subscriptionType: null,
+          authMethod: null,
+          createdAt: 0,
+          updatedAt: 0,
+          usageCached: null,
+          usageCachedAt: 0,
+        },
+      },
+    });
+
+    mockRunCcbUsage.mockResolvedValue({
+      five_hour: { utilization: 0.5, resets_at: '2026-06-29T21:30:41Z' },
+      seven_day: null,
+      seven_day_oauth_apps: null,
+      seven_day_sonnet: null,
+      seven_day_opus: null,
+      seven_day_cowork: null,
+      iguana_necktie: null,
+      extra_usage: null,
+    });
+
+    await getAllUsageHandler('conn-1', message, connections, mockBridge);
+
+    expect(connections.sendTo).toHaveBeenCalledWith(
+      'conn-1',
+      MessageType.ACK,
+      expect.objectContaining({
+        status: 'ok',
+        accounts: expect.arrayContaining([
+          expect.objectContaining({
+            id: 'acc-inactive',
+            active: false,
+            usage: null,
+            error: expect.stringContaining('Switch to this account'),
+            errorKind: 'unknown',
+          }),
+        ]),
       }),
     );
   });
@@ -229,6 +288,8 @@ describe('getAllUsageHandler', () => {
           authMethod: null,
           createdAt: 0,
           updatedAt: 0,
+          usageCached: null,
+          usageCachedAt: 0,
         },
       },
     });

@@ -3,9 +3,8 @@ import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { Claude } from '../claude';
 import { MessageType } from '../../shared';
-import { readRegistry, readSnapshot } from '../features/account-store';
+import { readRegistry } from '../features/account-store';
 import type { StoredAccount } from '../../shared';
-import { usageForSnapshot } from '../features/account-usage';
 import { runCcbUsage, classifyError } from './getUsage';
 import type { AccountUsage, AccountUsageData } from '../../shared';
 
@@ -65,6 +64,8 @@ export async function getAllUsageHandler(
         authMethod: null,
         createdAt: Date.now(),
         updatedAt: Date.now(),
+        usageCached: null,
+        usageCachedAt: 0,
       });
     }
 
@@ -106,15 +107,12 @@ export async function getAllUsageHandler(
           error = 'credentials are unavailable';
           errorKind = 'auth';
         } else {
-          const snapshot = await readSnapshot(account.id);
-          if (!snapshot) {
-            error = 'credentials are unavailable';
-            errorKind = 'auth';
-          } else {
-            const res = await usageForSnapshot(account.id, snapshot);
-            usage = res.usage;
-            error = res.error;
-            errorKind = res.errorKind;
+          // Read from usage data cached when this account was last active.
+          // Only the active account ever calls ccb — no direct HTTP to Anthropic.
+          usage = account.usageCached ?? null;
+          if (!usage) {
+            error = 'Switch to this account to load its usage data.';
+            errorKind = 'unknown';
           }
         }
       }

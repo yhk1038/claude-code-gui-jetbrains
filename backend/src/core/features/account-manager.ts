@@ -73,8 +73,8 @@ export async function listAccounts(): Promise<AccountsResult> {
     ...meta,
     active: activeEmail !== null && meta.emailAddress === activeEmail,
   }));
-  // Stable order: most recently updated first.
-  accounts.sort((a, b) => b.updatedAt - a.updatedAt);
+  // Stable order: registration order (oldest first).
+  accounts.sort((a, b) => a.createdAt - b.createdAt);
 
   return { accounts, activeEmail };
 }
@@ -113,6 +113,8 @@ export async function saveCurrentAccount(): Promise<StoredAccount> {
     authMethod: str(authStatus?.authMethod),
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
+    usageCached: existing?.usageCached ?? null,
+    usageCachedAt: existing?.usageCachedAt ?? 0,
   };
 
   await writeSnapshot(meta.id, { credentials: blob, oauthAccount });

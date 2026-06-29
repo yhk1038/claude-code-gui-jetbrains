@@ -1,8 +1,21 @@
 import { useState } from 'react';
 import { CheckIcon, PlusIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 import { useRouter } from '@/router/useRouter';
 import { Route } from '@/router/routes';
 import { useAccounts } from '@/hooks/queries/useAccounts';
+import { AccountAvatar } from './AccountAvatar';
+
+function relativeTime(ms: number): string {
+  const diff = Date.now() - ms;
+  const minutes = Math.floor(diff / 60_000);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  if (days > 0) return `${days}d ago`;
+  if (hours > 0) return `${hours}h ago`;
+  if (minutes > 0) return `${minutes}m ago`;
+  return 'just now';
+}
 
 interface Props {
   onClose: () => void;
@@ -27,9 +40,14 @@ export function AccountSwitcherMenu(props: Props) {
     if (switchingId) return;
     setSwitchingId(id);
     setError(null);
+    const account = accounts.find((a) => a.id === id);
     try {
       await switchTo(id);
       onClose();
+      const label = account?.displayName
+        ? `${account.displayName}(${account.emailAddress})`
+        : (account?.emailAddress ?? 'account');
+      toast.success(`Switched to ${label}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Switch failed');
       setSwitchingId(null);
@@ -58,22 +76,29 @@ export function AccountSwitcherMenu(props: Props) {
                 key={account.id}
                 disabled={account.active || switchingId !== null}
                 onClick={() => void handleSwitch(account.id)}
-                className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left hover:bg-surface-hover disabled:cursor-default disabled:hover:bg-transparent transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-surface-hover disabled:cursor-default disabled:hover:bg-transparent transition-colors"
               >
-                <div className="min-w-0">
-                  <div className="text-[0.8461rem] text-text-primary truncate">
+                <AccountAvatar account={account} className="w-6 h-6 text-[0.6153rem] shrink-0" />
+                <span className="min-w-0 flex-1 overflow-hidden">
+                  <span className="block text-[0.8461rem] text-text-primary truncate leading-tight">
                     {account.displayName ?? account.emailAddress}
-                  </div>
+                  </span>
                   {account.displayName && (
-                    <div className="text-[0.7692rem] text-text-tertiary truncate">{account.emailAddress}</div>
+                    <span className="block text-[0.7077rem] text-text-tertiary truncate leading-tight">
+                      {account.emailAddress}
+                    </span>
                   )}
-                </div>
+                </span>
                 <span className="shrink-0 flex items-center">
                   {account.active ? (
                     <CheckIcon className="w-4 h-4 text-state-success-fg" />
                   ) : busy ? (
                     <span className="w-4 h-4 border-2 border-border-strong border-t-text-primary rounded-full animate-spin block" />
-                  ) : null}
+                  ) : (
+                    <span className="text-[0.7077rem] text-text-tertiary whitespace-nowrap">
+                      {relativeTime(account.updatedAt)}
+                    </span>
+                  )}
                 </span>
               </button>
             );

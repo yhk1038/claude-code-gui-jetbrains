@@ -3,7 +3,7 @@ import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { useAccounts } from '@/hooks/queries/useAccounts';
 import { useAuthContext } from '@/contexts';
 import { AccountSwitcherMenu } from './AccountSwitcherMenu';
-import { initialsFor } from './initials';
+import { AccountAvatar } from './AccountAvatar';
 
 /**
  * Header "persona" button next to Settings: an avatar showing the active
@@ -13,7 +13,7 @@ import { initialsFor } from './initials';
  */
 export function AccountSwitcher() {
   const { loggedIn } = useAuthContext();
-  const { accounts, activeEmail } = useAccounts();
+  const { accounts } = useAccounts();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -29,7 +29,6 @@ export function AccountSwitcher() {
   if (loggedIn !== true) return null;
 
   const activeAccount = accounts.find((a) => a.active) ?? null;
-  const initials = initialsFor(activeAccount?.displayName, activeAccount?.emailAddress ?? activeEmail);
 
   return (
     <div className="relative flex-shrink-0" ref={ref}>
@@ -38,10 +37,8 @@ export function AccountSwitcher() {
         className="p-1 rounded transition-colors hover:bg-surface-hover"
         title="Accounts"
       >
-        {initials ? (
-          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-accent-claude text-text-primary text-[0.6153rem] font-semibold uppercase leading-none">
-            {initials}
-          </span>
+        {activeAccount ? (
+          <AccountAvatar account={activeAccount} className="w-5 h-5 text-[0.6153rem]" />
         ) : (
           <UserCircleIcon className="w-5 h-5 text-text-secondary hover:text-text-primary" />
         )}

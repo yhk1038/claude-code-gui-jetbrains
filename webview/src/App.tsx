@@ -36,7 +36,26 @@ function AppContent() {
       {isAccountUsageOpen && (
         <AccountUsageModal onClose={() => setIsAccountUsageOpen(false)} />
       )}
-      <Toaster />
+      <Toaster
+        position="top-center"
+        containerStyle={{ top: 40 }}
+        toastOptions={{
+          style: {
+            background: 'var(--surface-raised)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--border-default)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+            fontSize: '0.8461rem',
+            padding: '8px 12px',
+          },
+          success: {
+            iconTheme: {
+              primary: 'var(--state-success-fg)',
+              secondary: 'var(--surface-raised)',
+            },
+          },
+        }}
+      />
     </>
   );
 }

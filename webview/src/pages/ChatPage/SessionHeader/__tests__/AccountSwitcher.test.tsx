@@ -21,7 +21,8 @@ import { AccountSwitcher } from '../AccountSwitcher';
 function acc(id: string, email: string, active: boolean, displayName: string | null = null): AccountListItem {
   return {
     id, emailAddress: email, displayName, organizationName: null,
-    subscriptionType: 'team', authMethod: 'claudeai', createdAt: 1, updatedAt: 2, active,
+    subscriptionType: 'team', authMethod: 'claudeai', createdAt: 1, updatedAt: 2,
+    usageCached: null, usageCachedAt: 0, active,
   };
 }
 
@@ -48,7 +49,8 @@ describe('AccountSwitcher', () => {
   it('opens the dropdown and lists saved accounts on click', () => {
     render(<AccountSwitcher />);
     fireEvent.click(screen.getByTitle('Accounts'));
-    expect(screen.getByText('IO')).toBeInTheDocument();
+    // 'IO' appears in both the avatar span and the label span; confirm at least one exists.
+    expect(screen.getAllByText('IO').length).toBeGreaterThan(0);
     expect(screen.getByText('Add account')).toBeInTheDocument();
     expect(screen.getByText('Manage accounts')).toBeInTheDocument();
   });
@@ -57,7 +59,8 @@ describe('AccountSwitcher', () => {
     mockSwitchTo.mockResolvedValue(undefined);
     render(<AccountSwitcher />);
     fireEvent.click(screen.getByTitle('Accounts'));
-    fireEvent.click(screen.getByText('IO'));
+    // 'IO' appears in both avatar and label; click the parent button of either.
+    fireEvent.click(screen.getAllByText('IO')[0].closest('button')!);
     await waitFor(() => expect(mockSwitchTo).toHaveBeenCalledWith('acc-2'));
   });
 

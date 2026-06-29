@@ -26,6 +26,10 @@ export interface StoredAccount {
   createdAt: number;
   /** Epoch ms when the snapshot was last refreshed. */
   updatedAt: number;
+  /** Usage data cached from the last time this account was active (fetched via ccb). Null until first active fetch. */
+  usageCached: AccountUsageData | null;
+  /** Epoch ms when usageCached was last written. 0 when never fetched. */
+  usageCachedAt: number;
 }
 
 /** A StoredAccount plus whether it is the account currently live in the CLI. */

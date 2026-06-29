@@ -1,36 +1,26 @@
-import { SettingSection } from '../common';
+import { PlusIcon } from '@heroicons/react/24/outline';
+import { useRouter } from '@/router/useRouter';
 import { ROUTE_META, Route } from '@/router/routes';
-import { useAccountData } from '@/components/AccountUsageModal/useAccountData';
-import { InfoRow, InfoRowSkeleton } from '@/components/AccountUsageModal/InfoRow';
 import { AccountList } from './AccountList';
 
 export function AccountSettings() {
   const meta = ROUTE_META[Route.SETTINGS_ACCOUNT];
-  const { data: accountData, isLoading: accountLoading } = useAccountData();
+  const { navigate } = useRouter();
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-text-primary mb-6">{meta.label}</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-text-primary">{meta.label}</h2>
+        <button
+          onClick={() => navigate(Route.SWITCH_ACCOUNT)}
+          className="flex items-center gap-1.5 text-[0.8461rem] text-text-primary bg-accent-claude hover:bg-accent-claude-hover rounded px-3 py-1.5 transition-colors"
+        >
+          <PlusIcon className="w-4 h-4" />
+          Add account
+        </button>
+      </div>
 
-      <SettingSection title="Profile">
-        {accountLoading && !accountData ? (
-          <>
-            <InfoRowSkeleton />
-            <InfoRowSkeleton />
-            <InfoRowSkeleton />
-          </>
-        ) : (
-          <div className="py-3">
-            <InfoRow label="Auth method" value={accountData?.authMethod ?? null} />
-            <InfoRow label="Email" value={accountData?.email ?? null} />
-            <InfoRow label="Plan" value={accountData?.plan ?? null} />
-          </div>
-        )}
-      </SettingSection>
-
-      <SettingSection title="Accounts">
-        <AccountList />
-      </SettingSection>
+      <AccountList />
     </div>
   );
 }

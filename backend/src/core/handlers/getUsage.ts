@@ -4,6 +4,7 @@ import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { Claude } from '../claude';
 import { MessageType } from '../../shared';
+import { readRegistry, upsertAccount } from '../features/account-store';
 
 interface UsageBucket {
   utilization: number;
@@ -124,6 +125,27 @@ export function resetUsageCache(): void {
   lastErrorInfo = null;
 }
 
+async function persistUsageToRegistry(usage: CcbUsageResponse): Promise<void> {
+  try {
+    const registry = await readRegistry();
+    if (!registry.current) return;
+    const account = registry.accounts[registry.current];
+    if (!account) return;
+    await upsertAccount({
+      ...account,
+      usageCached: {
+        five_hour: usage.five_hour ?? null,
+        seven_day: usage.seven_day ?? null,
+        seven_day_sonnet: usage.seven_day_sonnet ?? null,
+        seven_day_opus: usage.seven_day_opus ?? null,
+      },
+      usageCachedAt: Date.now(),
+    });
+  } catch {
+    /* non-fatal: registry persist failure should never block the usage response */
+  }
+}
+
 export async function runCcbUsage(): Promise<CcbUsageResponse> {
   const { shell, args } = shellInvocation('ccb oauth usage --json');
   const { stdout } = await execFileAsync(shell, args, { timeout: 15000 });
@@ -203,6 +225,9 @@ export async function getUsageHandler(
       cachedUsage = usage;
       cachedAt = Date.now();
       lastErrorInfo = null;
+      // Persist to the account registry so GET_ALL_USAGE can show stale-but-correct data
+      // for this account when it becomes inactive (avoids direct HTTP to Anthropic).
+      void persistUsageToRegistry(usage);
       return usage;
     })();
 

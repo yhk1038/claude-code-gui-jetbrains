@@ -56,7 +56,8 @@ function authStatus(obj: Record<string, unknown>): void {
 function acc(id: string, email: string, extra: Partial<StoredAccount> = {}): StoredAccount {
   return {
     id, emailAddress: email, displayName: null, organizationName: null,
-    subscriptionType: 'team', authMethod: 'claudeai', createdAt: 1, updatedAt: 2, ...extra,
+    subscriptionType: 'team', authMethod: 'claudeai', createdAt: 1, updatedAt: 2,
+    usageCached: null, usageCachedAt: 0, ...extra,
   };
 }
 
@@ -151,15 +152,15 @@ describe('listAccounts', () => {
   it('marks the account whose email matches the live CLI email as active', async () => {
     mockReadRegistry.mockResolvedValue({
       current: 'acc-1',
-      accounts: { 'acc-1': acc('acc-1', 'a@x.com', { updatedAt: 10 }), 'acc-2': acc('acc-2', 'b@x.com', { updatedAt: 20 }) },
+      accounts: { 'acc-1': acc('acc-1', 'a@x.com', { createdAt: 5, updatedAt: 10 }), 'acc-2': acc('acc-2', 'b@x.com', { createdAt: 15, updatedAt: 20 }) },
     });
     authStatus({ email: 'b@x.com' });
 
     const result = await listAccounts();
 
     expect(result.activeEmail).toBe('b@x.com');
-    // Sorted by updatedAt desc → acc-2 first.
-    expect(result.accounts[0].id).toBe('acc-2');
+    // Sorted by createdAt asc → acc-1 first (registered earlier).
+    expect(result.accounts[0].id).toBe('acc-1');
     expect(result.accounts.find((a) => a.id === 'acc-2')?.active).toBe(true);
     expect(result.accounts.find((a) => a.id === 'acc-1')?.active).toBe(false);
   });
