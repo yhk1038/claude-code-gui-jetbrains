@@ -3,20 +3,13 @@ import Tippy from '@tippyjs/react/headless';
 import { TrashIcon, CheckBadgeIcon, ClockIcon } from '@heroicons/react/24/outline';
 import type { AccountListItem } from '@/shared';
 import { AccountAvatar } from '@/pages/ChatPage/SessionHeader/AccountSwitcher/AccountAvatar';
+import { formatPlan, formatAuthMethod } from '@/utils/accountFormat';
 
 interface AccountRowProps {
   account: AccountListItem;
   busy: boolean;
   onSwitch: (id: string) => void;
   onDelete: (account: AccountListItem) => void;
-}
-
-function formatPlan(raw: string | null): string | null {
-  if (!raw) return null;
-  return raw
-    .split('_')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join(' ');
 }
 
 // Calendar-day difference (midnight-based), so "Yesterday" means the previous
@@ -45,12 +38,6 @@ function lastActiveTime(ms: number): string {
   const relative = days > 0 ? `${days}d ago` : hours > 0 ? `${hours}h ago` : minutes > 0 ? `${minutes}m ago` : 'just now';
 
   return `${datePart} ${time} (${relative})`;
-}
-
-function formatAuthMethod(raw: string | null): string | null {
-  if (!raw) return null;
-  if (raw === 'claudeai') return 'Claude AI';
-  return raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
 }
 
 function Tooltip({ label, children }: { label: string; children: ReactElement }) {

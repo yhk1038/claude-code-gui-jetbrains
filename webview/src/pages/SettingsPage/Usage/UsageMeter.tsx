@@ -62,7 +62,7 @@ export function UsageMeter({ label, utilization, resetsAt }: UsageMeterProps) {
   const clamped = Math.min(100, Math.max(0, utilization));
 
   return (
-    <div className="py-3 border-b border-border-default last:border-b-0">
+    <div className="py-4 border-b border-border-default last:border-b-0">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm text-text-primary">{label}</span>
         <span className="text-sm text-text-secondary">{Math.round(clamped)}%</span>

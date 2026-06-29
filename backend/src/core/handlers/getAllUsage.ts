@@ -121,6 +121,7 @@ export async function getAllUsageHandler(
         id: account.id,
         emailAddress: account.emailAddress,
         displayName: account.displayName,
+        subscriptionType: account.subscriptionType,
         active,
         usage,
         error,

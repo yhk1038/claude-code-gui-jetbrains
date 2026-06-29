@@ -18,6 +18,7 @@ const mockAccounts = [
     id: 'acc-1',
     emailAddress: 'user1@example.com',
     displayName: 'User 1',
+    subscriptionType: 'max',
     active: true,
     usage: {
       five_hour: { utilization: 10, resets_at: '2026-12-01T00:00:00Z' },
@@ -32,6 +33,7 @@ const mockAccounts = [
     id: 'acc-2',
     emailAddress: 'user2@example.com',
     displayName: 'User 2',
+    subscriptionType: 'pro',
     active: false,
     usage: null,
     error: 'credentials are unavailable',
@@ -65,6 +67,7 @@ describe('UsageSettings', () => {
           id: 'acc-1',
           emailAddress: 'user1@example.com',
           displayName: 'User 1',
+          subscriptionType: 'max',
           active: true,
           usage: null,
           error: 'claude-code-battery CLI is not installed',

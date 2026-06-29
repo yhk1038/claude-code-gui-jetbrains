@@ -54,6 +54,7 @@ export interface AccountUsageData {
 }
 export interface AccountUsage {
   id: string; emailAddress: string; displayName: string | null;
+  subscriptionType: string | null;
   active: boolean;
   usage: AccountUsageData | null;
   error: string | null;
