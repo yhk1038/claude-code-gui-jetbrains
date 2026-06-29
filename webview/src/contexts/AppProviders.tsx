@@ -13,6 +13,8 @@ import { AuthProvider } from './AuthContext';
 import { CliConfigProvider } from './CliConfigContext';
 import { ChatInputFocusProvider } from './ChatInputFocusContext';
 import { ChatInputStateProvider } from './ChatInputStateContext';
+import { IdeSelectionProvider } from './IdeSelectionContext';
+import type { IdeSelectionPayload } from '@/hooks/useIdeSelection';
 import { WorkingDirProvider } from './WorkingDirContext';
 import { WorkflowStateProvider } from './WorkflowStateContext';
 import { CommandPaletteProvider } from '../commandPalette/CommandPaletteProvider';
@@ -182,23 +184,40 @@ function ChatProviderBridge(props: ChatProviderBridgeProps) {
   const inputRef = useRef('');
   const setInputCallbackRef = useRef<(value: string) => void>(() => {});
 
+  // Shared IDE-context refs: IdeSelectionProvider writes the live selection /
+  // toggle here, ChatStreamProvider reads them inside its stable sendMessage so
+  // it can prepend the context tag without re-rendering its consumers on every
+  // IDE selection change. Mirrors the inputRef bridge above.
+  const currentSelectionRef = useRef<IdeSelectionPayload | null>(null);
+  const includeSelectionRef = useRef(true);
+
   const setInput = useCallback((value: string) => {
     setInputCallbackRef.current(value);
   }, []);
 
   return (
-    <ChatStreamProvider setInput={setInput} inputRef={inputRef}>
+    <ChatStreamProvider
+      setInput={setInput}
+      inputRef={inputRef}
+      currentSelectionRef={currentSelectionRef}
+      includeSelectionRef={includeSelectionRef}
+    >
       <ChatInputStateProvider
         inputRef={inputRef}
         setInputCallbackRef={setInputCallbackRef}
       >
-        <CommandPaletteProvider>
-          <ThemeProvider>
-            <ChatInputFocusProvider>
-              <SessionLoader>{children}</SessionLoader>
-            </ChatInputFocusProvider>
-          </ThemeProvider>
-        </CommandPaletteProvider>
+        <IdeSelectionProvider
+          currentSelectionRef={currentSelectionRef}
+          includeSelectionRef={includeSelectionRef}
+        >
+          <CommandPaletteProvider>
+            <ThemeProvider>
+              <ChatInputFocusProvider>
+                <SessionLoader>{children}</SessionLoader>
+              </ChatInputFocusProvider>
+            </ThemeProvider>
+          </CommandPaletteProvider>
+        </IdeSelectionProvider>
       </ChatInputStateProvider>
     </ChatStreamProvider>
   );

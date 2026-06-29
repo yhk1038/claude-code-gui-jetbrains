@@ -4,6 +4,7 @@ import { join, extname, resolve, sep } from 'path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { ConnectionManager } from './connection-manager';
 import { handleEditorContextRequest } from './editor-context-route';
+import { handleIdeSelectionRequest } from './ide-selection-route';
 import type { Bridge } from '../bridge/bridge-interface';
 import type { IPCMessage } from '../core/types';
 import { ClientEnv, MessageType } from '../shared';
@@ -247,6 +248,25 @@ export function startWebSocketServer(
             return;
           }
           const result = handleEditorContextRequest(connections, rawBody);
+          res.writeHead(result.status, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result.body));
+          return;
+        }
+
+        // IDE → backend passive selection push. Kotlin POSTs the active editor
+        // selection here (loopback only); we route it to the webview as
+        // IDE_SELECTION. Unlike editor-context, no buffering: the next selection
+        // event supersedes, so we drop the payload if no webview is connected.
+        if (req.method === 'POST' && urlPath === '/internal/ide-selection') {
+          let rawBody: string;
+          try {
+            rawBody = await readRequestBody(req);
+          } catch {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Failed to read request body' }));
+            return;
+          }
+          const result = handleIdeSelectionRequest(connections, rawBody);
           res.writeHead(result.status, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify(result.body));
           return;

@@ -10,6 +10,8 @@ import { LoadedMessageDto, Context, Attachment, SessionState } from '../types';
 import { InputMode, InputModeValues, CLI_FLAG_TO_INPUT_MODE } from '../types/chatInput';
 import { isAutoModeAvailable } from '../types/models';
 import { MessageType } from '@/shared';
+import type { IdeSelectionPayload } from '../hooks/useIdeSelection';
+import { injectIdeContext, InjectedSelectionKey } from '../hooks/ideContextTag';
 
 /** 스트리밍 중 큐잉된 메시지의 bridge payload */
 interface QueuedMessage {
@@ -82,6 +84,13 @@ interface ChatStreamProviderProps {
   children: ReactNode;
   setInput: (value: string) => void;
   inputRef: React.MutableRefObject<string>;
+  /**
+   * Live IDE selection + include toggle, fed by IdeSelectionProvider (a sibling
+   * nested below). Read inside sendMessage to prepend the IDE-context tag
+   * without re-rendering this provider's consumers on every selection change.
+   */
+  currentSelectionRef?: React.MutableRefObject<IdeSelectionPayload | null>;
+  includeSelectionRef?: React.MutableRefObject<boolean>;
 }
 
 /**
@@ -91,7 +100,7 @@ interface ChatStreamProviderProps {
  * ChatStreamContext subscribers (e.g. MessageBubble, ChatMessageArea).
  */
 export function ChatStreamProvider(props: ChatStreamProviderProps) {
-  const { children, setInput, inputRef } = props;
+  const { children, setInput, inputRef, currentSelectionRef, includeSelectionRef } = props;
   const bridge = useBridgeContext();
   const session = useSessionContext();
   const { controlResponse } = useCliConfig();
@@ -111,6 +120,10 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
   // 스트리밍 중 새 메시지가 들어오면 여기에 큐잉.
   // 현재 턴이 자연스럽게 완료(result)된 후 자동으로 flush된다.
   const queuedMessageRef = useRef<QueuedMessage | null>(null);
+
+  // The IDE selection injected on the previous send, so an unchanged context is
+  // not re-prepended to every consecutive message (duplicate gate).
+  const lastInjectedSelectionRef = useRef<InjectedSelectionKey | null>(null);
 
   // Initialize useChatStream with bridge and callbacks
   const chatStream = useChatStream({
@@ -255,6 +268,21 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
   // sendMessage: add to local state + send to backend (or queue if streaming)
   const sendMessage = useCallback(
     (content: string, inputMode: InputMode, context?: Context[], attachments?: Attachment[]) => {
+      // Prepend the IDE-context tag (open file / selection) when the toggle is on
+      // and a selection is available. parseUserContent() turns the tag back into a
+      // context chip in the UI bubble, while the CLI sees the same hint. Gated on
+      // slash commands and duplicate selections inside injectIdeContext.
+      const { content: injectedContent, injected } = injectIdeContext({
+        content,
+        selection: currentSelectionRef?.current ?? null,
+        includeSelection: includeSelectionRef?.current ?? true,
+        lastInjected: lastInjectedSelectionRef.current,
+      });
+      if (injected) {
+        lastInjectedSelectionRef.current = injected;
+      }
+      content = injectedContent;
+
       // Resolve session ID: use existing or generate new one
       let sessionId = session.currentSessionId;
       const isNewSession = !sessionId;

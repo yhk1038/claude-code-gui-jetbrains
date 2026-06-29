@@ -235,6 +235,13 @@ export enum MessageType {
   IDE_ROOT = 'IDE_ROOT',
   /** The IDE's current editor context (open file/selection). */
   EDITOR_CONTEXT = 'EDITOR_CONTEXT',
+  /**
+   * outbound backend→webview. The IDE's active editor / selection changed and is
+   * pushed automatically (not via an explicit action) so the composer can show a
+   * toggleable context chip. Distinct from EDITOR_CONTEXT, which inserts an
+   * @mention into the input on an explicit "Add to Claude" (Alt+K) action.
+   */
+  IDE_SELECTION = 'IDE_SELECTION',
   /** A folder was chosen in the native folder dialog. */
   FOLDER_SELECTED = 'FOLDER_SELECTED',
   /** Resolved entries from a native file/folder drop. */

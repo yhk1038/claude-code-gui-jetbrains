@@ -74,6 +74,39 @@ object EditorContextPayload {
         put("endLine", endLine?.let { JsonPrimitive(it) } ?: JsonNull)
         put("workingDir", workingDir?.let { JsonPrimitive(it) } ?: JsonNull)
     }
+
+    /**
+     * Build the JSON payload sent to the backend's /internal/ide-selection endpoint.
+     *
+     * Extends [buildPayload] with [selectedText] so the passive auto-selection
+     * channel can transmit the currently selected text alongside the file and line
+     * range. When [selectedText] is null (no selection or tab-only switch),
+     * [startLine], [endLine], and [selectedText] are all serialized as JSON null.
+     *
+     * Contract agreed with the backend:
+     * ```
+     * { absolutePath, relativePath,
+     *   startLine: number | null,   // 1-based, null when no selection
+     *   endLine:   number | null,
+     *   selectedText: string | null,
+     *   workingDir: string }
+     * ```
+     */
+    fun buildSelectionPayload(
+        absolutePath: String,
+        relativePath: String,
+        startLine: Int?,
+        endLine: Int?,
+        selectedText: String?,
+        workingDir: String?
+    ): JsonObject = buildJsonObject {
+        put("absolutePath", JsonPrimitive(absolutePath))
+        put("relativePath", JsonPrimitive(relativePath))
+        put("startLine", startLine?.let { JsonPrimitive(it) } ?: JsonNull)
+        put("endLine", endLine?.let { JsonPrimitive(it) } ?: JsonNull)
+        put("selectedText", selectedText?.let { JsonPrimitive(it) } ?: JsonNull)
+        put("workingDir", workingDir?.let { JsonPrimitive(it) } ?: JsonNull)
+    }
 }
 
 /**
@@ -138,7 +171,7 @@ class SendSelectionToClaudeAction : AnAction() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val port = backend.awaitPort(backendKey)
-                postEditorContext(port, payload)
+                postJson(port, "/internal/editor-context", payload)
             } catch (ex: Exception) {
                 logger.warn("Failed to send editor context to backend", ex)
             } finally {
@@ -163,8 +196,8 @@ class SendSelectionToClaudeAction : AnAction() {
         }
     }
 
-    private fun postEditorContext(port: Int, payload: JsonObject) {
-        val url = URI("http://127.0.0.1:$port/internal/editor-context").toURL()
+    private fun postJson(port: Int, path: String, payload: JsonObject) {
+        val url = URI("http://127.0.0.1:$port$path").toURL()
         val conn = url.openConnection() as HttpURLConnection
         try {
             conn.connectTimeout = 2000
@@ -175,7 +208,7 @@ class SendSelectionToClaudeAction : AnAction() {
             conn.outputStream.use { it.write(payload.toString().toByteArray(Charsets.UTF_8)) }
             // Fire-and-forget: read the response code only to flush the request.
             val code = conn.responseCode
-            logger.info("Editor context POST returned HTTP $code")
+            logger.info("POST $path returned HTTP $code")
         } finally {
             conn.disconnect()
         }
