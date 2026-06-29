@@ -40,6 +40,10 @@ export interface CommandPaletteServices {
   ui: {
     confirm: (options: ConfirmOptions) => Promise<boolean>;
   };
+  workflowState: {
+    /** Open the Background tasks panel; optional toolUseId to focus a workflow. */
+    openPanel: (toolUseId?: string) => void;
+  };
 }
 
 /**

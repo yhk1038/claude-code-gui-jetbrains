@@ -142,23 +142,34 @@ export function BackgroundTasksPanel() {
     const { panelOpen, closePanel, runningTasks, finishedTasks, clearFinished, dismissTask, focusedToolUseId } =
         useWorkflowState();
     const [showFinished, setShowFinished] = useState(true);
+    const panelRef = useRef<HTMLDivElement>(null);
     const now = useNow(panelOpen && runningTasks.length > 0);
 
-    // Close on Escape.
+    // When the panel opens, move focus into it so keystrokes (notably Escape)
+    // act on the panel — closing it — instead of the chat input behind it. On
+    // close, restore focus to wherever it was (e.g. the chat input).
     useEffect(() => {
         if (!panelOpen) return;
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') closePanel();
-        };
-        window.addEventListener('keydown', onKey);
-        return () => window.removeEventListener('keydown', onKey);
-    }, [panelOpen, closePanel]);
+        const prevFocus = document.activeElement as HTMLElement | null;
+        panelRef.current?.focus();
+        return () => prevFocus?.focus?.();
+    }, [panelOpen]);
 
     if (!panelOpen) return null;
 
     return (
         <Portal>
-            <div className="fixed right-0 top-0 bottom-0 w-[24rem] max-w-[92vw] z-40 flex flex-col bg-surface-raised border-l border-border-default shadow-2xl">
+            <div
+                ref={panelRef}
+                tabIndex={-1}
+                onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                        e.stopPropagation();
+                        closePanel();
+                    }
+                }}
+                className="fixed right-0 top-0 bottom-0 w-[24rem] max-w-[92vw] z-40 flex flex-col bg-surface-raised border-l border-border-default shadow-2xl outline-none"
+            >
                 <div className="flex items-center justify-between px-4 h-[44px] border-b border-border-subtle shrink-0">
                     <div className="text-text-primary text-[1rem] font-semibold">Background tasks</div>
                     <button
