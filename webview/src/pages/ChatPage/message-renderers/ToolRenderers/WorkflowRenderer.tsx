@@ -61,9 +61,12 @@ export function WorkflowRenderer(props: RendererProps) {
         (live && isRunning ? now - live.startedAt : undefined);
     const duration = formatDuration(durationMs);
 
+    // Prefer the authoritative workflow-level total (live usage / final
+    // notification) over summing per-agent tokens, which fall back only while the
+    // total isn't known yet (e.g. early in a live run).
     const liveTokens = agents.reduce((sum, a) => sum + (a.tokens || 0), 0);
     const tokens = formatTokens(
-        liveTokens || live?.usage?.subagentTokens || notification?.usage?.subagentTokens,
+        live?.usage?.subagentTokens || notification?.usage?.subagentTokens || liveTokens,
     );
 
     const summary = live?.summary ?? notification?.summary;

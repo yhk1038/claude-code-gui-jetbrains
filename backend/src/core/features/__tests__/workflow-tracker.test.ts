@@ -22,7 +22,8 @@ beforeAll(() => {
   ].join('\n');
   writeFileSync(join(transcriptDir, 'journal.jsonl'), journal);
 
-  // agent a1 transcript: one assistant turn with usage + a tool_use, spanning 7s
+  // agent a1 transcript: one assistant turn with usage + a tool_use, spanning 7s.
+  // cache_read dominates real subagent turns (context reuse), so it must be counted.
   const a1 = [
     JSON.stringify({ type: 'user', timestamp: '2026-01-01T00:00:00.000Z', message: { role: 'user', content: 'go' } }),
     JSON.stringify({
@@ -31,7 +32,7 @@ beforeAll(() => {
       message: {
         role: 'assistant',
         content: [{ type: 'tool_use', id: 't', name: 'Bash', input: {} }],
-        usage: { input_tokens: 15781, cache_creation_input_tokens: 18515, cache_read_input_tokens: 0, output_tokens: 244 },
+        usage: { input_tokens: 15781, cache_creation_input_tokens: 18515, cache_read_input_tokens: 50000, output_tokens: 244 },
       },
     }),
   ].join('\n');
@@ -112,7 +113,7 @@ describe('reconstructWorkflowTasks', () => {
     const a1 = t.agents.find((a) => a.agentId === 'a1')!;
     expect(a1.status).toBe('done');
     expect(a1.label).toBe('океан'); // derived from journal result.topic
-    expect(a1.tokens).toBe(15781 + 18515 + 244); // input + cache_creation + output
+    expect(a1.tokens).toBe(15781 + 18515 + 50000 + 244); // input + cache_creation + cache_read + output
     expect(a1.tools).toBe(1);
     expect(a1.durationMs).toBe(7000);
 
