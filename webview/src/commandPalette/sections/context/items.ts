@@ -39,4 +39,15 @@ export const contextItems = [
       window.dispatchEvent(new CustomEvent(OPEN_SESSION_DROPDOWN_EVENT));
     },
   }),
+  // Search-only: surfaces when the user types `/workflows` (mirrors the CLI's
+  // /workflows). Opens the Background tasks panel — a local action, no message
+  // is sent to Claude.
+  new StaticItem('open-workflows', 'Workflow: Show background tasks', {
+    disabled: false,
+    searchOnly: true,
+    keywords: ['workflows', 'workflow'],
+    serviceAction: async (services) => {
+      services.workflowState.openPanel();
+    },
+  }),
 ];

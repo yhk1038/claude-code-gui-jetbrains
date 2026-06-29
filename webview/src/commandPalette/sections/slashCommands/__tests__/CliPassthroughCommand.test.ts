@@ -39,6 +39,9 @@ function makeServices(overrides: {
     ui: {
       confirm: vi.fn().mockResolvedValue(true),
     },
+    workflowState: {
+      openPanel: vi.fn(),
+    },
   };
   return { services, sendMessage };
 }

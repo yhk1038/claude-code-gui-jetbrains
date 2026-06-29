@@ -7,6 +7,7 @@ import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 import { getModelEffortConfig } from '@/types/effort';
 import { getAdapter } from '@/adapters';
 import { useConfirmDialog } from '@/components/ConfirmDialog/useConfirmDialog';
+import { useWorkflowState } from '@/contexts/WorkflowStateContext';
 import { SWITCH_MODEL_EVENT } from '@/pages/ChatPage/ModelSwitchOverlay';
 import { ROTATE_MODEL_EVENT } from '@/pages/ChatPage/ChatInput/ModelTag';
 import { PanelSection } from '@/types/commandPalette';
@@ -57,6 +58,7 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
   const { controlResponse } = useCliConfig();
   const { settings } = useClaudeSettings();
   const { confirmDialog, confirm } = useConfirmDialog();
+  const workflowState = useWorkflowState();
 
   // The Effort row only makes sense on models that support effort. On others
   // (e.g. Haiku) it would render an empty, unresponsive row — the same
@@ -95,6 +97,9 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
     ui: {
       confirm,
     },
+    workflowState: {
+      openPanel: workflowState.openPanel,
+    },
   });
 
   // Update servicesRef on every render
@@ -127,6 +132,9 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
     },
     ui: {
       confirm,
+    },
+    workflowState: {
+      openPanel: workflowState.openPanel,
     },
   };
 
