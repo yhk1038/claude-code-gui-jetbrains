@@ -17,6 +17,7 @@ import { LoadedMessageType } from '@/dto';
 import { useAttachments } from './hooks/useAttachments';
 import { AttachmentPreview } from './AttachmentPreview';
 import { ContextWindowTag } from './ContextWindowTag';
+import { IdeSelectionTag } from './IdeSelectionTag';
 import { ModelTag } from './ModelTag';
 import { DragOverlay } from './DragOverlay';
 import { AttachMenu } from './AttachMenu';
@@ -616,8 +617,8 @@ export function ChatInput() {
         {/* 하단 바: 모드 태그 + 파일 태그 + 액션 버튼 */}
         <div className="flex items-center justify-between px-[5px] py-[3px] h-[35px]">
           {/* 좌측: 모드 태그 + 파일 태그들 */}
-          <div className="flex items-center gap-4">
-            <div className="relative" ref={modePanelRef}>
+          <div className="flex items-center gap-1">
+            <div className="relative flex items-center" ref={modePanelRef}>
               {showModePanel && (
                 <div className="absolute bottom-full left-0 z-30 mb-2">
                   <ModeSelectPanel
@@ -630,6 +631,8 @@ export function ChatInput() {
               <InputModeTag mode={mode} onClick={() => setShowModePanel((v) => !v)} />
             </div>
             <ContextWindowTag onClick={handleCompact} disabled={isStreaming} />
+            {/* IDE 컨텍스트 태그: 현재 열린 파일/선택을 표시하고 포함 여부를 토글 */}
+            <IdeSelectionTag />
           </div>
 
           {/* 우측: 모델 태그 + 액션 버튼들 + 첨부 드롭다운 메뉴 */}

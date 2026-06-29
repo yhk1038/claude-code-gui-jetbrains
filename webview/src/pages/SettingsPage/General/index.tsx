@@ -31,6 +31,7 @@ export function GeneralSettings() {
 
   const useCtrlEnterToSend = (scopeSettings.useCtrlEnterToSend as boolean | undefined) ?? false;
   const focusInputOnEditorContext = (scopeSettings.focusInputOnEditorContext as boolean | undefined) ?? true;
+  const respectGitignoreForContext = (scopeSettings.respectGitignoreForContext as boolean | undefined) ?? false;
 
   const languageOptions: SelectOption[] = [
     ...(scope === 'project'
@@ -84,6 +85,17 @@ export function GeneralSettings() {
             checked={focusInputOnEditorContext}
             onChange={(checked) => updateSetting('focusInputOnEditorContext', checked)}
             ariaLabel="Focus chat input after attaching file path"
+          />
+        </SettingRow>
+
+        <SettingRow
+          label="Respect .gitignore for editor context"
+          description="When on, contents of .gitignore'd files are excluded from the editor context — only the file path is sent."
+        >
+          <ToggleSwitch
+            checked={respectGitignoreForContext}
+            onChange={(checked) => updateSetting('respectGitignoreForContext', checked)}
+            ariaLabel="Respect .gitignore for editor context"
           />
         </SettingRow>
 

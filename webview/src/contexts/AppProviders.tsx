@@ -13,6 +13,8 @@ import { AuthProvider } from './AuthContext';
 import { CliConfigProvider } from './CliConfigContext';
 import { ChatInputFocusProvider } from './ChatInputFocusContext';
 import { ChatInputStateProvider } from './ChatInputStateContext';
+import { IdeSelectionProvider } from './IdeSelectionContext';
+import type { IdeSelectionPayload } from '@/hooks/useIdeSelection';
 import { WorkingDirProvider } from './WorkingDirContext';
 import { WorkflowStateProvider } from './WorkflowStateContext';
 import { CommandPaletteProvider } from '../commandPalette/CommandPaletteProvider';
@@ -20,6 +22,7 @@ import { useApi } from './ApiContext';
 import { SessionState } from '../types';
 import type { LoadedMessageDto } from '../types';
 import { MessageType } from '@/shared';
+import { useClaudeSettings } from './ClaudeSettingsContext';
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -182,23 +185,49 @@ function ChatProviderBridge(props: ChatProviderBridgeProps) {
   const inputRef = useRef('');
   const setInputCallbackRef = useRef<(value: string) => void>(() => {});
 
+  // Shared IDE-context refs: IdeSelectionProvider writes the live selection /
+  // toggle here, ChatStreamProvider reads them inside its stable sendMessage so
+  // it can prepend the context tag without re-rendering its consumers on every
+  // IDE selection change. Mirrors the inputRef bridge above.
+  const currentSelectionRef = useRef<IdeSelectionPayload | null>(null);
+  const includeSelectionRef = useRef(true);
+
+  // Mirror of settings.respectGitignoreForContext kept as a ref so sendMessage
+  // stays stable (no ChatStreamProvider re-render on settings changes).
+  const respectGitignoreRef = useRef(false);
+  const { settings: claudeSettings } = useClaudeSettings();
+  useEffect(() => {
+    respectGitignoreRef.current = claudeSettings.respectGitignoreForContext ?? false;
+  }, [claudeSettings.respectGitignoreForContext]);
+
   const setInput = useCallback((value: string) => {
     setInputCallbackRef.current(value);
   }, []);
 
   return (
-    <ChatStreamProvider setInput={setInput} inputRef={inputRef}>
+    <ChatStreamProvider
+      setInput={setInput}
+      inputRef={inputRef}
+      currentSelectionRef={currentSelectionRef}
+      includeSelectionRef={includeSelectionRef}
+      respectGitignoreRef={respectGitignoreRef}
+    >
       <ChatInputStateProvider
         inputRef={inputRef}
         setInputCallbackRef={setInputCallbackRef}
       >
-        <CommandPaletteProvider>
-          <ThemeProvider>
-            <ChatInputFocusProvider>
-              <SessionLoader>{children}</SessionLoader>
-            </ChatInputFocusProvider>
-          </ThemeProvider>
-        </CommandPaletteProvider>
+        <IdeSelectionProvider
+          currentSelectionRef={currentSelectionRef}
+          includeSelectionRef={includeSelectionRef}
+        >
+          <CommandPaletteProvider>
+            <ThemeProvider>
+              <ChatInputFocusProvider>
+                <SessionLoader>{children}</SessionLoader>
+              </ChatInputFocusProvider>
+            </ThemeProvider>
+          </CommandPaletteProvider>
+        </IdeSelectionProvider>
       </ChatInputStateProvider>
     </ChatStreamProvider>
   );

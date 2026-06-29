@@ -70,6 +70,11 @@
         <postStartupActivity
             implementation="com.github.yhk1038.claudecodegui.startup.ChatHostRestoreActivity"/>
 
+        <!-- Register passive auto-selection listeners (tab switch + text selection)
+             that push the active file/selection to /internal/ide-selection -->
+        <postStartupActivity
+            implementation="com.github.yhk1038.claudecodegui.startup.IdeSelectionActivity"/>
+
         <!-- WebView resource server -->
         <httpRequestHandler
             implementation="com.github.yhk1038.claudecodegui.toolwindow.WebViewRequestHandler"/>

@@ -14,7 +14,7 @@ export function Tag(props: Props) {
         <button
             type={type}
             className={`
-                inline-flex items-center gap-1 px-1 py-[2px] rounded
+                inline-flex items-center gap-1 px-2 py-[2px] rounded
                 text-[0.8461rem] font-medium transition-colors
                 ${disabled
                     ? 'text-text-tertiary cursor-default'
