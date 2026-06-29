@@ -3,6 +3,8 @@ import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { MessageType } from '../../shared';
 import { saveCurrentAccount } from '../features/account-manager';
+import { resetUsageCache } from './getUsage';
+import { resetAllUsageCache } from './getAllUsage';
 
 /**
  * SAVE_ACCOUNT — capture the currently logged-in Claude account into the saved
@@ -16,6 +18,8 @@ export async function saveAccountHandler(
 ): Promise<void> {
   try {
     const account = await saveCurrentAccount();
+    resetUsageCache();
+    resetAllUsageCache();
     connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'ok',

@@ -3,6 +3,8 @@ import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { MessageType } from '../../shared';
 import { switchToAccount } from '../features/account-manager';
+import { resetUsageCache } from './getUsage';
+import { resetAllUsageCache } from './getAllUsage';
 
 /**
  * SWITCH_ACCOUNT — make a saved account the live one (swap the CLI credential
@@ -29,6 +31,8 @@ export async function switchAccountHandler(
   }
   try {
     const account = await switchToAccount(id);
+    resetUsageCache();
+    resetAllUsageCache();
     connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'ok',
