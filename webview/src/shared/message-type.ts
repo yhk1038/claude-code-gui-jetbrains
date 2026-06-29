@@ -201,6 +201,8 @@ export enum MessageType {
   TOOL_USE = 'TOOL_USE',
   /** A tool invocation completed (with result). */
   TOOL_COMPLETE = 'TOOL_COMPLETE',
+  /** Live progress of a background dynamic workflow; payload is a WorkflowTask. */
+  WORKFLOW_PROGRESS = 'WORKFLOW_PROGRESS',
 
   // -- Diff push --
   /** A diff is available to review. */

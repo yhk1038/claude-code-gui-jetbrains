@@ -4,6 +4,7 @@ import { Claude } from './claude';
 import { diagnoseAuthError } from './features/auth-diagnosis';
 import { getStrippableAuthEnvKeys } from './features/claude-settings';
 import { EditedFileTracker } from './features/editedFileTracker';
+import { WorkflowProgressTracker } from './features/workflow-tracker';
 import { isWslUncPath } from './wsl-path';
 import { reportBackendError } from './features/telemetry';
 import { MessageType } from '../shared';
@@ -11,6 +12,15 @@ import { MessageType } from '../shared';
 // Tracks files Claude edits so the IDE can be told to reload them once the
 // edit completes on disk. Shared across sessions — tool_use ids are unique.
 const editedFileTracker = new EditedFileTracker();
+
+// Tracks background dynamic workflows and streams live progress to the webview.
+// Lazily created on the first stream event because it needs the (single,
+// process-lifetime) ConnectionManager to broadcast from its polling timers.
+let workflowTracker: WorkflowProgressTracker | null = null;
+function getWorkflowTracker(connections: ConnectionManager): WorkflowProgressTracker {
+  if (!workflowTracker) workflowTracker = WorkflowProgressTracker.create(connections);
+  return workflowTracker;
+}
 
 // InputMode -> CLI --permission-mode flag mapping
 const INPUT_MODE_TO_CLI_FLAG: Record<string, string> = {
@@ -275,6 +285,7 @@ export async function ensureClaudeProcess(
 
       // 추적 정리
       sessionsWithResult.delete(targetSessionId);
+      workflowTracker?.stopSession(targetSessionId);
 
       connections.broadcastToSession(targetSessionId, MessageType.STREAM_END);
 
@@ -486,6 +497,10 @@ function handleStreamEvent(
       console.error('[node-backend]', 'Failed to refresh files in IDE:', err);
     });
   }
+
+  // Detect background dynamic workflows and stream their live progress. Pure
+  // side-effect — the raw CLI event is still forwarded unchanged below.
+  getWorkflowTracker(connections).handleEvent(targetSessionId, event);
 
   // 백엔드 고유 사이드이펙트 (WebView 전달과 무관한 서버 내부 로직)
   if (eventType === 'result') {

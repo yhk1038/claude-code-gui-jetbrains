@@ -60,6 +60,21 @@ vi.mock('../../../contexts/WorkingDirContext', () => ({
   }),
 }));
 
+// Mock WorkflowStateContext (BackgroundTasksButton uses useWorkflowState)
+vi.mock('../../../contexts/WorkflowStateContext', () => ({
+  useWorkflowState: () => ({
+    tasks: [],
+    getByToolUseId: () => undefined,
+    runningTasks: [],
+    finishedTasks: [],
+    clearFinished: vi.fn(),
+    panelOpen: false,
+    openPanel: vi.fn(),
+    closePanel: vi.fn(),
+    focusedToolUseId: null,
+  }),
+}));
+
 // Mock ChatStreamContext (TokenBatteryButton → useUsageData → useChatStreamContext)
 vi.mock('../../../contexts/ChatStreamContext', () => ({
   useChatStreamContext: () => ({

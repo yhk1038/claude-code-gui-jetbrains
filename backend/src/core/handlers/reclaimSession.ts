@@ -2,6 +2,7 @@ import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { loadSessionMessages } from '../features/loadSessionMessages';
+import { reconstructWorkflowTasks } from '../features/workflow-tracker';
 import { markSessionAsSpawned } from '../claude-process';
 import { MessageType } from '../../shared';
 
@@ -48,6 +49,20 @@ export async function reclaimSessionHandler(
     sessionId,
     messages,
   });
+
+  // Rebuild background-workflow state from the transcript (see loadSession).
+  try {
+    const workflows = await reconstructWorkflowTasks(messages as Array<Record<string, unknown>>);
+    for (const task of workflows) {
+      connections.sendTo(
+        connectionId,
+        MessageType.WORKFLOW_PROGRESS,
+        task as unknown as Record<string, unknown>,
+      );
+    }
+  } catch (err) {
+    console.error('[node-backend]', 'workflow reconstruction failed:', err);
+  }
 
   console.error('[node-backend]', `Session ${sessionId} reclaimed successfully`);
   connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });

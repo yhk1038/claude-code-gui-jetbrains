@@ -39,6 +39,33 @@ export class ToolUseBlockDto extends ContentBlockDto {
   childMessages?: LoadedMessageDto[];
   /** Runtime-only: progress entries from sub-agent (for Task tool only) */
   subAgentMessages?: SubAgentMessage[];
+  /**
+   * Runtime-only: parsed `<task-notification>` for a dynamic-workflow Workflow
+   * tool_use (for the Workflow tool only). Merged in by mergeToolResults from the
+   * later user message whose `<tool-use-id>` matches this block's id, so the
+   * Workflow renderer can show the final status/summary/result on reload.
+   */
+  workflowNotification?: WorkflowNotification;
+}
+
+/**
+ * Parsed `<task-notification>` envelope the CLI emits when a background dynamic
+ * workflow finishes. Field names mirror the source tags; `usage` mirrors the
+ * `<usage>` sub-block. All optional — the envelope shape can vary by status.
+ */
+export interface WorkflowNotification {
+  taskId?: string;
+  toolUseId?: string;
+  outputFile?: string;
+  status?: string;
+  summary?: string;
+  result?: string;
+  usage?: {
+    agentCount?: number;
+    subagentTokens?: number;
+    toolUses?: number;
+    durationMs?: number;
+  };
 }
 
 /**

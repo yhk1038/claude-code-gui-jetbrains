@@ -5,6 +5,8 @@ import { useApprovalKeyboard } from './useApprovalKeyboard';
 interface Props {
   title: string;
   subtitle?: string;
+  /** Optional highlighted note shown under the title (e.g. a usage warning). */
+  notice?: string;
   options: OptionItem[];
   onOptionSelect: (index: number) => void;
   textareaPlaceholder?: string;
@@ -13,7 +15,7 @@ interface Props {
 }
 
 export function ApprovalPanel(props: Props) {
-  const { title, subtitle, options, onOptionSelect, textareaPlaceholder = 'Tell Claude what to do instead', onTextSubmit, onCancel } = props;
+  const { title, subtitle, notice, options, onOptionSelect, textareaPlaceholder = 'Tell Claude what to do instead', onTextSubmit, onCancel } = props;
 
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [feedbackText, setFeedbackText] = useState('');
@@ -64,6 +66,11 @@ export function ApprovalPanel(props: Props) {
           <p className="text-[1.0769rem] font-semibold text-text-primary leading-snug">{title}</p>
           {subtitle && (
             <p className="text-[1rem] text-text-secondary mt-1">{subtitle}</p>
+          )}
+          {notice && (
+            <p className="text-[0.9230rem] text-text-secondary mt-2 px-2.5 py-2 rounded-[4px] bg-surface-hover border border-border-subtle">
+              {notice}
+            </p>
           )}
         </div>
 

@@ -1,6 +1,7 @@
 import { SessionDropdown } from './SessionDropdown';
 import { WorkingDirDropdown } from './WorkingDirDropdown';
 import { TokenBatteryButton } from './TokenBatteryButton';
+import { BackgroundTasksButton } from './BackgroundTasksButton';
 import { TunnelButton } from './TunnelButton';
 import { SettingsButton } from './SettingsButton';
 import { NewTabButton } from './NewTabButton';
@@ -26,6 +27,7 @@ export function SessionHeader() {
       {/* Right: buttons */}
       <div className="flex items-center gap-1 flex-shrink-0">
         <TokenBatteryButton />
+        <BackgroundTasksButton />
         <TunnelButton />
         <SettingsButton />
         <NewTabButton />

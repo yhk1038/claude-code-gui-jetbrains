@@ -88,6 +88,40 @@ describe('mergeToolResults', () => {
     expect(originalBlock!.tool_result).toBeUndefined();
   });
 
+  it('attaches a <task-notification> to its Workflow tool_use and hides the raw bubble', () => {
+    const notif = [
+      '<task-notification>',
+      '<task-id>w123</task-id>',
+      '<tool-use-id>tool1</tool-use-id>',
+      '<output-file>/tmp/x.output</output-file>',
+      '<status>completed</status>',
+      '<summary>Dynamic workflow "demo" completed</summary>',
+      '<result>{"ok":true}</result>',
+      '<usage><agent_count>5</agent_count><subagent_tokens>171500</subagent_tokens><tool_uses>5</tool_uses><duration_ms>7000</duration_ms></usage>',
+      '</task-notification>',
+    ].join('\n');
+    const notifMsg = {
+      uuid: 'u1',
+      type: LoadedMessageType.User,
+      message: { role: MessageRole.User, content: notif },
+      timestamp: '2026-01-01T00:00:02.000Z',
+    } as unknown as LoadedMessageDto;
+
+    const merged = mergeToolResults([assistantWithTool('a1', 'tool1', 'Workflow'), notifMsg]);
+
+    // raw <task-notification> bubble is hidden
+    expect(merged.find(m => m.uuid === 'u1')).toBeUndefined();
+
+    const block = getToolUseBlock(merged.find(m => m.uuid === 'a1')!);
+    const wf = block!.workflowNotification as Record<string, any> | undefined;
+    expect(wf).toBeDefined();
+    expect(wf!.status).toBe('completed');
+    expect(wf!.toolUseId).toBe('tool1');
+    expect(wf!.summary).toContain('completed');
+    expect(wf!.usage.agentCount).toBe(5);
+    expect(wf!.usage.subagentTokens).toBe(171500);
+  });
+
   it('keeps non-tool messages as their original references', () => {
     const userMsg = {
       uuid: 'u0',

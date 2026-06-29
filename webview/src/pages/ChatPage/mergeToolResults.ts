@@ -1,8 +1,9 @@
-import { LoadedMessageDto, isContentBlockArray } from '../../types';
+import { LoadedMessageDto, isContentBlockArray, getTextContent } from '../../types';
 import { ToolUseBlockDto, ToolResultBlockDto, ContentBlockType } from '../../dto/message/ContentBlockDto';
 import { transformContentBlocks } from '../../mappers/contentBlockTransformer';
 import type { SubAgentMessage } from '../../dto/message/ContentBlockDto';
 import { LoadedMessageType, MessageRole } from '../../dto/common';
+import { parseWorkflowNotification, hasWorkflowNotification } from './message-renderers/utils/parseWorkflowNotification';
 
 /**
  * Convert progress entries into SubAgentMessage array.
@@ -64,6 +65,7 @@ export function mergeToolResults(messages: LoadedMessageDto[]): LoadedMessageDto
           tool_result: undefined,
           childMessages: undefined,
           subAgentMessages: undefined,
+          workflowNotification: undefined,
         });
       }
     }
@@ -83,6 +85,23 @@ export function mergeToolResults(messages: LoadedMessageDto[]): LoadedMessageDto
   const mergedUserMsgs = new Set<LoadedMessageDto>();
   for (const msg of messages) {
     if (msg.type !== LoadedMessageType.User) continue;
+
+    // Phase 2-pre: Attach a dynamic-workflow <task-notification> to its Workflow
+    // tool_use (matched by <tool-use-id>) and hide the raw XML user bubble. Only
+    // hidden when the target tool_use is present in this chain — otherwise the
+    // message falls through and stays visible rather than vanishing silently.
+    const text = getTextContent(msg);
+    if (text && hasWorkflowNotification(text)) {
+      const notification = parseWorkflowNotification(text);
+      const toolUseBlock = notification?.toolUseId
+        ? toolUseMap.get(notification.toolUseId)
+        : undefined;
+      if (notification && toolUseBlock) {
+        toolUseBlock.workflowNotification = notification;
+        mergedUserMsgs.add(msg);
+        continue;
+      }
+    }
 
     // Phase 2a: Attach child messages linked via sourceToolUseID (e.g. skill-expanded prompts)
     if (msg.sourceToolUseID) {

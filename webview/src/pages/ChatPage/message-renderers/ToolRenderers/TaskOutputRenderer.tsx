@@ -4,6 +4,7 @@ import { Container, LabelValue, RendererProps, ToolHeader, ToolWrapper } from '.
 import { useWorkingDir } from '@/contexts/WorkingDirContext';
 import { useBridgeContext } from '@/contexts/BridgeContext';
 import { MessageType } from '@/shared';
+import { parseXmlTag } from '@/utils/parseXmlTag';
 
 class TaskOutputToolUseDto extends ToolUseBlockDto {
     declare input: {
@@ -24,11 +25,6 @@ enum TaskStatus {
     Completed = 'completed',
     Failed = 'failed',
     Stopped = 'stopped',
-}
-
-function parseXmlTag(text: string, tag: string): string | undefined {
-    const match = text.match(new RegExp(`<${tag}>(.*?)</${tag}>`, 's'));
-    return match?.[1]?.trim();
 }
 
 function retrievalStatusLabel(status: string): string {

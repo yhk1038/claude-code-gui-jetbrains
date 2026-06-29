@@ -14,6 +14,7 @@ import { CliConfigProvider } from './CliConfigContext';
 import { ChatInputFocusProvider } from './ChatInputFocusContext';
 import { ChatInputStateProvider } from './ChatInputStateContext';
 import { WorkingDirProvider } from './WorkingDirContext';
+import { WorkflowStateProvider } from './WorkflowStateContext';
 import { CommandPaletteProvider } from '../commandPalette/CommandPaletteProvider';
 import { useApi } from './ApiContext';
 import { SessionState } from '../types';
@@ -215,7 +216,9 @@ export function AppProviders({ children }: AppProvidersProps) {
                 <ClaudeSettingsProvider>
                   <AuthProvider>
                     <SessionProvider>
-                      <ChatProviderBridge>{children}</ChatProviderBridge>
+                      <WorkflowStateProvider>
+                        <ChatProviderBridge>{children}</ChatProviderBridge>
+                      </WorkflowStateProvider>
                     </SessionProvider>
                   </AuthProvider>
                 </ClaudeSettingsProvider>

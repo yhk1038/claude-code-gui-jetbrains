@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { ApprovalPanel } from './ApprovalPanel';
 import { OptionItem } from './ApprovalPanel/OptionButton';
 import { PendingPermission } from '../../hooks/usePendingPermissions';
+import { parseWorkflowName } from '@/utils/workflowName';
 
 interface Props {
   permission: PendingPermission;
@@ -9,6 +10,9 @@ interface Props {
   onApproveForSession: () => void;
   onDeny: (reason?: string) => void;
 }
+
+const WORKFLOW_NOTICE =
+  'Dynamic workflows run many subagents in parallel and can use a lot of your usage limit. Stop them any time from the tasks panel.';
 
 function basename(filePath: string): string {
   return filePath.split('/').pop() || filePath;
@@ -31,6 +35,8 @@ function generateTitle(toolName: string, input: Record<string, unknown>): string
       return file ? `Read ${file}?` : 'Read this file?';
     case 'NotebookEdit':
       return file ? `Edit notebook ${file}?` : 'Edit this notebook?';
+    case 'Workflow':
+      return `Allow Claude to run a workflow ${parseWorkflowName(input)}?`;
     default:
       return `Allow ${toolName}?`;
   }
@@ -48,6 +54,8 @@ function getSessionLabel(toolName: string): string {
       return 'Yes, allow all deletions this session';
     case 'Read':
       return 'Yes, allow all reads this session';
+    case 'Workflow':
+      return 'Yes, allow all workflows this session';
     default:
       return `Yes, allow all ${toolName} this session`;
   }
@@ -60,6 +68,10 @@ export function PermissionBanner(props: Props) {
     () => generateTitle(permission.toolName, permission.input),
     [permission.toolName, permission.input],
   );
+
+  const isWorkflow = permission.toolName === 'Workflow';
+  const subtitle = isWorkflow ? (permission.input.description as string | undefined) : undefined;
+  const notice = isWorkflow ? WORKFLOW_NOTICE : undefined;
 
   const options: OptionItem[] = useMemo(() => [
     { key: '1', label: 'Yes' },
@@ -76,6 +88,8 @@ export function PermissionBanner(props: Props) {
   return (
     <ApprovalPanel
       title={title}
+      subtitle={subtitle}
+      notice={notice}
       options={options}
       onOptionSelect={handleOptionSelect}
       textareaPlaceholder="Tell Claude what to do instead"
