@@ -21,6 +21,7 @@ export interface IdeSelectionRouteResult {
  * Validated ide-selection payload pushed to the webview as IDE_SELECTION.
  * Kotlin sends this automatically whenever the active editor selection changes.
  * `startLine`/`endLine`/`selectedText` are null when no selection is active.
+ * `isGitignored` is true when the file is excluded by VCS ignore rules (e.g. .gitignore).
  */
 interface IdeSelectionPayload extends Record<string, unknown> {
   absolutePath: string;
@@ -29,6 +30,7 @@ interface IdeSelectionPayload extends Record<string, unknown> {
   endLine: number | null;
   selectedText: string | null;
   workingDir: string;
+  isGitignored: boolean;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -83,6 +85,7 @@ export function handleIdeSelectionRequest(
     endLine: normalizeLine(parsed.endLine),
     selectedText: normalizeText(parsed.selectedText),
     workingDir: typeof parsed.workingDir === 'string' ? parsed.workingDir : '',
+    isGitignored: typeof parsed.isGitignored === 'boolean' ? parsed.isGitignored : false,
   };
 
   // Do NOT buffer: auto-tracked selection fires frequently; next change supersedes.

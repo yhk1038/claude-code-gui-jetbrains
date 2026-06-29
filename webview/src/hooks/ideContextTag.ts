@@ -83,6 +83,11 @@ export interface InjectIdeContextParams {
   includeSelection: boolean;
   /** The selection injected on the previous send, for duplicate suppression. */
   lastInjected: InjectedSelectionKey | null;
+  /**
+   * When true, contents of .gitignore'd files are stripped from the tag —
+   * only the file path is sent as <ide_opened_file>. Default false (body included).
+   */
+  respectGitignore?: boolean;
 }
 
 export interface InjectIdeContextResult {
@@ -103,7 +108,7 @@ export interface InjectIdeContextResult {
  *  3. identical to the previously injected selection → no injection.
  */
 export function injectIdeContext(params: InjectIdeContextParams): InjectIdeContextResult {
-  const { content, selection, includeSelection, lastInjected } = params;
+  const { content, selection, includeSelection, lastInjected, respectGitignore = false } = params;
 
   if (!includeSelection || !selection) {
     return { content, injected: null };
@@ -121,7 +126,15 @@ export function injectIdeContext(params: InjectIdeContextParams): InjectIdeConte
     return { content, injected: null };
   }
 
-  const tag = buildIdeContextTag(selection);
+  // When respectGitignore is on and the file is gitignored, strip the body so
+  // only the file path is forwarded. Pass a copy with selectedText nulled out
+  // so buildIdeContextTag emits <ide_opened_file> instead of <ide_selection>.
+  const effectiveSelection =
+    respectGitignore && selection.isGitignored
+      ? { ...selection, selectedText: null, startLine: null, endLine: null }
+      : selection;
+
+  const tag = buildIdeContextTag(effectiveSelection);
   if (!tag) {
     return { content, injected: null };
   }

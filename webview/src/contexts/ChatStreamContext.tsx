@@ -91,6 +91,11 @@ interface ChatStreamProviderProps {
    */
   currentSelectionRef?: React.MutableRefObject<IdeSelectionPayload | null>;
   includeSelectionRef?: React.MutableRefObject<boolean>;
+  /**
+   * Mirror of settings.respectGitignoreForContext. Kept as a ref so sendMessage
+   * stays stable across settings changes (no re-render of ChatStream consumers).
+   */
+  respectGitignoreRef?: React.MutableRefObject<boolean>;
 }
 
 /**
@@ -100,7 +105,7 @@ interface ChatStreamProviderProps {
  * ChatStreamContext subscribers (e.g. MessageBubble, ChatMessageArea).
  */
 export function ChatStreamProvider(props: ChatStreamProviderProps) {
-  const { children, setInput, inputRef, currentSelectionRef, includeSelectionRef } = props;
+  const { children, setInput, inputRef, currentSelectionRef, includeSelectionRef, respectGitignoreRef } = props;
   const bridge = useBridgeContext();
   const session = useSessionContext();
   const { controlResponse } = useCliConfig();
@@ -277,6 +282,7 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
         selection: currentSelectionRef?.current ?? null,
         includeSelection: includeSelectionRef?.current ?? true,
         lastInjected: lastInjectedSelectionRef.current,
+        respectGitignore: respectGitignoreRef?.current ?? false,
       });
       if (injected) {
         lastInjectedSelectionRef.current = injected;

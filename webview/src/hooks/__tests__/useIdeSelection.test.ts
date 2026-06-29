@@ -61,6 +61,7 @@ describe('parseIdeSelectionPayload', () => {
       endLine: 5,
       selectedText: 'code',
       workingDir: '/work',
+      isGitignored: false,
     });
   });
 
@@ -87,6 +88,57 @@ describe('parseIdeSelectionPayload', () => {
     expect(
       parseIdeSelectionPayload({ relativePath: 'src/file.ts' }),
     ).toBeNull();
+  });
+
+  it('normalises isGitignored: true when provided as boolean true', () => {
+    const result = parseIdeSelectionPayload({
+      absolutePath: '/work/dist/bundle.js',
+      relativePath: 'dist/bundle.js',
+      startLine: 1,
+      endLine: 5,
+      selectedText: 'code',
+      workingDir: '/work',
+      isGitignored: true,
+    });
+    expect(result?.isGitignored).toBe(true);
+  });
+
+  it('normalises isGitignored: false when provided as boolean false', () => {
+    const result = parseIdeSelectionPayload({
+      absolutePath: '/work/src/file.ts',
+      relativePath: 'src/file.ts',
+      startLine: null,
+      endLine: null,
+      selectedText: null,
+      workingDir: '/work',
+      isGitignored: false,
+    });
+    expect(result?.isGitignored).toBe(false);
+  });
+
+  it('defaults isGitignored to false when field is absent', () => {
+    const result = parseIdeSelectionPayload({
+      absolutePath: '/work/src/file.ts',
+      relativePath: 'src/file.ts',
+      startLine: null,
+      endLine: null,
+      selectedText: null,
+      workingDir: '/work',
+    });
+    expect(result?.isGitignored).toBe(false);
+  });
+
+  it('defaults isGitignored to false when field is a non-boolean value', () => {
+    const result = parseIdeSelectionPayload({
+      absolutePath: '/work/src/file.ts',
+      relativePath: 'src/file.ts',
+      startLine: null,
+      endLine: null,
+      selectedText: null,
+      workingDir: '/work',
+      isGitignored: 'yes',
+    });
+    expect(result?.isGitignored).toBe(false);
   });
 });
 

@@ -89,7 +89,8 @@ object EditorContextPayload {
      *   startLine: number | null,   // 1-based, null when no selection
      *   endLine:   number | null,
      *   selectedText: string | null,
-     *   workingDir: string }
+     *   workingDir: string,
+     *   isGitignored: boolean }      // true when the file is VCS-ignored
      * ```
      */
     fun buildSelectionPayload(
@@ -98,7 +99,8 @@ object EditorContextPayload {
         startLine: Int?,
         endLine: Int?,
         selectedText: String?,
-        workingDir: String?
+        workingDir: String?,
+        isGitignored: Boolean = false
     ): JsonObject = buildJsonObject {
         put("absolutePath", JsonPrimitive(absolutePath))
         put("relativePath", JsonPrimitive(relativePath))
@@ -106,6 +108,7 @@ object EditorContextPayload {
         put("endLine", endLine?.let { JsonPrimitive(it) } ?: JsonNull)
         put("selectedText", selectedText?.let { JsonPrimitive(it) } ?: JsonNull)
         put("workingDir", workingDir?.let { JsonPrimitive(it) } ?: JsonNull)
+        put("isGitignored", JsonPrimitive(isGitignored))
     }
 }
 

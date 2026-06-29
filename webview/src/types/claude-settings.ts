@@ -30,6 +30,7 @@ export interface ClaudeSettingsState {
   preferFastMode: boolean; // fast output mode (Opus 4.6 only)
   useCtrlEnterToSend: boolean; // when true, Ctrl/Cmd+Enter sends; plain Enter inserts a newline
   focusInputOnEditorContext: boolean; // when true, move focus to chat input after inserting file path via Alt+K
+  respectGitignoreForContext: boolean; // when true, exclude body of .gitignore'd files from editor context (path only)
   permissions?: PermissionsConfig;
   [key: string]: unknown; // extensible for future settings
 }
@@ -42,4 +43,5 @@ export const DEFAULT_CLAUDE_SETTINGS: ClaudeSettingsState = {
   preferFastMode: false,
   useCtrlEnterToSend: false,
   focusInputOnEditorContext: true,
+  respectGitignoreForContext: false,
 };

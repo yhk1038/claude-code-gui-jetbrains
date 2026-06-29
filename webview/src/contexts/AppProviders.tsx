@@ -22,6 +22,7 @@ import { useApi } from './ApiContext';
 import { SessionState } from '../types';
 import type { LoadedMessageDto } from '../types';
 import { MessageType } from '@/shared';
+import { useClaudeSettings } from './ClaudeSettingsContext';
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -191,6 +192,14 @@ function ChatProviderBridge(props: ChatProviderBridgeProps) {
   const currentSelectionRef = useRef<IdeSelectionPayload | null>(null);
   const includeSelectionRef = useRef(true);
 
+  // Mirror of settings.respectGitignoreForContext kept as a ref so sendMessage
+  // stays stable (no ChatStreamProvider re-render on settings changes).
+  const respectGitignoreRef = useRef(false);
+  const { settings: claudeSettings } = useClaudeSettings();
+  useEffect(() => {
+    respectGitignoreRef.current = claudeSettings.respectGitignoreForContext ?? false;
+  }, [claudeSettings.respectGitignoreForContext]);
+
   const setInput = useCallback((value: string) => {
     setInputCallbackRef.current(value);
   }, []);
@@ -201,6 +210,7 @@ function ChatProviderBridge(props: ChatProviderBridgeProps) {
       inputRef={inputRef}
       currentSelectionRef={currentSelectionRef}
       includeSelectionRef={includeSelectionRef}
+      respectGitignoreRef={respectGitignoreRef}
     >
       <ChatInputStateProvider
         inputRef={inputRef}

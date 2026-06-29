@@ -58,6 +58,7 @@ describe('handleIdeSelectionRequest', () => {
       endLine: 25,
       selectedText: 'const x = 1;',
       workingDir: '/abs',
+      isGitignored: false,
     });
     const result = handleIdeSelectionRequest(cm, body);
 
@@ -73,7 +74,70 @@ describe('handleIdeSelectionRequest', () => {
       endLine: 25,
       selectedText: 'const x = 1;',
       workingDir: '/abs',
+      isGitignored: false,
     });
+  });
+
+  it('broadcasts IDE_SELECTION with isGitignored: true when the file is VCS-ignored', () => {
+    const cm = new ConnectionManager();
+    const ws = createMockWs();
+    cm.addConnection(ws);
+
+    const body = JSON.stringify({
+      absolutePath: '/abs/dist/bundle.js',
+      relativePath: 'dist/bundle.js',
+      startLine: null,
+      endLine: null,
+      selectedText: null,
+      workingDir: '/abs',
+      isGitignored: true,
+    });
+    const result = handleIdeSelectionRequest(cm, body);
+
+    expect(result.status).toBe(200);
+    const sent = JSON.parse((ws.send as ReturnType<typeof vi.fn>).mock.calls[0][0]);
+    expect(sent.payload.isGitignored).toBe(true);
+  });
+
+  it('normalizes missing isGitignored to false', () => {
+    const cm = new ConnectionManager();
+    const ws = createMockWs();
+    cm.addConnection(ws);
+
+    // Kotlin did not send the field (e.g. older plugin version)
+    const body = JSON.stringify({
+      absolutePath: '/abs/src/file.ts',
+      relativePath: 'src/file.ts',
+      startLine: null,
+      endLine: null,
+      selectedText: null,
+      workingDir: '/abs',
+      // isGitignored intentionally omitted
+    });
+    handleIdeSelectionRequest(cm, body);
+
+    const sent = JSON.parse((ws.send as ReturnType<typeof vi.fn>).mock.calls[0][0]);
+    expect(sent.payload.isGitignored).toBe(false);
+  });
+
+  it('normalizes non-boolean isGitignored to false', () => {
+    const cm = new ConnectionManager();
+    const ws = createMockWs();
+    cm.addConnection(ws);
+
+    const body = JSON.stringify({
+      absolutePath: '/abs/src/file.ts',
+      relativePath: 'src/file.ts',
+      startLine: null,
+      endLine: null,
+      selectedText: null,
+      workingDir: '/abs',
+      isGitignored: 1, // number instead of boolean
+    });
+    handleIdeSelectionRequest(cm, body);
+
+    const sent = JSON.parse((ws.send as ReturnType<typeof vi.fn>).mock.calls[0][0]);
+    expect(sent.payload.isGitignored).toBe(false);
   });
 
   it('broadcasts IDE_SELECTION with null fields when no selection is present', () => {

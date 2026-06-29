@@ -25,6 +25,7 @@ const selection: IdeSelectionPayload = {
   endLine: 51,
   selectedText: 'code',
   workingDir: '/work',
+  isGitignored: false,
 };
 
 beforeEach(() => {

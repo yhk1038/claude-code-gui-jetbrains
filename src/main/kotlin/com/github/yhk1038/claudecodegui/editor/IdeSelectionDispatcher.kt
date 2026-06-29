@@ -6,6 +6,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.Alarm
 import kotlinx.coroutines.CoroutineScope
@@ -134,13 +135,16 @@ object IdeSelectionDispatcher {
         if (key == lastDispatched) return
         lastDispatched = key
 
+        val gitignored = isVcsIgnored(project, vFile)
+
         val payload = EditorContextPayload.buildSelectionPayload(
             absolutePath = absolutePath,
             relativePath = relativePath,
             startLine = startLine,
             endLine = endLine,
             selectedText = selectedText,
-            workingDir = workingDir
+            workingDir = workingDir,
+            isGitignored = gitignored
         )
 
         val backendKey = workingDir ?: return
@@ -176,6 +180,28 @@ object IdeSelectionDispatcher {
             logger.debug("POST /internal/ide-selection returned HTTP $code")
         } finally {
             conn.disconnect()
+        }
+    }
+
+    /**
+     * Returns true when [vFile] is ignored by the VCS configured for [project]
+     * (i.e. would be excluded by .gitignore or equivalent).
+     *
+     * Uses [ChangeListManager.isIgnoredFile], a public, non-deprecated,
+     * non-internal API available since IntelliJ Platform 2024.2.
+     *
+     * Called from the alarm callback on the EDT; ChangeListManager.isIgnoredFile
+     * reads from an in-memory cache and is safe to call on the EDT without any
+     * extra ReadAction wrapper.
+     *
+     * Returns false when VCS is not configured for the project or when any
+     * unexpected error occurs.
+     */
+    private fun isVcsIgnored(project: Project, vFile: VirtualFile): Boolean {
+        return try {
+            ChangeListManager.getInstance(project).isIgnoredFile(vFile)
+        } catch (_: Exception) {
+            false
         }
     }
 

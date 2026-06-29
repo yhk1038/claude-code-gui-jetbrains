@@ -21,6 +21,8 @@ export interface IdeSelectionPayload {
   endLine: number | null;
   selectedText: string | null;
   workingDir: string;
+  /** Whether the file is matched by the project's .gitignore rules. */
+  isGitignored: boolean;
 }
 
 export interface UseIdeSelectionParams {
@@ -43,7 +45,7 @@ export function parseIdeSelectionPayload(
   raw: Record<string, unknown> | undefined,
 ): IdeSelectionPayload | null {
   if (!raw) return null;
-  const { absolutePath, relativePath, startLine, endLine, selectedText, workingDir } = raw;
+  const { absolutePath, relativePath, startLine, endLine, selectedText, workingDir, isGitignored } = raw;
   if (typeof relativePath !== 'string' || relativePath.length === 0) return null;
   if (typeof workingDir !== 'string') return null;
   return {
@@ -53,6 +55,7 @@ export function parseIdeSelectionPayload(
     endLine: typeof endLine === 'number' ? endLine : null,
     selectedText: typeof selectedText === 'string' ? selectedText : null,
     workingDir,
+    isGitignored: typeof isGitignored === 'boolean' ? isGitignored : false,
   };
 }
 

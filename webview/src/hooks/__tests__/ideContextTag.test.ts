@@ -16,6 +16,7 @@ const fileOnly: IdeSelectionPayload = {
   endLine: null,
   selectedText: null,
   workingDir: '/work',
+  isGitignored: false,
 };
 
 const withSelection: IdeSelectionPayload = {
@@ -25,6 +26,7 @@ const withSelection: IdeSelectionPayload = {
   endLine: 51,
   selectedText: 'const x = 1;\nconst y = 2;',
   workingDir: '/work',
+  isGitignored: false,
 };
 
 // ---------------------------------------------------------------------------
@@ -192,5 +194,89 @@ describe('injectIdeContext', () => {
     });
     expect(result.content.startsWith('<ide_selection>')).toBe(true);
     expect(result.injected).toEqual(selectionKey(moved));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// respectGitignore — body exclusion when file is gitignored
+// ---------------------------------------------------------------------------
+
+const gitignored: IdeSelectionPayload = {
+  absolutePath: '/work/dist/bundle.js',
+  relativePath: 'dist/bundle.js',
+  startLine: 1,
+  endLine: 5,
+  selectedText: 'console.log("bundled");',
+  workingDir: '/work',
+  isGitignored: true,
+};
+
+const notGitignored: IdeSelectionPayload = {
+  ...withSelection,
+  isGitignored: false,
+};
+
+describe('injectIdeContext — respectGitignore', () => {
+  it('excludes body and sends <ide_opened_file> when respectGitignore=true and isGitignored=true', () => {
+    const result = injectIdeContext({
+      content: 'hello',
+      selection: gitignored,
+      includeSelection: true,
+      lastInjected: null,
+      respectGitignore: true,
+    });
+    expect(result.content.startsWith('<ide_opened_file>')).toBe(true);
+    expect(result.content).not.toContain('console.log');
+    expect(result.content).toContain('dist/bundle.js');
+    expect(result.injected).not.toBeNull();
+  });
+
+  it('includes body (ide_selection) when respectGitignore=false even if isGitignored=true', () => {
+    const result = injectIdeContext({
+      content: 'hello',
+      selection: gitignored,
+      includeSelection: true,
+      lastInjected: null,
+      respectGitignore: false,
+    });
+    expect(result.content.startsWith('<ide_selection>')).toBe(true);
+    expect(result.content).toContain('console.log');
+  });
+
+  it('includes body (ide_selection) when respectGitignore=true but isGitignored=false', () => {
+    const result = injectIdeContext({
+      content: 'hello',
+      selection: notGitignored,
+      includeSelection: true,
+      lastInjected: null,
+      respectGitignore: true,
+    });
+    expect(result.content.startsWith('<ide_selection>')).toBe(true);
+    expect(result.content).toContain('const x = 1;');
+  });
+
+  it('defaults to body-included when respectGitignore is omitted (backward compat)', () => {
+    const result = injectIdeContext({
+      content: 'hello',
+      selection: gitignored,
+      includeSelection: true,
+      lastInjected: null,
+    });
+    expect(result.content.startsWith('<ide_selection>')).toBe(true);
+  });
+
+  it('round-trips <ide_opened_file> tag through parseUserContent when body excluded', () => {
+    const result = injectIdeContext({
+      content: 'hello',
+      selection: gitignored,
+      includeSelection: true,
+      lastInjected: null,
+      respectGitignore: true,
+    });
+    const { contexts, text } = parseUserContent(result.content);
+    expect(text).toBe('hello');
+    expect(contexts).toHaveLength(1);
+    expect(contexts[0].type).toBe(ContextType.File);
+    expect(contexts[0].path).toBe('dist/bundle.js');
   });
 });

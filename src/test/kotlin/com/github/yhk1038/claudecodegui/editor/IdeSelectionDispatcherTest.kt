@@ -136,7 +136,8 @@ class IdeSelectionDispatcherTest {
             )
             val requiredKeys = setOf(
                 "absolutePath", "relativePath",
-                "startLine", "endLine", "selectedText", "workingDir"
+                "startLine", "endLine", "selectedText", "workingDir",
+                "isGitignored"
             )
             assertEquals(requiredKeys, payload.keys)
         }
