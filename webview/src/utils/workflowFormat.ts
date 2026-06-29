@@ -22,3 +22,19 @@ export const WORKFLOW_STATUS_COLOR: Record<string, string> = {
     failed: 'text-state-error-fg',
     stopped: 'text-state-warning-fg',
 };
+
+/**
+ * Tailwind background for an agent progress dot. `done` is green (succeeded),
+ * `stopped` is a muted grey (cut off when the workflow was interrupted — not a
+ * success), `running` pulses blue.
+ */
+export function agentDotClass(status: 'running' | 'done' | 'stopped'): string {
+    switch (status) {
+        case 'done':
+            return 'bg-state-success-fg';
+        case 'stopped':
+            return 'bg-text-tertiary';
+        default:
+            return 'bg-text-link animate-pulse';
+    }
+}

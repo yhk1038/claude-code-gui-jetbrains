@@ -117,8 +117,10 @@ describe('reconstructWorkflowTasks', () => {
     expect(a1.tools).toBe(1);
     expect(a1.durationMs).toBe(7000);
 
+    // a2 has no journal result, but the workflow is completed (terminal), so it
+    // is settled to done — a finished card must not show pulsing running dots.
     const a2 = t.agents.find((a) => a.agentId === 'a2')!;
-    expect(a2.status).toBe('running');
+    expect(a2.status).toBe('done');
   });
 
   it('returns [] when there is no Workflow tool_use', async () => {
@@ -126,6 +128,53 @@ describe('reconstructWorkflowTasks', () => {
       { type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text: 'hi' }] } },
     ]);
     expect(tasks).toEqual([]);
+  });
+
+  // A workflow whose transcript has no terminal <task-notification> (interrupted,
+  // or its final event was lost). Without the live check it would be resurrected
+  // as 'running' on every reload — the bug this guards against.
+  function messagesWithoutNotification() {
+    const launched = `Workflow launched in background. Task ID: w1\nTranscript dir: ${transcriptDir}`;
+    return [
+      {
+        type: 'assistant',
+        message: {
+          role: 'assistant',
+          content: [{ type: 'tool_use', id: 'toolu_x', name: 'Workflow', input: { description: 'demo' } }],
+        },
+      },
+      {
+        type: 'user',
+        message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'toolu_x', content: launched }] },
+      },
+    ] as Array<Record<string, unknown>>;
+  }
+
+  it('settles a notification-less workflow to stopped when it is not live', async () => {
+    const tasks = await reconstructWorkflowTasks(messagesWithoutNotification(), () => false);
+    expect(tasks).toHaveLength(1);
+    expect(tasks[0].status).toBe('stopped');
+    // No agent stays running, but an interrupted one (a2, no journal result)
+    // goes grey 'stopped' — never green 'done'. a1 finished, so it stays done.
+    expect(tasks[0].agents.some((a) => a.status === 'running')).toBe(false);
+    expect(tasks[0].agents.find((a) => a.agentId === 'a1')!.status).toBe('done');
+    expect(tasks[0].agents.find((a) => a.agentId === 'a2')!.status).toBe('stopped');
+  });
+
+  it('keeps a live workflow\'s unfinished agents running', async () => {
+    const tasks = await reconstructWorkflowTasks(messagesWithoutNotification(), () => true);
+    expect(tasks[0].status).toBe('running');
+    expect(tasks[0].agents.some((a) => a.status === 'running')).toBe(true);
+  });
+
+  it('keeps a notification-less workflow running when it is still live', async () => {
+    const tasks = await reconstructWorkflowTasks(messagesWithoutNotification(), (id) => id === 'toolu_x');
+    expect(tasks[0].status).toBe('running');
+  });
+
+  it('defaults a notification-less workflow to stopped when no live check is given', async () => {
+    const tasks = await reconstructWorkflowTasks(messagesWithoutNotification());
+    expect(tasks[0].status).toBe('stopped');
   });
 });
 
@@ -192,5 +241,15 @@ describe('WorkflowProgressTracker stop handling', () => {
     tracker.handleEvent('s1', startedEvent);
     tracker.stopSession('s1');
     expect(last().status).toBe('stopped');
+  });
+
+  it('isRunning reflects live state and flips off once stopped', () => {
+    const { tracker } = makeTracker();
+    expect(tracker.isRunning('s1', 'toolu_1')).toBe(false); // unknown
+    tracker.handleEvent('s1', startedEvent);
+    expect(tracker.isRunning('s1', 'toolu_1')).toBe(true);
+    expect(tracker.isRunning('s2', 'toolu_1')).toBe(false); // wrong session
+    tracker.stopRunning('s1');
+    expect(tracker.isRunning('s1', 'toolu_1')).toBe(false);
   });
 });

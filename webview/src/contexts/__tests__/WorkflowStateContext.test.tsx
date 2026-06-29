@@ -54,21 +54,27 @@ describe('WorkflowStateContext', () => {
     expect(ctx.runningTasks).toHaveLength(0);
   });
 
-  it('dismissTask drops a single workflow — including one stuck on running', () => {
-    emit({ toolUseId: 't1', status: 'running' });
+  it('dismissTask hides a workflow from the panel but keeps it for the inline card', () => {
+    emit({ toolUseId: 't1', status: 'stopped' });
     emit({ toolUseId: 't2', status: 'completed' });
     expect(ctx.tasks).toHaveLength(2);
 
     act(() => ctx.dismissTask('t1'));
+    // Gone from the panel list…
     expect(ctx.tasks.map((t) => t.toolUseId)).toEqual(['t2']);
+    // …but still resolvable for the inline chat card, with its real status
+    // (so it does NOT fall back to "running").
+    expect(ctx.getByToolUseId('t1')?.status).toBe('stopped');
   });
 
-  it('clearFinished keeps running workflows and removes finished ones', () => {
+  it('clearFinished hides finished workflows from the panel, inline cards keep status', () => {
     emit({ toolUseId: 't1', status: 'running' });
     emit({ toolUseId: 't2', status: 'completed' });
     emit({ toolUseId: 't3', status: 'stopped' });
 
     act(() => ctx.clearFinished());
     expect(ctx.tasks.map((t) => t.toolUseId)).toEqual(['t1']);
+    expect(ctx.getByToolUseId('t2')?.status).toBe('completed');
+    expect(ctx.getByToolUseId('t3')?.status).toBe('stopped');
   });
 });

@@ -32,6 +32,16 @@ export function stopWorkflowsForSession(sessionId: string): void {
   workflowTracker?.stopRunning(sessionId);
 }
 
+/**
+ * Whether a workflow is still actually running in this process. Lets transcript
+ * reconstruction (on session load) keep a genuinely-running workflow as
+ * `running` while settling interrupted ones to `stopped` instead of resurrecting
+ * them as `running`.
+ */
+export function isWorkflowRunning(sessionId: string, toolUseId: string): boolean {
+  return workflowTracker?.isRunning(sessionId, toolUseId) ?? false;
+}
+
 // InputMode -> CLI --permission-mode flag mapping
 const INPUT_MODE_TO_CLI_FLAG: Record<string, string> = {
   plan: 'plan',

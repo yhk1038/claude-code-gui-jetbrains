@@ -10,10 +10,12 @@ interface WorkflowStateValue {
   getByToolUseId: (toolUseId: string) => WorkflowTask | undefined;
   runningTasks: WorkflowTask[];
   finishedTasks: WorkflowTask[];
-  /** Drop finished workflows (the panel's "Clear" action). */
+  /** Hide finished workflows from the panel (the "Clear" action). The inline
+   *  chat cards keep their last status — only the panel list is affected. */
   clearFinished: () => void;
-  /** Drop a single workflow by tool_use id (the per-row "✕" — also clears a
-   *  workflow stuck on "running" when the runtime lost its final event). */
+  /** Hide a single workflow from the panel by tool_use id (the per-row "✕").
+   *  The inline chat card keeps its status; this only removes it from the
+   *  Background tasks list. */
   dismissTask: (toolUseId: string) => void;
   // Background tasks panel UI state
   panelOpen: boolean;
@@ -34,12 +36,17 @@ export function WorkflowStateProvider({ children }: { children: ReactNode }) {
   const { subscribe, isConnected } = useBridgeContext();
   const { currentSessionId } = useSessionContext();
   const [taskMap, setTaskMap] = useState<Map<string, WorkflowTask>>(new Map());
+  // Workflows hidden from the panel via "Clear"/"✕". They stay in taskMap so the
+  // inline chat card keeps rendering its real status — dismissing must not make
+  // getByToolUseId return undefined (which would fall back to "running").
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const [panelOpen, setPanelOpen] = useState(false);
   const [focusedToolUseId, setFocusedToolUseId] = useState<string | null>(null);
 
   // currentSessionId is derived from the URL (SSOT) — clear when it changes.
   useEffect(() => {
     setTaskMap(new Map());
+    setDismissedIds(new Set());
     setPanelOpen(false);
     setFocusedToolUseId(null);
   }, [currentSessionId]);
@@ -65,22 +72,25 @@ export function WorkflowStateProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<WorkflowStateValue>(() => {
     const tasks = Array.from(taskMap.values());
+    // Panel lists exclude dismissed workflows; getByToolUseId (inline card) does
+    // not — the card must always reflect the workflow's real status.
+    const visible = tasks.filter((t) => !dismissedIds.has(t.toolUseId));
     return {
-      tasks,
+      tasks: visible,
       getByToolUseId: (id) => taskMap.get(id),
-      runningTasks: tasks.filter((t) => t.status === 'running'),
-      finishedTasks: tasks.filter((t) => t.status !== 'running'),
+      runningTasks: visible.filter((t) => t.status === 'running'),
+      finishedTasks: visible.filter((t) => t.status !== 'running'),
       clearFinished: () =>
-        setTaskMap((prev) => {
-          const next = new Map<string, WorkflowTask>();
-          for (const [k, v] of prev) if (v.status === 'running') next.set(k, v);
+        setDismissedIds((prev) => {
+          const next = new Set(prev);
+          for (const t of taskMap.values()) if (t.status !== 'running') next.add(t.toolUseId);
           return next;
         }),
       dismissTask: (id) =>
-        setTaskMap((prev) => {
-          if (!prev.has(id)) return prev;
-          const next = new Map(prev);
-          next.delete(id);
+        setDismissedIds((prev) => {
+          if (prev.has(id)) return prev;
+          const next = new Set(prev);
+          next.add(id);
           return next;
         }),
       panelOpen,
@@ -88,7 +98,7 @@ export function WorkflowStateProvider({ children }: { children: ReactNode }) {
       closePanel,
       focusedToolUseId,
     };
-  }, [taskMap, panelOpen, openPanel, closePanel, focusedToolUseId]);
+  }, [taskMap, dismissedIds, panelOpen, openPanel, closePanel, focusedToolUseId]);
 
   return <WorkflowStateContext.Provider value={value}>{children}</WorkflowStateContext.Provider>;
 }

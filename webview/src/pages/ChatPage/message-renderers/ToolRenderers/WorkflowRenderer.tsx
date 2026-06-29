@@ -4,7 +4,7 @@ import { ToolUseBlockDto } from '@/dto';
 import type { WorkflowNotification } from '@/dto/message/ContentBlockDto';
 import { useWorkflowState } from '@/contexts/WorkflowStateContext';
 import type { WorkflowTask } from '@/shared';
-import { formatDuration, formatTokens, WORKFLOW_STATUS_COLOR } from '@/utils/workflowFormat';
+import { agentDotClass, formatDuration, formatTokens, WORKFLOW_STATUS_COLOR } from '@/utils/workflowFormat';
 import { parseWorkflowName } from '@/utils/workflowName';
 import { RendererProps, ToolHeader, ToolWrapper, toolResultText } from './common';
 
@@ -128,11 +128,7 @@ export function WorkflowRenderer(props: RendererProps) {
                                 <span
                                     key={a.agentId}
                                     title={a.label}
-                                    className={`inline-block w-1.5 h-1.5 rounded-full ${
-                                        a.status === 'done'
-                                            ? 'bg-state-success-fg'
-                                            : 'bg-text-link animate-pulse'
-                                    }`}
+                                    className={`inline-block w-1.5 h-1.5 rounded-full ${agentDotClass(a.status)}`}
                                 />
                             ))}
                         </div>

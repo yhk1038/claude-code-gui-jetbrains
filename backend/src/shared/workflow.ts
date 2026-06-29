@@ -17,7 +17,9 @@ export interface WorkflowPhase {
 export interface WorkflowAgent {
   agentId: string;
   label: string;
-  status: 'running' | 'done';
+  /** `done` = finished successfully; `stopped` = cut off when the workflow was
+   *  interrupted (never settle an unfinished agent to `done`). */
+  status: 'running' | 'done' | 'stopped';
   tokens: number;
   tools: number;
   durationMs: number;

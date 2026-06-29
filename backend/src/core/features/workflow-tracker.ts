@@ -244,6 +244,18 @@ function applyNotification(task: WorkflowTask, text: string): void {
   };
 }
 
+/**
+ * Settle still-running agents to match a terminal workflow status: a `completed`
+ * workflow finished them (→ `done`, green); a `stopped`/`failed` one cut them off
+ * (→ `stopped`, grey). Never paint an interrupted agent as a success. No-op while
+ * the workflow is still running.
+ */
+function settleAgents(agents: WorkflowAgent[], status: WorkflowStatus): void {
+  if (status === 'running') return;
+  const settled = status === 'completed' ? 'done' : 'stopped';
+  for (const a of agents) if (a.status === 'running') a.status = settled;
+}
+
 function eventTimestamp(event: Record<string, unknown>): number {
   const ts = event['timestamp'];
   if (typeof ts === 'string') {
@@ -259,9 +271,17 @@ function eventTimestamp(event: Record<string, unknown>): number {
  * not replayed). Scans for the Workflow tool_use, its immediate tool_result
  * (transcript dir) and the `<task-notification>`, then aggregates agent stats
  * from the runtime files on disk.
+ *
+ * `isLive(toolUseId)` reports whether the workflow is still actually running in
+ * this process (its live tracker entry exists and is `running`). A workflow with
+ * no terminal `<task-notification>` is otherwise indistinguishable from one that
+ * was interrupted — without this check reconstruction would resurrect a stopped
+ * workflow as `running` on every reload. When not live, such a workflow settles
+ * to `stopped`; the live stream still drives genuinely-running ones.
  */
 export async function reconstructWorkflowTasks(
   messages: Array<Record<string, unknown>>,
+  isLive?: (toolUseId: string) => boolean,
 ): Promise<WorkflowTask[]> {
   const tasks = new Map<string, WorkflowTask>();
 
@@ -279,7 +299,10 @@ export async function reconstructWorkflowTasks(
         toolUseId,
         name: parseMetaName(script) || scriptPathName(scriptPath) || description || 'workflow',
         description,
-        status: 'running',
+        // Default only — overwritten by applyNotification when a terminal
+        // <task-notification> exists. A workflow with no notification that is
+        // not live was interrupted, so it must not come back as 'running'.
+        status: isLive?.(toolUseId) ? 'running' : 'stopped',
         startedAt: eventTimestamp(msg),
         phases: parseMetaPhases(script),
         agents: [],
@@ -318,6 +341,10 @@ export async function reconstructWorkflowTasks(
     if (task.transcriptDir) {
       task.agents = await aggregateAgents(task.transcriptDir);
     }
+    // A terminal workflow has no running agents — settle any the journal left
+    // open (no `result` recorded) so a finished card doesn't show pulsing
+    // "running" dots after reload. Interrupted agents go grey, not green.
+    settleAgents(task.agents, task.status);
   }
 
   return [...tasks.values()];
@@ -445,11 +472,9 @@ export class WorkflowProgressTracker {
 
     const status = typeof event['status'] === 'string' ? (event['status'] as WorkflowStatus) : undefined;
     t.status = status ?? 'completed';
-    // On a successful finish, any agent whose final "done" delta we missed is
-    // settled now — reflect that so the panel doesn't show stragglers as running.
-    if (t.status === 'completed') {
-      for (const a of t.agents) if (a.status !== 'done') a.status = 'done';
-    }
+    // Settle stragglers whose final delta we missed: a completed workflow
+    // finished them (green); a stopped/failed one cut them off (grey).
+    settleAgents(t.agents, t.status);
     if (typeof event['summary'] === 'string') t.summary = event['summary'] as string;
     if (typeof event['task_id'] === 'string') t.taskId = event['task_id'] as string;
 
@@ -493,9 +518,19 @@ export class WorkflowProgressTracker {
     const t = entry.task;
     t.status = 'stopped';
     t.endedAt = Date.now();
-    for (const a of t.agents) if (a.status !== 'done') a.status = 'done';
+    settleAgents(t.agents, t.status);
     t.usage = { ...t.usage, durationMs: t.usage?.durationMs ?? t.endedAt - t.startedAt };
     this.broadcast(entry);
+  }
+
+  /**
+   * Whether a workflow is still actually running in this process — a live entry
+   * exists and has not reached a terminal status. Used by reconstruction to tell
+   * a genuinely-running workflow apart from a stopped one that lacks a terminal
+   * `<task-notification>` in the transcript.
+   */
+  isRunning(sessionId: string, toolUseId: string): boolean {
+    return this.entries.get(this.key(sessionId, toolUseId))?.task.status === 'running';
   }
 
   /**

@@ -3,7 +3,7 @@ import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { loadSessionMessages } from '../features/loadSessionMessages';
 import { reconstructWorkflowTasks } from '../features/workflow-tracker';
-import { markSessionAsSpawned } from '../claude-process';
+import { markSessionAsSpawned, isWorkflowRunning } from '../claude-process';
 import { MessageType } from '../../shared';
 
 export async function reclaimSessionHandler(
@@ -52,7 +52,10 @@ export async function reclaimSessionHandler(
 
   // Rebuild background-workflow state from the transcript (see loadSession).
   try {
-    const workflows = await reconstructWorkflowTasks(messages as Array<Record<string, unknown>>);
+    const workflows = await reconstructWorkflowTasks(
+      messages as Array<Record<string, unknown>>,
+      (toolUseId) => isWorkflowRunning(sessionId, toolUseId),
+    );
     for (const task of workflows) {
       connections.sendTo(
         connectionId,

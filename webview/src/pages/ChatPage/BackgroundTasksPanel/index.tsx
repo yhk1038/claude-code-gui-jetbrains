@@ -3,7 +3,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import { Portal } from '@/components/Portal';
 import { useWorkflowState } from '@/contexts/WorkflowStateContext';
 import type { WorkflowTask } from '@/shared';
-import { formatDuration, formatTokens, WORKFLOW_STATUS_COLOR } from '@/utils/workflowFormat';
+import { agentDotClass, formatDuration, formatTokens, WORKFLOW_STATUS_COLOR } from '@/utils/workflowFormat';
 
 /** Re-render every second while `active` so running timers tick. */
 function useNow(active: boolean): number {
@@ -120,9 +120,7 @@ function WorkflowTaskRow({
                                 <tr key={a.agentId} className="text-text-primary/75">
                                     <td className="py-0.5 pr-2 max-w-[10rem] truncate">
                                         <span
-                                            className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle ${
-                                                a.status === 'done' ? 'bg-state-success-fg' : 'bg-text-link animate-pulse'
-                                            }`}
+                                            className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle ${agentDotClass(a.status)}`}
                                         />
                                         {a.label}
                                     </td>
