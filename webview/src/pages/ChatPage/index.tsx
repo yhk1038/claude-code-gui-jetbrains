@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState, useMemo } from 'react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import { ChatInput } from './ChatInput';
 import { SessionHeader } from './SessionHeader';
@@ -27,6 +27,8 @@ import {isMobile} from "@/config/environment.ts";
 import { useSettings } from '@/contexts/SettingsContext';
 import { SettingKey } from '@/types/settings';
 import { clampAutoScrollThreshold, nextAutoFollow, shouldShowScrollToBottom, AUTO_SCROLL_THRESHOLD_DEFAULT, AUTO_SCROLL_BOTTOM_EPS } from '@/utils/autoScroll';
+import { useApi } from '../../contexts/ApiContext';
+import { mergeToolResults } from './mergeToolResults';
 
 export function ChatPage() {
   // Redirect logged-out users to the login screen before they hit a failing chat.
@@ -48,9 +50,10 @@ export function ChatPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const api = useApi();
   const { textareaRef, focus: focusInput } = useChatInputFocus();
   const { currentSessionId, currentSession } = useSessionContext();
-  const { messages, isStreaming } = useChatStreamContext();
+  const { messages, isStreaming, hasMoreOlder, oldestLoadedUuid } = useChatStreamContext();
   const { pending: pendingUserAnswer, dismiss } = usePendingAskUserQuestion(messages, isStreaming);
   const { pending: pendingPermission, approve: approvePermission, approveForSession, deny: denyPermission } = usePendingPermissions();
   const { pending: pendingPlan, approve: approvePlan, deny: denyPlan } = usePendingPlanApproval();
@@ -60,50 +63,141 @@ export function ChatPage() {
     settings[SettingKey.AUTO_SCROLL_THRESHOLD] ?? AUTO_SCROLL_THRESHOLD_DEFAULT,
   );
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  // Auto-follow tracks user *intent*, not viewport position. A large block
-  // inserted at once grows scrollHeight while scrollTop stays put — the user
-  // did not move, so following must continue (issue #100). Only a deliberate
-  // upward scroll (negative scrollTop delta) releases it.
+
+  // Scroll position & page tracking refs
+  const isInitialScrollDoneRef = useRef(false);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadMoreTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isLoadingMoreRef = useRef(false);
+  const hasMoreOlderRef = useRef(false);
+  // Reactive mirror of isLoadingMoreRef so the "loading earlier" indicator updates
+  // immediately (the ref alone can't drive a re-render → the indicator lagged).
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  // Refs for scroll anchoring during prepend paging
+  const prevScrollHeightRef = useRef(0);
+  const prevOldestUuidRef = useRef<string | null>(null);
+
+  // Refs to read fast-changing states inside requestAnimationFrame loop without re-registering it
+  const messagesRef = useRef(messages);
+  const isStreamingRef = useRef(isStreaming);
+  const currentSessionIdRef = useRef(currentSessionId);
+  const hasMessagesRef = useRef(false);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+    isStreamingRef.current = isStreaming;
+    currentSessionIdRef.current = currentSessionId;
+    hasMessagesRef.current = messages.length > 0;
+  }, [messages, isStreaming, currentSessionId]);
+
+  // Auto-follow tracks user *intent*, not viewport position.
   const autoFollowRef = useRef(true);
   const prevScrollTopRef = useRef(0);
   const lastScrollHeightRef = useRef(0);
-  // Button visibility is a separate, position-aware decision from auto-follow
-  // (which tracks intent): the button hides whenever the view already shows the
-  // bottom — auto-follow active, no messages, or within the resume threshold.
-  const hasMessagesRef = useRef(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
   useEffect(() => {
-    hasMessagesRef.current = messages.length > 0;
-  }, [messages.length]);
+    hasMoreOlderRef.current = hasMoreOlder;
+  }, [hasMoreOlder]);
 
-  // Drive auto-follow from a requestAnimationFrame loop. A single loop both
-  // decides the next auto-follow state and performs the scroll, so the two can
-  // never disagree. The scroll itself is animated by CSS `scroll-smooth` on the
-  // container, so a large block inserted at once slides into view instead of
-  // jumping. We only call scrollTo when scrollHeight actually changed: firing it
-  // every frame at the same target restarts the smooth animation each frame and
-  // can stall it. The programmatic scroll moves the view down (delta >= 0),
-  // which never satisfies the upward-release test — so it cannot release itself
-  // and needs no guard flag. rAF is reliable in JCEF (Chromium), unlike the
-  // scroll events / IntersectionObserver that earlier polling worked around.
+  // Clean up timers on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      if (loadMoreTimeoutRef.current) clearTimeout(loadMoreTimeoutRef.current);
+    };
+  }, []);
+
+  // Track session change
+  useEffect(() => {
+    isInitialScrollDoneRef.current = false;
+    autoFollowRef.current = true;
+    prevOldestUuidRef.current = null;
+    isLoadingMoreRef.current = false;
+    setIsLoadingMore(false);
+    if (loadMoreTimeoutRef.current) clearTimeout(loadMoreTimeoutRef.current);
+  }, [currentSessionId]);
+
+  const mergedMessages = useMemo(() => mergeToolResults(messages), [messages]);
+
+  // Scroll preservation on prepend loading
+  useLayoutEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el || !currentSessionId) return;
+
+    if (isLoadingMoreRef.current) {
+      if (oldestLoadedUuid !== prevOldestUuidRef.current) {
+        // Older messages were prepended, adjust scroll position to prevent jumping
+        const newScrollHeight = el.scrollHeight;
+        const heightDiff = newScrollHeight - prevScrollHeightRef.current;
+        el.scrollTop = prevScrollTopRef.current + heightDiff;
+
+        // Sync scroll baselines
+        prevScrollTopRef.current = el.scrollTop;
+        lastScrollHeightRef.current = el.scrollHeight;
+      }
+      // Always reset loading flag once render runs
+      isLoadingMoreRef.current = false;
+      setIsLoadingMore(false);
+      if (loadMoreTimeoutRef.current) {
+        clearTimeout(loadMoreTimeoutRef.current);
+        loadMoreTimeoutRef.current = null;
+      }
+    }
+
+    prevScrollHeightRef.current = el.scrollHeight;
+    prevOldestUuidRef.current = oldestLoadedUuid;
+  }, [messages, oldestLoadedUuid, currentSessionId]);
+
+  // Drive auto-follow and scroll positioning from requestAnimationFrame
   useEffect(() => {
     let rafId = 0;
     const tick = () => {
       const el = scrollContainerRef.current;
       if (el) {
-        const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
-        const delta = el.scrollTop - prevScrollTopRef.current;
-        const next = nextAutoFollow(autoFollowRef.current, delta, dist, autoScrollThreshold);
-        autoFollowRef.current = next;
-        const show = shouldShowScrollToBottom(next, hasMessagesRef.current, dist, autoScrollThreshold);
-        setShowScrollButton(prev => (prev === show ? prev : show));
-        const grew = el.scrollHeight !== lastScrollHeightRef.current;
-        if (next && grew && dist > AUTO_SCROLL_BOTTOM_EPS) {
-          el.scrollTo({ top: el.scrollHeight });
+        const msgs = messagesRef.current;
+        const sid = currentSessionIdRef.current;
+
+        // 1. Initial scroll positioning (instant)
+        if (!isInitialScrollDoneRef.current && msgs.length > 0 && el.scrollHeight > 0) {
+          const key = `claude-gui:scroll:${sid}`;
+          const cached = localStorage.getItem(key);
+          if (cached) {
+            const top = Number(cached);
+            el.scrollTop = top;
+            localStorage.removeItem(key);
+            const cachedDist = el.scrollHeight - top - el.clientHeight;
+            autoFollowRef.current = cachedDist <= autoScrollThreshold;
+          } else {
+            // Default: instant scroll to bottom
+            el.scrollTop = el.scrollHeight;
+            autoFollowRef.current = true;
+          }
+          isInitialScrollDoneRef.current = true;
+          prevScrollTopRef.current = el.scrollTop;
+          lastScrollHeightRef.current = el.scrollHeight;
+        } else {
+          // 2. Normal auto-scroll follow
+          const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
+          const delta = el.scrollTop - prevScrollTopRef.current;
+          const next = nextAutoFollow(autoFollowRef.current, delta, dist, autoScrollThreshold);
+          autoFollowRef.current = next;
+
+          const show = shouldShowScrollToBottom(next, hasMessagesRef.current, dist, autoScrollThreshold);
+          setShowScrollButton(prev => (prev === show ? prev : show));
+
+          const grew = el.scrollHeight !== lastScrollHeightRef.current;
+          if (next && grew && dist > AUTO_SCROLL_BOTTOM_EPS) {
+            // Smooth scroll during streaming, instant otherwise
+            el.scrollTo({ 
+              top: el.scrollHeight, 
+              behavior: isStreamingRef.current ? 'smooth' : 'auto' 
+            });
+          }
+          lastScrollHeightRef.current = el.scrollHeight;
+          prevScrollTopRef.current = el.scrollTop;
         }
-        lastScrollHeightRef.current = el.scrollHeight;
-        prevScrollTopRef.current = el.scrollTop;
       }
       rafId = requestAnimationFrame(tick);
     };
@@ -125,51 +219,56 @@ export function ChatPage() {
     pendingUserAnswer: pendingUserAnswer !== null,
   });
 
-  // Save scroll position to localStorage (debounced via scroll event)
-  useEffect(() => {
+  const loadMore = useCallback(() => {
     const el = scrollContainerRef.current;
-    if (!el || !currentSessionId) return;
+    if (!el || !hasMoreOlderRef.current || !oldestLoadedUuid || isLoadingMoreRef.current || !currentSessionId) return;
 
-    let saveTimer: ReturnType<typeof setTimeout>;
-    const handleScroll = () => {
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(() => {
-        localStorage.setItem(`claude-gui:scroll:${currentSessionId}`, String(el.scrollTop));
-      }, 300);
-    };
+    isLoadingMoreRef.current = true;
+    setIsLoadingMore(true);
+    prevScrollHeightRef.current = el.scrollHeight;
+    prevScrollTopRef.current = el.scrollTop;
 
-    el.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      clearTimeout(saveTimer);
-      el.removeEventListener('scroll', handleScroll);
-    };
-  }, [currentSessionId]);
+    // Safety net: the loading flag is normally cleared by the layout-effect once
+    // the prepended page renders. If a response never changes state (e.g. an empty
+    // older page, all-duplicate entries, or a dropped reply), clear it after a
+    // timeout so paging can't get permanently stuck.
+    if (loadMoreTimeoutRef.current) clearTimeout(loadMoreTimeoutRef.current);
+    loadMoreTimeoutRef.current = setTimeout(() => {
+      isLoadingMoreRef.current = false;
+      setIsLoadingMore(false);
+      loadMoreTimeoutRef.current = null;
+    }, 5000);
 
-  // Restore scroll position after messages load
-  useEffect(() => {
-    if (!currentSessionId || messages.length === 0) return;
+    api.sessions.loadOlder(currentSessionId, oldestLoadedUuid).catch(err => {
+      console.error('[ChatPage] Failed to load older messages:', err);
+      isLoadingMoreRef.current = false;
+      setIsLoadingMore(false);
+      if (loadMoreTimeoutRef.current) {
+        clearTimeout(loadMoreTimeoutRef.current);
+        loadMoreTimeoutRef.current = null;
+      }
+    });
+  }, [currentSessionId, oldestLoadedUuid, api.sessions]);
+
+  const handleScroll = useCallback(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
 
-    const key = `claude-gui:scroll:${currentSessionId}`;
-    const cached = localStorage.getItem(key);
-    if (cached) {
-      const top = Number(cached);
-      requestAnimationFrame(() => {
-        el.scrollTop = top;
-        // Sync the poll baseline so the next tick does not read the restore as a
-        // huge upward scroll, and release auto-follow unless we restored near
-        // the bottom — otherwise the first tick would yank the view back down
-        // and defeat the restore.
-        prevScrollTopRef.current = el.scrollTop;
-        const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
-        const atBottom = dist <= autoScrollThreshold;
-        autoFollowRef.current = atBottom;
-        // Button visibility is reconciled by the rAF loop on the next frame.
-      });
-      localStorage.removeItem(key);
+    // 1. Debounced save scroll position to localStorage
+    if (currentSessionId) {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
+        localStorage.setItem(`claude-gui:scroll:${currentSessionId}`, String(el.scrollTop));
+      }, 300);
     }
-  }, [currentSessionId, messages.length > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // 2. Prefetch the next page ~one viewport BEFORE the top, so older messages
+    //    are already in place by the time the user scrolls up — smooth, no wall.
+    const prefetchMargin = Math.max(400, el.clientHeight);
+    if (el.scrollTop < prefetchMargin && hasMoreOlderRef.current && oldestLoadedUuid && !isLoadingMoreRef.current) {
+      loadMore();
+    }
+  }, [currentSessionId, oldestLoadedUuid, loadMore]);
 
   // 빈 영역 클릭 시 textarea로 포커스 이동
   // mousedown 시점에 확인해야 포커스 이동 전 activeElement를 비교할 수 있음
@@ -201,9 +300,13 @@ export function ChatPage() {
       </BannerArea>
 
       {/* Messages Area */}
-      <div ref={scrollContainerRef} className={`flex flex-col flex-1 overflow-y-auto scroll-smooth w-full h-screen pt-10 ${isMobile() ? 'pb-52' : ''} bg-surface-base z-0`}>
+      <div ref={scrollContainerRef} onScroll={handleScroll} className={`flex flex-col flex-1 overflow-y-auto w-full h-screen pt-10 ${isMobile() ? 'pb-52' : ''} bg-surface-base z-0`}>
         <ChatMessageArea
           isStreaming={isStreaming && !pendingUserAnswer && !pendingPlan && !pendingPermission}
+          mergedMessages={mergedMessages}
+          hasMore={hasMoreOlder}
+          isLoadingMore={isLoadingMore}
+          onLoadMore={loadMore}
         />
 
         {/* Input Area */}

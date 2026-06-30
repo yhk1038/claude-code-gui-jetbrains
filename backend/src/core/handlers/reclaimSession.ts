@@ -44,16 +44,18 @@ export async function reclaimSessionHandler(
 
   // 3. 세션 메시지 로딩 & 전송
   connections.subscribe(connectionId, sessionId);
-  const messages = await loadSessionMessages(workingDir, sessionId);
+  const result = await loadSessionMessages(workingDir, sessionId);
   connections.sendTo(connectionId, MessageType.SESSION_LOADED, {
     sessionId,
-    messages,
+    messages: result.messages,
+    hasMore: result.hasMore,
+    oldestUuid: result.oldestUuid,
   });
 
   // Rebuild background-workflow state from the transcript (see loadSession).
   try {
     const workflows = await reconstructWorkflowTasks(
-      messages as Array<Record<string, unknown>>,
+      result.messages as Array<Record<string, unknown>>,
       (toolUseId) => isWorkflowRunning(sessionId, toolUseId),
     );
     for (const task of workflows) {

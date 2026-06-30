@@ -2,9 +2,17 @@ import { stat } from 'fs/promises';
 import { join } from 'path';
 import { getProjectSessionsPath } from './getProjectSessionsPath';
 import { readJsonlEntries } from './readJsonlEntries';
+import { filterActiveChain } from './activeChain';
 
 // Raw JSONL entry - passed through as-is to match Kotlin backend
-type SessionMessage = Record<string, unknown>;
+export type SessionMessage = Record<string, unknown>;
+
+export interface PaginatedSessionMessages {
+  messages: SessionMessage[];
+  hasMore: boolean;
+  oldestUuid?: string;
+  total: number;
+}
 
 // Extract Task tool_use id -> agentId mappings from main session messages
 function extractTaskAgentMappings(messages: SessionMessage[]): Map<string, string> {
@@ -106,86 +114,135 @@ async function loadSubagentProgress(
   return syntheticEntries;
 }
 
-export async function loadSessionMessages(workingDir: string, targetSessionId: string): Promise<SessionMessage[]> {
+export async function loadSessionMessages(
+  workingDir: string,
+  targetSessionId: string,
+  beforeUuid?: string,
+  limit?: number,
+): Promise<PaginatedSessionMessages> {
+  let allMessages: SessionMessage[] = [];
   try {
     const sessionsPath = await getProjectSessionsPath(workingDir);
     const sessionFile = join(sessionsPath, `${targetSessionId}.jsonl`);
 
-    const messages: SessionMessage[] = await readJsonlEntries(sessionFile);
+    allMessages = await readJsonlEntries(sessionFile);
 
     // Load subagent files and inject synthetic progress entries
     try {
       const subagentsDir = join(sessionsPath, targetSessionId, 'subagents');
 
       // Check if subagents directory exists before proceeding
+      let hasSubagents = false;
       try {
         await stat(subagentsDir);
+        hasSubagents = true;
       } catch {
-        // No subagents directory — return main messages as-is
-        return messages;
+        // No subagents directory
       }
 
-      // Extract Task tool_use id -> agentId mappings from main messages
-      const toolUseToAgentId = extractTaskAgentMappings(messages);
+      if (hasSubagents) {
+        // Extract Task tool_use id -> agentId mappings from main messages
+        const toolUseToAgentId = extractTaskAgentMappings(allMessages);
 
-      if (toolUseToAgentId.size === 0) {
-        return messages;
-      }
-
-      // Build a map from tool_use id -> index of the assistant message containing that Task tool_use
-      const toolUseToAssistantIndex = new Map<string, number>();
-      for (let i = 0; i < messages.length; i++) {
-        const msg = messages[i];
-        if (msg.type !== 'assistant') continue;
-        const message = msg.message as Record<string, unknown> | undefined;
-        if (!message) continue;
-        const msgContent = message.content;
-        if (!Array.isArray(msgContent)) continue;
-        for (const block of msgContent) {
-          if (
-            block &&
-            typeof block === 'object' &&
-            (block as Record<string, unknown>).type === 'tool_use' &&
-            ((block as Record<string, unknown>).name === 'Task' || (block as Record<string, unknown>).name === 'Agent')
-          ) {
-            const id = (block as Record<string, unknown>).id;
-            if (typeof id === 'string' && toolUseToAgentId.has(id)) {
-              toolUseToAssistantIndex.set(id, i);
+        if (toolUseToAgentId.size > 0) {
+          // Build a map from tool_use id -> index of the assistant message containing that Task tool_use
+          const toolUseToAssistantIndex = new Map<string, number>();
+          for (let i = 0; i < allMessages.length; i++) {
+            const msg = allMessages[i];
+            if (msg.type !== 'assistant') continue;
+            const message = msg.message as Record<string, unknown> | undefined;
+            if (!message) continue;
+            const msgContent = message.content;
+            if (!Array.isArray(msgContent)) continue;
+            for (const block of msgContent) {
+              if (
+                block &&
+                typeof block === 'object' &&
+                (block as Record<string, unknown>).type === 'tool_use' &&
+                ((block as Record<string, unknown>).name === 'Task' || (block as Record<string, unknown>).name === 'Agent')
+              ) {
+                const id = (block as Record<string, unknown>).id;
+                if (typeof id === 'string' && toolUseToAgentId.has(id)) {
+                  toolUseToAssistantIndex.set(id, i);
+                }
+              }
             }
           }
-        }
-      }
 
-      // Load all subagent progress entries, keyed by insertion index
-      // We collect (insertAfterIndex, syntheticEntries) pairs, then splice in reverse order
-      const insertions: Array<{ afterIndex: number; entries: SessionMessage[] }> = [];
+          // Load all subagent progress entries, keyed by insertion index
+          // We collect (insertAfterIndex, syntheticEntries) pairs, then splice in reverse order
+          const insertions: Array<{ afterIndex: number; entries: SessionMessage[] }> = [];
 
-      for (const [toolUseId, agentId] of toolUseToAgentId.entries()) {
-        const assistantIndex = toolUseToAssistantIndex.get(toolUseId);
-        if (assistantIndex === undefined) continue;
+          for (const [toolUseId, agentId] of toolUseToAgentId.entries()) {
+            const assistantIndex = toolUseToAssistantIndex.get(toolUseId);
+            if (assistantIndex === undefined) continue;
 
-        try {
-          const syntheticEntries = await loadSubagentProgress(subagentsDir, toolUseId, agentId);
-          if (syntheticEntries.length > 0) {
-            insertions.push({ afterIndex: assistantIndex, entries: syntheticEntries });
+            try {
+              const syntheticEntries = await loadSubagentProgress(subagentsDir, toolUseId, agentId);
+              if (syntheticEntries.length > 0) {
+                insertions.push({ afterIndex: assistantIndex, entries: syntheticEntries });
+              }
+            } catch {
+              // Subagent file missing or unreadable — skip gracefully
+            }
           }
-        } catch {
-          // Subagent file missing or unreadable — skip gracefully
-        }
-      }
 
-      // Insert in reverse order of index so earlier insertions don't shift later indices
-      insertions.sort((a, b) => b.afterIndex - a.afterIndex);
-      for (const { afterIndex, entries } of insertions) {
-        messages.splice(afterIndex + 1, 0, ...entries);
+          // Insert in reverse order of index so earlier insertions don't shift later indices
+          insertions.sort((a, b) => b.afterIndex - a.afterIndex);
+          for (const { afterIndex, entries } of insertions) {
+            allMessages.splice(afterIndex + 1, 0, ...entries);
+          }
+        }
       }
     } catch {
-      // Any unexpected error in subagent loading — return main messages as-is
+      // Any unexpected error in subagent loading
     }
-
-    return messages;
   } catch (err) {
     console.error('[node-backend]', 'Error loading session:', err);
-    return [];
+    return {
+      messages: [],
+      hasMore: false,
+      total: 0,
+    };
   }
+
+  // Apply active chain filtering on the complete history
+  const activeChainMessages = filterActiveChain(allMessages);
+  const total = activeChainMessages.length;
+
+  const pageSize = limit ?? 50;
+
+  let slicedMessages: SessionMessage[] = [];
+  let hasMore = false;
+
+  if (beforeUuid) {
+    // Find the index of the message with beforeUuid
+    const index = activeChainMessages.findIndex(m => m.uuid === beforeUuid);
+    if (index !== -1) {
+      // Return older messages (indices before index)
+      const startIndex = Math.max(0, index - pageSize);
+      slicedMessages = activeChainMessages.slice(startIndex, index);
+      hasMore = startIndex > 0;
+    }
+  } else {
+    // Return latest page
+    const startIndex = Math.max(0, total - pageSize);
+    slicedMessages = activeChainMessages.slice(startIndex);
+    hasMore = startIndex > 0;
+  }
+
+  // The paging cursor must be a real message uuid. The first sliced entry can be a
+  // progress/summary record without a uuid — using it would yield `undefined`, which
+  // stalls "load older" (the client guards on a falsy cursor). Pick the oldest entry
+  // that actually has a uuid.
+  const oldestUuid = slicedMessages.find(
+    (m) => typeof m.uuid === 'string',
+  )?.uuid as string | undefined;
+
+  return {
+    messages: slicedMessages,
+    hasMore,
+    oldestUuid,
+    total,
+  };
 }

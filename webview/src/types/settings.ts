@@ -25,6 +25,9 @@ export enum SettingKey {
 
   // Settings screen open mode
   OPEN_SETTINGS_AS = 'openSettingsAs',
+
+  // Chat history paging
+  CHAT_PAGINATION = 'chatPagination',
 }
 
 /**
@@ -78,6 +81,7 @@ export interface SettingsState {
   [SettingKey.TERMINAL_APP]: string | null;
   [SettingKey.HOST_MODE]: HostMode;
   [SettingKey.OPEN_SETTINGS_AS]: OpenSettingsMode;
+  [SettingKey.CHAT_PAGINATION]: boolean;
 }
 
 /**
@@ -94,4 +98,5 @@ export const DEFAULT_SETTINGS: SettingsState = {
   [SettingKey.TERMINAL_APP]: null,
   [SettingKey.HOST_MODE]: HostMode.EDITOR_TAB,
   [SettingKey.OPEN_SETTINGS_AS]: OpenSettingsMode.OVERLAY,
+  [SettingKey.CHAT_PAGINATION]: true,
 };

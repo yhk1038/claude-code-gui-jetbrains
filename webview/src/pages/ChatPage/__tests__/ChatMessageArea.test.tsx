@@ -5,6 +5,7 @@ import { ChatMessageArea } from '../ChatMessageArea';
 import type { LoadedMessageDto } from '../../../types';
 import { LoadedMessageType, MessageRole } from '../../../dto/common';
 import { _resetRuntimeCache } from '@/config/environment';
+import { mergeToolResults } from '../mergeToolResults';
 
 // Mock contexts
 const mockSessionContext = {
@@ -52,6 +53,19 @@ const renderWithScrollContainer = (ui: React.ReactElement) => {
   );
 };
 
+const renderArea = (isStreaming = false, hasMore = false, onLoadMore = vi.fn(), isLoadingMore = false) => {
+  const merged = mergeToolResults(mockChatStreamContext.messages);
+  return renderWithScrollContainer(
+    <ChatMessageArea
+      isStreaming={isStreaming}
+      mergedMessages={merged}
+      hasMore={hasMore}
+      isLoadingMore={isLoadingMore}
+      onLoadMore={onLoadMore}
+    />
+  );
+};
+
 describe('ChatMessageArea', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -66,7 +80,7 @@ describe('ChatMessageArea', () => {
   });
 
   it('shows ProjectSelector when no working directory in browser environment', () => {
-    renderWithScrollContainer(<ChatMessageArea isStreaming={false} />);
+    renderArea();
 
     expect(screen.getByTestId('project-selector')).toBeInTheDocument();
     expect(screen.getByText('Select Project')).toBeInTheDocument();
@@ -79,7 +93,7 @@ describe('ChatMessageArea', () => {
       configurable: true,
     });
 
-    renderWithScrollContainer(<ChatMessageArea isStreaming={false} />);
+    renderArea();
 
     expect(screen.getByText('Loading working directory...')).toBeInTheDocument();
     expect(screen.queryByTestId('project-selector')).not.toBeInTheDocument();
@@ -88,7 +102,7 @@ describe('ChatMessageArea', () => {
   it('shows empty state message when no messages with working directory', () => {
     mockSessionContext.workingDirectory = '/test/path';
 
-    renderWithScrollContainer(<ChatMessageArea isStreaming={false} />);
+    renderArea();
 
     expect(screen.getByTestId('empty-state')).toBeInTheDocument();
   });
@@ -102,7 +116,7 @@ describe('ChatMessageArea', () => {
       timestamp: new Date().toISOString(),
     }];
 
-    renderWithScrollContainer(<ChatMessageArea isStreaming={false} />);
+    renderArea();
 
     expect(screen.getByTestId('message-bubble-msg1')).toBeInTheDocument();
     expect(screen.getByText('user: Hello, assistant!')).toBeInTheDocument();
@@ -117,7 +131,7 @@ describe('ChatMessageArea', () => {
       timestamp: new Date().toISOString(),
     }];
 
-    renderWithScrollContainer(<ChatMessageArea isStreaming={false} />);
+    renderArea();
 
     expect(screen.getByTestId('message-bubble-msg2')).toBeInTheDocument();
     expect(screen.getByText('assistant: Hello, user!')).toBeInTheDocument();
@@ -138,7 +152,7 @@ describe('ChatMessageArea', () => {
       timestamp: new Date().toISOString(),
     }];
 
-    renderWithScrollContainer(<ChatMessageArea isStreaming={false} />);
+    renderArea();
 
     expect(screen.getByTestId('message-bubble-msg3')).toBeInTheDocument();
   });
@@ -167,7 +181,7 @@ describe('ChatMessageArea', () => {
       },
     ];
 
-    renderWithScrollContainer(<ChatMessageArea isStreaming={false} />);
+    renderArea();
 
     expect(screen.getByTestId('message-bubble-msg1')).toBeInTheDocument();
     expect(screen.getByTestId('message-bubble-msg2')).toBeInTheDocument();
@@ -193,7 +207,7 @@ describe('ChatMessageArea', () => {
       timestamp: new Date().toISOString(),
     }];
 
-    renderWithScrollContainer(<ChatMessageArea isStreaming={false} />);
+    renderArea();
 
     expect(screen.getByTestId('message-bubble-msg4')).toBeInTheDocument();
   });

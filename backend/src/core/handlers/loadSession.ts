@@ -27,29 +27,41 @@ export async function loadSessionHandler(
     // 기존 세션 로딩 → 다음 spawn 시 --resume 사용하도록 마킹
     markSessionAsSpawned(sessionId);
     connections.subscribe(connectionId, sessionId);
-    const messages = await loadSessionMessages(workingDir, sessionId);
+    
+    const beforeUuid = message.payload?.beforeUuid as string | undefined;
+    const limit = message.payload?.limit as number | undefined;
+    const isOlderPage = message.type === MessageType.LOAD_OLDER_MESSAGES;
+
+    const result = await loadSessionMessages(workingDir, sessionId, beforeUuid, limit);
     connections.sendTo(connectionId, MessageType.SESSION_LOADED, {
       sessionId,
-      messages,
+      messages: result.messages,
+      hasMore: result.hasMore,
+      oldestUuid: result.oldestUuid,
+      prepend: isOlderPage,
     });
 
     // Rebuild background-workflow state from the transcript so the inline cards
     // and the Background tasks panel populate on reload (the live progress
     // stream is not replayed). Best-effort — never blocks the session load.
-    try {
-      const workflows = await reconstructWorkflowTasks(
-        messages as Array<Record<string, unknown>>,
-        (toolUseId) => isWorkflowRunning(sessionId, toolUseId),
-      );
-      for (const task of workflows) {
-        connections.sendTo(
-          connectionId,
-          MessageType.WORKFLOW_PROGRESS,
-          task as unknown as Record<string, unknown>,
+    // Only on the initial load — older pages would re-run it per page and could
+    // re-emit already-reconstructed tasks.
+    if (!isOlderPage) {
+      try {
+        const workflows = await reconstructWorkflowTasks(
+          result.messages as Array<Record<string, unknown>>,
+          (toolUseId) => isWorkflowRunning(sessionId, toolUseId),
         );
+        for (const task of workflows) {
+          connections.sendTo(
+            connectionId,
+            MessageType.WORKFLOW_PROGRESS,
+            task as unknown as Record<string, unknown>,
+          );
+        }
+      } catch (err) {
+        console.error('[node-backend]', 'workflow reconstruction failed:', err);
       }
-    } catch (err) {
-      console.error('[node-backend]', 'workflow reconstruction failed:', err);
     }
   }
   connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
