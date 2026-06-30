@@ -47,9 +47,11 @@ vi.mock('../../../contexts/BridgeContext', () => ({
   }),
 }));
 
-// Mock react-router-dom (ProjectButton uses useNavigate)
+// Mock react-router-dom (ProjectButton uses useNavigate, SettingsButton uses useRouter)
 vi.mock('react-router-dom', () => ({
   useNavigate: () => vi.fn(),
+  useLocation: () => ({ pathname: '/' }),
+  useParams: () => ({}),
 }));
 
 // Mock WorkingDirContext (ProjectButton uses useWorkingDir)

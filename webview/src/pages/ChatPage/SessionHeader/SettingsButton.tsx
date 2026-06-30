@@ -1,15 +1,14 @@
 import { Cog6ToothIcon } from '@heroicons/react/24/outline';
-import { useSessionContext } from '@/contexts/SessionContext';
-import { Route } from '@/router';
+import { useRouter, Route } from '@/router';
 import { ROUTE_META } from '@/router/routes';
 
 export function SettingsButton() {
-  const { openSettings } = useSessionContext();
+  const { navigate } = useRouter();
   const settingsMeta = ROUTE_META[Route.SETTINGS];
 
   return (
     <button
-      onClick={openSettings}
+      onClick={() => navigate(Route.SETTINGS_GENERAL)}
       className="p-1 rounded transition-colors text-text-secondary hover:text-text-primary hover:bg-surface-hover"
       title={settingsMeta.label}
     >

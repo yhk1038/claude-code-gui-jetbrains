@@ -84,6 +84,7 @@ const mockNavigate = vi.fn((path: string, _options?: unknown) => {
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
   useLocation: () => ({ pathname: mockPathname }),
+  useParams: () => ({}),
 }));
 
 // Test data
