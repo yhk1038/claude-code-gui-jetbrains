@@ -1,9 +1,20 @@
-import {ReactNode, useState} from "react";
+import {ReactNode, createContext, useContext, useState} from "react";
 import {ContextPills} from "@/pages/ChatPage/message-renderers";
 import type {LoadedMessageDto} from "@/types";
 import {cn} from "@/utils/cn.ts";
-import {AnyContentBlockDto, ContentBlockType, TextBlockDto, ToolResultBlockDto} from "@/dto/message/ContentBlockDto";
-import {useToolStatus} from "./toolStatus";
+import {AnyContentBlockDto, ContentBlockType, TextBlockDto, ToolResultBlockDto, ToolUseBlockDto} from "@/dto/message/ContentBlockDto";
+import {useToolStatus, type ToolStatus} from "./toolStatus";
+
+/**
+ * The tool_use block currently being rendered. ToolRenderer provides it so deep
+ * children (e.g. a header tooltip) can read original CLI metadata like
+ * `display_name` / `server_display_name` without threading props through every
+ * renderer. Undefined when no provider is present.
+ */
+export const ToolUseContext = createContext<ToolUseBlockDto | undefined>(undefined);
+export function useCurrentToolUse(): ToolUseBlockDto | undefined {
+    return useContext(ToolUseContext);
+}
 
 export * from './RendererProps';
 export * from './toolStatus';
@@ -33,10 +44,17 @@ export const ToolWrapper = (props: {
     onClick?: () => any;
     groupClassName?: string;
     className?: string;
+    /**
+     * Override the bullet status. The context status only knows is_error; a
+     * renderer that parses a payload-level failure (non-zero exit code, build
+     * isSuccess:false, …) passes `forceStatus="error"` to reflect the truth.
+     */
+    forceStatus?: ToolStatus;
     children?: ReactNode;
 }) => {
-    const {message, groupClassName = '', className = '', onClick, children} = props;
-    const status = useToolStatus();
+    const {message, groupClassName = '', className = '', onClick, forceStatus, children} = props;
+    const contextStatus = useToolStatus();
+    const status = forceStatus ?? contextStatus;
     const bulletColor =
         status === 'success' ? 'text-state-success-fg'
         : status === 'error' ? 'text-state-error-fg'
@@ -80,14 +98,16 @@ export const ToolHeader = (props: {
     description?: string;
     inProgress?: boolean;
     className?: string;
+    /** Optional hover tooltip on the bold name (e.g. MCP server + tool metadata). */
+    nameTitle?: string;
     children?: ReactNode;
 }) => {
-    const {name, description = '', className = '', children} = props;
+    const {name, description = '', className = '', nameTitle, children} = props;
 
     return (
         <div className={cn(`flex items-start gap-1.5 text-[1rem]`, className)}>
             <div className="text-text-primary text-[1rem] font-semibold">
-                <span className="">{name}</span>
+                <span className={cn(nameTitle && "cursor-help")} title={nameTitle}>{name}</span>
             </div>
 
             {children || <div className="text-text-primary/60">{description}</div>}

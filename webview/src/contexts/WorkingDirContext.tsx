@@ -105,3 +105,13 @@ export function useWorkingDir(): WorkingDirContextValue {
   }
   return context;
 }
+
+/**
+ * Like {@link useWorkingDir} but returns null instead of throwing when there is
+ * no provider. For deeply-nested, broadly-reused components (e.g. a tool-card
+ * header) that want the working dir when available but must not hard-depend on
+ * the provider being mounted.
+ */
+export function useWorkingDirOrNull(): WorkingDirContextValue | null {
+  return useContext(WorkingDirContext);
+}

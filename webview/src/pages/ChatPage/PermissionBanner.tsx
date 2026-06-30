@@ -3,6 +3,7 @@ import { ApprovalPanel } from './ApprovalPanel';
 import { OptionItem } from './ApprovalPanel/OptionButton';
 import { PendingPermission } from '../../hooks/usePendingPermissions';
 import { parseWorkflowName } from '@/utils/workflowName';
+import { humanizeMcpToolName, isJetBrainsTool, toolTitle } from './message-renderers/ToolRenderers/Mcp/JetBrains/_shared/helpers';
 
 interface Props {
   permission: PendingPermission;
@@ -15,10 +16,18 @@ const WORKFLOW_NOTICE =
   'Dynamic workflows run many subagents in parallel and can use a lot of your usage limit. Stop them any time from the tasks panel.';
 
 function basename(filePath: string): string {
+  if (typeof filePath !== 'string') return '';
   return filePath.split('/').pop() || filePath;
 }
 
 function generateTitle(toolName: string, input: Record<string, unknown>): string {
+  // MCP tools own their humanized title and must NOT go through the built-in
+  // file-path logic below: their inputs are arbitrary per-tool schemas and some
+  // reuse `path` for a non-string value (e.g. xdebug_get_value_by_path sends
+  // `path: ["greeter","name"]`), which would crash basename() and take down the
+  // whole chat. The file logic is only valid for the built-in tools.
+  if (toolName.startsWith('mcp__')) return `Allow ${humanizeMcpToolName(toolName)}?`;
+
   const filePath = (input.file_path as string) || (input.path as string) || '';
   const file = filePath ? basename(filePath) : '';
 
@@ -57,6 +66,10 @@ function getSessionLabel(toolName: string): string {
     case 'Workflow':
       return 'Yes, allow all workflows this session';
     default:
+      if (toolName.startsWith('mcp__')) {
+        const label = isJetBrainsTool(toolName) ? `"${toolTitle(toolName)}"` : humanizeMcpToolName(toolName);
+        return `Yes, allow all ${label} this session`;
+      }
       return `Yes, allow all ${toolName} this session`;
   }
 }
