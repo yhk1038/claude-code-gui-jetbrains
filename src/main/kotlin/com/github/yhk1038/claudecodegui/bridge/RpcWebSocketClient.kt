@@ -228,7 +228,9 @@ class RpcWebSocketClient(
             "OPEN_FILE" -> {
                 val path = params["path"]?.jsonPrimitive?.content
                     ?: throw IllegalArgumentException("Missing 'path' param")
-                rpcHandler.openFile(path)
+                val line = params["line"]?.jsonPrimitive?.intOrNull
+                val column = params["column"]?.jsonPrimitive?.intOrNull
+                rpcHandler.openFile(path, line, column)
                 buildJsonObject {}
             }
             "OPEN_DIFF" -> {

@@ -126,8 +126,8 @@ class NodeBackendService : Disposable {
                 logger.warn("No panel handler for $op (basePath=$basePath)"); return null
             }
 
-            override suspend fun openFile(path: String) {
-                any()?.openFile(path) ?: warn("openFile")
+            override suspend fun openFile(path: String, line: Int?, column: Int?) {
+                any()?.openFile(path, line, column) ?: warn("openFile")
             }
 
             override suspend fun openDiff(filePath: String, oldContent: String, newContent: String, toolUseId: String?) {

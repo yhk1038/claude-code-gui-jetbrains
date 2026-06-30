@@ -1,5 +1,5 @@
 export interface Bridge {
-  openFile(path: string): Promise<void>;
+  openFile(path: string, line?: number, column?: number): Promise<void>;
   openDiff(params: {
     filePath: string;
     oldContent: string;

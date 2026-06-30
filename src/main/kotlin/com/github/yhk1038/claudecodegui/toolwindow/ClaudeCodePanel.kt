@@ -24,6 +24,7 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptor
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
@@ -1014,13 +1015,19 @@ class ClaudeCodePanel(
     private fun createRpcHandler(): NodeProcessManager.RpcHandler {
         return object : NodeProcessManager.RpcHandler {
 
-            override suspend fun openFile(path: String) {
+            override suspend fun openFile(path: String, line: Int?, column: Int?) {
                 ApplicationManager.getApplication().invokeLater {
                     try {
                         val virtualFile = LocalFileSystem.getInstance().findFileByPath(path)
                         if (virtualFile != null) {
-                            FileEditorManager.getInstance(project).openFile(virtualFile, true)
-                            logger.info("Opened file: $path")
+                            if (line != null && line > 0) {
+                                // line/column from tools are 1-based; OpenFileDescriptor is 0-based.
+                                OpenFileDescriptor(project, virtualFile, line - 1, (column ?: 1) - 1)
+                                    .navigate(true)
+                            } else {
+                                FileEditorManager.getInstance(project).openFile(virtualFile, true)
+                            }
+                            logger.info("Opened file: $path${if (line != null) ":$line" else ""}")
                         } else {
                             logger.warn("File not found: $path")
                         }
