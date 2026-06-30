@@ -32,10 +32,16 @@ const mockLoadSessions = vi.fn();
 const mockSend = vi.fn();
 
 let mockSessionCtxValue: any;
+let mockSettingsValue: any;
 
 // Mock SessionContext
 vi.mock('../../../contexts/SessionContext', () => ({
   useSessionContext: () => mockSessionCtxValue,
+}));
+
+// Mock SettingsContext (SettingsButton reads openSettingsAs to pick overlay vs new tab)
+vi.mock('../../../contexts/SettingsContext', () => ({
+  useSettings: () => mockSettingsValue,
 }));
 
 // Mock BridgeContext
@@ -126,6 +132,11 @@ beforeEach(() => {
     renameSession: vi.fn(),
     setSessionState: vi.fn(),
     setWorkingDirectory: vi.fn(),
+  };
+
+  mockSettingsValue = {
+    settings: { openSettingsAs: 'overlay' },
+    updateSettingWithScope: vi.fn(),
   };
 });
 
@@ -332,6 +343,26 @@ describe('SessionHeader', () => {
 
     // openNewTab 호출 확인
     expect(mockSessionCtxValue.openNewTab).toHaveBeenCalled();
+  });
+
+  it('설정 버튼: openSettingsAs=overlay(기본)이면 새 탭(openSettings)을 열지 않음', async () => {
+    const user = userEvent.setup();
+    render(<SessionHeader />, { wrapper: queryWrapper });
+
+    await user.click(screen.getByTitle('Settings'));
+
+    // Overlay mode navigates in-tab; it must NOT open a dedicated tab.
+    expect(mockSessionCtxValue.openSettings).not.toHaveBeenCalled();
+  });
+
+  it('설정 버튼: openSettingsAs=new-tab이면 openSettings 호출', async () => {
+    const user = userEvent.setup();
+    mockSettingsValue.settings.openSettingsAs = 'new-tab';
+    render(<SessionHeader />, { wrapper: queryWrapper });
+
+    await user.click(screen.getByTitle('Settings'));
+
+    expect(mockSessionCtxValue.openSettings).toHaveBeenCalledTimes(1);
   });
 
   it('새 탭 버튼이 항상 활성화되어 있음', () => {

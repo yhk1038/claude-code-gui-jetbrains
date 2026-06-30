@@ -22,6 +22,19 @@ export enum SettingKey {
 
   // Host
   HOST_MODE = 'hostMode',
+
+  // Settings screen open mode
+  OPEN_SETTINGS_AS = 'openSettingsAs',
+}
+
+/**
+ * How the Settings screen opens from the gear button:
+ * - overlay: a modal over the current session (keeps a running session mounted)
+ * - new-tab: a dedicated editor tab / browser tab (the legacy openSettings path)
+ */
+export enum OpenSettingsMode {
+  OVERLAY = 'overlay',
+  NEW_TAB = 'new-tab',
 }
 
 /**
@@ -64,6 +77,7 @@ export interface SettingsState {
   [SettingKey.LOG_LEVEL]: LogLevel;
   [SettingKey.TERMINAL_APP]: string | null;
   [SettingKey.HOST_MODE]: HostMode;
+  [SettingKey.OPEN_SETTINGS_AS]: OpenSettingsMode;
 }
 
 /**
@@ -79,4 +93,5 @@ export const DEFAULT_SETTINGS: SettingsState = {
   [SettingKey.LOG_LEVEL]: LogLevel.INFO,
   [SettingKey.TERMINAL_APP]: null,
   [SettingKey.HOST_MODE]: HostMode.EDITOR_TAB,
+  [SettingKey.OPEN_SETTINGS_AS]: OpenSettingsMode.OVERLAY,
 };

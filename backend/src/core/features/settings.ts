@@ -17,6 +17,7 @@ const DEFAULT_SETTINGS: Record<string, unknown> = {
   logLevel: 'info',
   terminalApp: null,
   hostMode: 'editor-tab',
+  openSettingsAs: 'overlay',
   env: {},
 };
 
@@ -30,6 +31,7 @@ const COMMENT_MAP: Record<string, string> = {
   logLevel: '로그 레벨: "debug" | "info" | "warn" | "error"',
   terminalApp: '터미널 프로그램 (null이면 OS 기본 터미널)',
   hostMode: '채팅을 띄우는 자리: "editor-tab" | "tool-window"',
+  openSettingsAs: '설정 화면을 여는 방식: "overlay" | "new-tab"',
   env: '자식 프로세스(claude, ccb)에 주입할 환경 변수. 예: { CLAUDE_CONFIG_DIR: "..." }',
 };
 
@@ -142,6 +144,11 @@ function validateSetting(key: string, value: unknown): string | null {
     case 'hostMode':
       if (!['editor-tab', 'tool-window'].includes(value as string)) {
         return 'hostMode must be one of "editor-tab", "tool-window"';
+      }
+      break;
+    case 'openSettingsAs':
+      if (!['overlay', 'new-tab'].includes(value as string)) {
+        return 'openSettingsAs must be one of "overlay", "new-tab"';
       }
       break;
     case 'env': {
