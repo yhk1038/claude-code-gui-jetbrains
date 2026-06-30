@@ -70,6 +70,7 @@ import { playSystemSoundHandler } from './playSystemSound';
 import { clientInfoHandler } from './clientInfo';
 import { clientErrorHandler } from './clientError';
 import { getMcpServersHandler } from './getMcpServersHandler';
+import { getMcpServerToolsHandler } from './getMcpServerToolsHandler';
 import {
   reconnectMcpServerHandler,
   authenticateMcpServerHandler,
@@ -322,6 +323,9 @@ export async function handleMessage(
       break;
     case MessageType.SEARCH_MCP_REGISTRY:
       await searchMcpRegistryHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.GET_MCP_SERVER_TOOLS:
+      await getMcpServerToolsHandler(connectionId, message, connections, bridge);
       break;
     default:
       console.error('[node-backend]', `Unknown message type: ${message.type}`);

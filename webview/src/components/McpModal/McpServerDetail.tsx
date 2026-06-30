@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronLeftIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/20/solid';
 import { McpServer, McpServerStatus, McpTransportType, canAuthenticate } from '@/shared';
+import { useMcpServerTools } from '@/hooks/useMcpServerTools';
 import { McpStatusBadge } from './McpStatusBadge';
 
 interface Props {
@@ -27,6 +28,14 @@ export function McpServerDetail(props: Props) {
   const isDisabled = server.status === McpServerStatus.DISABLED;
   const isFailed = server.status === McpServerStatus.FAILED;
   const needsAuth = server.status === McpServerStatus.NEEDS_AUTH;
+
+  // Tools are fetched live by connecting to the server (MCP tools/list); only
+  // attempt it for connected servers, where a connection actually succeeds.
+  const { data: tools = [], isFetching: toolsLoading, error: toolsError } = useMcpServerTools(
+    server.name,
+    server.config,
+    isConnected,
+  );
 
   async function wrap(action: string, fn: () => Promise<void>): Promise<void> {
     setBusyAction(action);
@@ -163,35 +172,43 @@ export function McpServerDetail(props: Props) {
           />
         </div>
 
-        {/* View tools */}
-        {server.tools.length > 0 && (
+        {/* View tools — fetched live via MCP tools/list for connected servers */}
+        {isConnected && (
           <div>
-            <button
-              className="flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary transition-colors"
-              onClick={() => setToolsOpen((p) => !p)}
-            >
-              {toolsOpen ? (
-                <ChevronUpIcon className="w-4 h-4" />
-              ) : (
-                <ChevronDownIcon className="w-4 h-4" />
-              )}
-              View tools ({server.tools.length})
-            </button>
-            {toolsOpen && (
-              <div className="mt-2 space-y-1">
-                {server.tools.map((tool) => (
-                  <div key={tool.name} className="flex items-center gap-2 text-xs">
-                    <span className="font-mono text-text-primary">{tool.name}</span>
-                    {tool.annotations?.readOnly && (
-                      <span className="px-1 py-0.5 rounded bg-surface-hover text-text-tertiary">read-only</span>
-                    )}
-                    {tool.annotations?.destructive && (
-                      <span className="px-1 py-0.5 rounded bg-state-error-bg text-state-error-fg">destructive</span>
-                    )}
+            {toolsLoading && tools.length === 0 ? (
+              <span className="text-sm text-text-tertiary">Loading tools…</span>
+            ) : toolsError ? (
+              <span className="text-sm text-state-error-fg">Couldn't load tools</span>
+            ) : tools.length > 0 ? (
+              <>
+                <button
+                  className="flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                  onClick={() => setToolsOpen((p) => !p)}
+                >
+                  {toolsOpen ? (
+                    <ChevronUpIcon className="w-4 h-4" />
+                  ) : (
+                    <ChevronDownIcon className="w-4 h-4" />
+                  )}
+                  View tools ({tools.length})
+                </button>
+                {toolsOpen && (
+                  <div className="mt-2 space-y-1">
+                    {tools.map((tool) => (
+                      <div key={tool.name} className="flex items-center gap-2 text-xs">
+                        <span className="font-mono text-text-primary">{tool.name}</span>
+                        {tool.annotations?.readOnly && (
+                          <span className="px-1 py-0.5 rounded bg-surface-hover text-text-tertiary">read-only</span>
+                        )}
+                        {tool.annotations?.destructive && (
+                          <span className="px-1 py-0.5 rounded bg-state-error-bg text-state-error-fg">destructive</span>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
+                )}
+              </>
+            ) : null}
           </div>
         )}
 

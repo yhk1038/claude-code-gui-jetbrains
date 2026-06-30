@@ -165,6 +165,8 @@ export enum MessageType {
   REMOVE_MCP_SERVER = 'REMOVE_MCP_SERVER',
   /** Search the official MCP registry for installable servers. inbound webview→backend */
   SEARCH_MCP_REGISTRY = 'SEARCH_MCP_REGISTRY',
+  /** Fetch the tool list of one MCP server by connecting to it (MCP tools/list). inbound webview→backend */
+  GET_MCP_SERVER_TOOLS = 'GET_MCP_SERVER_TOOLS',
 
   // -- Plugin updates --
   /** Check for available plugin updates. */
