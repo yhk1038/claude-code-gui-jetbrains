@@ -4,8 +4,8 @@ import { join, dirname } from 'path';
 import { homedir } from 'os';
 import { Claude } from '../claude';
 import { parseMcpList, parseMcpGet } from './mcp-parser';
-import { McpServerStatus } from '../../shared';
-import type { McpServer, McpServersResult, McpServerScope } from '../../shared';
+import { McpServerStatus, McpServerScope } from '../../shared';
+import type { McpServer, McpServersResult } from '../../shared';
 
 // ─── Path helpers ─────────────────────────────────────────────────────────────
 
@@ -67,25 +67,10 @@ export async function getMcpServers(): Promise<McpServersResult> {
     return [];
   });
 
-  // Mark disabled servers. The CLI doesn't report them in `mcp list`, so we
-  // add synthetic entries for those not already in the results (config-only servers).
-  for (const disabledName of disabled) {
-    const existing = servers.find((s) => s.name === disabledName);
-    if (existing) {
-      // Server appeared in list (perhaps was recently re-enabled) — leave its status.
-    } else {
-      // Config-only disabled server: try to get its config details.
-      const details = await fetchServerDetails(disabledName).catch(() => null);
-      servers.push(details ?? {
-        name: disabledName,
-        status: 'disabled' as McpServer['status'],
-        scope: 'user',
-        config: null,
-        tools: [],
-        error: null,
-      });
-    }
-  }
+  // Apply disabled state. `claude mcp list` does NOT honour disabledMcpServers —
+  // it still reports those servers (and health-checks them), so their status must
+  // be overridden to DISABLED here, plus synthetic entries for config-only ones.
+  await mergeDisabledServers(servers, disabled, fetchServerDetails);
 
   servers.sort((a, b) => {
     const scopeDiff = scopeRank(a.scope) - scopeRank(b.scope);
@@ -94,6 +79,42 @@ export async function getMcpServers(): Promise<McpServersResult> {
   });
 
   return { servers };
+}
+
+/**
+ * Override the status of servers in the `disabledMcpServers` list to DISABLED.
+ *
+ * `claude mcp list` ignores `disabledMcpServers` and still reports those servers
+ * with their live status (usually FAILED, since a disabled server isn't running),
+ * so a disabled server would otherwise render as "Failed" and offer no way back.
+ * For servers the CLI didn't report at all (config-only), a synthetic entry is
+ * fetched and added. Mutates and returns `servers`.
+ */
+export async function mergeDisabledServers(
+  servers: McpServer[],
+  disabled: string[],
+  fetchDetails: (name: string) => Promise<McpServer | null>,
+): Promise<McpServer[]> {
+  for (const disabledName of disabled) {
+    const existing = servers.find((s) => s.name === disabledName);
+    if (existing) {
+      existing.status = McpServerStatus.DISABLED;
+      existing.error = null;
+    } else {
+      const details = await fetchDetails(disabledName).catch(() => null);
+      servers.push({
+        ...(details ?? {
+          name: disabledName,
+          scope: McpServerScope.USER,
+          config: null,
+          tools: [],
+        }),
+        status: McpServerStatus.DISABLED,
+        error: null,
+      });
+    }
+  }
+  return servers;
 }
 
 /**
