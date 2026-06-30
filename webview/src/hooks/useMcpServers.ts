@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useBridge } from './useBridge';
-import { MessageType, McpServer } from '@/shared';
+import { MessageType, McpServer, McpServerStatus } from '@/shared';
 
 export const MCP_SERVERS_QUERY_KEY = ['mcp-servers'] as const;
 
@@ -61,7 +61,29 @@ export function useMcpServers(): UseMcpServersReturn {
     mutationFn: async ({ name, enabled }: { name: string; enabled: boolean }) => {
       await send(MessageType.SET_MCP_SERVER_ENABLED, { name, enabled });
     },
-    onSuccess: () => { void invalidate(); },
+    // Optimistically reflect the toggle: a full refetch re-runs every server's
+    // health check (seconds), so without this the list/detail looks stale until
+    // it completes. onSettled re-syncs with the backend's real status.
+    onMutate: async ({ name, enabled }) => {
+      await queryClient.cancelQueries({ queryKey: MCP_SERVERS_QUERY_KEY });
+      const previous = queryClient.getQueryData<McpServer[]>(MCP_SERVERS_QUERY_KEY);
+      queryClient.setQueryData<McpServer[]>(MCP_SERVERS_QUERY_KEY, (old) =>
+        (old ?? []).map((s) =>
+          s.name === name
+            ? {
+                ...s,
+                status: enabled ? McpServerStatus.PENDING : McpServerStatus.DISABLED,
+                error: enabled ? s.error : null,
+              }
+            : s,
+        ),
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(MCP_SERVERS_QUERY_KEY, ctx.previous);
+    },
+    onSettled: () => { void invalidate(); },
   });
 
   const addServerMutation = useMutation({
