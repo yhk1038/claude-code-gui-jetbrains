@@ -1,15 +1,16 @@
 import {ReactNode, createContext, useContext, useState} from "react";
 import {ContextPills} from "@/pages/ChatPage/message-renderers";
 import type {LoadedMessageDto} from "@/types";
+import {Tooltip} from "@/components";
 import {cn} from "@/utils/cn.ts";
 import {AnyContentBlockDto, ContentBlockType, TextBlockDto, ToolResultBlockDto, ToolUseBlockDto} from "@/dto/message/ContentBlockDto";
 import {useToolStatus, type ToolStatus} from "./toolStatus";
 
 /**
  * The tool_use block currently being rendered. ToolRenderer provides it so deep
- * children (e.g. a header tooltip) can read original CLI metadata like
- * `display_name` / `server_display_name` without threading props through every
- * renderer. Undefined when no provider is present.
+ * children (e.g. the JetBrains project-path chip) can read the tool's `input`
+ * without threading props through every renderer. Undefined when no provider is
+ * present.
  */
 export const ToolUseContext = createContext<ToolUseBlockDto | undefined>(undefined);
 export function useCurrentToolUse(): ToolUseBlockDto | undefined {
@@ -98,16 +99,18 @@ export const ToolHeader = (props: {
     description?: string;
     inProgress?: boolean;
     className?: string;
-    /** Optional hover tooltip on the bold name (e.g. MCP server + tool metadata). */
-    nameTitle?: string;
+    /** Optional hover tooltip on the bold name (e.g. the raw MCP tool id). */
+    nameTooltip?: string;
     children?: ReactNode;
 }) => {
-    const {name, description = '', className = '', nameTitle, children} = props;
+    const {name, description = '', className = '', nameTooltip, children} = props;
 
     return (
         <div className={cn(`flex items-start gap-1.5 text-[1rem]`, className)}>
             <div className="text-text-primary text-[1rem] font-semibold">
-                <span className={cn(nameTitle && "cursor-help")} title={nameTitle}>{name}</span>
+                <Tooltip content={nameTooltip}>
+                    <span className={cn(nameTooltip && "cursor-help")}>{name}</span>
+                </Tooltip>
             </div>
 
             {children || <div className="text-text-primary/60">{description}</div>}

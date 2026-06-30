@@ -1,7 +1,6 @@
-import type { ReactElement } from 'react';
-import Tippy from '@tippyjs/react/headless';
 import { TrashIcon, CheckBadgeIcon, ClockIcon } from '@heroicons/react/24/outline';
 import type { AccountListItem } from '@/shared';
+import { Tooltip } from '@/components';
 import { AccountAvatar } from '@/pages/ChatPage/SessionHeader/AccountSwitcher/AccountAvatar';
 import { formatPlan, formatAuthMethod } from '@/utils/accountFormat';
 
@@ -40,28 +39,9 @@ function lastActiveTime(ms: number): string {
   return `${datePart} ${time} (${relative})`;
 }
 
-function Tooltip({ label, children }: { label: string; children: ReactElement }) {
-  return (
-    <Tippy
-      placement="top"
-      offset={[0, 4]}
-      render={(attrs) => (
-        <div
-          className="bg-surface-overlay border border-border-default rounded-md px-2 py-1 text-xs text-text-primary shadow-lg"
-          {...attrs}
-        >
-          {label}
-        </div>
-      )}
-    >
-      {children}
-    </Tippy>
-  );
-}
-
 function TooltipBadge({ tooltip, value }: { tooltip: string; value: string }) {
   return (
-    <Tooltip label={tooltip}>
+    <Tooltip content={tooltip}>
       <span className="text-[0.7692rem] text-text-tertiary border border-border-default rounded px-1.5 py-0.5 shrink-0 cursor-default">
         {value}
       </span>
@@ -96,7 +76,7 @@ export function AccountRow(props: AccountRowProps) {
         )}
 
         {/* Row 3: last active — muted, smallest */}
-        <Tooltip label="Last access">
+        <Tooltip content="Last access">
           <span className="inline-flex items-center gap-1 text-[0.7307rem] text-text-tertiary mt-1 cursor-default leading-none w-fit">
             <ClockIcon className="w-3 h-3 shrink-0" />
             {lastActiveTime(account.updatedAt)}
