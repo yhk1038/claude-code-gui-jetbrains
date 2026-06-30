@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AppProviders } from './contexts';
-import { ChatPage, SettingsPage, SwitchAccountPage, ProjectSelectorPage, SessionPanelPage } from './pages';
+import { ChatPage, SettingsPage, SettingsOverlay, SwitchAccountPage, ProjectSelectorPage, SessionPanelPage } from './pages';
 import { AccountUsageModal } from './components/AccountUsageModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -13,6 +13,8 @@ import 'katex/dist/katex.min.css';
 function AppContent() {
   useKeyboardShortcuts();
   const [isAccountUsageOpen, setIsAccountUsageOpen] = useState(false);
+  const location = useLocation();
+  const backgroundLocation = location.state?.backgroundLocation;
 
   useEffect(() => {
     const handler = () => setIsAccountUsageOpen(true);
@@ -23,7 +25,7 @@ function AppContent() {
   return (
     <>
       {isDev() && <div className="sticky top-0 border-t-2 border-t-fuchsia-500 z-50" />}
-      <Routes>
+      <Routes location={backgroundLocation ?? location}>
         <Route path="/" element={<ProjectSelectorPage />} />
         <Route path="/sessions/new" element={<ChatPage />} />
         <Route path="/sessions/:current_session_id" element={<ChatPage />} />
@@ -33,6 +35,15 @@ function AppContent() {
         <Route path="/switch-account" element={<SwitchAccountPage />} />
         <Route path="*" element={<Navigate to="/sessions/new" replace />} />
       </Routes>
+
+      {backgroundLocation && (
+        <SettingsOverlay>
+          <Routes>
+            <Route path="/settings/*" element={<SettingsPage />} />
+          </Routes>
+        </SettingsOverlay>
+      )}
+
       {isAccountUsageOpen && (
         <AccountUsageModal onClose={() => setIsAccountUsageOpen(false)} />
       )}

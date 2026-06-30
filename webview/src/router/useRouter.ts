@@ -1,10 +1,10 @@
-import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { useNavigate, useLocation, useParams, Location } from 'react-router-dom';
 import { Route, pathToRoute, routeToPath, isSettingsRoute, withWorkingDir } from './routes';
 
 export interface UseRouterReturn {
   route: Route;
   params: Record<string, string>;
-  navigate: (route: Route, params?: Record<string, string>) => void;
+  navigate: (route: Route, options?: { backgroundLocation?: Location }) => void;
   goBack: () => void;
   isSettings: boolean;
 }
@@ -18,9 +18,12 @@ export function useRouter(): UseRouterReturn {
   const routeParams = useParams();
   const route = pathToRoute(location.pathname);
 
-  const navigate = (targetRoute: Route, _params?: Record<string, string>) => {
+  const navigate = (targetRoute: Route, options?: { backgroundLocation?: Location }) => {
     const resolved = targetRoute === Route.SETTINGS ? Route.SETTINGS_GENERAL : targetRoute;
-    nav(withWorkingDir(routeToPath(resolved)));
+    const path = withWorkingDir(routeToPath(resolved));
+    const carried = options?.backgroundLocation
+      ?? (isSettingsRoute(resolved) ? location.state?.backgroundLocation : undefined);
+    nav(path, carried ? { state: { backgroundLocation: carried } } : undefined);
   };
 
   const goBack = () => {

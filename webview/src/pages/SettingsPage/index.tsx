@@ -63,3 +63,5 @@ export function SettingsPage() {
     </SettingsLayout>
   );
 }
+
+export { SettingsOverlay } from './SettingsOverlay';

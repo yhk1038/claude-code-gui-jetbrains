@@ -79,7 +79,8 @@ export function SessionProvider({ children }: SessionProviderProps) {
   const bypassDisabled = claudeSettings.permissions?.disableBypassPermissionsMode === 'disable';
 
   // currentSessionId is derived from URL (SSOT)
-  const currentSessionId = parseSessionIdFromPath(location.pathname);
+  const bg = location.state?.backgroundLocation;
+  const currentSessionId = parseSessionIdFromPath(bg?.pathname ?? location.pathname);
 
   const [sessions, setSessions] = useState<SessionMetaDto[]>([]);
   const [sessionState, setSessionState] = useState<SessionState>(SessionState.Idle);

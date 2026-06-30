@@ -309,5 +309,6 @@ export const SETTINGS_SUB_ROUTES: Route[] = [
 export enum Label {
   SETTINGS = 'Settings',
   BACK = 'Back',
+  CLOSE = 'Close',
   NEW_TAB = 'Open New Tab',
 }
