@@ -18,7 +18,7 @@ export const EmptyState = () => {
       "Tired of repeating yourself? Tell Claude to remember what you've told it using CLAUDE.md.",
       <>Press <kbd className={kbdClass}>Shift</kbd> <kbd className={kbdClass}>Tab</kbd> to automatically approve code edits</>,
       <>Highlight any text and press <kbd className={kbdClass}>{isMac ? 'Option' : 'Alt'}</kbd> <kbd className={kbdClass}>K</kbd> to chat about it</>,
-      <>Type <kbd className={kbdClass}>/manage-mcp</kbd> to add, remove, and manage MCP servers right here.</>,
+      <>Type <kbd className={kbdClass}>/mcp</kbd> to add, remove, and manage MCP servers right here.</>,
       <>Use planning mode to talk through big changes before a commit. Press <kbd className={kbdClass}>Shift</kbd> <kbd className={kbdClass}>Tab</kbd> to cycle between modes.</>,
       'Type /model to pick the right tool for the job.',
       "You've come to the absolutely right place!",

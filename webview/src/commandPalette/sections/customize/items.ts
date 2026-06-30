@@ -11,6 +11,9 @@ export const customizeItems = [
   new StaticItem('permissions', 'Permissions'),
   new StaticItem('manage-mcp', 'MCP Servers', {
     disabled: false,
+    // Label is "MCP Servers" (matches "/mcp"); these keywords also surface it
+    // for "/manage-mcp" and the bare "/manage" query.
+    keywords: ['manage-mcp', 'mcp'],
     action: async () => {
       window.dispatchEvent(new CustomEvent(OPEN_MCP_MODAL_EVENT));
     },
