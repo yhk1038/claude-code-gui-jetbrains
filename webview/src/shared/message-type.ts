@@ -317,6 +317,15 @@ export enum MessageType {
   REGISTER_PROJECT_ROOTS = 'REGISTER_PROJECT_ROOTS',
   /** Query the IDE whether a plugin restart is required (e.g. after an update). */
   REQUIRES_RESTART = 'REQUIRES_RESTART',
+  /**
+   * Node → Kotlin notification carrying the current `hostMode` value
+   * (`editor-tab` | `tool-window`). The backend is the single source of truth for
+   * settings; on WSL2 the IDE-side JVM home and the Linux home diverge, so Kotlin
+   * cannot read the settings file reliably. The backend pushes this on RPC connect
+   * and whenever `hostMode` is saved, and Kotlin caches it for synchronous host
+   * routing. params: { hostMode: string }.
+   */
+  HOST_MODE_CHANGED = 'HOST_MODE_CHANGED',
 
   // ───────────────────────────────────────────────────────────────────────
   // Logging channel (webview LogForwarder → backend log-ws)

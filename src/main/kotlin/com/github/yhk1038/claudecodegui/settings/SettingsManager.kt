@@ -1,6 +1,7 @@
 package com.github.yhk1038.claudecodegui.settings
 
 import com.github.yhk1038.claudecodegui.hosting.HostMode
+import com.github.yhk1038.claudecodegui.hosting.HostModeCache
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
@@ -153,13 +154,19 @@ class SettingsManager {
     }
 
     /**
-     * 현재 채팅 호스트 모드. `hostMode` 설정 값(`editor-tab` | `tool-window`)을
-     * [HostMode]로 파싱한다. 누락/이상값은 [HostMode.EDITOR_TAB]로 폴백.
+     * 현재 채팅 호스트 모드. 설정 파일이 아니라 [HostModeCache]에서 동기로 읽는다.
+     *
+     * 백엔드가 설정의 유일 진실원이므로(CLAUDE.md), `hostMode`만은 Kotlin이 파일을
+     * 직접 읽지 않는다. WSL2에서는 백엔드가 Linux distro 안에서 실행되어 설정 파일을
+     * Linux 홈(`/home/<user>/.claude-code-gui`)에 쓰지만, IDE 쪽 JVM의 `user.home`은
+     * Windows 홈(`C:\Users\<user>`)이라 두 경로가 갈라진다. 그래서 Kotlin이 파일을 직접
+     * 읽으면 사용자가 고른 값을 못 찾고 항상 [HostMode.EDITOR_TAB]로 폴백한다(이슈 #7).
+     *
+     * 대신 백엔드가 RPC로 푸시한 값을 [HostModeCache]가 [com.intellij.ide.util.PropertiesComponent]에
+     * 캐싱하고, 라우팅([com.github.yhk1038.claudecodegui.hosting.ChatHostRouter.currentHost])은
+     * 그 캐시를 동기로 읽는다. 캐시가 비어 있으면(아직 푸시 전) [HostMode.EDITOR_TAB] 폴백.
      */
-    fun getHostMode(): HostMode {
-        val raw = (get("hostMode") as? JsonPrimitive)?.contentOrNull
-        return HostMode.fromSetting(raw)
-    }
+    fun getHostMode(): HostMode = HostModeCache.read()
 
     // ---- Private helpers (lock 내부에서만 호출) ----
 

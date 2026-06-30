@@ -157,7 +157,7 @@ case "${1:-}" in
   be-build)       pnpm -C "$ROOT/backend" build ;;
   be-lint)        pnpm -C "$ROOT/backend" lint ;;
   be-dev)         pnpm -C "$ROOT/backend" dev ;;
-  be-test)        pnpm -C "$ROOT/backend" test ;;
+  be-test)        pnpm -C "$ROOT/backend" test "${@:2}" ;;
   be-test-cov)    pnpm -C "$ROOT/backend" test:coverage ;;
 
   # --- WebView ---

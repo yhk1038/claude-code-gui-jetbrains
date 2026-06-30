@@ -3,6 +3,8 @@ package com.github.yhk1038.claudecodegui.services
 import com.github.yhk1038.claudecodegui.bridge.NodeProcessManager
 import com.github.yhk1038.claudecodegui.bridge.RpcWebSocketClient
 import com.github.yhk1038.claudecodegui.bridge.WslPathResolver
+import com.github.yhk1038.claudecodegui.bridge.parseHostModeParam
+import com.github.yhk1038.claudecodegui.hosting.HostModeCache
 import com.github.yhk1038.claudecodegui.toolwindow.realization.LoadingPhase
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
@@ -223,10 +225,34 @@ class NodeBackendService : Disposable {
                 // Route RPC-handling failures to the single Kotlin reporting point. This
                 // backend is connected (the error came over its socket), so prefer it.
                 onError = { throwable, where -> reportError(throwable, where, basePath) },
+                // One-way Node→Kotlin state pushes. HOST_MODE_CHANGED carries the current
+                // `hostMode`; the backend owns settings (CLAUDE.md) and on WSL2 Kotlin can't
+                // read the settings file (home paths diverge), so we cache the pushed value
+                // for synchronous host routing (issue #7). The method literal mirrors the
+                // shared MessageType enum on the TS side.
+                onNotification = ::handleRpcNotification,
             )
             rpcClient = client
             client.connect(port)
             logger.info("RPC WebSocket client connecting to port $port (basePath=$basePath)")
+        }
+
+        /**
+         * Handle a one-way Node→Kotlin JSON-RPC notification. Currently only
+         * HOST_MODE_CHANGED: cache the pushed `hostMode` so [com.github.yhk1038.claudecodegui.hosting.ChatHostRouter]
+         * can route chat windows synchronously without reading the settings file
+         * (which diverges from the Linux home on WSL2 — issue #7). Unknown methods
+         * are ignored; the method literal mirrors the shared MessageType enum (TS).
+         */
+        private fun handleRpcNotification(method: String, params: JsonObject) {
+            when (method) {
+                "HOST_MODE_CHANGED" -> {
+                    val hostMode = parseHostModeParam(params) ?: return
+                    HostModeCache.update(hostMode)
+                    logger.info("Cached hostMode from backend push: $hostMode (basePath=$basePath)")
+                }
+                else -> logger.warn("Unhandled RPC notification from backend: $method")
+            }
         }
 
         /** Tell the backend which IDE project root this socket serves, for IDE-bound routing. */

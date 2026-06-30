@@ -1,5 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { JetBrainsBridge, parseProjectRoots } from '../jetbrains-bridge';
+import { MessageType } from '../../shared';
+import * as settings from '../../core/features/settings';
 
 type MsgHandler = (data: Buffer) => void;
 type CloseHandler = () => void;
@@ -102,5 +104,71 @@ describe('JetBrainsBridge cross-IDE routing', () => {
   it('rejects when no client is connected', async () => {
     const bridge = new JetBrainsBridge();
     await expect(bridge.openFile('/x.ts')).rejects.toThrow(/No RPC client connected/);
+  });
+});
+
+/** Parse the JSON-RPC message at call index [callIdx] sent to [ws]. */
+function sentMessage(
+  ws: ReturnType<typeof createMockWs>,
+  callIdx = 0,
+): { jsonrpc: string; method?: string; params?: Record<string, unknown>; id?: string } | undefined {
+  const call = ws.send.mock.calls[callIdx]?.[0];
+  return call ? JSON.parse(call) : undefined;
+}
+
+describe('JetBrainsBridge.pushHostMode', () => {
+  it('sends a HOST_MODE_CHANGED JSON-RPC notification (no id) to a single client', () => {
+    const bridge = new JetBrainsBridge();
+    const ws = createMockWs();
+    bridge.addRpcClient(ws as never);
+    ws.send.mockClear(); // ignore any connect-time push
+
+    bridge.pushHostMode('tool-window', ws as never);
+
+    expect(ws.send).toHaveBeenCalledTimes(1);
+    const msg = sentMessage(ws);
+    expect(msg?.method).toBe(MessageType.HOST_MODE_CHANGED);
+    expect(msg?.params).toEqual({ hostMode: 'tool-window' });
+    // A notification carries NO id (so Kotlin never tries to reply).
+    expect(msg?.id).toBeUndefined();
+  });
+
+  it('broadcasts to every connected client when no target ws is given', () => {
+    const bridge = new JetBrainsBridge();
+    const wsA = createMockWs();
+    const wsB = createMockWs();
+    bridge.addRpcClient(wsA as never);
+    bridge.addRpcClient(wsB as never);
+    wsA.send.mockClear();
+    wsB.send.mockClear();
+
+    bridge.pushHostMode('editor-tab');
+
+    expect(sentMessage(wsA)?.method).toBe(MessageType.HOST_MODE_CHANGED);
+    expect(sentMessage(wsA)?.params).toEqual({ hostMode: 'editor-tab' });
+    expect(sentMessage(wsB)?.params).toEqual({ hostMode: 'editor-tab' });
+  });
+});
+
+describe('JetBrainsBridge connect-time hostMode push', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('pushes the current hostMode to a newly connected RPC client', async () => {
+    vi.spyOn(settings, 'readSettingsFile').mockResolvedValue({ hostMode: 'tool-window' });
+
+    const bridge = new JetBrainsBridge();
+    const ws = createMockWs();
+    bridge.addRpcClient(ws as never);
+
+    // The connect-time push reads settings asynchronously; let microtasks drain.
+    await vi.waitFor(() => {
+      expect(ws.send).toHaveBeenCalled();
+    });
+
+    const msg = sentMessage(ws);
+    expect(msg?.method).toBe(MessageType.HOST_MODE_CHANGED);
+    expect(msg?.params).toEqual({ hostMode: 'tool-window' });
   });
 });

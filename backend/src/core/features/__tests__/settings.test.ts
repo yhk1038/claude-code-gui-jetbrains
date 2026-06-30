@@ -206,6 +206,7 @@ describe('settings', () => {
         logLevel: 'info',
         terminalApp: null,
         hostMode: 'editor-tab',
+        openSettingsAs: 'overlay',
         env: {},
       });
       expect(mockWriteFile).toHaveBeenCalled();
@@ -276,6 +277,7 @@ export default {
         logLevel: 'info',
         terminalApp: null,
         hostMode: 'editor-tab',
+        openSettingsAs: 'overlay',
         env: {},
       });
     });
