@@ -4,9 +4,13 @@ import { McpServer, McpServerStatus, McpTransportType, canAuthenticate } from '@
 import { useMcpServerTools } from '@/hooks/useMcpServerTools';
 import { McpStatusBadge } from './McpStatusBadge';
 
+/** Scopes a server can live in that the CLI `add`/`remove` commands can manage. */
+const EDITABLE_SCOPES = ['user', 'project', 'local'];
+
 interface Props {
   server: McpServer;
   onBack: () => void;
+  onEdit: (server: McpServer) => void;
   onReconnect: (name: string) => Promise<void>;
   onAuthenticate: (name: string) => Promise<{ hint?: string }>;
   onClearAuth: (name: string) => Promise<{ hint?: string }>;
@@ -15,7 +19,7 @@ interface Props {
 }
 
 export function McpServerDetail(props: Props) {
-  const { server, onBack, onReconnect, onAuthenticate, onClearAuth, onToggleEnabled, onRemove } = props;
+  const { server, onBack, onEdit, onReconnect, onAuthenticate, onClearAuth, onToggleEnabled, onRemove } = props;
   const [toolsOpen, setToolsOpen] = useState(false);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
@@ -24,6 +28,13 @@ export function McpServerDetail(props: Props) {
   const busy = busyAction !== null;
   const isClaudeAiProxy = server.config?.type === McpTransportType.CLAUDEAI_PROXY;
   const canAuth = canAuthenticate(server);
+  // Editable only when we have a transport config we could re-create via the CLI,
+  // and the scope is one `claude mcp add/remove` actually manages. claude.ai
+  // connectors (claudeai-proxy / null config) are provisioned elsewhere — no Edit.
+  const canEdit =
+    server.config != null &&
+    !isClaudeAiProxy &&
+    EDITABLE_SCOPES.includes(server.scope as string);
   const isConnected = server.status === McpServerStatus.CONNECTED;
   const isDisabled = server.status === McpServerStatus.DISABLED;
   const isFailed = server.status === McpServerStatus.FAILED;
@@ -98,7 +109,20 @@ export function McpServerDetail(props: Props) {
         {/* Server header */}
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-mono text-base font-semibold text-text-primary leading-none m-0">{server.name}</h3>
-          <McpStatusBadge status={server.status} />
+          <div className="flex items-center gap-2">
+            <McpStatusBadge status={server.status} />
+            {/* Edit chip — badge shape, but button background/border (see onEdit) */}
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => onEdit(server)}
+                disabled={busy}
+                className="inline-flex items-center gap-1 text-sm font-medium px-2.5 py-1.5 rounded-md flex-shrink-0 border border-border-default bg-surface-hover text-text-primary hover:bg-surface-raised transition-colors disabled:opacity-50"
+              >
+                Edit
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Config details */}

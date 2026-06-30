@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import { XMarkIcon, PlusIcon, ArrowPathIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { Portal } from '@/components/Portal';
 import { McpServer, McpRegistryServer } from '@/shared';
@@ -18,6 +19,7 @@ type View =
   | { kind: 'list' }
   | { kind: 'detail'; name: string }
   | { kind: 'add'; prefill?: { name: string; json: string } }
+  | { kind: 'edit'; name: string }
   | { kind: 'marketplace' };
 
 export function McpModal(props: Props) {
@@ -25,6 +27,9 @@ export function McpModal(props: Props) {
   const { servers, configPath, loading, refreshing, error, fetch, reconnect, setEnabled, addServer, removeServer, authenticate, clearAuth } = useMcpServers();
 
   const [view, setView] = useState<View>({ kind: 'list' });
+  // While an add/edit submit is in flight, the whole modal is locked: no input
+  // edits, no closing, no other actions. The form reports its busy state here.
+  const [formBusy, setFormBusy] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
 
   // Focus trap for the lifetime of the modal. The chat input underneath runs
@@ -58,6 +63,7 @@ export function McpModal(props: Props) {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
+        if (formBusy) return; // locked while a save is in flight
         if (view.kind !== 'list') {
           setView({ kind: 'list' });
         } else {
@@ -67,7 +73,7 @@ export function McpModal(props: Props) {
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [onClose, view]);
+  }, [onClose, view, formBusy]);
 
   function handleSelect(nameOrSpecial: string): void {
     if (nameOrSpecial === '__add__') {
@@ -98,6 +104,46 @@ export function McpModal(props: Props) {
     await fetch();
   }
 
+  /**
+   * Edit = replace an existing server. The CLI has no `mcp edit`, so the
+   * equivalent is `remove` then `add-json` (also how a CLI user would do it).
+   * Name and scope may change here too, which naturally covers rename / move.
+   * If the re-add fails, the original config is added back so a failed edit
+   * never leaves the user with a deleted server.
+   */
+  async function handleEdit(
+    original: McpServer,
+    serversFromForm: ParsedMcpServer[],
+    newScope: string,
+  ): Promise<void> {
+    if (serversFromForm.length !== 1) {
+      throw new Error('Editing replaces a single server — paste exactly one server config.');
+    }
+    const next = serversFromForm[0];
+    const oldName = original.name;
+    const oldScope = original.scope as string;
+    const oldConfig = original.config as unknown as Record<string, unknown> | null;
+
+    await removeServer(oldName, oldScope);
+    try {
+      await addServer(next.name, next.config, newScope);
+    } catch (err) {
+      // Roll back: re-add the original so the edit didn't destroy the server.
+      if (oldConfig) {
+        try {
+          await addServer(oldName, oldConfig, oldScope);
+        } catch {
+          /* best-effort restore; surface the original failure below */
+        }
+      }
+      await fetch();
+      throw err instanceof Error ? err : new Error(String(err));
+    }
+    await fetch();
+    toast.success(`Saved ${next.name}`);
+    setView({ kind: 'list' });
+  }
+
   async function handleAdd(serversToAdd: ParsedMcpServer[], scope: string): Promise<void> {
     const failures: string[] = [];
     for (const s of serversToAdd) {
@@ -115,6 +161,7 @@ export function McpModal(props: Props) {
         `${failures.length}/${serversToAdd.length} server(s) failed to add:\n${failures.join('\n')}`,
       );
     }
+    serversToAdd.forEach((s) => toast.success(`Added ${s.name}`));
     setView({ kind: 'list' });
   }
 
@@ -125,19 +172,21 @@ export function McpModal(props: Props) {
   }
 
   const selectedServer = getSelectedServer();
-  const ownHeaderView = view.kind === 'add' || view.kind === 'marketplace';
+  const editServer = view.kind === 'edit' ? servers.find((s) => s.name === view.name) ?? null : null;
+  const ownHeaderView = view.kind === 'add' || view.kind === 'edit' || view.kind === 'marketplace';
 
   return (
     <Portal>
       <div
         className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-overlay-scrim"
         onClick={(e) => {
+          if (formBusy) return; // locked while a save is in flight
           if (e.target === e.currentTarget) onClose();
         }}
       >
         <div ref={dialogRef}
              tabIndex={-1}
-             className="w-full max-w-lg bg-surface-raised border border-border-default rounded-xl shadow-2xl overflow-hidden flex flex-col focus:outline-none"
+             className={`w-full max-w-lg bg-surface-raised border border-border-default rounded-xl shadow-2xl overflow-hidden flex flex-col focus:outline-none ${formBusy ? 'pointer-events-none' : ''}`}
              style={{ maxHeight: '50rem', minHeight: '32rem' }}>
           {/* Header */}
           {!ownHeaderView && (
@@ -204,6 +253,7 @@ export function McpModal(props: Props) {
               <McpServerDetail
                 server={selectedServer}
                 onBack={() => setView({ kind: 'list' })}
+                onEdit={(s) => setView({ kind: 'edit', name: s.name })}
                 onReconnect={handleReconnect}
                 onAuthenticate={authenticate}
                 onClearAuth={clearAuth}
@@ -226,7 +276,25 @@ export function McpModal(props: Props) {
                 initialJson={view.prefill?.json}
                 onAdd={handleAdd}
                 onCancel={() => setView({ kind: 'list' })}
+                onBusyChange={setFormBusy}
               />
+            )}
+            {view.kind === 'edit' && editServer && (
+              <McpAddForm
+                key={`edit-${editServer.name}`}
+                mode="edit"
+                initialName={editServer.name}
+                initialScope={editServer.scope as string}
+                initialJson={JSON.stringify(editServer.config, null, 2)}
+                onAdd={(parsed, scope) => handleEdit(editServer, parsed, scope)}
+                onCancel={() => setView({ kind: 'detail', name: editServer.name })}
+                onBusyChange={setFormBusy}
+              />
+            )}
+            {view.kind === 'edit' && !editServer && (
+              <div className="flex-1 flex items-center justify-center text-md text-text-tertiary">
+                Server not found.
+              </div>
             )}
           </div>
 

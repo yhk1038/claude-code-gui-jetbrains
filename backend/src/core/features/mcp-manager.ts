@@ -5,7 +5,7 @@ import { homedir } from 'os';
 import { Claude } from '../claude';
 import { parseMcpList, parseMcpGet } from './mcp-parser';
 import { McpServerStatus, McpServerScope } from '../../shared';
-import type { McpServer, McpServersResult } from '../../shared';
+import type { McpServer, McpServersResult, McpServerConfig } from '../../shared';
 
 // ─── Path helpers ─────────────────────────────────────────────────────────────
 
@@ -62,8 +62,8 @@ function scopeRank(scope: McpServerScope | string): number {
  *
  * Servers are sorted by scope priority then name.
  */
-export async function getMcpServers(): Promise<McpServersResult> {
-  const [listOut, disabled] = await Promise.all([runMcpList(), readDisabledServers()]);
+export async function getMcpServers(cwd?: string): Promise<McpServersResult> {
+  const [listOut, disabled] = await Promise.all([runMcpList(cwd), readDisabledServers()]);
   const names = parseMcpList(listOut).map((s) => s.name);
 
   if (names.length === 0 && disabled.length === 0) {
@@ -71,17 +71,39 @@ export async function getMcpServers(): Promise<McpServersResult> {
   }
 
   // Fetch details for all connected/failed servers in parallel.
-  const settled = await Promise.allSettled(names.map((name) => fetchServerDetails(name)));
+  const settled = await Promise.allSettled(names.map((name) => fetchServerDetails(name, cwd)));
 
   const servers: McpServer[] = settled.flatMap((r) => {
     if (r.status === 'fulfilled' && r.value !== null) return [r.value];
     return [];
   });
 
+  // `claude mcp get` is an unreliable source for config: it omits transport
+  // details for non-connected servers, and even when present it drops headers/
+  // env (and its text format is brittle). For user/project servers the settings
+  // file IS the source of truth, so overwrite with the file's verbatim config
+  // (full env/headers preserved) — this is what makes Failed/Pending servers
+  // show their config and become editable.
+  const userData = await readClaudeJson();
+  const projectData = cwd ? await readProjectMcpJson(cwd) : null;
+  // local scope lives under projects[cwd] in ~/.claude.json (same mcpServers shape).
+  const localData = cwd ? extractProjectEntry(userData, cwd) : null;
+  for (const s of servers) {
+    const fromFile =
+      s.scope === McpServerScope.USER
+        ? extractServerConfig(userData, s.name)
+        : s.scope === McpServerScope.PROJECT
+          ? extractServerConfig(projectData, s.name)
+          : s.scope === McpServerScope.LOCAL
+            ? extractServerConfig(localData, s.name)
+            : null;
+    if (fromFile) s.config = fromFile;
+  }
+
   // Apply disabled state. `claude mcp list` does NOT honour disabledMcpServers —
   // it still reports those servers (and health-checks them), so their status must
   // be overridden to DISABLED here, plus synthetic entries for config-only ones.
-  await mergeDisabledServers(servers, disabled, fetchServerDetails);
+  await mergeDisabledServers(servers, disabled, (name) => fetchServerDetails(name, cwd));
 
   servers.sort((a, b) => {
     const scopeDiff = scopeRank(a.scope) - scopeRank(b.scope);
@@ -133,8 +155,8 @@ export async function mergeDisabledServers(
  * `claude mcp get` tries to connect when invoked, so re-running it is the
  * CLI-equivalent of a reconnect probe.
  */
-export async function reconnectMcpServer(name: string): Promise<McpServer | null> {
-  return fetchServerDetails(name);
+export async function reconnectMcpServer(name: string, cwd?: string): Promise<McpServer | null> {
+  return fetchServerDetails(name, cwd);
 }
 
 /**
@@ -158,17 +180,21 @@ export async function setMcpServerEnabled(name: string, enabled: boolean): Promi
 /**
  * Add a new MCP server via `claude mcp add-json`.
  * @param scope  One of: user | project | local
+ * @param cwd    Working directory to run the CLI in. CRITICAL for `project`/`local`
+ *               scope: those write `.mcp.json` / project config relative to cwd, so
+ *               this MUST be the user's workspace root — not the backend's own dir.
  */
 export async function addMcpServer(
   name: string,
   config: Record<string, unknown>,
   scope: string,
+  cwd?: string,
 ): Promise<void> {
   const json = JSON.stringify(config);
   const scopeFlag = scopeCliFlag(scope);
   const args = ['mcp', 'add-json', name, json];
   if (scopeFlag) args.push('-s', scopeFlag);
-  const { stdout, stderr } = await Claude.exec(args, { timeout: 15000 });
+  const { stdout, stderr } = await Claude.exec(args, { timeout: 15000, cwd });
   const combined = `${stdout}\n${stderr}`.toLowerCase();
   if (combined.includes('error') && !combined.includes('already exists')) {
     throw new Error(`claude mcp add-json failed: ${stderr || stdout}`);
@@ -177,12 +203,14 @@ export async function addMcpServer(
 
 /**
  * Remove a named MCP server via `claude mcp remove`.
+ * @param cwd  Workspace root (see addMcpServer) — needed to target the right
+ *             `.mcp.json` when removing a `project`/`local` scope server.
  */
-export async function removeMcpServer(name: string, scope: string): Promise<void> {
+export async function removeMcpServer(name: string, scope: string, cwd?: string): Promise<void> {
   const scopeFlag = scopeCliFlag(scope);
   const args = ['mcp', 'remove', name];
   if (scopeFlag) args.push('-s', scopeFlag);
-  const { stderr } = await Claude.exec(args, { timeout: 10000 });
+  const { stderr } = await Claude.exec(args, { timeout: 10000, cwd });
   if (stderr.toLowerCase().includes('error')) {
     throw new Error(`claude mcp remove failed: ${stderr}`);
   }
@@ -190,18 +218,18 @@ export async function removeMcpServer(name: string, scope: string): Promise<void
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
-async function runMcpList(): Promise<string> {
+async function runMcpList(cwd?: string): Promise<string> {
   try {
-    const { stdout } = await Claude.exec(['mcp', 'list'], { timeout: 20000 });
+    const { stdout } = await Claude.exec(['mcp', 'list'], { timeout: 20000, cwd });
     return stdout;
   } catch {
     return '';
   }
 }
 
-async function fetchServerDetails(name: string): Promise<McpServer | null> {
+async function fetchServerDetails(name: string, cwd?: string): Promise<McpServer | null> {
   try {
-    const { stdout } = await Claude.exec(['mcp', 'get', name], { timeout: 12000 });
+    const { stdout } = await Claude.exec(['mcp', 'get', name], { timeout: 12000, cwd });
     const server = parseMcpGet(stdout);
     if (!server) return null;
     return await enrichWithProbeError(server);
@@ -264,6 +292,43 @@ async function probeUrl(url: string): Promise<string | null> {
 async function readDisabledServers(): Promise<string[]> {
   const data = await readClaudeJson();
   return Array.isArray(data.disabledMcpServers) ? (data.disabledMcpServers as string[]) : [];
+}
+
+/**
+ * Read and parse `{cwd}/.mcp.json` (project-scope server configs). Returns null
+ * on absent/invalid file — config enrichment is best-effort.
+ */
+async function readProjectMcpJson(cwd: string): Promise<unknown> {
+  try {
+    const p = join(cwd, '.mcp.json');
+    if (!existsSync(p)) return null;
+    return JSON.parse(await readFile(p, 'utf-8'));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Pull the per-project entry (`projects[cwd]`) out of `~/.claude.json`, where
+ * local-scope servers live under its `mcpServers`. Returns null when absent.
+ */
+export function extractProjectEntry(data: unknown, cwd: string): unknown {
+  if (!data || typeof data !== 'object') return null;
+  const projects = (data as Record<string, unknown>).projects;
+  if (!projects || typeof projects !== 'object') return null;
+  return (projects as Record<string, unknown>)[cwd] ?? null;
+}
+
+/**
+ * Pull one server's raw config out of an `mcpServers` map, verbatim (no key
+ * renaming) per the original-data-preservation rule.
+ */
+export function extractServerConfig(data: unknown, name: string): McpServerConfig | null {
+  if (!data || typeof data !== 'object') return null;
+  const servers = (data as Record<string, unknown>).mcpServers;
+  if (!servers || typeof servers !== 'object') return null;
+  const cfg = (servers as Record<string, unknown>)[name];
+  return cfg && typeof cfg === 'object' ? (cfg as McpServerConfig) : null;
 }
 
 /** Map our scope string to the -s flag value the CLI accepts. */

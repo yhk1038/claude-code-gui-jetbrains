@@ -46,7 +46,7 @@ export async function reconnectMcpServerHandler(
     return ack(connectionId, message, connections, { status: 'error', error: 'Missing name' });
   }
   try {
-    const server = await reconnectMcpServer(name);
+    const server = await reconnectMcpServer(name, getStringPayload(message, 'workingDir') ?? undefined);
     ack(connectionId, message, connections, { status: 'ok', server });
   } catch (err) {
     ack(connectionId, message, connections, {
@@ -189,7 +189,7 @@ export async function addMcpServerHandler(
     });
   }
   try {
-    await addMcpServer(name, config, scope);
+    await addMcpServer(name, config, scope, getStringPayload(message, 'workingDir') ?? undefined);
     ack(connectionId, message, connections, { status: 'ok', name });
   } catch (err) {
     ack(connectionId, message, connections, {
@@ -251,7 +251,7 @@ export async function removeMcpServerHandler(
     return ack(connectionId, message, connections, { status: 'error', error: 'Missing name' });
   }
   try {
-    await removeMcpServer(name, scope);
+    await removeMcpServer(name, scope, getStringPayload(message, 'workingDir') ?? undefined);
     ack(connectionId, message, connections, { status: 'ok', name });
   } catch (err) {
     ack(connectionId, message, connections, {

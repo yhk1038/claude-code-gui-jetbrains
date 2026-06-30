@@ -1,7 +1,10 @@
-import { describe, it, expect, vi } from 'vitest';
-import { mergeDisabledServers } from '../mcp-manager';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { mergeDisabledServers, addMcpServer, removeMcpServer, extractServerConfig } from '../mcp-manager';
+import { Claude } from '../../claude';
 import { McpServerStatus, McpServerScope, McpTransportType } from '../../../shared';
 import type { McpServer } from '../../../shared';
+
+vi.mock('../../claude', () => ({ Claude: { exec: vi.fn() } }));
 
 function server(name: string, overrides: Partial<McpServer> = {}): McpServer {
   return {
@@ -76,5 +79,56 @@ describe('mergeDisabledServers', () => {
 
     expect(servers[0].status).toBe(McpServerStatus.CONNECTED);
     expect(fetchDetails).not.toHaveBeenCalled();
+  });
+});
+
+// Regression: project/local scope writes `.mcp.json` relative to the CLI's cwd.
+// Without forwarding the workspace root, the file landed in the backend's own
+// directory (backend/.mcp.json) instead of the user's project. Every MCP
+// command must run with cwd === workspace root.
+describe('MCP commands run in the workspace cwd', () => {
+  const execMock = vi.mocked(Claude.exec);
+
+  beforeEach(() => {
+    execMock.mockReset();
+    execMock.mockResolvedValue({ stdout: 'Added', stderr: '' });
+  });
+
+  it('forwards cwd to `claude mcp add-json` so project scope writes at the workspace root', async () => {
+    await addMcpServer('srv', { command: 'npx' }, 'project', '/ws/root');
+    expect(execMock).toHaveBeenCalledWith(
+      ['mcp', 'add-json', 'srv', JSON.stringify({ command: 'npx' }), '-s', 'project'],
+      expect.objectContaining({ cwd: '/ws/root' }),
+    );
+  });
+
+  it('forwards cwd to `claude mcp remove` to target the right project .mcp.json', async () => {
+    await removeMcpServer('srv', 'project', '/ws/root');
+    expect(execMock).toHaveBeenCalledWith(
+      ['mcp', 'remove', 'srv', '-s', 'project'],
+      expect.objectContaining({ cwd: '/ws/root' }),
+    );
+  });
+});
+
+// Regression: `claude mcp get` drops headers/env (and omits config entirely for
+// non-connected servers). The settings file is the source of truth, so config
+// recovery must return it verbatim — otherwise Edit would silently lose headers.
+describe('extractServerConfig', () => {
+  it('returns the server config verbatim, including headers', () => {
+    const data = { mcpServers: { srv: { type: 'http', url: 'u', headers: { 'X-Test': '1' } } } };
+    expect(extractServerConfig(data, 'srv')).toEqual({ type: 'http', url: 'u', headers: { 'X-Test': '1' } });
+  });
+
+  it('preserves stdio env verbatim', () => {
+    const data = { mcpServers: { srv: { command: 'npx', args: ['x'], env: { API_KEY: 'secret' } } } };
+    expect(extractServerConfig(data, 'srv')).toEqual({ command: 'npx', args: ['x'], env: { API_KEY: 'secret' } });
+  });
+
+  it('returns null when the server is absent or the shape is malformed', () => {
+    expect(extractServerConfig({ mcpServers: {} }, 'srv')).toBeNull();
+    expect(extractServerConfig({}, 'srv')).toBeNull();
+    expect(extractServerConfig(null, 'srv')).toBeNull();
+    expect(extractServerConfig({ mcpServers: { srv: 'not-an-object' } }, 'srv')).toBeNull();
   });
 });

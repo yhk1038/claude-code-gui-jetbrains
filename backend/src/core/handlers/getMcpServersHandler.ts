@@ -19,7 +19,10 @@ export async function getMcpServersHandler(
   _bridge: Bridge,
 ): Promise<void> {
   try {
-    const result = await getMcpServers();
+    // Run the CLI in the user's workspace root so project-scope (.mcp.json)
+    // servers resolve from the right place, matching the chat session's cwd.
+    const workingDir = (message.payload as { workingDir?: string })?.workingDir;
+    const result = await getMcpServers(workingDir);
     connections.sendTo(connectionId, MessageType.ACK, {
       requestId: message.requestId,
       status: 'ok',
