@@ -56,8 +56,10 @@ export async function loadSessionHandler(
     }
 
     const session = connections.getSession(sessionId);
+    const watcher = getSessionJsonlWatcher();
+    // Always unwatch previous sessions for this connection before subscribing to the new one.
+    watcher?.unwatchConnection(connectionId);
     if (!session || !session.process) {
-      const watcher = getSessionJsonlWatcher();
       if (watcher) {
         try {
           const sessionsPath = await getProjectSessionsPath(workingDir);

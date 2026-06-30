@@ -107,4 +107,54 @@ describe('SessionJsonlWatcher', () => {
 
     expect(appendSpy).not.toHaveBeenCalled();
   });
+
+  it('unwatchConnection removes connection from all watched sessions (WebView tab close)', async () => {
+    const tempFilePath2 = join(tmpdir(), `test-watcher-multi-${Date.now()}.jsonl`);
+    await fsPromises.writeFile(tempFilePath2, '{"uuid":"a"}\n');
+
+    try {
+      await watcher.watch('conn1', 'sess1', tempFilePath);
+      await watcher.watch('conn1', 'sess2', tempFilePath2);
+
+      // conn1 is watching both sessions — simulate WebView tab close
+      watcher.unwatchConnection('conn1');
+
+      await fsPromises.appendFile(tempFilePath, '{"uuid":"2"}\n');
+      await fsPromises.appendFile(tempFilePath2, '{"uuid":"b"}\n');
+      await watcher.tailRead('sess1');
+      await watcher.tailRead('sess2');
+
+      expect(appendSpy).not.toHaveBeenCalled();
+    } finally {
+      await fsPromises.unlink(tempFilePath2).catch(() => {});
+    }
+  });
+
+  it('switching sessions: re-watching does not mix history from previous session', async () => {
+    const tempFilePath2 = join(tmpdir(), `test-watcher-switch-${Date.now()}.jsonl`);
+    await fsPromises.writeFile(tempFilePath2, '{"uuid":"a"}\n');
+
+    try {
+      // conn1 loads sess1 first
+      await watcher.watch('conn1', 'sess1', tempFilePath);
+      // conn1 switches to sess2 — must unwatch previous session first
+      watcher.unwatchConnection('conn1');
+      await watcher.watch('conn1', 'sess2', tempFilePath2);
+
+      // append to sess1 — conn1 must NOT receive it
+      await fsPromises.appendFile(tempFilePath, '{"uuid":"2","type":"user"}\n');
+      await watcher.tailRead('sess1');
+      expect(appendSpy).not.toHaveBeenCalled();
+
+      // append to sess2 — conn1 MUST receive it
+      await fsPromises.appendFile(tempFilePath2, '{"uuid":"b","type":"assistant"}\n');
+      await watcher.tailRead('sess2');
+      expect(appendSpy).toHaveBeenCalledTimes(1);
+      expect(appendSpy).toHaveBeenCalledWith('conn1', 'sess2', [
+        { uuid: 'b', type: 'assistant' },
+      ]);
+    } finally {
+      await fsPromises.unlink(tempFilePath2).catch(() => {});
+    }
+  });
 });
