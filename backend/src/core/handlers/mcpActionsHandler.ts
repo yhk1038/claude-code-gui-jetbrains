@@ -8,6 +8,7 @@ import {
   addMcpServer,
   removeMcpServer,
 } from '../features/mcp-manager';
+import { searchMcpRegistry } from '../features/mcp-registry';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -190,6 +191,36 @@ export async function addMcpServerHandler(
   try {
     await addMcpServer(name, config, scope);
     ack(connectionId, message, connections, { status: 'ok', name });
+  } catch (err) {
+    ack(connectionId, message, connections, {
+      status: 'error',
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+}
+
+// ─── SEARCH_MCP_REGISTRY ──────────────────────────────────────────────────────
+
+/**
+ * Search the official MCP registry for installable servers.
+ * Payload: { query: string, cursor?: string }
+ *
+ * CLI-equivalence note: `claude mcp` has no `search` subcommand, so this is a
+ * GUI-only capability backed by the registry's PUBLIC REST API (not the Claude
+ * SDK). Installation still goes through `claude mcp add-json` (ADD_MCP_SERVER).
+ */
+export async function searchMcpRegistryHandler(
+  connectionId: string,
+  message: IPCMessage,
+  connections: ConnectionManager,
+  _bridge: Bridge,
+): Promise<void> {
+  const payload = message.payload as Record<string, unknown>;
+  const query = typeof payload?.query === 'string' ? payload.query : '';
+  const cursor = typeof payload?.cursor === 'string' ? payload.cursor : undefined;
+  try {
+    const result = await searchMcpRegistry(query, cursor);
+    ack(connectionId, message, connections, { status: 'ok', ...result });
   } catch (err) {
     ack(connectionId, message, connections, {
       status: 'error',

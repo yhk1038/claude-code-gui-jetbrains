@@ -5,8 +5,15 @@ import { MessageType, McpServer, McpServerStatus } from '@/shared';
 
 export const MCP_SERVERS_QUERY_KEY = ['mcp-servers'] as const;
 
+interface McpServersData {
+  servers: McpServer[];
+  configPath?: string;
+}
+
 export interface UseMcpServersReturn {
   servers: McpServer[];
+  /** Display path of the global config file (~/.claude.json or $CLAUDE_CONFIG_DIR/.claude.json). */
+  configPath?: string;
   loading: boolean;
   refreshing: boolean;
   error: string | null;
@@ -23,14 +30,14 @@ export function useMcpServers(): UseMcpServersReturn {
   const { send } = useBridge();
   const queryClient = useQueryClient();
 
-  const { data: servers = [], isPending: loading, isFetching: refreshing, error: queryError } = useQuery({
+  const { data, isPending: loading, isFetching: refreshing, error: queryError } = useQuery({
     queryKey: MCP_SERVERS_QUERY_KEY,
-    queryFn: async () => {
-      const res = await send<{ status: string; servers?: McpServer[]; error?: string }>(
+    queryFn: async (): Promise<McpServersData> => {
+      const res = await send<{ status: string; servers?: McpServer[]; configPath?: string; error?: string }>(
         MessageType.GET_MCP_SERVERS,
       );
       if (res.status === 'ok' && res.servers) {
-        return res.servers;
+        return { servers: res.servers, configPath: res.configPath };
       }
       throw new Error(res.error ?? 'Failed to load MCP servers');
     },
@@ -40,6 +47,8 @@ export function useMcpServers(): UseMcpServersReturn {
     retry: false,
   });
 
+  const servers = data?.servers ?? [];
+  const configPath = data?.configPath;
   const error = queryError instanceof Error ? queryError.message : (queryError != null ? String(queryError) : null);
 
   const invalidate = useCallback(
@@ -67,17 +76,22 @@ export function useMcpServers(): UseMcpServersReturn {
     // it completes. onSettled re-syncs with the backend's real status.
     onMutate: async ({ name, enabled }) => {
       await queryClient.cancelQueries({ queryKey: MCP_SERVERS_QUERY_KEY });
-      const previous = queryClient.getQueryData<McpServer[]>(MCP_SERVERS_QUERY_KEY);
-      queryClient.setQueryData<McpServer[]>(MCP_SERVERS_QUERY_KEY, (old) =>
-        (old ?? []).map((s) =>
-          s.name === name
-            ? {
-                ...s,
-                status: enabled ? McpServerStatus.PENDING : McpServerStatus.DISABLED,
-                error: enabled ? s.error : null,
-              }
-            : s,
-        ),
+      const previous = queryClient.getQueryData<McpServersData>(MCP_SERVERS_QUERY_KEY);
+      queryClient.setQueryData<McpServersData>(MCP_SERVERS_QUERY_KEY, (old) =>
+        old
+          ? {
+              ...old,
+              servers: old.servers.map((s) =>
+                s.name === name
+                  ? {
+                      ...s,
+                      status: enabled ? McpServerStatus.PENDING : McpServerStatus.DISABLED,
+                      error: enabled ? s.error : null,
+                    }
+                  : s,
+              ),
+            }
+          : old,
       );
       return { previous };
     },
@@ -119,6 +133,7 @@ export function useMcpServers(): UseMcpServersReturn {
 
   return {
     servers,
+    configPath,
     loading,
     refreshing,
     error,

@@ -92,6 +92,43 @@ export interface McpServer {
 /** Payload of GET_MCP_SERVERS ACK response. */
 export interface McpServersResult {
   servers: McpServer[];
+  /**
+   * Display path of the global config file that backs the user/local scopes —
+   * `~/.claude.json`, or `$CLAUDE_CONFIG_DIR/.claude.json` when that env var is set.
+   * Used to label scope groups with their real source path.
+   */
+  configPath?: string;
+}
+
+/**
+ * A single MCP server entry from the official MCP Registry, normalised into a
+ * config ready for the Add form (`claude mcp add-json` shape).
+ *
+ * Source: https://registry.modelcontextprotocol.io/v0/servers (Generic MCP
+ * Registry API). The raw entry's packages[]/remotes[] are converted server-side
+ * into a single `config`; env vars / headers that need a user-supplied value are
+ * listed in `requiredInputs` so the UI can flag them.
+ */
+export interface McpRegistryServer {
+  /** Reverse-DNS identifier, e.g. "io.github.owner/server-name". */
+  name: string;
+  /** Short human-readable summary (may be empty). */
+  description: string;
+  /** Latest version string reported by the registry. */
+  version: string;
+  /** Source repository URL, or null when not reported. */
+  repositoryUrl: string | null;
+  /** Pre-built config for the Add form. Null when the entry has no installable package/remote. */
+  config: McpServerConfig | null;
+  /** Names of env vars / headers the user must fill in before the server will connect. */
+  requiredInputs: string[];
+}
+
+/** Payload of SEARCH_MCP_REGISTRY ACK response. */
+export interface McpRegistrySearchResult {
+  servers: McpRegistryServer[];
+  /** Opaque cursor for the next page, or null when there are no more results. */
+  nextCursor: string | null;
 }
 
 /**

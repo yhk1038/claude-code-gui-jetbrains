@@ -163,6 +163,8 @@ export enum MessageType {
   ADD_MCP_SERVER = 'ADD_MCP_SERVER',
   /** Remove a named MCP server via `claude mcp remove`. inbound webview→backend */
   REMOVE_MCP_SERVER = 'REMOVE_MCP_SERVER',
+  /** Search the official MCP registry for installable servers. inbound webview→backend */
+  SEARCH_MCP_REGISTRY = 'SEARCH_MCP_REGISTRY',
 
   // -- Plugin updates --
   /** Check for available plugin updates. */

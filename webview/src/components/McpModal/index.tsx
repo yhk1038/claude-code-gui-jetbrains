@@ -1,21 +1,28 @@
 import { useEffect, useState } from 'react';
-import { XMarkIcon, PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, PlusIcon, ArrowPathIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { Portal } from '@/components/Portal';
-import { McpServer } from '@/shared';
+import { McpServer, McpRegistryServer } from '@/shared';
+import { ParsedMcpServer } from '@/utils/parseMcpJson';
 import { useMcpServers } from '@/hooks/useMcpServers';
+import { registryServerToPrefill } from '@/hooks/useMcpRegistry';
 import { McpServerList } from './McpServerList';
 import { McpServerDetail } from './McpServerDetail';
 import { McpAddForm } from './McpAddForm';
+import { McpMarketplace } from './McpMarketplace';
 
 interface Props {
   onClose: () => void;
 }
 
-type View = { kind: 'list' } | { kind: 'detail'; name: string } | { kind: 'add' };
+type View =
+  | { kind: 'list' }
+  | { kind: 'detail'; name: string }
+  | { kind: 'add'; prefill?: { name: string; json: string } }
+  | { kind: 'marketplace' };
 
 export function McpModal(props: Props) {
   const { onClose } = props;
-  const { servers, loading, refreshing, error, fetch, reconnect, setEnabled, addServer, removeServer, authenticate, clearAuth } = useMcpServers();
+  const { servers, configPath, loading, refreshing, error, fetch, reconnect, setEnabled, addServer, removeServer, authenticate, clearAuth } = useMcpServers();
 
   const [view, setView] = useState<View>({ kind: 'list' });
 
@@ -63,17 +70,34 @@ export function McpModal(props: Props) {
     await fetch();
   }
 
-  async function handleAdd(
-    name: string,
-    config: Record<string, unknown>,
-    scope: string,
-  ): Promise<void> {
-    await addServer(name, config, scope);
-    setView({ kind: 'list' });
+  async function handleAdd(serversToAdd: ParsedMcpServer[], scope: string): Promise<void> {
+    const failures: string[] = [];
+    for (const s of serversToAdd) {
+      try {
+        await addServer(s.name, s.config, scope);
+      } catch (err) {
+        failures.push(`${s.name}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
     await fetch();
+    if (failures.length > 0) {
+      // Some (or all) failed — keep the form open so the user can fix and retry.
+      // Servers that succeeded are already reflected by the refetch above.
+      throw new Error(
+        `${failures.length}/${serversToAdd.length} server(s) failed to add:\n${failures.join('\n')}`,
+      );
+    }
+    setView({ kind: 'list' });
+  }
+
+  function handlePick(server: McpRegistryServer): void {
+    // Marketplace → Add form: pre-fill name + config JSON, let the user fill any
+    // required env/secret values, then add via the same `claude mcp add-json` path.
+    setView({ kind: 'add', prefill: registryServerToPrefill(server) });
   }
 
   const selectedServer = getSelectedServer();
+  const ownHeaderView = view.kind === 'add' || view.kind === 'marketplace';
 
   return (
     <Portal>
@@ -86,10 +110,10 @@ export function McpModal(props: Props) {
         <div className="w-full max-w-lg bg-surface-raised border border-border-default rounded-xl shadow-2xl overflow-hidden flex flex-col"
              style={{ maxHeight: '50rem', minHeight: '32rem' }}>
           {/* Header */}
-          {view.kind !== 'add' && (
+          {!ownHeaderView && (
             <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
               <h2 className="text-lg font-semibold text-text-primary">MCP servers</h2>
-              
+
               <div className="flex items-center gap-1">
                 {view.kind === 'list' && (
                   <button
@@ -99,6 +123,15 @@ export function McpModal(props: Props) {
                     title="Refresh MCP servers"
                   >
                     <ArrowPathIcon className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+                  </button>
+                )}
+                {view.kind === 'list' && (
+                  <button
+                    onClick={() => setView({ kind: 'marketplace' })}
+                    className="w-8 h-8 flex items-center justify-center rounded text-gray-400 hover:bg-gray-500/50 transition-colors"
+                    title="Browse MCP registry"
+                  >
+                    <MagnifyingGlassIcon className="w-5 h-5" />
                   </button>
                 )}
                 {view.kind === 'list' && (
@@ -122,18 +155,20 @@ export function McpModal(props: Props) {
 
           {/* Body */}
           <div className="flex-1 overflow-hidden flex flex-col">
-            {loading && (
+            {/* loading/error reflect the configured-servers list — not the
+                marketplace or add form, which manage their own state. */}
+            {!ownHeaderView && loading && (
               <div className="flex-1 flex items-center justify-center text-md text-text-tertiary">
                 Checking MCP server health…
               </div>
             )}
-            {!loading && error && (
+            {!ownHeaderView && !loading && error && (
               <div className="flex-1 flex items-center justify-center px-4">
                 <p className="text-sm text-state-error-fg text-center">{error}</p>
               </div>
             )}
             {!loading && !error && view.kind === 'list' && (
-              <McpServerList servers={servers} onSelect={handleSelect} />
+              <McpServerList servers={servers} configPath={configPath} onSelect={handleSelect} />
             )}
             {!loading && !error && view.kind === 'detail' && selectedServer && (
               <McpServerDetail
@@ -151,8 +186,14 @@ export function McpModal(props: Props) {
                 Server not found.
               </div>
             )}
+            {view.kind === 'marketplace' && (
+              <McpMarketplace onPick={handlePick} onBack={() => setView({ kind: 'list' })} />
+            )}
             {view.kind === 'add' && (
               <McpAddForm
+                key={view.prefill?.json ?? 'blank'}
+                initialName={view.prefill?.name}
+                initialJson={view.prefill?.json}
                 onAdd={handleAdd}
                 onCancel={() => setView({ kind: 'list' })}
               />

@@ -24,6 +24,7 @@ export async function getMcpServersHandler(
       requestId: message.requestId,
       status: 'ok',
       servers: result.servers,
+      configPath: result.configPath,
     });
   } catch (err) {
     connections.sendTo(connectionId, MessageType.ACK, {

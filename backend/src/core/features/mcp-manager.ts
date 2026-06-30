@@ -14,6 +14,17 @@ function claudeJsonPath(): string {
   return join(process.env.CLAUDE_CONFIG_DIR ?? homedir(), '.claude.json');
 }
 
+/**
+ * Display form of the global config path, shown next to the user/local scope
+ * groups in the UI. Resolves to `~/.claude.json` normally, or the absolute
+ * `$CLAUDE_CONFIG_DIR/.claude.json` when that env var overrides the home dir —
+ * so the displayed source path always matches where `claude mcp add` writes.
+ */
+export function claudeJsonDisplayPath(): string {
+  const dir = process.env.CLAUDE_CONFIG_DIR;
+  return dir ? join(dir, '.claude.json') : '~/.claude.json';
+}
+
 async function readClaudeJson(): Promise<Record<string, unknown>> {
   try {
     const p = claudeJsonPath();
@@ -56,7 +67,7 @@ export async function getMcpServers(): Promise<McpServersResult> {
   const names = parseMcpList(listOut).map((s) => s.name);
 
   if (names.length === 0 && disabled.length === 0) {
-    return { servers: [] };
+    return { servers: [], configPath: claudeJsonDisplayPath() };
   }
 
   // Fetch details for all connected/failed servers in parallel.
@@ -78,7 +89,7 @@ export async function getMcpServers(): Promise<McpServersResult> {
     return a.name.localeCompare(b.name);
   });
 
-  return { servers };
+  return { servers, configPath: claudeJsonDisplayPath() };
 }
 
 /**

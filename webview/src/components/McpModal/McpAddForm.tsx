@@ -1,52 +1,48 @@
 import { useState } from 'react';
-import { McpTransportType } from '@/shared';
+import { parseMcpJson, ParsedMcpServer } from '@/utils/parseMcpJson';
 
 interface Props {
-  onAdd: (name: string, config: Record<string, unknown>, scope: string) => Promise<void>;
+  /** Pre-fill the Name field (used when arriving from the marketplace). */
+  initialName?: string;
+  /** Pre-fill the JSON box (used when arriving from the marketplace). */
+  initialJson?: string;
+  onAdd: (servers: ParsedMcpServer[], scope: string) => Promise<void>;
   onCancel: () => void;
 }
 
-type TransportTab = 'stdio' | 'http' | 'sse';
+const PLACEHOLDER = `{
+  "mcpServers": {
+    "my-server": {
+      "command": "npx",
+      "args": ["-y", "my-mcp-server"]
+    }
+  }
+}`;
 
 export function McpAddForm(props: Props) {
-  const { onAdd, onCancel } = props;
-  const [name, setName] = useState('');
+  const { onAdd, onCancel, initialName, initialJson } = props;
+  const [name, setName] = useState(initialName ?? '');
   const [scope, setScope] = useState('user');
-  const [transport, setTransport] = useState<TransportTab>('stdio');
-  const [command, setCommand] = useState('');
-  const [args, setArgs] = useState('');
-  const [url, setUrl] = useState('');
+  const [json, setJson] = useState(initialJson ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent): Promise<void> {
     e.preventDefault();
-    if (!name.trim()) { setError('Name is required'); return; }
+    const parsed = parseMcpJson(json, name);
+    if (!parsed.ok) {
+      setError(parsed.error);
+      return;
+    }
     setError(null);
     setBusy(true);
     try {
-      const config = buildConfig();
-      await onAdd(name.trim(), config, scope);
+      await onAdd(parsed.servers, scope);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
     }
-  }
-
-  function buildConfig(): Record<string, unknown> {
-    if (transport === 'stdio') {
-      const argList = args.trim() ? args.trim().split(/\s+/) : [];
-      return {
-        type: McpTransportType.STDIO,
-        command: command.trim(),
-        args: argList.length ? argList : undefined,
-      };
-    }
-    return {
-      type: transport === 'http' ? McpTransportType.HTTP : McpTransportType.SSE,
-      url: url.trim(),
-    };
   }
 
   return (
@@ -55,17 +51,16 @@ export function McpAddForm(props: Props) {
         <h3 className="text-lg font-semibold text-text-primary">Add MCP Server</h3>
 
         {error && (
-          <p className="text-xs text-state-error-fg">{error}</p>
+          <p className="text-xs text-state-error-fg whitespace-pre-wrap">{error}</p>
         )}
 
-        {/* Name */}
-        <Field label="Name">
+        {/* Name (optional — used only when the pasted JSON has no mcpServers wrapper) */}
+        <Field label="Name" hint="Optional — only used when your JSON has no “mcpServers” wrapper">
           <input
             className="w-full text-md bg-surface-hover border border-border-default rounded px-2 py-1.5 text-text-primary focus:outline-none focus:border-accent-primary"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="my-server"
-            autoFocus
           />
         </Field>
 
@@ -82,57 +77,17 @@ export function McpAddForm(props: Props) {
           </select>
         </Field>
 
-        {/* Transport tabs */}
-        <div>
-          <label className="block text-sm text-text-tertiary mb-1">Transport</label>
-          <div className="flex gap-2">
-            {(['stdio', 'http', 'sse'] as TransportTab[]).map((t) => (
-              <button
-                key={t}
-                type="button"
-                className={`text-md px-3 py-1 rounded transition-colors ${
-                  transport === t
-                    ? 'bg-accent-primary text-white'
-                    : 'bg-surface-hover text-text-secondary hover:bg-surface-raised'
-                }`}
-                onClick={() => setTransport(t)}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Transport-specific fields */}
-        {transport === 'stdio' ? (
-          <>
-            <Field label="Command">
-              <input
-                className="w-full text-md bg-surface-hover border border-border-default rounded px-2 py-1.5 text-text-primary font-mono focus:outline-none focus:border-accent-primary"
-                value={command}
-                onChange={(e) => setCommand(e.target.value)}
-                placeholder="npx"
-              />
-            </Field>
-            <Field label="Arguments (space-separated)">
-              <input
-                className="w-full text-md bg-surface-hover border border-border-default rounded px-2 py-1.5 text-text-primary font-mono focus:outline-none focus:border-accent-primary"
-                value={args}
-                onChange={(e) => setArgs(e.target.value)}
-                placeholder="-y my-mcp-server"
-              />
-            </Field>
-          </>
-        ) : (
-          <Field label="URL">
-            <input
-              className="w-full text-sm bg-surface-hover border border-border-default rounded px-2 py-1.5 text-text-primary font-mono focus:outline-none focus:border-accent-primary"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="http://localhost:3000/mcp"
-            />
-          </Field>
-        )}
+        {/* JSON config */}
+        <Field label="Configuration (JSON)" hint="Paste an mcpServers config or a single server config">
+          <textarea
+            className="w-full h-44 text-md bg-surface-hover border border-border-default rounded px-2 py-1.5 text-text-primary font-mono resize-y focus:outline-none focus:border-accent-primary"
+            value={json}
+            onChange={(e) => setJson(e.target.value)}
+            placeholder={PLACEHOLDER}
+            autoFocus
+            spellCheck={false}
+          />
+        </Field>
       </div>
 
       {/* Footer */}
@@ -156,11 +111,12 @@ export function McpAddForm(props: Props) {
   );
 }
 
-function Field(props: { label: string; children: React.ReactNode }) {
+function Field(props: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
       <label className="block text-sm text-text-tertiary mb-1.5">{props.label}</label>
       {props.children}
+      {props.hint && <p className="mt-1 text-xs text-text-tertiary">{props.hint}</p>}
     </div>
   );
 }

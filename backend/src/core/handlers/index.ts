@@ -78,6 +78,7 @@ import {
   submitMcpOauthCallbackUrlHandler,
   addMcpServerHandler,
   removeMcpServerHandler,
+  searchMcpRegistryHandler,
 } from './mcpActionsHandler';
 
 export async function handleMessage(
@@ -318,6 +319,9 @@ export async function handleMessage(
       break;
     case MessageType.REMOVE_MCP_SERVER:
       await removeMcpServerHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.SEARCH_MCP_REGISTRY:
+      await searchMcpRegistryHandler(connectionId, message, connections, bridge);
       break;
     default:
       console.error('[node-backend]', `Unknown message type: ${message.type}`);
