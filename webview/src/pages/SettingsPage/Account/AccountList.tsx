@@ -8,10 +8,13 @@ import { AccountRow } from './AccountRow';
  * is not yet in the registry (covers accounts logged in outside the plugin).
  */
 export function AccountList() {
-  const { accounts, isLoading, error, save, switchTo, remove } = useAccounts();
+  const { accounts, activeEmail, isLoading, error, save, switchTo, remove } = useAccounts();
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  const autoSaveAttempted = useRef(false);
+  // The live account email we last auto-saved for. Keyed by email (not a one-shot
+  // boolean) so a NEW account logged in elsewhere (e.g. a terminal `claude` login)
+  // is captured too — not just the very first one seen on mount.
+  const autoSavedEmailRef = useRef<string | null>(null);
 
   const run = async (action: () => Promise<void>) => {
     if (busy) return;
@@ -27,15 +30,16 @@ export function AccountList() {
   };
 
   useEffect(() => {
-    if (isLoading || autoSaveAttempted.current) return;
-    const currentSaved = accounts.some((a) => a.active);
-    if (!currentSaved) {
-      autoSaveAttempted.current = true;
-      void run(save);
-    }
-    // run/save are recreated each render but autoSaveAttempted guards single execution
+    if (isLoading || !activeEmail) return;
+    // The live account is already saved (marked active) — nothing to capture.
+    if (accounts.some((a) => a.active)) return;
+    // Already attempted a save for this exact live account — don't loop on it.
+    if (autoSavedEmailRef.current === activeEmail) return;
+    autoSavedEmailRef.current = activeEmail;
+    void run(save);
+    // run/save are recreated each render; the per-email ref guards re-execution
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, accounts]);
+  }, [isLoading, accounts, activeEmail]);
 
   const handleDelete = (account: AccountListItem) => {
     void run(() => remove(account.id));

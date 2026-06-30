@@ -39,7 +39,13 @@ export function AuthProvider(props: AuthProviderProps) {
   const loggedIn: boolean | null = accountQuery.data ? accountQuery.data.loggedIn : null;
 
   const refetch = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: [MessageType.GET_ACCOUNT] });
+    // Invalidate both the single live-account query (login state, header avatar)
+    // and the saved-accounts list (active marker, switcher) so a login/switch made
+    // outside the GUI (e.g. in a terminal) is reflected on the next focus re-check.
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: [MessageType.GET_ACCOUNT] }),
+      queryClient.invalidateQueries({ queryKey: [MessageType.GET_ACCOUNTS] }),
+    ]);
   }, [queryClient]);
 
   useEffect(() => {

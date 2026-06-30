@@ -35,6 +35,12 @@ function useAccountsQuery(): UseQueryResult<AccountsResult, Error> {
   return useQuery<AccountsResult, Error>({
     queryKey: [MessageType.GET_ACCOUNTS],
     enabled: isConnected,
+    // External (terminal) account switches emit no ACCOUNTS_CHANGED, so override
+    // the global staleTime:Infinity / refetchOnWindowFocus:false: refetch the
+    // saved list + active marker when the IDE regains focus / reconnects.
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     queryFn: async () => {
       const result = (await send(MessageType.GET_ACCOUNTS)) as RawAccountsResponse;
       if (result?.status === 'ok') {

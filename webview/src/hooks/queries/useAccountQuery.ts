@@ -52,6 +52,13 @@ export function useAccountQuery(): UseQueryResult<AccountQueryResult, Error> {
   return useQuery<AccountQueryResult, Error>({
     queryKey: [MessageType.GET_ACCOUNT, workingDirectory],
     enabled: isConnected,
+    // The live account can change OUTSIDE the GUI (e.g. `claude` login / account
+    // switch in a terminal), which emits no ACCOUNTS_CHANGED. Override the global
+    // staleTime:Infinity / refetchOnWindowFocus:false so returning to the IDE
+    // re-runs `claude auth status` and the GUI reflects the current account.
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     queryFn: async () => {
       const result = (await send(MessageType.GET_ACCOUNT, {
         workingDir: workingDirectory ?? undefined,
