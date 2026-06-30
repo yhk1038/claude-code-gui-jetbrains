@@ -20,13 +20,15 @@ const injectedDefine = Object.fromEntries(
   ]),
 );
 
-await build({
-  entryPoints: ['src/server.ts'],
+// Shared esbuild options. Both the WebSocket server and the standalone account
+// CLI are bundled with the SAME platform/format/banner so the account helper —
+// which imports the same account-manager code (keychain via child_process under
+// ESM needs the createRequire shim) — runs identically to the backend.
+const common = {
   bundle: true,
   platform: 'node',
   target: 'node18',
   format: 'esm',
-  outfile: 'dist/backend.mjs',
   sourcemap: true,
   minify: false,
   external: [],
@@ -39,6 +41,14 @@ await build({
   banner: {
     js: `import { createRequire } from 'node:module';\nconst require = createRequire(import.meta.url);`,
   },
-});
+};
+
+// Main backend (WebSocket server). Name stays `backend.mjs` — cli/lib/runtime.sh
+// keys the runtime cache off it.
+await build({ ...common, entryPoints: ['src/server.ts'], outfile: 'dist/backend.mjs' });
+
+// Terminal account-switch helper, shipped beside backend.mjs in the standalone
+// runtime and invoked by `ccg account …`.
+await build({ ...common, entryPoints: ['src/cli/account.ts'], outfile: 'dist/account-cli.mjs' });
 
 console.log('Backend bundled successfully');

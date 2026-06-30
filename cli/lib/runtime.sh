@@ -32,7 +32,9 @@ runtime_is_cached() {
   local v dir
   v=$(_strip_v "$1")
   dir=$(runtime_cache_dir "$v")
-  [[ -f "$dir/backend.mjs" && -d "$dir/webview" ]]
+  # account-cli.mjs (added alongside backend.mjs) is required so a runtime cached
+  # before the account feature shipped re-downloads instead of failing `ccg account`.
+  [[ -f "$dir/backend.mjs" && -f "$dir/account-cli.mjs" && -d "$dir/webview" ]]
 }
 
 runtime_list_cached() {
@@ -44,7 +46,7 @@ runtime_list_cached() {
     [[ -d "$entry" ]] || continue
     name=$(basename "$entry")
     # Only list entries that look properly cached
-    if [[ -f "$entry/backend.mjs" && -d "$entry/webview" ]]; then
+    if [[ -f "$entry/backend.mjs" && -f "$entry/account-cli.mjs" && -d "$entry/webview" ]]; then
       printf '%s\n' "$name"
     fi
   done | sort

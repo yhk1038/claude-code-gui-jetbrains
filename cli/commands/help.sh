@@ -10,6 +10,7 @@ cmd_help() {
   ccg                  Run (default). Check port, compare versions, spawn backend, open browser.
   ccg run              Same as default. Use -h for details.
   ccg list, ls         Show the backend process tree (PIDs, ports, source labels).
+  ccg account, acct    Manage saved Claude accounts (list/use/current/save/rm).
   ccg update           Force-update runtime to the latest release.
   ccg stop             Stop the backend on port 19836, descendants included.
   ccg version, -v      Show installed ccg, cached runtimes, and running backend.

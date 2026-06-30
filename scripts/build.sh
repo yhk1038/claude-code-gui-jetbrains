@@ -184,6 +184,9 @@ case "${1:-}" in
     if [[ ! -f "$ROOT/backend/dist/backend.mjs" ]]; then
       echo "backend/dist/backend.mjs not found. Run 'be-build' first." >&2; exit 1
     fi
+    if [[ ! -f "$ROOT/backend/dist/account-cli.mjs" ]]; then
+      echo "backend/dist/account-cli.mjs not found. Run 'be-build' first." >&2; exit 1
+    fi
     if [[ ! -d "$ROOT/webview/dist" ]]; then
       echo "webview/dist not found. Run 'wv-build' first." >&2; exit 1
     fi
@@ -192,9 +195,10 @@ case "${1:-}" in
     rm -rf "$stage"
     mkdir -p "$stage/webview"
     cp "$ROOT/backend/dist/backend.mjs" "$stage/"
+    cp "$ROOT/backend/dist/account-cli.mjs" "$stage/"
     cp -R "$ROOT/webview/dist/." "$stage/webview/"
     out="$ROOT/dist/claude-code-gui-standalone-v$version.tgz"
-    tar -czf "$out" -C "$stage" backend.mjs webview
+    tar -czf "$out" -C "$stage" account-cli.mjs backend.mjs webview
     rm -rf "$stage"
     echo "Created: $out"
     ;;

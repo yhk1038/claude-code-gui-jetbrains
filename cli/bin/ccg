@@ -54,7 +54,7 @@ source "$CCG_LIB_DIR/spawn/index.sh"
 # (run/list/stop) expose cmd_<name> through their index.sh barrel.
 # shellcheck disable=SC1090
 for _cmd_module in \
-  run/index.sh list/index.sh stop/index.sh \
+  run/index.sh list/index.sh stop/index.sh account/index.sh \
   doctor.sh version.sh update.sh self-update.sh uninstall.sh help.sh; do
   source "$CCG_COMMANDS_DIR/$_cmd_module"
 done
@@ -72,6 +72,7 @@ ccg_main() {
   case "$cmd" in
     run)           cmd_run "$@" ;;
     list|ls)       cmd_list "$@" ;;
+    account|acct)  cmd_account "$@" ;;
     update)        cmd_update "$@" ;;
     stop)          cmd_stop "$@" ;;
     version|--version|-v) cmd_version "$@" ;;
