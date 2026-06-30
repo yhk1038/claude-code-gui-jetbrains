@@ -184,7 +184,7 @@ export function McpModal(props: Props) {
           )}
 
           {/* Body */}
-          <div className="flex-1 overflow-hidden flex flex-col">
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
             {/* loading/error reflect the configured-servers list — not the
                 marketplace or add form, which manage their own state. */}
             {!ownHeaderView && loading && (

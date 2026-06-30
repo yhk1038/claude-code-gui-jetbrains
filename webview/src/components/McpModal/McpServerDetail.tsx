@@ -75,7 +75,7 @@ export function McpServerDetail(props: Props) {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       {/* Header */}
       <div className="flex items-center gap-2 px-2.5 pt-4 pb-2">
         <button
@@ -87,7 +87,7 @@ export function McpServerDetail(props: Props) {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-2 space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-2 space-y-4">
         {/* Error box — above server name,커서 스타일 */}
         {server.error && (
           <div className="p-3 rounded-lg border border-state-error-fg/40 bg-state-error-bg text-sm text-state-error-fg">
@@ -193,19 +193,21 @@ export function McpServerDetail(props: Props) {
                   View tools ({tools.length})
                 </button>
                 {toolsOpen && (
-                  <div className="mt-2 space-y-1">
+                  <ul className="mt-2 space-y-3.5 pl-8">
                     {tools.map((tool) => (
-                      <div key={tool.name} className="flex items-center gap-2 text-xs">
-                        <span className="font-mono text-text-primary">{tool.name}</span>
-                        {tool.annotations?.readOnly && (
-                          <span className="px-1 py-0.5 rounded bg-surface-hover text-text-tertiary">read-only</span>
-                        )}
-                        {tool.annotations?.destructive && (
-                          <span className="px-1 py-0.5 rounded bg-state-error-bg text-state-error-fg">destructive</span>
-                        )}
-                      </div>
+                      <li key={tool.name} className="list-disc">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-gray-400">{tool.name}</span>
+                          {tool.annotations?.readOnly && (
+                            <span className="px-1 py-0.5 rounded bg-surface-hover text-text-tertiary">read-only</span>
+                          )}
+                          {tool.annotations?.destructive && (
+                            <span className="px-1 py-0.5 rounded bg-state-error-bg text-state-error-fg">destructive</span>
+                          )}
+                        </div>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 )}
               </>
             ) : null}
