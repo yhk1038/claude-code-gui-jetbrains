@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { Portal } from '@/components/Portal';
 import { McpServer } from '@/shared';
 import { useMcpServers } from '@/hooks/useMcpServers';
@@ -15,7 +15,7 @@ type View = { kind: 'list' } | { kind: 'detail'; name: string } | { kind: 'add' 
 
 export function McpModal(props: Props) {
   const { onClose } = props;
-  const { servers, loading, error, fetch, reconnect, setEnabled, addServer, removeServer, authenticate, clearAuth } = useMcpServers();
+  const { servers, loading, refreshing, error, fetch, reconnect, setEnabled, addServer, removeServer, authenticate, clearAuth } = useMcpServers();
 
   const [view, setView] = useState<View>({ kind: 'list' });
 
@@ -91,6 +91,16 @@ export function McpModal(props: Props) {
               <h2 className="text-lg font-semibold text-text-primary">MCP servers</h2>
               
               <div className="flex items-center gap-1">
+                {view.kind === 'list' && (
+                  <button
+                    onClick={() => void fetch()}
+                    disabled={refreshing}
+                    className="w-8 h-8 flex items-center justify-center rounded text-gray-400 hover:bg-gray-500/50 transition-colors disabled:hover:bg-transparent"
+                    title="Refresh MCP servers"
+                  >
+                    <ArrowPathIcon className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+                  </button>
+                )}
                 {view.kind === 'list' && (
                   <button
                     onClick={() => setView({ kind: 'add' })}

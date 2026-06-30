@@ -8,6 +8,7 @@ export const MCP_SERVERS_QUERY_KEY = ['mcp-servers'] as const;
 export interface UseMcpServersReturn {
   servers: McpServer[];
   loading: boolean;
+  refreshing: boolean;
   error: string | null;
   fetch: () => Promise<void>;
   reconnect: (name: string) => Promise<McpServer | null>;
@@ -22,7 +23,7 @@ export function useMcpServers(): UseMcpServersReturn {
   const { send } = useBridge();
   const queryClient = useQueryClient();
 
-  const { data: servers = [], isPending: loading, error: queryError } = useQuery({
+  const { data: servers = [], isPending: loading, isFetching: refreshing, error: queryError } = useQuery({
     queryKey: MCP_SERVERS_QUERY_KEY,
     queryFn: async () => {
       const res = await send<{ status: string; servers?: McpServer[]; error?: string }>(
@@ -119,6 +120,7 @@ export function useMcpServers(): UseMcpServersReturn {
   return {
     servers,
     loading,
+    refreshing,
     error,
     fetch: invalidate,
     reconnect: (name) => reconnectMutation.mutateAsync(name),
