@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { XMarkIcon, PlusIcon, ArrowPathIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { Portal } from '@/components/Portal';
 import { McpServer, McpRegistryServer } from '@/shared';
@@ -25,6 +25,34 @@ export function McpModal(props: Props) {
   const { servers, configPath, loading, refreshing, error, fetch, reconnect, setEnabled, addServer, removeServer, authenticate, clearAuth } = useMcpServers();
 
   const [view, setView] = useState<View>({ kind: 'list' });
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Focus trap for the lifetime of the modal. The chat input underneath runs
+  // auto-focus timers (window focus, visibility change, …) that pull focus to
+  // its textarea whenever activeElement falls back to document.body — which
+  // happens the moment a non-focusable area inside this modal is clicked.
+  // Without a trap, clicking a result card or empty space yanks focus to the
+  // background composer. Mirrors ConfirmDialog: remember the opener, pull focus
+  // back if it escapes while open, and restore it on close.
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    dialogRef.current?.focus();
+
+    const handleFocusIn = (e: FocusEvent) => {
+      const dialog = dialogRef.current;
+      if (dialog && e.target instanceof Node && !dialog.contains(e.target)) {
+        dialog.focus();
+      }
+    };
+    document.addEventListener('focusin', handleFocusIn);
+
+    return () => {
+      document.removeEventListener('focusin', handleFocusIn);
+      if (previouslyFocused?.isConnected) {
+        previouslyFocused.focus();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -107,7 +135,9 @@ export function McpModal(props: Props) {
           if (e.target === e.currentTarget) onClose();
         }}
       >
-        <div className="w-full max-w-lg bg-surface-raised border border-border-default rounded-xl shadow-2xl overflow-hidden flex flex-col"
+        <div ref={dialogRef}
+             tabIndex={-1}
+             className="w-full max-w-lg bg-surface-raised border border-border-default rounded-xl shadow-2xl overflow-hidden flex flex-col focus:outline-none"
              style={{ maxHeight: '50rem', minHeight: '32rem' }}>
           {/* Header */}
           {!ownHeaderView && (
