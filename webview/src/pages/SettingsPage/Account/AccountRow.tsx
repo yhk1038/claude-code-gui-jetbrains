@@ -107,7 +107,7 @@ export function AccountRow(props: AccountRowProps) {
       {/* Actions */}
       <div className="flex items-center gap-1.5 shrink-0">
         {account.active ? (
-          <span className="flex items-center gap-1 text-[0.8461rem] text-state-success-fg">
+          <span className="flex items-center gap-1 text-[0.8461rem] text-state-success-fg pr-4">
             <CheckBadgeIcon className="w-4 h-4" />
             In use
           </span>
@@ -120,14 +120,18 @@ export function AccountRow(props: AccountRowProps) {
             Switch
           </button>
         )}
-        <button
-          onClick={() => onDelete(account)}
-          disabled={busy}
-          title="Remove account"
-          className="p-1.5 rounded-md text-text-tertiary hover:text-state-error-fg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          <TrashIcon className="w-3.5 h-3.5" />
-        </button>
+        {/* The active account can't be deleted — removing it would orphan the live
+            CLI credential slot. Switch to another account first to delete this one. */}
+        {!account.active && (
+          <button
+            onClick={() => onDelete(account)}
+            disabled={busy}
+            title="Remove account"
+            className="p-1.5 rounded-md text-text-tertiary hover:text-state-error-fg hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <TrashIcon className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
     </div>
   );
