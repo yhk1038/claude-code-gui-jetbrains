@@ -1,14 +1,20 @@
 import { IconType } from '@/types/commandPalette';
 import { StaticItem } from '../../types';
 
+export const OPEN_MCP_MODAL_EVENT = 'open-mcp-modal';
+
 export const customizeItems = [
-  new StaticItem('output-styles', 'Output styles', { icon: IconType.Terminal }),
-  new StaticItem('agents', 'Agents', { icon: IconType.Terminal }),
-  new StaticItem('hooks', 'Hooks', { icon: IconType.Terminal }),
-  new StaticItem('memory', 'Memory', { icon: IconType.Terminal }),
-  new StaticItem('permissions', 'Permissions', { icon: IconType.Terminal }),
-  new StaticItem('mcp-status', 'MCP status'),
-  new StaticItem('manage-mcp', 'Manage MCP servers', { icon: IconType.Terminal }),
+  new StaticItem('output-styles', 'Output styles'),
+  new StaticItem('agents', 'Agents'),
+  new StaticItem('hooks', 'Hooks'),
+  new StaticItem('memory', 'Memory'),
+  new StaticItem('permissions', 'Permissions'),
+  new StaticItem('manage-mcp', 'MCP Servers', {
+    disabled: false,
+    action: async () => {
+      window.dispatchEvent(new CustomEvent(OPEN_MCP_MODAL_EVENT));
+    },
+  }),
   new StaticItem('manage-plugins', 'Manage plugins'),
   new StaticItem('open-terminal', 'Open Claude in Terminal', {
     icon: IconType.Terminal,

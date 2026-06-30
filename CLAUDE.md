@@ -6,6 +6,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 JetBrains IDE용 Claude Code GUI 플러그인. Cursor의 Claude Code 확장과 동일한 UX를 JetBrains 환경에서 제공하는 것이 목표.
 
+## ★ 핵심 원칙 — CLI 동등성 & 공식 지원 비의존 (최우선, 위반 금지)
+
+이 프로젝트의 존재 이유는 **JetBrains 공식 Claude Code 플러그인이 Cursor 공식 확장보다 조잡한데 업데이트가 없어서, 우리가 직접 더 나은 것을 만든다**는 것이다. 따라서 다음을 **모든 기능 설계의 기준선**으로 삼는다. (신규 기여자·에이전트는 기능 작업 전에 반드시 숙지할 것.)
+
+1. **CLI 동등성**: "기존 사용자가 CLI(`claude ...`)에서 할 수 있는 것은 GUI로도 할 수 있어야 한다." 기능을 설계할 때 **"이걸 CLI 사용자는 무슨 명령으로 하나?"를 먼저 묻고**, 그 공식 명령을 기준 인터페이스로 삼는다.
+
+2. **공식 지원 비의존**: Claude의 **공식 SDK 라이브러리나 미문서화 내부 프로토콜에 의존하지 않는다.** 의존하면 "CLI에선 되는데 정책상·미출시로 GUI만 막히는" 종속이 생기고, 그 순간 이 프로젝트의 존재 이유가 무너진다. 공식 지원에 기댈 거였으면 애초에 시작할 이유가 없었다.
+
+3. **참고 대상은 UX만 모방한다**: Cursor 등 참고 대상에서 따라야 할 것은 **화면·기능(UX)**이지, 그것을 만드는 **내부 구현 수단**이 아니다. 예: Cursor가 MCP 상태 조회에 미문서화 `control_request{subtype:"mcp_status"}` 내부 프로토콜을 쓰더라도, 우리는 그 화면을 공식 `claude mcp list` 명령으로 구현한다.
+
+4. **우리가 직접 제어하는 통신은 우리 자산이다**: 우리가 stdin/stdout으로 claude를 직접 제어하는 것(`control_request`의 interrupt/set_model 등, `backend/src/core/claude-process.ts`)은 "공식 SDK 라이브러리 의존"이 **아니라 우리가 구현한 통신**이다. 그 완성도를 높이는 것은 옳다 — 단, 미문서화 subtype에 **의존하지 말고 보조 최적화로만 쓰며, 공식 CLI 명령 폴백을 항상 1순위로 보장**한다.
+
+> 안정성 판단 기준: **사용자가 터미널에서 직접 쓰는 공식 명령의 출력 계약**(예: `claude mcp list`의 텍스트 출력) > **프로그램 간 미문서화 내부 프로토콜**. 후자가 더 "구조화"돼 있어 편해 보여도, 안정성과 우리 철학 양면에서 전자가 우선이다.
+
 ## 아키텍처
 
 3개 레이어로 구성:

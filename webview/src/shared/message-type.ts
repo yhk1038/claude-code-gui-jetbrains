@@ -146,6 +146,24 @@ export enum MessageType {
   /** Detect the path to the `node` binary. */
   GET_DETECTED_NODE_PATH = 'GET_DETECTED_NODE_PATH',
 
+  // -- MCP server management --
+  /** List all MCP servers with status, scope, and config. inbound webview→backend */
+  GET_MCP_SERVERS = 'GET_MCP_SERVERS',
+  /** Reconnect (restart) a named MCP server. inbound webview→backend */
+  RECONNECT_MCP_SERVER = 'RECONNECT_MCP_SERVER',
+  /** Trigger the OAuth/auth flow for a named MCP server. inbound webview→backend */
+  AUTHENTICATE_MCP_SERVER = 'AUTHENTICATE_MCP_SERVER',
+  /** Clear saved authentication for a named MCP server. inbound webview→backend */
+  CLEAR_MCP_SERVER_AUTH = 'CLEAR_MCP_SERVER_AUTH',
+  /** Enable or disable a named MCP server (edits disabledMcpServers in config). inbound webview→backend */
+  SET_MCP_SERVER_ENABLED = 'SET_MCP_SERVER_ENABLED',
+  /** Submit a manual OAuth callback URL after a failed redirect. inbound webview→backend */
+  SUBMIT_MCP_OAUTH_CALLBACK_URL = 'SUBMIT_MCP_OAUTH_CALLBACK_URL',
+  /** Add a new MCP server via `claude mcp add-json`. inbound webview→backend */
+  ADD_MCP_SERVER = 'ADD_MCP_SERVER',
+  /** Remove a named MCP server via `claude mcp remove`. inbound webview→backend */
+  REMOVE_MCP_SERVER = 'REMOVE_MCP_SERVER',
+
   // -- Plugin updates --
   /** Check for available plugin updates. */
   GET_PLUGIN_UPDATES = 'GET_PLUGIN_UPDATES',

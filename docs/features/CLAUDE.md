@@ -8,3 +8,4 @@
 
 - [Editor Context Tag](./001-editor_context_tag/en.md) — 에디터에서 연 파일이나 선택한 코드를 자동으로 채팅 컨텍스트로 첨부하는 토글 태그 ([#122](https://github.com/yhk1038/claude-code-gui-jetbrains/issues/122), [#133](https://github.com/yhk1038/claude-code-gui-jetbrains/pull/133))
 - [Multi-Account Management](./002-multi_account_management/en.md) — 여러 Claude 계정을 저장하고 전환하며, 계정별 사용량을 한 화면에서 비교하는 멀티 계정 기능 ([#134](https://github.com/yhk1038/claude-code-gui-jetbrains/pull/134))
+- [MCP Server Management](./003-mcp_server_management/en.md) — GUI에서 MCP 서버를 조회·추가·제거·활성화·재연결하는 MCP 서버 관리 패널 ([#135](https://github.com/yhk1038/claude-code-gui-jetbrains/pull/135))

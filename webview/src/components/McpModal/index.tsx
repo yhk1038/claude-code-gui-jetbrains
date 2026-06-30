@@ -1,0 +1,167 @@
+import { useEffect, useState } from 'react';
+import { XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { Portal } from '@/components/Portal';
+import { McpServer } from '@/shared';
+import { useMcpServers } from '@/hooks/useMcpServers';
+import { McpServerList } from './McpServerList';
+import { McpServerDetail } from './McpServerDetail';
+import { McpAddForm } from './McpAddForm';
+
+interface Props {
+  onClose: () => void;
+}
+
+type View = { kind: 'list' } | { kind: 'detail'; name: string } | { kind: 'add' };
+
+export function McpModal(props: Props) {
+  const { onClose } = props;
+  const { servers, loading, error, fetch, reconnect, setEnabled, addServer, removeServer, authenticate, clearAuth } = useMcpServers();
+
+  const [view, setView] = useState<View>({ kind: 'list' });
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (view.kind !== 'list') {
+          setView({ kind: 'list' });
+        } else {
+          onClose();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [onClose, view]);
+
+  function handleSelect(nameOrSpecial: string): void {
+    if (nameOrSpecial === '__add__') {
+      setView({ kind: 'add' });
+    } else {
+      setView({ kind: 'detail', name: nameOrSpecial });
+    }
+  }
+
+  function getSelectedServer(): McpServer | null {
+    if (view.kind !== 'detail') return null;
+    return servers.find((s) => s.name === view.name) ?? null;
+  }
+
+  async function handleReconnect(name: string): Promise<void> {
+    await reconnect(name);
+    await fetch();
+  }
+
+  async function handleToggle(name: string, enabled: boolean): Promise<void> {
+    await setEnabled(name, enabled);
+    await fetch();
+  }
+
+  async function handleRemove(name: string, scope: string): Promise<void> {
+    await removeServer(name, scope);
+    setView({ kind: 'list' });
+    await fetch();
+  }
+
+  async function handleAdd(
+    name: string,
+    config: Record<string, unknown>,
+    scope: string,
+  ): Promise<void> {
+    await addServer(name, config, scope);
+    setView({ kind: 'list' });
+    await fetch();
+  }
+
+  const selectedServer = getSelectedServer();
+
+  return (
+    <Portal>
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-overlay-scrim"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        <div className="w-full max-w-lg bg-surface-raised border border-border-default rounded-xl shadow-2xl overflow-hidden flex flex-col"
+             style={{ maxHeight: '50rem', minHeight: '32rem' }}>
+          {/* Header */}
+          {view.kind !== 'add' && (
+            <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
+              <h2 className="text-lg font-semibold text-text-primary">MCP servers</h2>
+              
+              <div className="flex items-center gap-1">
+                {view.kind === 'list' && (
+                  <button
+                    onClick={() => setView({ kind: 'add' })}
+                    className="w-8 h-8 flex items-center justify-center rounded text-gray-400 hover:bg-gray-500/50 transition-colors"
+                    title="Add MCP server"
+                  >
+                    <PlusIcon className="w-5 h-5" />
+                  </button>
+                )}
+                <button
+                    onClick={onClose}
+                    className="w-8 h-8 flex items-center justify-center rounded text-gray-400 hover:bg-gray-500/50 transition-colors"
+                  >
+                  <XMarkIcon className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Body */}
+          <div className="flex-1 overflow-hidden flex flex-col">
+            {loading && (
+              <div className="flex-1 flex items-center justify-center text-md text-text-tertiary">
+                Checking MCP server health…
+              </div>
+            )}
+            {!loading && error && (
+              <div className="flex-1 flex items-center justify-center px-4">
+                <p className="text-sm text-state-error-fg text-center">{error}</p>
+              </div>
+            )}
+            {!loading && !error && view.kind === 'list' && (
+              <McpServerList servers={servers} onSelect={handleSelect} />
+            )}
+            {!loading && !error && view.kind === 'detail' && selectedServer && (
+              <McpServerDetail
+                server={selectedServer}
+                onBack={() => setView({ kind: 'list' })}
+                onReconnect={handleReconnect}
+                onAuthenticate={authenticate}
+                onClearAuth={clearAuth}
+                onToggleEnabled={handleToggle}
+                onRemove={handleRemove}
+              />
+            )}
+            {!loading && !error && view.kind === 'detail' && !selectedServer && (
+              <div className="flex-1 flex items-center justify-center text-md text-text-tertiary">
+                Server not found.
+              </div>
+            )}
+            {view.kind === 'add' && (
+              <McpAddForm
+                onAdd={handleAdd}
+                onCancel={() => setView({ kind: 'list' })}
+              />
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="px-4 py-5 border-t border-border-default">
+            <a
+              href="https://docs.anthropic.com/en/docs/claude-code/mcp"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-semibold text-text-tertiary hover:text-text-secondary underline underline-offset-2"
+            >
+              Learn more about MCP
+            </a>
+          </div>
+        </div>
+      </div>
+    </Portal>
+  );
+}

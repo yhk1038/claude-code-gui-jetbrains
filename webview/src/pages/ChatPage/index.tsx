@@ -11,6 +11,10 @@ import { UpdateBanner } from './UpdateBanner';
 import { ConnectionLostBanner } from './ConnectionLostBanner';
 import { BrowserPermissionBanner } from './BrowserPermissionBanner';
 import { BackgroundTasksPanel } from './BackgroundTasksPanel';
+import { McpModal } from '@/components/McpModal';
+import { OPEN_MCP_MODAL_EVENT } from '@/commandPalette/sections/customize/items';
+import { useMcpServers, MCP_SERVERS_QUERY_KEY } from '@/hooks/useMcpServers';
+import { useQueryClient } from '@tanstack/react-query';
 import { useChatInputFocus } from '../../contexts/ChatInputFocusContext';
 import { useChatStreamContext } from '../../contexts/ChatStreamContext';
 import { useSessionContext } from '../../contexts/SessionContext';
@@ -27,6 +31,22 @@ import { clampAutoScrollThreshold, nextAutoFollow, shouldShowScrollToBottom, AUT
 export function ChatPage() {
   // Redirect logged-out users to the login screen before they hit a failing chat.
   useLoginGate();
+
+  // pre-fetch: ChatPage 마운트 시 query를 활성화해 모달이 즉시 표시되도록
+  useMcpServers();
+  const queryClient = useQueryClient();
+  const [mcpModalOpen, setMcpModalOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => {
+      // 모달 오픈 시 캐시 invalidate → 최신 상태 보장
+      void queryClient.invalidateQueries({ queryKey: MCP_SERVERS_QUERY_KEY });
+      setMcpModalOpen(true);
+    };
+    window.addEventListener(OPEN_MCP_MODAL_EVENT, handler);
+    return () => window.removeEventListener(OPEN_MCP_MODAL_EVENT, handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { textareaRef, focus: focusInput } = useChatInputFocus();
   const { currentSessionId, currentSession } = useSessionContext();
@@ -225,6 +245,7 @@ export function ChatPage() {
       )}
 
       <BackgroundTasksPanel />
+      {mcpModalOpen && <McpModal onClose={() => setMcpModalOpen(false)} />}
     </div>
   );
 }
