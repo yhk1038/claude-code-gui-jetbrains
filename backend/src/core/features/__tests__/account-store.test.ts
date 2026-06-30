@@ -36,6 +36,8 @@ function meta(id: string, email: string): StoredAccount {
     authMethod: 'claudeai',
     createdAt: 1,
     updatedAt: 2,
+    usageCached: null,
+    usageCachedAt: 0,
   };
 }
 
