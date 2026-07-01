@@ -19,7 +19,7 @@ The key detail: it updates the CLI **the same way you installed it**. If you ins
 
 When a newer version exists, an **Update** control appears next to the version.
 
-![Update dropdown showing Stable and Latest with per-channel status icons](../assets/005-update-dropdown.png)
+![Update dropdown showing Stable and Latest with per-channel status icons](../../img/screenshot-cli-update-dropdown.png)
 
 Its shape depends on how the CLI was installed:
 
@@ -31,11 +31,11 @@ Its shape depends on how the CLI was installed:
 
 Before running, a dialog confirms the update — **updating replaces the CLI and can interrupt running Claude sessions.** While it runs, the control shows a spinner. On success you get a toast and the displayed version refreshes automatically.
 
-![Success toast: Claude Code v2.1.197 Updated](../assets/005-update-toast.png)
+![Success toast: Claude Code v2.1.197 Updated](../../img/screenshot-cli-update-toast.png)
 
 Once you're on the newest release, the button is replaced by a static **Up to date** note.
 
-![Up to date state](../assets/005-up-to-date.png)
+![Up to date state](../../img/screenshot-cli-up-to-date.png)
 
 ## When there's no Update button
 

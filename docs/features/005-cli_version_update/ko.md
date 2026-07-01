@@ -19,7 +19,7 @@
 
 더 최신 버전이 있으면 버전 옆에 **Update** 컨트롤이 나타납니다.
 
-![Stable/Latest 채널과 상태 아이콘이 표시된 업데이트 드롭다운](../assets/005-update-dropdown.png)
+![Stable/Latest 채널과 상태 아이콘이 표시된 업데이트 드롭다운](../../img/screenshot-cli-update-dropdown.png)
 
 모양은 설치 방식에 따라 달라집니다:
 
@@ -31,11 +31,11 @@
 
 실행 전에 확인 창이 뜹니다 — **업데이트는 CLI를 교체하므로 진행 중인 Claude 세션이 중단될 수 있습니다.** 실행하는 동안에는 컨트롤에 스피너가 돕니다. 성공하면 토스트가 뜨고 표시된 버전이 자동으로 갱신됩니다.
 
-![성공 토스트: Claude Code v2.1.197 Updated](../assets/005-update-toast.png)
+![성공 토스트: Claude Code v2.1.197 Updated](../../img/screenshot-cli-update-toast.png)
 
 최신 릴리스에 도달하면 버튼 대신 **Up to date** 표시가 나타납니다.
 
-![Up to date 상태](../assets/005-up-to-date.png)
+![Up to date 상태](../../img/screenshot-cli-up-to-date.png)
 
 ## Update 버튼이 없을 때
 
