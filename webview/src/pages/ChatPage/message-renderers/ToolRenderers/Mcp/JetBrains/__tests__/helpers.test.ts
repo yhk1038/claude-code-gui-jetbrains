@@ -1,6 +1,6 @@
 import {describe, it, expect} from 'vitest';
 import {
-    jetbrainsProductName, toolTitle, isJetBrainsTool, humanizeMcpToolName,
+    jetbrainsProductName, toolTitle, isJetBrainsTool, jetBrainsToolNamer,
     isTrivialResult, safeParseJson, asArray, basename, joinProjectPath, inputProjectPath,
     dirname, valueType, typeMismatch, resultIndicatesError, debuggerOutcome, debuggerHasExtraPayload,
 } from '../_shared/helpers';
@@ -27,9 +27,12 @@ describe('JetBrains _shared helpers', () => {
         expect(isJetBrainsTool('Bash')).toBe(false);
     });
 
-    it('humanizes any MCP tool name', () => {
-        expect(humanizeMcpToolName('mcp__idea__create_new_file')).toBe('IntelliJ IDEA: Create new file');
-        expect(humanizeMcpToolName('mcp__claude_ai_Gmail__search_threads')).toContain('[search_threads]');
+    it('exposes a JetBrains namer for the MCP humanizer registry', () => {
+        expect(jetBrainsToolNamer.matches('mcp__idea__create_new_file')).toBe(true);
+        expect(jetBrainsToolNamer.matches('mcp__claude_ai_Gmail__search_threads')).toBe(false);
+        expect(jetBrainsToolNamer.label('mcp__idea__create_new_file')).toBe('IntelliJ IDEA: Create new file');
+        // session-scope label is the quoted action only (no product prefix)
+        expect(jetBrainsToolNamer.sessionScopeLabel('mcp__idea__create_new_file')).toBe('"Create new file"');
     });
 
     it('asArray coerces non-arrays to [] (never throws)', () => {

@@ -9,7 +9,7 @@
  * parse the JSON result payloads the IDE tools return.
  */
 
-import {formatMcpToolName} from "../../_common";
+import type {McpToolNamer} from "../../_common";
 
 const MCP_PREFIX = 'mcp__';
 
@@ -142,14 +142,15 @@ export function toolTitle(name: string): string {
 }
 
 /**
- * Human label for any MCP tool — shared by the permission dialog and any generic
- * fallback. JetBrains → "IntelliJ IDEA: Create new file"; other MCP servers fall
- * back to the project's `formatMcpToolName` ("Gmail [search_threads]").
+ * This family's naming contract for the MCP humanizer registry (see
+ * `Mcp/humanize.ts`). Kept here beside the JetBrains name maps so general chat UI
+ * never imports JetBrains internals directly — it goes through the aggregator.
  */
-export function humanizeMcpToolName(name: string): string {
-    if (isJetBrainsTool(name)) return `${jetbrainsProductName(name)}: ${toolTitle(name)}`;
-    return formatMcpToolName(name);
-}
+export const jetBrainsToolNamer: McpToolNamer = {
+    matches: isJetBrainsTool,
+    label: (name) => `${jetbrainsProductName(name)}: ${toolTitle(name)}`,
+    sessionScopeLabel: (name) => `"${toolTitle(name)}"`,
+};
 
 /** Full catalog of JetBrains MCP tool suffixes (identical across IDEs). */
 export const JETBRAINS_TOOLS: string[] = [

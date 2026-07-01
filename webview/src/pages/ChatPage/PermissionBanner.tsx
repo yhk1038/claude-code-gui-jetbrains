@@ -3,7 +3,7 @@ import { ApprovalPanel } from './ApprovalPanel';
 import { OptionItem } from './ApprovalPanel/OptionButton';
 import { PendingPermission } from '../../hooks/usePendingPermissions';
 import { parseWorkflowName } from '@/utils/workflowName';
-import { humanizeMcpToolName, isJetBrainsTool, toolTitle } from './message-renderers/ToolRenderers/Mcp/JetBrains/_shared/helpers';
+import { humanizeMcpToolName, mcpToolSessionScopeLabel } from './message-renderers/ToolRenderers/Mcp/humanize';
 
 interface Props {
   permission: PendingPermission;
@@ -67,8 +67,7 @@ function getSessionLabel(toolName: string): string {
       return 'Yes, allow all workflows this session';
     default:
       if (toolName.startsWith('mcp__')) {
-        const label = isJetBrainsTool(toolName) ? `"${toolTitle(toolName)}"` : humanizeMcpToolName(toolName);
-        return `Yes, allow all ${label} this session`;
+        return `Yes, allow all ${mcpToolSessionScopeLabel(toolName)} this session`;
       }
       return `Yes, allow all ${toolName} this session`;
   }
