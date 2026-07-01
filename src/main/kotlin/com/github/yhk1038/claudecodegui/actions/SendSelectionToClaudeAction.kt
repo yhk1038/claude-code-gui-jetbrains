@@ -1,6 +1,6 @@
 package com.github.yhk1038.claudecodegui.actions
 
-import com.github.yhk1038.claudecodegui.bridge.NodeProcessManager
+import com.github.yhk1038.claudecodegui.bridge.NoopRpcHandler
 import com.github.yhk1038.claudecodegui.editor.ClaudeCodeVirtualFile
 import com.github.yhk1038.claudecodegui.services.NodeBackendService
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -226,27 +226,4 @@ class SendSelectionToClaudeAction : AnAction() {
     }
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
-
-    /**
-     * No-op RPC handler registered transiently while this action ensures the backend
-     * is running. The action never needs IDE-native callbacks, so every method is a
-     * minimal default. Released in [actionPerformed]'s finally block.
-     */
-    private object NoopRpcHandler : NodeProcessManager.RpcHandler {
-        override suspend fun openFile(path: String) {}
-        override suspend fun openDiff(filePath: String, oldContent: String, newContent: String, toolUseId: String?) {}
-        override suspend fun applyDiff(filePath: String, newContent: String, toolUseId: String?): Boolean = false
-        override suspend fun rejectDiff(toolUseId: String?) {}
-        override suspend fun refreshFiles(paths: List<String>) {}
-        override suspend fun createSession(workingDir: String) {}
-        override suspend fun openNewTab(workingDir: String) {}
-        override suspend fun openSession(sessionId: String, workingDir: String?) {}
-        override suspend fun openSettings(workingDir: String) {}
-        override suspend fun openTerminal(workingDir: String) {}
-        override suspend fun openUrl(url: String) {}
-        override suspend fun pickFiles(mode: String, multiple: Boolean): List<String> = emptyList()
-        override suspend fun updatePlugin() {}
-        override suspend fun requiresRestart(): Boolean = false
-        override suspend fun getIdeRoot(workingDir: String?): String? = null
-    }
 }

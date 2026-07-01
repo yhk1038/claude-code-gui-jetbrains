@@ -1,6 +1,8 @@
 package com.github.yhk1038.claudecodegui.hosting
 
 import com.intellij.ide.util.PropertiesComponent
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * IDE-side cache of the `hostMode` value (issue #7).
@@ -54,6 +56,66 @@ object HostModeCache {
     /** Read the cached host mode from the production PropertiesComponent store. */
     fun read(): HostMode = read(PropertiesComponentStore)
 
+    /**
+     * True when the production store already holds a pushed `hostMode` (any value).
+     * The startup restore path uses this to skip the first-push wait once a value
+     * has ever been cached — persistence makes that the common case.
+     */
+    fun hasCachedValue(): Boolean = PropertiesComponentStore.read() != null
+
     /** Cache the raw host-mode string pushed by the backend into the production store. */
-    fun update(raw: String) = update(PropertiesComponentStore, raw)
+    fun update(raw: String) {
+        update(PropertiesComponentStore, raw)
+        // Wake anyone parked in [Signal.await] on the very first push (issue #7 / PR #146).
+        firstPushSignal.complete()
+    }
+
+    /**
+     * Awaitable that closes the first-open timing race PR #146 flagged.
+     *
+     * On a fresh install the cache is empty until the backend's connect-time
+     * HOST_MODE_CHANGED push arrives. The IDE-startup restore path
+     * ([com.github.yhk1038.claudecodegui.startup.ChatHostRestoreActivity]) is the
+     * only place that must NOT guess EDITOR_TAB before that push lands, so it awaits
+     * this signal once. Every other entry point (the "+" button, Cmd+N, the popup,
+     * the tool-window factory) keeps reading the persistent cache synchronously with
+     * zero delay — the persisted value is already correct by then.
+     *
+     * The wait is bounded: if no push arrives before the timeout the caller gets the
+     * safe [HostMode.EDITOR_TAB] fallback, so startup is never blocked indefinitely
+     * (the lesson of issue #97). Because [PropertiesComponent] persists the value,
+     * this wait only ever matters on the first run before any push — subsequent runs
+     * short-circuit on the already-cached value.
+     *
+     * Kept free of any IDE API (talks to a [Store]) so it is unit-testable.
+     */
+    class Signal {
+        private val firstPush = CompletableDeferred<Unit>()
+
+        /** Mark the first backend push as received, releasing any pending [await]. */
+        fun complete() {
+            firstPush.complete(Unit)
+        }
+
+        /**
+         * Resolve the [HostMode] for [store]. Returns the cached value immediately
+         * when one is already present; otherwise suspends until [complete] fires or
+         * [timeoutMs] elapses, then reads the store (falling back to
+         * [HostMode.EDITOR_TAB] on timeout / empty cache).
+         */
+        suspend fun await(store: Store, timeoutMs: Long): HostMode {
+            if (store.read() != null) return read(store)
+            withTimeoutOrNull(timeoutMs) { firstPush.await() }
+            return read(store)
+        }
+
+        /** Await against the production [PropertiesComponentStore] (see [await]). */
+        suspend fun await(timeoutMs: Long): HostMode = await(PropertiesComponentStore, timeoutMs)
+    }
+
+    /**
+     * Process-wide signal completed by the production [update] on the first backend
+     * push. The startup restore path awaits this instance; all other reads ignore it.
+     */
+    val firstPushSignal = Signal()
 }
