@@ -24,7 +24,7 @@ export const CommandPalettePanel: React.FC<CommandPalettePanelProps> = ({
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const selectedItemRef = useRef<HTMLDivElement>(null);
-  const { pluginVersion, cliVersion } = useVersionInfo();
+  const { pluginVersion, cliVersion, refresh: refreshVersion, isLoading: versionRefreshing } = useVersionInfo();
   const { refresh } = useCliConfig();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -38,6 +38,15 @@ export const CommandPalettePanel: React.FC<CommandPalettePanelProps> = ({
     } finally {
       setRefreshing(false);
     }
+  };
+
+  // Clicking the version text re-queries the CLI version — same action as the
+  // Settings › About refresh button (both hit the shared [GET_VERSION] query).
+  const handleVersionRefresh = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (versionRefreshing) return;
+    await refreshVersion();
   };
 
   // Auto-scroll selected item into view
@@ -109,9 +118,15 @@ export const CommandPalettePanel: React.FC<CommandPalettePanelProps> = ({
             {refreshing ? 'Reloading…' : 'Reload commands'}
           </button>
         </div>
-        <div className="text-text-secondary/80">
+        <button
+          type="button"
+          onClick={handleVersionRefresh}
+          disabled={versionRefreshing}
+          title="Refresh version"
+          className="text-text-secondary/80 hover:text-text-secondary hover:underline disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+        >
           {cliVersion ? `v${pluginVersion} · ${APP_NAME} ${cliVersion}` : `v${pluginVersion}`}
-        </div>
+        </button>
       </div>
     </div>
   );
