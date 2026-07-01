@@ -20,12 +20,12 @@ import java.io.InputStreamReader
  *
  * Responsibilities:
  * 1. Find the `node` executable on PATH or well-known locations
- * 2. Locate the backend entry file (dev: project-relative, prod: extracted from JAR)
- * 3. Extract WebView static resources for the WEBVIEW_DIR env var
- * 4. Spawn `node backend.mjs` with correct env vars
- * 5. Read the first stdout line `PORT:{n}\n` -> expose via [port] Deferred
- * 6. Forward stderr to IDE logger
- * 7. Gracefully terminate the process on dispose
+ * 2. Await the shared resource-extraction gate for the backend entry + WEBVIEW_DIR
+ *    (extraction itself is owned by [com.github.yhk1038.claudecodegui.services.NodeBackendService])
+ * 3. Spawn `node backend.mjs` with correct env vars
+ * 4. Read the first stdout line `PORT:{n}\n` -> expose via [port] Deferred
+ * 5. Forward stderr to IDE logger
+ * 6. Gracefully terminate the process on dispose
  *
  * JSON-RPC dispatch is handled by [RpcWebSocketClient] via WebSocket /rpc endpoint.
  */
@@ -38,13 +38,6 @@ class NodeProcessManager(
      * project root) coexist without colliding on a fixed port. See issue #57.
      */
     private val requestedPort: Int = 0,
-    /**
-     * Disambiguates this backend's extraction temp dirs from other concurrently
-     * running backends (one per IDE project root). Without it, two backends share
-     * `tmpdir/claude-code-{backend,webview}` and one's `deleteRecursively`+re-extract
-     * races the other's live webview serving. See issue #57 / plan S2b.
-     */
-    private val instanceTag: String = "default",
     /**
      * When non-null, the project root lives inside this WSL distro, so the backend
      * is launched inside it via `wsl.exe` (node + claude run as Linux natives,
@@ -70,6 +63,16 @@ class NodeProcessManager(
      * coroutine; the listener is responsible for marshalling to the UI thread if needed.
      */
     private val onRestartRequested: (() -> Unit)? = null,
+    /**
+     * The shared, application-scoped extraction gate. The plugin's webview/backend
+     * resources are extracted once per (IDE product, plugin version) by
+     * [com.github.yhk1038.claudecodegui.services.NodeBackendService]; every backend
+     * awaits this Deferred instead of extracting itself. This is what closes issue
+     * #149: successive backend generations read the same already-extracted, never-
+     * deleted dir, so no generation's shutdown can delete a dir another is serving.
+     * Null only in unit tests that never reach the extraction step.
+     */
+    private val resourcesReady: Deferred<ExtractedResources>? = null,
 ) : Disposable {
 
     private val logger = Logger.getInstance(NodeProcessManager::class.java)
@@ -123,12 +126,6 @@ class NodeProcessManager(
     @Volatile
     private var disposed = false
 
-    // Temp dirs extracted from the plugin JAR for THIS instance (#120). Set ONLY when we
-    // actually extracted to java.io.tmpdir (production); left null in dev mode, where the
-    // backend/webview paths point at the source tree and must never be deleted. Passed to
-    // the backend as cleanup env so Node removes them on its own clean exit.
-    private var extractedBackendDir: File? = null
-    private var extractedWebviewDir: File? = null
 
     /** True only once the process has actually started and later exited (or failed to start). */
     val isDead: Boolean
@@ -193,17 +190,28 @@ class NodeProcessManager(
             }
 
             onProgress?.invoke(LoadingPhase.PREPARING_BACKEND)
-            val backendFile = findBackendFile()
-            if (backendFile == null) {
-                logger.error("Backend entry file (backend.mjs) not found.")
+            // Await the shared extraction gate instead of extracting here (#149). Bounded
+            // so a stuck extraction can't hang backend start indefinitely (the #97 lesson);
+            // on timeout/failure we fail-fast exactly like the old missing-backend path.
+            val resources = if (resourcesReady == null) null
+                else withTimeoutOrNull(RESOURCE_READY_TIMEOUT_MS) {
+                    try {
+                        resourcesReady.await()
+                    } catch (e: Exception) {
+                        logger.error("Plugin resource extraction failed", e)
+                        null
+                    }
+                }
+            if (resources == null) {
+                logger.error("Plugin resources not ready (extraction gate absent or timed out).")
                 lifecycle = Lifecycle.DEAD
                 _portDeferred.completeExceptionally(
-                    IllegalStateException("Backend entry file not found")
+                    IllegalStateException("Plugin resources not ready")
                 )
                 return@launch
             }
-
-            val webviewDir = extractWebviewResources()
+            val backendFile = resources.backendFile
+            val webviewDir: File? = resources.webviewDir
 
             logger.info("Starting Node.js backend: node=$nodePath, backend=${backendFile.absolutePath}, webviewDir=${webviewDir?.absolutePath}")
 
@@ -230,14 +238,9 @@ class NodeProcessManager(
                         webviewDir?.let { wv ->
                             WslPathResolver.toWslPath(wv.absolutePath)?.let { put("WEBVIEW_DIR", it) }
                         }
-                        // Self-cleanup of JAR-extracted temp dirs on clean exit (#120).
-                        // Set only for production extractions; absent in dev (source tree).
-                        extractedWebviewDir?.let { d ->
-                            WslPathResolver.toWslPath(d.absolutePath)?.let { put("CLEANUP_TEMP_WEBVIEW_DIR", it) }
-                        }
-                        extractedBackendDir?.let { d ->
-                            WslPathResolver.toWslPath(d.absolutePath)?.let { put("CLEANUP_TEMP_BACKEND_DIR", it) }
-                        }
+                        // No CLEANUP_TEMP_* env: resources are version-scoped and shared,
+                        // extracted once and never deleted on exit. Stale other-version dirs
+                        // are pruned at extraction time by PluginResourceExtractor (#149).
                     }
                     val cmd = WslPathResolver.buildWslNodeCommand(wslDistro, wslCwd, wslEnv, linuxBackend)
                     logger.info("Starting WSL backend (distro=$wslDistro, cwd=$wslCwd): ${cmd.joinToString(" ")}")
@@ -261,11 +264,8 @@ class NodeProcessManager(
                         if (webviewDir != null) {
                             put("WEBVIEW_DIR", webviewDir.absolutePath)
                         }
-                        // Self-cleanup of JAR-extracted temp dirs on clean exit (#120).
-                        // Set only for production extractions; absent in dev (source tree),
-                        // so the backend never deletes the source webview/dist or backend.mjs.
-                        extractedWebviewDir?.let { put("CLEANUP_TEMP_WEBVIEW_DIR", it.absolutePath) }
-                        extractedBackendDir?.let { put("CLEANUP_TEMP_BACKEND_DIR", it.absolutePath) }
+                        // No CLEANUP_TEMP_* env — see the WSL branch above (#149): resources
+                        // are version-scoped, extracted once, never deleted on process exit.
                         // Dynamic port: backend binds an OS-assigned free port when this is 0
                         // and reports the real port via its PORT:{n} stdout line. Lets one
                         // backend per IDE project root coexist without a fixed-port clash (#57).
@@ -531,351 +531,6 @@ class NodeProcessManager(
         }
     }
 
-    /**
-     * Find the backend entry file.
-     *
-     * Dev mode: look for `backend/dist/backend.mjs` relative to project root.
-     * Production: extract from JAR resource `/backend/backend.mjs` to temp directory.
-     */
-    private fun findBackendFile(): File? {
-        val devMode = System.getProperty("claude.dev.mode", "false").toBoolean() ||
-                System.getenv("CLAUDE_DEV_MODE") == "true"
-
-        if (devMode) {
-            // Dev mode: look in project's backend/dist/
-            val projectRoot = findPluginProjectRoot()
-            if (projectRoot != null) {
-                val devBackend = File(projectRoot, "backend/dist/backend.mjs")
-                if (devBackend.exists()) {
-                    logger.info("Using dev backend: ${devBackend.absolutePath}")
-                    return devBackend
-                }
-                logger.warn("Dev mode but backend not found at: ${devBackend.absolutePath}")
-            }
-        }
-
-        // Production: extract from JAR
-        return extractBackendFromJar()
-    }
-
-    /**
-     * Try to find the plugin project root by looking for build.gradle.kts
-     * up from the classpath or using project basePath heuristics.
-     */
-    private fun findPluginProjectRoot(): File? {
-        // Heuristic 1: Check if we're running from Gradle runIde (common dev scenario)
-        // The working directory is often the project root in that case
-        val cwd = File(System.getProperty("user.dir"))
-        if (File(cwd, "backend/dist/backend.mjs").exists()) {
-            return cwd
-        }
-
-        // Heuristic 2: Check system property (set by runIde task in build.gradle.kts)
-        System.getProperty("plugin.project.root")?.let { root ->
-            val rootFile = File(root)
-            if (rootFile.exists() && File(rootFile, "backend/dist/backend.mjs").exists()) {
-                return rootFile
-            }
-        }
-
-        // Heuristic 3: Check environment variable (manual override)
-        System.getenv("PLUGIN_PROJECT_ROOT")?.let { root ->
-            val rootFile = File(root)
-            if (rootFile.exists() && File(rootFile, "backend/dist/backend.mjs").exists()) {
-                return rootFile
-            }
-        }
-
-        // Heuristic 4: Walk up from class location
-        try {
-            val classUrl = javaClass.protectionDomain.codeSource?.location?.toURI()
-            if (classUrl != null) {
-                var dir = File(classUrl).parentFile
-                repeat(5) {
-                    if (dir != null && File(dir, "backend/dist/backend.mjs").exists()) {
-                        return dir
-                    }
-                    dir = dir?.parentFile
-                }
-            }
-        } catch (e: Exception) {
-            logger.debug("Class location lookup failed: ${e.message}")
-        }
-
-        return null
-    }
-
-    /**
-     * Extract backend.mjs from JAR resources to a temp directory.
-     */
-    private fun extractBackendFromJar(): File? {
-        return try {
-            val tempDir = File(System.getProperty("java.io.tmpdir"), "claude-code-backend-$instanceTag")
-
-            // Always re-extract for latest version
-            if (tempDir.exists()) {
-                tempDir.deleteRecursively()
-            }
-            tempDir.mkdirs()
-
-            // Try to extract backend.mjs from /backend/ resource path
-            val backendStream = javaClass.getResourceAsStream("/backend/backend.mjs")
-            if (backendStream != null) {
-                val targetFile = File(tempDir, "backend.mjs")
-                backendStream.use { input ->
-                    targetFile.outputStream().use { output ->
-                        input.copyTo(output)
-                    }
-                }
-                logger.info("Extracted backend.mjs to: ${targetFile.absolutePath}")
-                // Production extraction only — mark this temp dir for self-cleanup (#120).
-                extractedBackendDir = tempDir
-                return targetFile
-            }
-
-            logger.warn("Backend resource /backend/backend.mjs not found in JAR")
-            null
-        } catch (e: Exception) {
-            logger.error("Failed to extract backend from JAR", e)
-            null
-        }
-    }
-
-    /**
-     * Extract WebView static resources for the Node.js backend to serve.
-     *
-     * Dev mode: return the webview dist directory directly (Vite build output).
-     * Production: extract from JAR /webview/ to temp directory.
-     */
-    private fun extractWebviewResources(): File? {
-        val devMode = System.getProperty("claude.dev.mode", "false").toBoolean() ||
-                System.getenv("CLAUDE_DEV_MODE") == "true"
-
-        if (devMode) {
-            val projectRoot = findPluginProjectRoot()
-            if (projectRoot != null) {
-                val devWebview = File(projectRoot, "webview/dist")
-                if (devWebview.exists()) {
-                    logger.info("Using dev webview dir: ${devWebview.absolutePath}")
-                    return devWebview
-                }
-            }
-        }
-
-        // Production: extract from JAR
-        return try {
-            val tempDir = File(System.getProperty("java.io.tmpdir"), "claude-code-webview-$instanceTag")
-
-            if (tempDir.exists()) {
-                tempDir.deleteRecursively()
-            }
-            tempDir.mkdirs()
-
-            // Production: locate the plugin JAR that ships /webview/ and extract it
-            // recursively. Do NOT gate this on getResource("/webview/"): IntelliJ's
-            // PluginClassLoader does not reliably resolve *directory* resource URLs, so
-            // that check silently fell through to the dev/runtime fallback below and left
-            // assets/ unextracted — every asset 404s and the panel renders blank (#52).
-            val webviewJar = locateWebviewJar()
-            if (webviewJar != null) {
-                extractFromJar(tempDir, webviewJar)
-            } else {
-                // Dev / IDE runtime: resources live on the filesystem, not in a JAR.
-                val webviewUrl = javaClass.getResource("/webview/")
-                // IDE runtime — try dynamic scanning of /webview/ directory first
-                var dynamicScanSucceeded = false
-                if (webviewUrl != null && webviewUrl.protocol == "file") {
-                    try {
-                        val webviewDir = File(webviewUrl.toURI())
-                        if (webviewDir.isDirectory) {
-                            webviewDir.walkTopDown().filter { it.isFile }.forEach { file ->
-                                val relativePath = file.relativeTo(webviewDir).path
-                                val targetFile = File(tempDir, relativePath)
-                                targetFile.parentFile?.mkdirs()
-                                file.inputStream().use { input ->
-                                    targetFile.outputStream().use { output ->
-                                        input.copyTo(output)
-                                    }
-                                }
-                                logger.debug("Extracted (scanned): $relativePath")
-                            }
-                            logger.info("Dynamically scanned and extracted all webview resources")
-                            dynamicScanSucceeded = true
-                        }
-                    } catch (e: Exception) {
-                        logger.debug("Dynamic webview scanning failed, falling back to known resources: ${e.message}")
-                    }
-                }
-
-                if (!dynamicScanSucceeded) {
-                    // Fallback: extract known resources individually
-                    val resources = listOf(
-                        "index.html",
-                        "favicon.svg",
-                        "favicon-unread.svg",
-                        "welcome-art-dark.svg",
-                        "welcome-art-light.svg"
-                    )
-
-                    for (resource in resources) {
-                        val inputStream = javaClass.getResourceAsStream("/webview/$resource")
-                        if (inputStream != null) {
-                            val targetFile = File(tempDir, resource)
-                            targetFile.parentFile?.mkdirs()
-                            inputStream.use { input ->
-                                targetFile.outputStream().use { output ->
-                                    input.copyTo(output)
-                                }
-                            }
-                            logger.debug("Extracted: $resource")
-                        }
-                    }
-
-                    // Also try to extract assets/ directory entries
-                    extractAssetsFromClasspath(tempDir)
-                }
-            }
-
-            logger.info("Extracted WebView resources to: ${tempDir.absolutePath}")
-            // Production extraction only — mark this temp dir for self-cleanup (#120).
-            // (Dev mode returns the source webview/dist above and never reaches here.)
-            extractedWebviewDir = tempDir
-            tempDir
-        } catch (e: Exception) {
-            logger.error("Failed to extract WebView resources", e)
-            null
-        }
-    }
-
-    /**
-     * Locate the plugin JAR that ships the bundled `/webview/` resources.
-     *
-     * Anchored on a *file* resource (`index.html`) rather than the `/webview/`
-     * directory. IntelliJ's PluginClassLoader reliably resolves file resources to
-     * `jar:` URLs, but does NOT reliably return a URL for *directory* resources, so
-     * `getResource("/webview/")` could be null/non-jar and silently skip the recursive
-     * extraction below — leaving assets/ unextracted and the panel blank (#52).
-     *
-     * The containing JAR is resolved via [java.net.JarURLConnection], which parses the
-     * `jar:` URL with the JDK rather than hand-munging the URL path — correct across
-     * platforms (Windows drive letters, percent-encoded spaces).
-     *
-     * Returns the JAR file containing webview/index.html, or null when the resources
-     * live on the filesystem (dev / IDE runtime) instead of a packaged JAR.
-     */
-    private fun locateWebviewJar(): File? {
-        val fileUrl = javaClass.getResource("/webview/index.html") ?: return null
-        if (fileUrl.protocol != "jar") return null
-
-        return try {
-            val connection = fileUrl.openConnection() as? java.net.JarURLConnection ?: return null
-            // jarFileURL is the file: URL of the containing JAR, parsed by the JDK.
-            val jar = File(connection.jarFileURL.toURI())
-            if (jar.isFile) jar else null
-        } catch (e: Exception) {
-            logger.debug("Could not resolve webview JAR from $fileUrl: ${e.message}")
-            null
-        }
-    }
-
-    /**
-     * Recursively extract every `webview/` entry from [jarFile] into [targetDir],
-     * recreating subdirectories (notably `assets/`). Verify the hashed JS bundle landed
-     * and throw on an incomplete extraction, so the caller surfaces a real error instead
-     * of silently serving a broken sandbox to the user (blank panel).
-     */
-    private fun extractFromJar(targetDir: File, jarFile: File) {
-        var extractedCount = 0
-        java.util.jar.JarFile(jarFile).use { jar ->
-            val entries = jar.entries()
-            while (entries.hasMoreElements()) {
-                val entry = entries.nextElement()
-                if (!entry.name.startsWith("webview/") || entry.isDirectory) continue
-
-                val relativePath = entry.name.removePrefix("webview/")
-                val targetFile = File(targetDir, relativePath)
-                targetFile.parentFile?.mkdirs()
-
-                jar.getInputStream(entry).use { input ->
-                    targetFile.outputStream().use { output ->
-                        input.copyTo(output)
-                    }
-                }
-                extractedCount++
-            }
-        }
-
-        // Hard verification: a real production build must have an assets/ directory
-        // with at least the hashed JS bundle. An empty extraction means the WebView
-        // would 404 on every page load — fail loudly so the user gets a real error
-        // instead of a blank panel.
-        val assetsDir = File(targetDir, "assets")
-        val hasHashedBundle = assetsDir.isDirectory &&
-            assetsDir.listFiles()?.any { it.name.startsWith("index-") && it.name.endsWith(".js") } == true
-        if (extractedCount == 0 || !hasHashedBundle) {
-            throw IllegalStateException(
-                "JAR extraction produced incomplete webview resources " +
-                    "(files=$extractedCount, hashedBundle=$hasHashedBundle, jar=${jarFile.absolutePath})"
-            )
-        }
-        logger.info("Extracted $extractedCount webview entries from JAR: ${jarFile.absolutePath}")
-    }
-
-    /**
-     * Try to extract assets from classpath when not running from JAR.
-     * This is a best-effort approach for IDE development runtime.
-     */
-    private fun extractAssetsFromClasspath(targetDir: File) {
-        // Try dynamic directory scanning first (works in IDE runtime where resources are on filesystem)
-        val assetsUrl = javaClass.getResource("/webview/assets/")
-        if (assetsUrl != null && assetsUrl.protocol == "file") {
-            try {
-                val assetsDir = File(assetsUrl.toURI())
-                if (assetsDir.isDirectory) {
-                    assetsDir.listFiles()?.forEach { file ->
-                        if (file.isFile) {
-                            val relativePath = "assets/${file.name}"
-                            val targetFile = File(targetDir, relativePath)
-                            targetFile.parentFile?.mkdirs()
-                            file.inputStream().use { input ->
-                                targetFile.outputStream().use { output ->
-                                    input.copyTo(output)
-                                }
-                            }
-                            logger.debug("Extracted asset (scanned): $relativePath")
-                        }
-                    }
-                    return
-                }
-            } catch (e: Exception) {
-                logger.debug("Directory scanning failed, falling back to known assets: ${e.message}")
-            }
-        }
-
-        // Fallback: extract known assets individually from classpath
-        val knownAssets = listOf(
-            "assets/index.js",
-            "assets/index.css",
-            "assets/codicon.ttf",
-            "assets/clawd.svg",
-            "assets/claude-code-logo.svg"
-        )
-
-        for (asset in knownAssets) {
-            val stream = javaClass.getResourceAsStream("/webview/$asset")
-            if (stream != null) {
-                val targetFile = File(targetDir, asset)
-                targetFile.parentFile?.mkdirs()
-                stream.use { input ->
-                    targetFile.outputStream().use { output ->
-                        input.copyTo(output)
-                    }
-                }
-                logger.debug("Extracted asset: $asset")
-            }
-        }
-    }
-
     // ─── Lifecycle ──────────────────────────────────────────────────
 
     /**
@@ -934,6 +589,12 @@ class NodeProcessManager(
     companion object {
         // How many recent stderr lines to retain for startup-failure diagnostics (#97).
         private const val MAX_STDERR_LINES = 30
+
+        // Upper bound on awaiting the shared resource-extraction gate before failing a
+        // backend start. Extraction is normally prewarmed at app init and already done by
+        // the time a backend starts; this only guards a cold first start on a slow disk so
+        // start() never hangs indefinitely (the #97 lesson). On timeout we fail-fast.
+        private const val RESOURCE_READY_TIMEOUT_MS = 30_000L
 
         /**
          * Unified "restart the plugin backend" exit code. The Node backend self-exits with

@@ -39,6 +39,10 @@
         <applicationService
             serviceImplementation="com.github.yhk1038.claudecodegui.services.NodeBackendService"/>
 
+        <!-- Prewarm version-scoped resource extraction at app init (issue #149) -->
+        <applicationInitializedListener
+            implementation="com.github.yhk1038.claudecodegui.startup.ResourceExtractionPrewarmActivity"/>
+
         <!-- Application service for CLI management -->
         <applicationService
             serviceImplementation="com.github.yhk1038.claudecodegui.services.ClaudeCliService"/>
