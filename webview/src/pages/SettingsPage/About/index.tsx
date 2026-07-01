@@ -3,6 +3,7 @@ import { SettingSection, SettingRow } from '../common';
 import { APP_NAME } from '@/config/app';
 import { ROUTE_META, Route } from '@/router/routes';
 import { useVersionInfo } from '@/hooks/useVersionInfo';
+import { CliUpdateControl } from './CliUpdateControl';
 
 export function AboutSettings() {
   const meta = ROUTE_META[Route.SETTINGS_ABOUT];
@@ -19,6 +20,7 @@ export function AboutSettings() {
 
         <SettingRow label={`${APP_NAME} Version`}>
           <div className="flex items-center gap-2">
+            <CliUpdateControl />
             <span className="text-sm text-text-secondary">{cliVersion ?? 'not detected'}</span>
             <button
               onClick={refresh}
