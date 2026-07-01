@@ -34,6 +34,7 @@ import { restartBackendHandler } from './restartBackend';
 import { openTerminalHandler } from './openTerminal';
 import { getVersionHandler } from './getVersion';
 import { getCliUpdateInfoHandler } from './getCliUpdateInfo';
+import { updateCliHandler } from './updateCli';
 import { getAccountHandler } from './getAccount';
 import { getAccountsHandler } from './getAccounts';
 import { saveAccountHandler } from './saveAccount';
@@ -192,6 +193,9 @@ export async function handleMessage(
       break;
     case MessageType.GET_CLI_UPDATE_INFO:
       await getCliUpdateInfoHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.UPDATE_CLI:
+      await updateCliHandler(connectionId, message, connections, bridge);
       break;
     case MessageType.GET_ACCOUNT:
       await getAccountHandler(connectionId, message, connections, bridge);

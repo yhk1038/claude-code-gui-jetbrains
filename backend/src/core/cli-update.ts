@@ -54,6 +54,19 @@ export function detectPackageManager(
   return PackageManager.UNKNOWN;
 }
 
+/**
+ * Which Homebrew cask the binary belongs to: the stable `claude-code` or the
+ * `claude-code@latest` channel. Derived from the Caskroom path segment so
+ * `brew upgrade` targets the cask the user actually installed.
+ */
+export function detectHomebrewCask(paths: Array<string | null | undefined>): string {
+  const joined = paths
+    .filter((p): p is string => typeof p === 'string' && p.length > 0)
+    .join('/')
+    .toLowerCase();
+  return joined.includes('claude-code@latest') ? 'claude-code@latest' : 'claude-code';
+}
+
 /** The update affordance a package manager supports. */
 export function updateModeFor(pm: PackageManager): UpdateMode {
   switch (pm) {

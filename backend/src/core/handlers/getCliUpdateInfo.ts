@@ -43,7 +43,7 @@ async function fetchDistTags(): Promise<{ stable: string | null; latest: string 
 }
 
 /** Resolve every path we know for the running `claude` binary (shim + realpath). */
-async function resolveClaudePaths(): Promise<Array<string | null>> {
+export async function resolveClaudePaths(): Promise<Array<string | null>> {
   const whichPath = await Claude.which();
   let realPath: string | null = null;
   if (whichPath) {

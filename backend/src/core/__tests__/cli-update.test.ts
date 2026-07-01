@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   detectPackageManager,
+  detectHomebrewCask,
   updateModeFor,
   isNewerVersion,
   isCliUpdatable,
@@ -67,6 +68,16 @@ describe('detectPackageManager', () => {
 
   it('returns UNKNOWN when no path resolves', () => {
     expect(detectPackageManager([null, undefined, ''], HOME)).toBe(PackageManager.UNKNOWN);
+  });
+});
+
+describe('detectHomebrewCask', () => {
+  it('defaults to the stable claude-code cask', () => {
+    expect(detectHomebrewCask(['/opt/homebrew/Caskroom/claude-code/2.1.0/claude'])).toBe('claude-code');
+  });
+  it('detects the @latest cask from the Caskroom path', () => {
+    expect(detectHomebrewCask(['/opt/homebrew/bin/claude', '/opt/homebrew/Caskroom/claude-code@latest/2.1.5/claude']))
+      .toBe('claude-code@latest');
   });
 });
 
