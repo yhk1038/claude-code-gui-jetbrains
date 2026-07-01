@@ -91,6 +91,10 @@ export enum MessageType {
   GET_ALL_USAGE = 'GET_ALL_USAGE',
   /** Read the plugin/backend version info. */
   GET_VERSION = 'GET_VERSION',
+  /** Detect the CLI install method + query npm for available versions (stable/latest). inbound webview→backend */
+  GET_CLI_UPDATE_INFO = 'GET_CLI_UPDATE_INFO',
+  /** Run the install-method-specific update command for the Claude Code CLI. inbound webview→backend */
+  UPDATE_CLI = 'UPDATE_CLI',
 
   // -- Authentication --
   /** Begin the CLI login flow (produces a login URL). */
