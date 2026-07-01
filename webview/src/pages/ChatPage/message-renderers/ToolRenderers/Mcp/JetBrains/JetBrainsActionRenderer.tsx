@@ -72,7 +72,13 @@ function parseApplyPatch(patch: string): PatchFile[] {
     return out.filter((f) => f.lines.length > 0 || f.op !== 'update');
 }
 
-function PatchView({patch, projectPath}: {patch: string; projectPath?: string}) {
+interface PatchViewProps {
+    patch: string;
+    projectPath?: string;
+}
+
+function PatchView(props: PatchViewProps) {
+    const {patch, projectPath} = props;
     const files = parseApplyPatch(patch);
     if (!files.length) return null;
 

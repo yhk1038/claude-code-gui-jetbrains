@@ -12,11 +12,13 @@ import Tippy from "@tippyjs/react/headless";
  * therefore be a single ref-accepting element. When `content` is empty the child
  * is returned untouched, so callers can pass a maybe-undefined value.
  */
-export function Tooltip(props: {
+interface Props {
     content?: ReactNode;
     children: ReactElement;
     placement?: "top" | "bottom" | "left" | "right";
-}) {
+}
+
+export function Tooltip(props: Props) {
     const {content, children, placement = "top"} = props;
     if (content === undefined || content === null || content === "") return children;
 
