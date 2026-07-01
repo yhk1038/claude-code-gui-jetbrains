@@ -39,10 +39,6 @@
         <applicationService
             serviceImplementation="com.github.yhk1038.claudecodegui.services.NodeBackendService"/>
 
-        <!-- Prewarm version-scoped resource extraction at app init (issue #149) -->
-        <applicationInitializedListener
-            implementation="com.github.yhk1038.claudecodegui.startup.ResourceExtractionPrewarmActivity"/>
-
         <!-- Application service for CLI management -->
         <applicationService
             serviceImplementation="com.github.yhk1038.claudecodegui.services.ClaudeCliService"/>
@@ -93,6 +89,13 @@
         <fileIconPatcher
             implementation="com.github.yhk1038.claudecodegui.editor.ClaudeCodeFileIconPatcher"/>
     </extensions>
+
+    <!-- Prewarm version-scoped resource extraction at app frame creation (issue #149) -->
+    <applicationListeners>
+        <listener
+            class="com.github.yhk1038.claudecodegui.startup.ResourceExtractionPrewarmActivity"
+            topic="com.intellij.ide.AppLifecycleListener"/>
+    </applicationListeners>
 
     <!-- Clean up session state only on real tab close (not on tab move/split) -->
     <projectListeners>

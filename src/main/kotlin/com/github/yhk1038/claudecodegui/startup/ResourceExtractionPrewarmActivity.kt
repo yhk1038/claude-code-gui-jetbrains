@@ -1,11 +1,10 @@
 package com.github.yhk1038.claudecodegui.startup
 
 import com.github.yhk1038.claudecodegui.services.NodeBackendService
-import com.intellij.ide.ApplicationInitializedListener
-import kotlinx.coroutines.CoroutineScope
+import com.intellij.ide.AppLifecycleListener
 
 /**
- * Prewarms plugin resource extraction at application initialization.
+ * Prewarms plugin resource extraction as early in the app lifecycle as is safe.
  *
  * The plugin's webview/backend resources are extracted from the JAR once per
  * (IDE product, plugin version) by [NodeBackendService]. Kicking that off here means an
@@ -16,13 +15,19 @@ import kotlinx.coroutines.CoroutineScope
  * This is only a prewarm: the gate is LAZY and self-heals on first use, so extraction
  * still runs correctly even when this listener doesn't (e.g. a dynamic plugin reload).
  *
- * `execute(CoroutineScope)` is the non-deprecated, non-internal entry point
- * ([ApplicationInitializedListener.componentsInitialized] is `@Deprecated`); it runs off
- * the EDT so the blocking extraction inside [NodeBackendService.prewarmResources] (itself
- * dispatched to IO) never touches the UI thread.
+ * ## Why AppLifecycleListener, not ApplicationInitializedListener
+ *
+ * `ApplicationInitializedListener.execute(CoroutineScope)` puts `kotlinx.coroutines.
+ * CoroutineScope` on the plugin↔platform classloader boundary. The plugin loads coroutines
+ * through its own PluginClassLoader while the platform loaded them through its PathClassLoader,
+ * so overriding that method fails at class-load time with a `LinkageError` (loader constraint
+ * violation) and the whole plugin fails to load. [AppLifecycleListener.appFrameCreated] is
+ * non-`@Internal` and exposes no coroutine types, so it sidesteps the constraint entirely.
+ * [NodeBackendService.prewarmResources] only starts a LAZY Deferred (non-blocking), so this
+ * runs safely on the EDT.
  */
-class ResourceExtractionPrewarmActivity : ApplicationInitializedListener {
-    override suspend fun execute(asyncScope: CoroutineScope) {
+class ResourceExtractionPrewarmActivity : AppLifecycleListener {
+    override fun appFrameCreated(commandLineArgs: MutableList<String>) {
         NodeBackendService.getInstance().prewarmResources()
     }
 }
