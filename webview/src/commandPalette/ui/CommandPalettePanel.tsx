@@ -118,15 +118,26 @@ export const CommandPalettePanel: React.FC<CommandPalettePanelProps> = ({
             {refreshing ? 'Reloading…' : 'Reload commands'}
           </button>
         </div>
-        <button
-          type="button"
-          onClick={handleVersionRefresh}
-          disabled={versionRefreshing}
-          title="Refresh version"
-          className="text-text-secondary/80 hover:text-text-secondary hover:underline disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-        >
-          {cliVersion ? `v${pluginVersion} · ${APP_NAME} ${cliVersion}` : `v${pluginVersion}`}
-        </button>
+        <div className="text-text-secondary/80">
+          {cliVersion ? (
+            <>
+              <span>{`v${pluginVersion} · `}</span>
+              {/* "Claude Code <version>" is the clickable unit — the plugin version
+                  (left) doesn't change at runtime, so refetching it makes no sense. */}
+              <button
+                type="button"
+                onClick={handleVersionRefresh}
+                disabled={versionRefreshing}
+                title="Refresh version"
+                className="hover:text-text-secondary hover:underline disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {`${APP_NAME} ${cliVersion}`}
+              </button>
+            </>
+          ) : (
+            <span>{`v${pluginVersion}`}</span>
+          )}
+        </div>
       </div>
     </div>
   );
