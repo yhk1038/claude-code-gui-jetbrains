@@ -30,9 +30,9 @@ export class JetBrainsAdapter implements IdeAdapter {
     console.log('[JetBrainsAdapter] Sent OPEN_SETTINGS via WebSocket bridge');
   }
 
-  async openFile(filePath: string): Promise<void> {
-    await getBridge().request(MessageType.OPEN_FILE, { filePath });
-    console.log('[JetBrainsAdapter] Sent OPEN_FILE via WebSocket bridge:', filePath);
+  async openFile(filePath: string, line?: number, column?: number): Promise<void> {
+    await getBridge().request(MessageType.OPEN_FILE, { filePath, line, column });
+    console.log('[JetBrainsAdapter] Sent OPEN_FILE via WebSocket bridge:', filePath, line ?? '');
   }
 
   async openTerminal(workingDir: string): Promise<void> {

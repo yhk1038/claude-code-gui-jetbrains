@@ -136,7 +136,7 @@ class NodeProcessManager(
      * The Node.js backend calls these when it needs IDE-native functionality.
      */
     interface RpcHandler {
-        suspend fun openFile(path: String)
+        suspend fun openFile(path: String, line: Int? = null, column: Int? = null)
         suspend fun openDiff(filePath: String, oldContent: String, newContent: String, toolUseId: String?)
         suspend fun applyDiff(filePath: String, newContent: String, toolUseId: String?): Boolean
         suspend fun rejectDiff(toolUseId: String?)

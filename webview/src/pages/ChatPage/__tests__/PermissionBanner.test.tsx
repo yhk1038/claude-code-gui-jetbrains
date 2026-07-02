@@ -177,3 +177,62 @@ describe('PermissionBanner', () => {
     });
   });
 });
+
+describe('PermissionBanner — MCP tool humanization', () => {
+  function mcpPermission(toolName: string, input: Record<string, unknown> = {}): PendingPermission {
+    return {
+      controlRequestId: 'ctrl-mcp',
+      toolName,
+      toolUseId: 'tool-mcp',
+      input,
+      riskLevel: 'high',
+      description: '',
+    };
+  }
+
+  it('humanizes a JetBrains tool in the title and the session option', () => {
+    render(
+      <PermissionBanner
+        permission={mcpPermission('mcp__idea__create_new_file', { pathInProject: 'README.md' })}
+        onApprove={vi.fn()}
+        onApproveForSession={vi.fn()}
+        onDeny={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Allow IntelliJ IDEA: Create new file?')).toBeInTheDocument();
+    expect(screen.getByText(/Yes, allow all .*Create new file.* this session/)).toBeInTheDocument();
+  });
+
+  it('falls back to "Server [tool]" for non-JetBrains MCP tools', () => {
+    render(
+      <PermissionBanner
+        permission={mcpPermission('mcp__claude_ai_Gmail__search_threads')}
+        onApprove={vi.fn()}
+        onApproveForSession={vi.fn()}
+        onDeny={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/Allow .*\[search_threads]\?/)).toBeInTheDocument();
+  });
+
+  it('does not crash when an MCP tool sends a non-string `path` (xdebug value path)', () => {
+    // Regression: `path: ["greeter","name"]` used to hit basename().split() and
+    // crash the whole chat. The MCP branch must never treat `path` as a string.
+    expect(() =>
+      render(
+        <PermissionBanner
+          permission={mcpPermission('mcp__idea__xdebug_get_value_by_path', {
+            sessionId: 'App',
+            path: ['greeter', 'name'],
+          })}
+          onApprove={vi.fn()}
+          onApproveForSession={vi.fn()}
+          onDeny={vi.fn()}
+        />,
+      ),
+    ).not.toThrow();
+    expect(screen.getByText('Allow IntelliJ IDEA: Debugger: inspect value?')).toBeInTheDocument();
+  });
+});

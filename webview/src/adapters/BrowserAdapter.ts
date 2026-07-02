@@ -55,10 +55,10 @@ export class BrowserAdapter implements IdeAdapter {
     console.log('[BrowserAdapter] Opened settings in new browser tab');
   }
 
-  async openFile(filePath: string): Promise<void> {
+  async openFile(filePath: string, line?: number, column?: number): Promise<void> {
     try {
-      await getBridge().request(MessageType.OPEN_FILE, { filePath });
-      console.log('[BrowserAdapter] Sent OPEN_FILE request:', filePath);
+      await getBridge().request(MessageType.OPEN_FILE, { filePath, line, column });
+      console.log('[BrowserAdapter] Sent OPEN_FILE request:', filePath, line ?? '');
     } catch (error) {
       console.error('[BrowserAdapter] Failed to open file:', filePath, error);
     }
