@@ -3,7 +3,7 @@ import { useChatStreamContext } from '@/contexts/ChatStreamContext';
 import { useChatInputState } from '@/contexts/ChatInputStateContext';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useCliConfig } from '@/contexts/CliConfigContext';
-import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
 import { getModelEffortConfig } from '@/types/effort';
 import { getAdapter } from '@/adapters';
 import { useConfirmDialog } from '@/components/ConfirmDialog/useConfirmDialog';
@@ -56,15 +56,15 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
   const chatInputState = useChatInputState();
   const session = useSessionContext();
   const { controlResponse } = useCliConfig();
-  const { settings } = useClaudeSettings();
   const { confirmDialog, confirm } = useConfirmDialog();
   const workflowState = useWorkflowState();
+  const currentModel = useCurrentModel();
 
   // The Effort row only makes sense on models that support effort. On others
   // (e.g. Haiku) it would render an empty, unresponsive row — the same
   // "nothing happens" symptom as issue #121 — so we drop it, matching the
   // Cursor extension (which unregisters the effort action for such models).
-  const supportsEffort = getModelEffortConfig(controlResponse, settings.model).supportsEffort;
+  const supportsEffort = getModelEffortConfig(controlResponse, currentModel).supportsEffort;
 
   // Services ref - always points to current React state
   const servicesRef = useRef<CommandPaletteServices>({

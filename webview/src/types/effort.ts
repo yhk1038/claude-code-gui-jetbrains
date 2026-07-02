@@ -13,7 +13,7 @@
  * model's `supportedEffortLevels` (low/medium/high/xhigh/max), and `auto` is
  * only the label shown while the level is unset.
  */
-import { toModelAlias, DEFAULT_MODEL_ALIAS } from './models';
+import { resolveModelInfo } from './models';
 import type { CliConfigControlResponse, ModelInfo } from './slashCommand';
 
 export const EFFORT_AUTO = 'auto';
@@ -139,16 +139,23 @@ export interface ModelEffortConfig {
 
 /**
  * Resolve the current model's effort configuration from the CLI control
- * response. The CLI keys models by short `value` (`default`, `sonnet`,
- * `haiku`); `settings.model` is either a full CLI model ID or `null`.
+ * response. `currentModel` may be a precise list value (e.g. `opus[1m]`), a
+ * coarse alias (`opus`), or a raw full model id — the same granularity mix
+ * `resolveModelInfo` already handles for the model indicator, so this reuses
+ * it rather than doing its own exact-only lookup.
+ *
+ * This matters in practice: the CLI's `value` for Opus with the 1M context
+ * window is the suffixed `opus[1m]`, not the bare `opus` alias. An exact-match
+ * lookup against that suffixed value missed it whenever `currentModel` was the
+ * bare alias, silently reporting `supportsEffort: false` and hiding the effort
+ * slider. `resolveModelInfo`'s alias-equivalence fallback fixes that.
  */
 export function getModelEffortConfig(
   controlResponse: CliConfigControlResponse | null,
-  settingsModel: string | null | undefined,
+  currentModel: string | null | undefined,
 ): ModelEffortConfig {
   const models: ModelInfo[] = controlResponse?.response?.response?.models ?? [];
-  const alias = settingsModel ? toModelAlias(settingsModel) : DEFAULT_MODEL_ALIAS;
-  const info = models.find((m) => m.value === alias);
+  const info = resolveModelInfo(models, currentModel);
   if (!info?.supportsEffort) return { supportsEffort: false, levels: [] };
   return { supportsEffort: true, levels: info.supportedEffortLevels ?? [] };
 }
