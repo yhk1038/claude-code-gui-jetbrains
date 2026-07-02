@@ -1,22 +1,103 @@
 import type { ModelInfo } from './slashCommand';
 
 /**
- * CLI model alias ("default", "opus", "sonnet", "haiku") used by the
+ * CLI model alias ("default", "opus", "sonnet", "haiku", "fable") used by the
  * Claude Code CLI as the short form of `ModelInfo.value` in the
  * initialize control_response. Full model IDs such as
- * `claude-opus-4-7[1m]` are mapped to one of these aliases via
- * `toModelAlias`.
+ * `claude-opus-4-7[1m]` or `claude-fable-5` are mapped to one of these
+ * aliases via `toModelAlias`.
  */
 export const DEFAULT_MODEL_ALIAS = 'default';
 
 export function toModelAlias(value: string | null | undefined): string {
   if (!value) return DEFAULT_MODEL_ALIAS;
   if (value === DEFAULT_MODEL_ALIAS) return DEFAULT_MODEL_ALIAS;
-  if (value === 'opus' || value === 'sonnet' || value === 'haiku') return value;
+  if (value === 'opus' || value === 'sonnet' || value === 'haiku' || value === 'fable') return value;
   if (value.includes('opus')) return 'opus';
   if (value.includes('sonnet')) return 'sonnet';
   if (value.includes('haiku')) return 'haiku';
+  if (value.includes('fable')) return 'fable';
   return DEFAULT_MODEL_ALIAS;
+}
+
+/**
+ * Fable 5 support (issue #153).
+ *
+ * Fable 5 is a limited-window promotional model. Whether the CLI lists it in
+ * the `initialize` model catalog is decided per-account by the server
+ * (`additionalModelOptionsCache` entitlement), NOT by CLI version — so many
+ * accounts never see it in the picker even though `--model fable` activates it
+ * fine. To honour CLI equivalence ("what works in the CLI works in the GUI")
+ * we surface Fable as a fallback item when the account's catalog omits it.
+ *
+ * `FABLE_PROMO_END` is the promotion window end used for the "included until"
+ * badge and, past that date, to stop offering the fallback.
+ * TODO(after 2026-07-07): the promotion window ends; revisit the fallback,
+ * badge, and announcement once Fable's post-promo availability is known.
+ */
+export const FABLE_PROMO_END = '2026-07-07';
+
+/**
+ * Badge shown next to the Fable row during the promo window. Kept in the CLI's
+ * own wording ("Included until July 7", verbatim from the Fable model row) —
+ * see issue #153 appendix. Update alongside `FABLE_PROMO_END` if the window
+ * shifts.
+ */
+export const FABLE_PROMO_BADGE = 'Included until July 7';
+
+/**
+ * Whether the Fable promotion window is still open on `now` (inclusive of the
+ * end day). ISO date strings compare lexicographically in calendar order, so a
+ * simple prefix compare against `FABLE_PROMO_END` suffices.
+ */
+export function isFablePromoActive(now: Date): boolean {
+  return now.toISOString().slice(0, 10) <= FABLE_PROMO_END;
+}
+
+/**
+ * Hardcoded Fable item appended only when the CLI-provided catalog lacks Fable.
+ * `value: 'fable'` matches the verified `--model fable` / `set_model` path.
+ * `description` is the CLI's own Fable row text (kept verbatim, not invented).
+ */
+export const FABLE_FALLBACK_MODEL: ModelInfo = {
+  value: 'fable',
+  displayName: 'Fable 5',
+  description: 'Most capable for your hardest and longest-running tasks',
+};
+
+/**
+ * Augment the CLI's model list with a Fable fallback when the account's catalog
+ * omits it — a merge, not a static override. If the CLI already lists Fable
+ * (entitled account), that dynamic entry wins and the hardcoded item is skipped
+ * via alias-based dedup, so this quietly no-ops once Fable is served natively.
+ * A CLI-served Fable is respected regardless of the promo window — the server,
+ * not us, decides post-promo availability; only our hardcoded fallback is
+ * gated on the promo still being active (`now`).
+ *
+ * An empty list is left untouched: length 0 means the CLI config hasn't loaded
+ * yet, and consumers treat that as "loading" (hide the tag / show a spinner).
+ * Injecting Fable there would defeat that, so only a loaded list is augmented.
+ */
+export function withFableFallback(models: ModelInfo[], now: Date): ModelInfo[] {
+  if (models.length === 0) return models;
+  if (models.some((m) => toModelAlias(m.value) === 'fable')) return models;
+  if (!isFablePromoActive(now)) return models;
+  return [...models, FABLE_FALLBACK_MODEL];
+}
+
+/**
+ * The model to treat as "current" for display and selection. The running
+ * session model (`systemInit` truth) wins once known; before the CLI is
+ * spawned (new session, `sessionModel` null) we predict with the user's saved
+ * default (`settings.model`); with neither set it's the default alias. This
+ * mirrors the auto-mode availability check so the indicator and auto gating
+ * never disagree.
+ */
+export function resolveCurrentModel(
+  sessionModel: string | null | undefined,
+  settingsModel: string | null | undefined,
+): string {
+  return sessionModel ?? settingsModel ?? DEFAULT_MODEL_ALIAS;
 }
 
 /**

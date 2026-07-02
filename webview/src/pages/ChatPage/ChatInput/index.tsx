@@ -36,7 +36,9 @@ import { basename } from './basename';
 import { RichInput } from './RichInput';
 import { TelemetryConsentBanner } from '../TelemetryConsentBanner';
 import { InputBanner } from '../InputBanner';
+import { FableNoticeBanner } from '../FableNoticeBanner';
 import { useTelemetryConsent, ConsentStatus, ConsentSource } from '@/hooks/useTelemetryConsent';
+import { useFableNotice } from '@/hooks/useFableNotice';
 import { getCaretOffset, setCaretOffset, getSelectionRange } from '@/utils/domSelection';
 import { MessageType } from '@/shared';
 
@@ -109,6 +111,7 @@ export function ChatInput() {
   // 숨기고(consentDismissed), 새 세션 전환 시 다시 노출한다. 수락/거절하면 status가 바뀌어 영영 숨는다.
   const { status: consentStatus, accept: acceptConsent, deny: denyConsent } = useTelemetryConsent();
   const [consentDismissed, setConsentDismissed] = useState(false);
+  const fableNotice = useFableNotice();
 
   // Native (IDE/Swing) drag-and-drop bridge: Kotlin → Node backend → IPC NATIVE_DROP_ENTRIES.
   // Currently unused (CefDragHandler forwards drops to the page as HTML5 events instead),
@@ -531,6 +534,8 @@ export function ChatInput() {
           onClose={() => setConsentDismissed(true)}
         />
       )}
+      {/* Fable 5 프로모션 공지: 프로모션 기간(~2026-07-07)이고 아직 닫지 않았을 때만 (issue #153) */}
+      {fableNotice.visible && <FableNoticeBanner onClose={fableNotice.dismiss} />}
       {/* Auto mode 강등 안내: auto를 요청했으나 CLI가 이 환경에서 미지원이라 기본 모드로 적용한 경우 */}
       {autoFallbackNotice && (
         <InputBanner
