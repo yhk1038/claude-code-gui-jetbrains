@@ -29,6 +29,7 @@ import { SettingKey } from '@/types/settings';
 import { clampAutoScrollThreshold, nextAutoFollow, shouldShowScrollToBottom, AUTO_SCROLL_THRESHOLD_DEFAULT, AUTO_SCROLL_BOTTOM_EPS } from '@/utils/autoScroll';
 import { useApi } from '../../contexts/ApiContext';
 import { mergeToolResults } from './mergeToolResults';
+import { isOlderPagePrepend } from './paging';
 
 export function ChatPage() {
   // Redirect logged-out users to the login screen before they hit a failing chat.
@@ -67,7 +68,6 @@ export function ChatPage() {
   // Scroll position & page tracking refs
   const isInitialScrollDoneRef = useRef(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const loadMoreTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLoadingMoreRef = useRef(false);
   const hasMoreOlderRef = useRef(false);
   // Reactive mirror of isLoadingMoreRef so the "loading earlier" indicator updates
@@ -105,7 +105,6 @@ export function ChatPage() {
   useEffect(() => {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      if (loadMoreTimeoutRef.current) clearTimeout(loadMoreTimeoutRef.current);
     };
   }, []);
 
@@ -116,34 +115,33 @@ export function ChatPage() {
     prevOldestUuidRef.current = null;
     isLoadingMoreRef.current = false;
     setIsLoadingMore(false);
-    if (loadMoreTimeoutRef.current) clearTimeout(loadMoreTimeoutRef.current);
   }, [currentSessionId]);
 
   const mergedMessages = useMemo(() => mergeToolResults(messages), [messages]);
 
-  // Scroll preservation on prepend loading
+  // Scroll preservation on older-page prepend.
+  //
+  // Anchoring is keyed purely on oldestLoadedUuid changing to a different non-null
+  // value — i.e. an actual older-page prepend. Streaming deltas grow the newest
+  // messages and leave oldestLoadedUuid untouched, so they never enter the
+  // anchoring branch (a streaming delta doing so is what made the viewport jump).
+  // The loading guard is intentionally neither read nor cleared here; its lifecycle
+  // is owned by the loadOlder promise (see loadMore), so a mid-request streaming
+  // delta can no longer release it early.
   useLayoutEffect(() => {
     const el = scrollContainerRef.current;
     if (!el || !currentSessionId) return;
 
-    if (isLoadingMoreRef.current) {
-      if (oldestLoadedUuid !== prevOldestUuidRef.current) {
-        // Older messages were prepended, adjust scroll position to prevent jumping
-        const newScrollHeight = el.scrollHeight;
-        const heightDiff = newScrollHeight - prevScrollHeightRef.current;
-        el.scrollTop = prevScrollTopRef.current + heightDiff;
+    const prepended = isOlderPagePrepend(prevOldestUuidRef.current, oldestLoadedUuid);
+    if (prepended) {
+      // Older messages were prepended, adjust scroll position to prevent jumping
+      const newScrollHeight = el.scrollHeight;
+      const heightDiff = newScrollHeight - prevScrollHeightRef.current;
+      el.scrollTop = prevScrollTopRef.current + heightDiff;
 
-        // Sync scroll baselines
-        prevScrollTopRef.current = el.scrollTop;
-        lastScrollHeightRef.current = el.scrollHeight;
-      }
-      // Always reset loading flag once render runs
-      isLoadingMoreRef.current = false;
-      setIsLoadingMore(false);
-      if (loadMoreTimeoutRef.current) {
-        clearTimeout(loadMoreTimeoutRef.current);
-        loadMoreTimeoutRef.current = null;
-      }
+      // Sync scroll baselines
+      prevScrollTopRef.current = el.scrollTop;
+      lastScrollHeightRef.current = el.scrollHeight;
     }
 
     prevScrollHeightRef.current = el.scrollHeight;
@@ -228,26 +226,20 @@ export function ChatPage() {
     prevScrollHeightRef.current = el.scrollHeight;
     prevScrollTopRef.current = el.scrollTop;
 
-    // Safety net: the loading flag is normally cleared by the layout-effect once
-    // the prepended page renders. If a response never changes state (e.g. an empty
-    // older page, all-duplicate entries, or a dropped reply), clear it after a
-    // timeout so paging can't get permanently stuck.
-    if (loadMoreTimeoutRef.current) clearTimeout(loadMoreTimeoutRef.current);
-    loadMoreTimeoutRef.current = setTimeout(() => {
-      isLoadingMoreRef.current = false;
-      setIsLoadingMore(false);
-      loadMoreTimeoutRef.current = null;
-    }, 5000);
-
-    api.sessions.loadOlder(currentSessionId, oldestLoadedUuid).catch(err => {
-      console.error('[ChatPage] Failed to load older messages:', err);
-      isLoadingMoreRef.current = false;
-      setIsLoadingMore(false);
-      if (loadMoreTimeoutRef.current) {
-        clearTimeout(loadMoreTimeoutRef.current);
-        loadMoreTimeoutRef.current = null;
-      }
-    });
+    // The loading guard is closed by the request's own lifecycle, not a wall-clock
+    // guess: loadOlder resolves on the backend ACK (the handler sends SESSION_LOADED
+    // then ACK). The .finally() clears the guard for every outcome — a normal page,
+    // an empty page, an all-duplicate page, or an error — so paging can neither get
+    // permanently stuck nor fire a duplicate request with the same cursor while one
+    // is still in flight.
+    api.sessions.loadOlder(currentSessionId, oldestLoadedUuid)
+      .catch(err => {
+        console.error('[ChatPage] Failed to load older messages:', err);
+      })
+      .finally(() => {
+        isLoadingMoreRef.current = false;
+        setIsLoadingMore(false);
+      });
   }, [currentSessionId, oldestLoadedUuid, api.sessions]);
 
   const handleScroll = useCallback(() => {
