@@ -1,6 +1,7 @@
 import type { Bridge } from './bridge-interface';
 import type { WebSocket } from 'ws';
 import { extractRoutingPath, selectRpcClientIndex } from './rpc-routing';
+import { readSettingsFile } from '../core/features/settings';
 import { MessageType } from '../shared';
 
 interface JsonRpcRequest {
@@ -58,6 +59,21 @@ export class JetBrainsBridge implements Bridge {
   addRpcClient(ws: WebSocket): void {
     this.rpcClients.add(ws);
     console.error('[node-backend]', 'RPC client connected');
+
+    // Push the current hostMode to the freshly connected IDE. The backend is the
+    // single source of truth for settings; on WSL2 the IDE-side JVM home and the
+    // Linux home diverge, so Kotlin cannot read the settings file reliably and would
+    // otherwise fall back to EDITOR_TAB (issue #7). Read it from the same file the
+    // webview writes through, then notify just this socket. Fire-and-forget — a read
+    // failure must not break RPC client registration.
+    readSettingsFile()
+      .then((settings) => {
+        const hostMode = typeof settings.hostMode === 'string' ? settings.hostMode : 'editor-tab';
+        this.pushHostMode(hostMode, ws);
+      })
+      .catch((err) => {
+        console.error('[node-backend]', 'Failed to push hostMode on RPC connect:', err);
+      });
 
     ws.on('message', (data: Buffer) => {
       const trimmed = data.toString().trim();
@@ -154,6 +170,32 @@ export class JetBrainsBridge implements Bridge {
       console.error('[node-backend]', `[DEBUG:bridge.request] sending: ${JSON.stringify(request)}`);
       client.send(JSON.stringify(request) + '\n');
     });
+  }
+
+  /**
+   * Send a JSON-RPC notification (no id, so no response is expected) to one IDE
+   * client, or broadcast it to every connected client when [target] is omitted.
+   * Used for Node→Kotlin state pushes that don't need an answer.
+   */
+  private notify(method: string, params: Record<string, unknown>, target?: WebSocket): void {
+    const notification: JsonRpcNotification = { jsonrpc: '2.0', method, params };
+    const payload = JSON.stringify(notification) + '\n';
+    const clients = target ? [target] : [...this.rpcClients];
+    for (const client of clients) {
+      if (client.readyState !== 1) continue;
+      client.send(payload);
+    }
+  }
+
+  /**
+   * Push the current `hostMode` (`editor-tab` | `tool-window`) to the IDE so Kotlin
+   * can cache it and route chat windows synchronously. The backend is the single
+   * source of truth for settings (CLAUDE.md), so Kotlin no longer reads the settings
+   * file for hostMode — it relies on this push (on RPC connect and on every hostMode
+   * save). Pass [target] to address one socket; omit it to reach all IDEs. See #7.
+   */
+  pushHostMode(hostMode: string, target?: WebSocket): void {
+    this.notify(MessageType.HOST_MODE_CHANGED, { hostMode }, target);
   }
 
   async openFile(path: string): Promise<void> {

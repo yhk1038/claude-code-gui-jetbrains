@@ -1,8 +1,12 @@
 package com.github.yhk1038.claudecodegui.services
 
+import com.github.yhk1038.claudecodegui.bridge.ExtractedResources
 import com.github.yhk1038.claudecodegui.bridge.NodeProcessManager
+import com.github.yhk1038.claudecodegui.bridge.PluginResourceExtractor
 import com.github.yhk1038.claudecodegui.bridge.RpcWebSocketClient
 import com.github.yhk1038.claudecodegui.bridge.WslPathResolver
+import com.github.yhk1038.claudecodegui.bridge.parseHostModeParam
+import com.github.yhk1038.claudecodegui.hosting.HostModeCache
 import com.github.yhk1038.claudecodegui.toolwindow.realization.LoadingPhase
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
@@ -47,13 +51,38 @@ class NodeBackendService : Disposable {
     private val backends = ConcurrentHashMap<String, BackendInstance>()
 
     /**
+     * Application-scoped resource-extraction gate (issue #149). The plugin's webview
+     * static files and `backend.mjs` are extracted from the plugin JAR **once per
+     * (IDE product, plugin version)** into a version-scoped dir, shared by every
+     * per-root backend and never deleted on process exit. Every [BackendInstance]
+     * awaits this Deferred instead of extracting itself, so successive backend
+     * generations read the same live dir — no generation's shutdown can delete a dir
+     * another is still serving (the root cause of the `Not found` blank panel).
+     *
+     * LAZY: nothing runs until [prewarmResources] (app-init) or the first backend
+     * awaits it, so a self-healing extraction still happens even if app-init is skipped
+     * (e.g. dynamic plugin reload).
+     */
+    private val resourcesReady: Deferred<ExtractedResources> =
+        scope.async(Dispatchers.IO, start = CoroutineStart.LAZY) {
+            PluginResourceExtractor().resolve()
+        }
+
+    /**
+     * Start resource extraction ahead of the first backend spawn. Called at app init so
+     * an IDE restart (which the plugin already requires after an update) is the natural
+     * moment extraction happens — by the time a panel opens, the gate is usually done.
+     * Idempotent: starting an already-started Deferred is a no-op.
+     */
+    fun prewarmResources() {
+        resourcesReady.start()
+    }
+
+    /**
      * One Node.js backend dedicated to a single IDE project root. Owns its
      * process, RPC socket, port, and the per-panel handlers for that root.
      */
     private inner class BackendInstance(private val basePath: String) {
-        // Stable per-root tag so this backend's extraction temp dirs don't collide
-        // with other roots' backends (plan S2b). Same root → same tag → safe reuse.
-        private val instanceTag: String = Integer.toHexString(basePath.hashCode())
         private var nodeProcessManager: NodeProcessManager? = null
         private var rpcClient: RpcWebSocketClient? = null
 
@@ -181,7 +210,6 @@ class NodeBackendService : Disposable {
                 // Reuse the last bound port on respawn (0 only on first start) so a WebView
                 // already pointing at this port reconnects instead of hitting a dead port.
                 requestedPort = lastPort,
-                instanceTag = instanceTag,
                 wslDistro = wsl?.distro,
                 wslCwd = wsl?.linuxPath,
                 onProgress = ::emitProgress,
@@ -190,6 +218,9 @@ class NodeBackendService : Disposable {
                 // @Synchronized and runs stop()+start(), so it can't re-enter the start()
                 // that is still in progress, and lastPort is reused for a seamless reconnect.
                 onRestartRequested = { restart() },
+                // Shared extraction gate: the manager awaits this instead of extracting its
+                // own temp dir, so all backend generations share one live dir (#149).
+                resourcesReady = resourcesReady,
             )
             nodeProcessManager = manager
             manager.start()
@@ -223,10 +254,34 @@ class NodeBackendService : Disposable {
                 // Route RPC-handling failures to the single Kotlin reporting point. This
                 // backend is connected (the error came over its socket), so prefer it.
                 onError = { throwable, where -> reportError(throwable, where, basePath) },
+                // One-way Node→Kotlin state pushes. HOST_MODE_CHANGED carries the current
+                // `hostMode`; the backend owns settings (CLAUDE.md) and on WSL2 Kotlin can't
+                // read the settings file (home paths diverge), so we cache the pushed value
+                // for synchronous host routing (issue #7). The method literal mirrors the
+                // shared MessageType enum on the TS side.
+                onNotification = ::handleRpcNotification,
             )
             rpcClient = client
             client.connect(port)
             logger.info("RPC WebSocket client connecting to port $port (basePath=$basePath)")
+        }
+
+        /**
+         * Handle a one-way Node→Kotlin JSON-RPC notification. Currently only
+         * HOST_MODE_CHANGED: cache the pushed `hostMode` so [com.github.yhk1038.claudecodegui.hosting.ChatHostRouter]
+         * can route chat windows synchronously without reading the settings file
+         * (which diverges from the Linux home on WSL2 — issue #7). Unknown methods
+         * are ignored; the method literal mirrors the shared MessageType enum (TS).
+         */
+        private fun handleRpcNotification(method: String, params: JsonObject) {
+            when (method) {
+                "HOST_MODE_CHANGED" -> {
+                    val hostMode = parseHostModeParam(params) ?: return
+                    HostModeCache.update(hostMode)
+                    logger.info("Cached hostMode from backend push: $hostMode (basePath=$basePath)")
+                }
+                else -> logger.warn("Unhandled RPC notification from backend: $method")
+            }
         }
 
         /** Tell the backend which IDE project root this socket serves, for IDE-bound routing. */

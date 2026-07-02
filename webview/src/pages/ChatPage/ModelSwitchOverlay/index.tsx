@@ -4,8 +4,16 @@ import { useChatStreamContext } from '@/contexts/ChatStreamContext';
 import { useBridge } from '@/hooks/useBridge';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useCliConfig } from '@/contexts/CliConfigContext';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
 import { LoadedMessageType } from '@/types';
-import { DEFAULT_MODEL_ALIAS, resolveModelInfo, resolveModelLabel } from '@/types/models';
+import {
+  FABLE_PROMO_BADGE,
+  isFablePromoActive,
+  resolveModelInfo,
+  resolveModelLabel,
+  toModelAlias,
+  withFableFallback,
+} from '@/types/models';
 import type { ModelInfo } from '@/types/slashCommand';
 import { MessageType } from '@/shared';
 
@@ -16,15 +24,18 @@ interface ModelSwitchOverlayProps {
 }
 
 export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
-  const { sessionModel, setSessionModel, appendMessage } = useChatStreamContext();
+  const { setSessionModel, appendMessage } = useChatStreamContext();
   const { send } = useBridge();
   const { currentSessionId } = useSessionContext();
   const { controlResponse } = useCliConfig();
+  const currentModel = useCurrentModel();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const models: ModelInfo[] = controlResponse?.response?.response?.models ?? [];
-  const currentInfo = resolveModelInfo(models, sessionModel ?? DEFAULT_MODEL_ALIAS);
+  const now = new Date();
+  const models: ModelInfo[] = withFableFallback(controlResponse?.response?.response?.models ?? [], now);
+  const currentInfo = resolveModelInfo(models, currentModel);
   const isMac = navigator.platform.toUpperCase().includes('MAC');
+  const promoActive = isFablePromoActive(now);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -106,8 +117,15 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
               }`}
             >
               <span className="flex flex-col min-w-0">
-                <span className={`leading-tight text-[1rem] truncate ${selected ? 'text-text-primary' : 'text-text-primary'}`}>
-                  {m.displayName}
+                <span className="flex items-center gap-1.5 min-w-0">
+                  <span className="leading-tight text-[1rem] truncate text-text-primary">
+                    {m.displayName}
+                  </span>
+                  {toModelAlias(m.value) === 'fable' && promoActive && (
+                    <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[0.7692rem] bg-surface-tooltip text-text-secondary whitespace-nowrap">
+                      {FABLE_PROMO_BADGE}
+                    </span>
+                  )}
                 </span>
                 <span className="leading-normal text-[0.8461rem] truncate text-text-secondary/80">
                   {m.description}

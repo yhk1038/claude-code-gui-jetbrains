@@ -90,6 +90,13 @@
             implementation="com.github.yhk1038.claudecodegui.editor.ClaudeCodeFileIconPatcher"/>
     </extensions>
 
+    <!-- Prewarm version-scoped resource extraction at app frame creation (issue #149) -->
+    <applicationListeners>
+        <listener
+            class="com.github.yhk1038.claudecodegui.startup.ResourceExtractionPrewarmActivity"
+            topic="com.intellij.ide.AppLifecycleListener"/>
+    </applicationListeners>
+
     <!-- Clean up session state only on real tab close (not on tab move/split) -->
     <projectListeners>
         <listener

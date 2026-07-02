@@ -8,6 +8,7 @@ import {
 import { readSettingsFile, resolveClaudeConfigDirOverride } from './features/settings';
 import { augmentedPath } from './augmented-path';
 import { isWslUncPath, toWslPath } from './wsl-path';
+import { execViaCmdArgv } from './win-exec';
 
 /**
  * In a WSL backend (running inside the distro, platform === 'linux') the IDE hands us the
@@ -175,32 +176,22 @@ export class Claude {
     args: string[],
     options?: ExecFileOptions,
   ): Promise<{ stdout: string; stderr: string }> {
-    Claude.assertNoCmdPercentExpansion(args);
+    // Resolve the `.cmd` launcher to an absolute path, then delegate the
+    // cmd.exe argv-array wrapping to the shared helper (execViaCmdArgv). The
+    // helper enforces the `%`-expansion guard and standard-quoting rules; here
+    // we only add the launcher resolution + env/cwd projection specific to the
+    // Claude launcher. See win-exec.ts for the full rationale.
     const launcher = (await Claude.which()) ?? Claude.command;
-    // `/d` skips AutoRun, `/s` keeps quoting predictable, `/c` runs then exits.
-    const comspec = process.env.ComSpec || 'cmd.exe';
-    const cmdArgs = ['/d', '/s', '/c', launcher, ...args];
-    // shell:false: Node spawns cmd.exe directly (not nested in another shell).
-    // windowsVerbatimArguments stays false so Node's standard quoting applies.
-    return Claude.runExecFile(comspec, cmdArgs, { ...options, shell: false });
-  }
-
-  /**
-   * Reject argv that cmd.exe would mangle via `%`-expansion. cmd.exe expands
-   * `%VAR%` even inside the double quotes Node wraps each arg in, so a value like
-   * `%API_KEY%` would reach the launcher altered (or emptied). We fail loudly
-   * rather than write a corrupted config. The error names the position and the
-   * cause but never echoes the full value — an MCP env value may be a secret.
-   */
-  private static assertNoCmdPercentExpansion(args: string[]): void {
-    const idx = args.findIndex((a) => a.includes('%'));
-    if (idx === -1) return;
-    throw new Error(
-      `Cannot run the Claude CLI on Windows: argument #${idx + 1} contains a '%' character, ` +
-      `which Windows cmd.exe expands as an environment variable (even inside quotes) and would ` +
-      `corrupt the value. Remove the '%' from that value (e.g. an MCP server's command/args/env) ` +
-      `and try again.`,
-    );
+    const { err, stdout, stderr } = await execViaCmdArgv(launcher, args, {
+      ...options,
+      cwd: resolveWslCwd(options?.cwd),
+      env: {
+        ...Claude.env,
+        ...options?.env,
+      },
+    });
+    if (err) throw err;
+    return { stdout, stderr };
   }
 
   static which(): Promise<string | null> {

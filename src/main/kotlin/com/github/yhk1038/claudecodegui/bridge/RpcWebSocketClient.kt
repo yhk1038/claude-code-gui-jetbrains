@@ -29,7 +29,15 @@ class RpcWebSocketClient(
      * is the throwable, the second a short `where` tag. Kept as a callback (not a direct
      * NodeBackendService reference) to avoid a service↔client cycle and stay unit-testable.
      */
-    private val onError: ((Throwable, String) -> Unit)? = null
+    private val onError: ((Throwable, String) -> Unit)? = null,
+    /**
+     * Invoked for a Node→Kotlin JSON-RPC *notification* (a message with no `id`, so no
+     * response is expected). The backend uses these for one-way state pushes, e.g.
+     * HOST_MODE_CHANGED carrying the current `hostMode` (issue #7). The first arg is the
+     * method, the second its params. Kept as a callback (not a direct service reference)
+     * so the dispatch stays unit-testable and the client has no upward dependency.
+     */
+    private val onNotification: ((String, JsonObject) -> Unit)? = null,
 ) : Disposable {
 
     private val logger = Logger.getInstance(RpcWebSocketClient::class.java)
@@ -176,16 +184,28 @@ class RpcWebSocketClient(
                     return@launch
                 }
 
+                // A message with no `id` is a JSON-RPC notification: the backend expects
+                // no response. These carry one-way Node→Kotlin state pushes such as
+                // HOST_MODE_CHANGED (issue #7). Dispatch to the notification callback and
+                // never reply — replying to a notification would desync the channel.
+                if (id == null) {
+                    logger.info("[DEBUG:handleMessage] notification method=$method, params=$params")
+                    onNotification?.invoke(method, params)
+                    return@launch
+                }
+
                 logger.info("[DEBUG:handleMessage] method=$method, id=$id, params=$params")
 
+                // Past the notification guard above, this is a request with a non-null id,
+                // so every path replies (success result or error) exactly once.
                 try {
                     val result = dispatchRpc(method, params)
-                    if (id != null) sendResult(ws, id, result)
+                    sendResult(ws, id, result)
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
                     logger.error("Error executing RPC method '$method'", e)
-                    if (id != null) sendError(ws, id, -32000, e.message ?: "Internal error")
+                    sendError(ws, id, -32000, e.message ?: "Internal error")
                     // Plugin error boundary: an IDE-native RPC handler threw. Forward to the
                     // single Kotlin reporting point (which hands it to Node).
                     onError?.invoke(e, "RpcWebSocketClient.dispatch:$method")
@@ -353,3 +373,13 @@ internal fun parseRefreshFilePaths(params: JsonObject): List<String> {
         (element as? JsonPrimitive)?.takeIf { it.isString }?.content
     }
 }
+
+/**
+ * Extracts the `hostMode` string from a HOST_MODE_CHANGED notification's params,
+ * or null when it is missing or not a string. Kept top-level and internal so it
+ * can be unit-tested without a live WebSocket (see HostModeParamTest). The raw
+ * value is handed to [com.github.yhk1038.claudecodegui.hosting.HostModeCache],
+ * which maps unknown/missing values to the safe default (issue #7).
+ */
+internal fun parseHostModeParam(params: JsonObject): String? =
+    (params["hostMode"] as? JsonPrimitive)?.takeIf { it.isString }?.content

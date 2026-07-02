@@ -93,6 +93,10 @@ export enum MessageType {
   GET_ALL_USAGE = 'GET_ALL_USAGE',
   /** Read the plugin/backend version info. */
   GET_VERSION = 'GET_VERSION',
+  /** Detect the CLI install method + query npm for available versions (stable/latest). inbound webview→backend */
+  GET_CLI_UPDATE_INFO = 'GET_CLI_UPDATE_INFO',
+  /** Run the install-method-specific update command for the Claude Code CLI. inbound webview→backend */
+  UPDATE_CLI = 'UPDATE_CLI',
 
   // -- Authentication --
   /** Begin the CLI login flow (produces a login URL). */
@@ -319,6 +323,15 @@ export enum MessageType {
   REGISTER_PROJECT_ROOTS = 'REGISTER_PROJECT_ROOTS',
   /** Query the IDE whether a plugin restart is required (e.g. after an update). */
   REQUIRES_RESTART = 'REQUIRES_RESTART',
+  /**
+   * Node → Kotlin notification carrying the current `hostMode` value
+   * (`editor-tab` | `tool-window`). The backend is the single source of truth for
+   * settings; on WSL2 the IDE-side JVM home and the Linux home diverge, so Kotlin
+   * cannot read the settings file reliably. The backend pushes this on RPC connect
+   * and whenever `hostMode` is saved, and Kotlin caches it for synchronous host
+   * routing. params: { hostMode: string }.
+   */
+  HOST_MODE_CHANGED = 'HOST_MODE_CHANGED',
 
   // ───────────────────────────────────────────────────────────────────────
   // Logging channel (webview LogForwarder → backend log-ws)

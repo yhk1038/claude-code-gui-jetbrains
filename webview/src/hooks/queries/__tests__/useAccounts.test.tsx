@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, waitFor, act } from '@testing-library/react';
+import { focusManager } from '@tanstack/react-query';
 import { MessageType } from '@/shared';
 import { createTestQueryClient, makeQueryWrapper } from './testQueryClient';
 
@@ -39,6 +40,9 @@ describe('useAccounts', () => {
   beforeEach(() => {
     mockSend.mockReset();
     mockSubscribe.mockReset();
+    // focusManager is a global singleton; restore system default so focus state
+    // never leaks between tests.
+    focusManager.setFocused(undefined);
     connected = true;
     current = null;
     changedHandler = null;
@@ -91,6 +95,25 @@ describe('useAccounts', () => {
 
     mockSend.mockResolvedValueOnce({ status: 'error', error: 'keychain locked' });
     await expect(current!.switchTo('acc-2')).rejects.toThrow(/keychain locked/);
+  });
+
+  it('does not refetch GET_ACCOUNTS on window focus (event-only policy)', async () => {
+    mockSend.mockResolvedValue(sample);
+    renderHook();
+    await waitFor(() => expect(current?.accounts.length).toBe(1));
+    const countGetAccounts = () =>
+      mockSend.mock.calls.filter((c) => c[0] === MessageType.GET_ACCOUNTS).length;
+    expect(countGetAccounts()).toBe(1);
+
+    // Simulate the IDE window regaining focus. With the event-only policy
+    // (staleTime:Infinity / refetchOnWindowFocus:false) this must NOT refetch.
+    await act(async () => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+      await Promise.resolve();
+    });
+
+    expect(countGetAccounts()).toBe(1);
   });
 
   it('refetches both account queries on an ACCOUNTS_CHANGED push', async () => {

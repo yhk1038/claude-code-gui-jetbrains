@@ -9,7 +9,7 @@ export async function saveSettingsHandler(
   connectionId: string,
   message: IPCMessage,
   connections: ConnectionManager,
-  _bridge: Bridge,
+  bridge: Bridge,
 ): Promise<void> {
   const key = message.payload?.key as string;
   const value = message.payload?.value;
@@ -20,6 +20,15 @@ export async function saveSettingsHandler(
 
   if (result.status === 'ok' && key === 'cliPath') {
     await Claude.refresh();
+  }
+
+  // Push the new hostMode to the IDE so Kotlin's cache stays in sync and chat windows
+  // route to the chosen host immediately. The backend owns settings; Kotlin no longer
+  // reads the file for hostMode (it diverges from the JVM home on WSL2 — issue #7).
+  // Only the JetBrains bridge exposes pushHostMode; browser mode has no IDE to notify.
+  if (result.status === 'ok' && key === 'hostMode' && typeof value === 'string') {
+    const pushable = bridge as Bridge & { pushHostMode?: (hostMode: string) => void };
+    pushable.pushHostMode?.(value);
   }
 
   // Broadcast merged settings after save

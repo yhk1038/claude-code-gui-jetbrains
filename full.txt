@@ -1,0 +1,1 @@
+Error: class not found: com/intellij/openapi/application/PathManager.class

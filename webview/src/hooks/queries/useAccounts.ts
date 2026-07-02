@@ -35,12 +35,15 @@ function useAccountsQuery(): UseQueryResult<AccountsResult, Error> {
   return useQuery<AccountsResult, Error>({
     queryKey: [MessageType.GET_ACCOUNTS],
     enabled: isConnected,
-    // External (terminal) account switches emit no ACCOUNTS_CHANGED, so override
-    // the global staleTime:Infinity / refetchOnWindowFocus:false: refetch the
-    // saved list + active marker when the IDE regains focus / reconnects.
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    // Event-only refresh: inherit the global staleTime:Infinity /
+    // refetchOnWindowFocus:false / refetchOnReconnect:false. In the IDE, window
+    // focus fires on every editor<->tool-window<->webview switch, so a focus
+    // refetch flooded the backend with GET_ACCOUNTS. GUI account actions
+    // (save/switch/delete) and cross-window changes both broadcast
+    // ACCOUNTS_CHANGED, which invalidates this query — so the list and active
+    // marker still update instantly. The only case not caught is an external
+    // `claude` login switch in the terminal, which surfaces on the next GUI
+    // account action rather than in real time.
     queryFn: async () => {
       const result = (await send(MessageType.GET_ACCOUNTS)) as RawAccountsResponse;
       if (result?.status === 'ok') {
