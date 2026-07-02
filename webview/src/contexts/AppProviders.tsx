@@ -7,7 +7,8 @@ import { ApiProvider, useApiContext } from './ApiContext';
 import { SessionProvider, useSessionContext } from './SessionContext';
 import { ChatStreamProvider, useChatStreamContext } from './ChatStreamContext';
 import { ThemeProvider } from './ThemeContext';
-import { SettingsProvider } from './SettingsContext';
+import { SettingsProvider, useSettings } from './SettingsContext';
+import { SettingKey, NO_PAGINATION_LIMIT } from '@/types/settings';
 import { ClaudeSettingsProvider } from './ClaudeSettingsContext';
 import { AuthProvider } from './AuthContext';
 import { CliConfigProvider } from './CliConfigContext';
@@ -50,15 +51,24 @@ function SessionLoader({ children }: { children: ReactNode }) {
     loadSessions, sessions, currentSessionId, navigateToNewSession,
     isNewlyCreatedSession, setSessionState,
   } = useSessionContext();
-  const { loadMessages, resetForSessionSwitch } = useChatStreamContext();
+  const { loadMessages, prependOlderMessages, setPaginationState, resetForSessionSwitch } = useChatStreamContext();
+  const { settings } = useSettings();
 
   // Ref to track currentSessionId for SESSION_LOADED validation (avoids stale closure)
   const currentSessionIdRef = useRef<string | null>(currentSessionId);
   currentSessionIdRef.current = currentSessionId;
 
+  // When paging is off, request a huge page so the backend returns the whole active
+  // chain in one shot (hasMore=false → no "load older" UI). Default on.
+  const chatPagination = settings[SettingKey.CHAT_PAGINATION] ?? true;
+
   // Track previous values for change detection
   const prevSessionIdRef = useRef<string | null | undefined>(undefined); // undefined = not yet initialized
   const prevConnectedRef = useRef(false);
+  // The pagination value the current session was last loaded with. A change must
+  // re-load the session (toggle flip, or the setting resolving after a cold
+  // deep-link where it briefly read the default before the bridge value arrived).
+  const prevPaginationRef = useRef(chatPagination);
 
   // 1. Load session list on connect
   useEffect(() => {
@@ -78,12 +88,14 @@ function SessionLoader({ children }: { children: ReactNode }) {
 
     const sessionChanged = prevSessionIdRef.current !== currentSessionId;
     const reconnected = !prevConnectedRef.current && prevSessionIdRef.current !== undefined;
+    const paginationChanged = prevPaginationRef.current !== chatPagination;
 
     prevSessionIdRef.current = currentSessionId;
     prevConnectedRef.current = true;
+    prevPaginationRef.current = chatPagination;
 
-    // Nothing to do if session didn't change and not reconnecting
-    if (!sessionChanged && !reconnected) return;
+    // Nothing to do if nothing relevant changed
+    if (!sessionChanged && !reconnected && !paginationChanged) return;
 
     console.log('[SessionLoader] Session reaction:', {
       currentSessionId,
@@ -100,11 +112,13 @@ function SessionLoader({ children }: { children: ReactNode }) {
     }
     setSessionState(SessionState.Idle);
 
-    // Load session messages (skip for new/empty sessions and newly created sessions)
+    // Load session messages (skip for new/empty sessions and newly created sessions).
+    // Paging off → request a huge page so the entire conversation loads at once.
     if (currentSessionId && !isNewlyCreatedSession(currentSessionId)) {
-      api.sessions.load(currentSessionId);
+      const limit = chatPagination ? undefined : NO_PAGINATION_LIMIT;
+      api.sessions.load(currentSessionId, undefined, limit);
     }
-  }, [currentSessionId, isConnected, resetForSessionSwitch, setSessionState, api.sessions, isNewlyCreatedSession]);
+  }, [currentSessionId, isConnected, chatPagination, resetForSessionSwitch, setSessionState, api.sessions, isNewlyCreatedSession]);
 
   // 3. Subscribe to SESSION_LOADED — with sessionId guard against stale responses
   useEffect(() => {
@@ -112,6 +126,9 @@ function SessionLoader({ children }: { children: ReactNode }) {
       if (message.payload?.messages) {
         const rawMessages = message.payload.messages as LoadedMessageDto[];
         const sid = message.payload?.sessionId as string | undefined;
+        const prepend = message.payload?.prepend as boolean | undefined;
+        const hasMore = message.payload?.hasMore as boolean | undefined;
+        const oldestUuid = message.payload?.oldestUuid as string | undefined;
 
         // Guard: ignore stale responses from previously requested sessions
         if (sid && sid !== currentSessionIdRef.current) {
@@ -126,11 +143,16 @@ function SessionLoader({ children }: { children: ReactNode }) {
           return;
         }
 
-        console.log('[SessionLoader] Session loaded, injecting raw messages:', rawMessages);
-        loadMessages(rawMessages);
+        console.log('[SessionLoader] Session loaded:', rawMessages.length, 'messages, prepend:', !!prepend, 'hasMore:', !!hasMore);
+        if (prepend) {
+          prependOlderMessages(rawMessages);
+        } else {
+          loadMessages(rawMessages);
+        }
+        setPaginationState(!!hasMore, oldestUuid ?? null);
       }
     });
-  }, [subscribe, loadMessages, isNewlyCreatedSession]);
+  }, [subscribe, loadMessages, prependOlderMessages, setPaginationState, isNewlyCreatedSession]);
 
   // 4. Validate session exists in list — redirect bad URLs
   useEffect(() => {

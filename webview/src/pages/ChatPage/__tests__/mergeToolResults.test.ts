@@ -122,6 +122,16 @@ describe('mergeToolResults', () => {
     expect(wf!.usage.subagentTokens).toBe(171500);
   });
 
+  it('keeps a tool_result visible when its tool_use is not loaded (split by paging)', () => {
+    // Only the tool_result user message is present — its tool_use sits on an
+    // older, not-yet-loaded page. It must stay visible rather than vanish.
+    const orphan = toolResultUser('u1', 'tool-missing', 'output from an older page');
+
+    const merged = mergeToolResults([orphan]);
+
+    expect(merged.find(m => m.uuid === 'u1')).toBe(orphan);
+  });
+
   it('keeps non-tool messages as their original references', () => {
     const userMsg = {
       uuid: 'u0',

@@ -43,6 +43,8 @@ export enum MessageType {
   GET_SESSIONS = 'GET_SESSIONS',
   /** Load the full message history (JSONL) of one session. */
   LOAD_SESSION = 'LOAD_SESSION',
+  /** Load older messages before a specific message cursor (paging). */
+  LOAD_OLDER_MESSAGES = 'LOAD_OLDER_MESSAGES',
   /** Delete a session and its on-disk history. */
   DELETE_SESSION = 'DELETE_SESSION',
   /** Rename a session's title. */

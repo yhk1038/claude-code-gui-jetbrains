@@ -119,15 +119,21 @@ export function mergeToolResults(messages: LoadedMessageDto[]): LoadedMessageDto
     if (isContentBlockArray(content)) {
       const isToolResultOnly = content.every(block => block.type === ContentBlockType.ToolResult);
       if (isToolResultOnly) {
+        let attached = false;
         for (const block of content) {
           if (block.type === ContentBlockType.ToolResult) {
             const toolUseBlock = toolUseMap.get((block as ToolResultBlockDto).tool_use_id);
             if (toolUseBlock) {
               toolUseBlock.tool_result = msg;
+              attached = true;
             }
           }
         }
-        mergedUserMsgs.add(msg);
+        // Only hide the user message once its result is attached to a loaded
+        // tool_use. When paging splits the pair — the tool_use sits on an
+        // older, not-yet-loaded page — leave it visible rather than dropping
+        // the tool output silently (mirrors the workflow-notification path above).
+        if (attached) mergedUserMsgs.add(msg);
       }
     }
   }

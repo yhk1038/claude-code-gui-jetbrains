@@ -49,6 +49,7 @@ interface ChatStreamContextType {
   // From useChatStream (message manipulation)
   clearMessages: () => void;
   loadMessages: (msgs: LoadedMessageDto[]) => void;
+  prependOlderMessages: (msgs: LoadedMessageDto[]) => void;
   appendMessage: (message: LoadedMessageDto) => void;
   updateMessage: (id: string, updates: Partial<LoadedMessageDto>) => void;
 
@@ -68,6 +69,11 @@ interface ChatStreamContextType {
 
   // Context window usage
   contextWindowUsage: { totalTokens: number; contextWindow: number; maxOutputTokens: number } | null;
+
+  // Pagination
+  hasMoreOlder: boolean;
+  oldestLoadedUuid: string | null;
+  setPaginationState: (hasMore: boolean, oldestUuid: string | null) => void;
 }
 
 const ChatStreamContext = createContext<ChatStreamContextType | undefined>(undefined);
@@ -116,6 +122,13 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
   const toggleThinkingExpanded = useCallback(() => setIsThinkingExpanded(prev => !prev), []);
   const [sessionModel, setSessionModel] = useState<string | null>(null);
+  const [hasMoreOlder, setHasMoreOlder] = useState(false);
+  const [oldestLoadedUuid, setOldestLoadedUuid] = useState<string | null>(null);
+
+  const setPaginationState = useCallback((hasMore: boolean, oldestUuid: string | null) => {
+    setHasMoreOlder(hasMore);
+    setOldestLoadedUuid(oldestUuid);
+  }, []);
 
   // EnterPlanMode 진입 전의 모드를 저장 (ExitPlanMode 시 복원용)
   const prePlanModeRef = useRef<InputMode | null>(null);
@@ -171,6 +184,7 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
     addUserMessage,
     clearMessages: chatStreamClearMessages,
     loadMessages: chatStreamLoadMessages,
+    prependOlderMessages: chatStreamPrependOlderMessages,
     appendMessage: chatStreamAppendMessage,
     updateMessage: chatStreamUpdateMessage,
     resetStreamState: chatStreamResetStreamState,
@@ -234,6 +248,8 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
     diffs.clearDiffs();
     queuedMessageRef.current = null;
     prePlanModeRef.current = null;
+    setHasMoreOlder(false);
+    setOldestLoadedUuid(null);
   }, [chatStreamClearMessages, chatStreamResetStreamState, setInput, tools.clearToolUses, diffs.clearDiffs, session.currentSessionId]);
 
   // resetForSessionSwitch is called directly by SessionLoader
@@ -418,6 +434,7 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
     // Message manipulation
     clearMessages: chatStreamClearMessages,
     loadMessages: chatStreamLoadMessages,
+    prependOlderMessages: chatStreamPrependOlderMessages,
     appendMessage: chatStreamAppendMessage,
     updateMessage: chatStreamUpdateMessage,
 
@@ -437,6 +454,11 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
 
     // Context window usage
     contextWindowUsage: chatStream.contextWindowUsage,
+
+    // Pagination
+    hasMoreOlder,
+    oldestLoadedUuid,
+    setPaginationState,
   }), [
     chatStream.messages,
     chatStream.isStreaming,
@@ -448,6 +470,7 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
     chatStreamResetStreamState,
     chatStreamClearMessages,
     chatStreamLoadMessages,
+    chatStreamPrependOlderMessages,
     chatStreamAppendMessage,
     chatStreamUpdateMessage,
     sendMessage,
@@ -461,6 +484,9 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
     toggleThinkingExpanded,
     sessionModel,
     resetForSessionSwitch,
+    hasMoreOlder,
+    oldestLoadedUuid,
+    setPaginationState,
   ]);
 
   return (

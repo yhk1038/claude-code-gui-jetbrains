@@ -53,9 +53,18 @@ export class SessionsApi {
    * Triggers SESSION_LOADED event which AppProviders.SessionLoader handles
    * POST /sessions/:id/load
    */
-  async load(sessionId: string, workingDir?: string): Promise<void> {
+  async load(sessionId: string, workingDir?: string, limit?: number): Promise<void> {
     const dir = workingDir ?? this.getConfig().workingDir;
-    await this.bridge.request(MessageType.LOAD_SESSION, { sessionId, workingDir: dir });
+    await this.bridge.request(MessageType.LOAD_SESSION, { sessionId, workingDir: dir, limit });
+  }
+
+  /**
+   * Load older messages before a specific message cursor (paging)
+   * Triggers SESSION_LOADED event with prepend: true
+   */
+  async loadOlder(sessionId: string, beforeUuid: string, workingDir?: string, limit?: number): Promise<void> {
+    const dir = workingDir ?? this.getConfig().workingDir;
+    await this.bridge.request(MessageType.LOAD_OLDER_MESSAGES, { sessionId, workingDir: dir, beforeUuid, limit });
   }
 
   /**
@@ -97,8 +106,8 @@ export class SessionsApi {
    * Kills the existing process and reloads session messages
    * POST /sessions/:id/reclaim
    */
-  async reclaim(sessionId: string, workingDir?: string): Promise<void> {
+  async reclaim(sessionId: string, workingDir?: string, limit?: number): Promise<void> {
     const dir = workingDir ?? this.getConfig().workingDir;
-    await this.bridge.request(MessageType.RECLAIM_SESSION, { sessionId, workingDir: dir });
+    await this.bridge.request(MessageType.RECLAIM_SESSION, { sessionId, workingDir: dir, limit });
   }
 }
