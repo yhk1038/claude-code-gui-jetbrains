@@ -131,89 +131,179 @@ function snapStartToUuid(chain: SessionMessage[], start: number): number {
   return i;
 }
 
+// --- Active-chain snapshot cache (issue #8) -------------------------------
+//
+// Building the paged view is O(entire session): read + parse the whole JSONL,
+// read every subagent progress file, then run filterActiveChain over the full
+// history. Doing that on *every* "load older" page turns scrolling up through a
+// huge session into repeated full-file work just to return a ~50-message slice.
+//
+// So we cache the fully-parsed + subagent-injected + active-chain-filtered array
+// per session file. The cache key is the session file's path; the validity key
+// is a cheap `stat` fingerprint (mtimeMs + size of the main file, plus the
+// subagents directory mtime so newly-added agent files invalidate too). If the
+// fingerprint matches, we serve the page as a pure in-memory slice — identical to
+// what the from-disk path would produce, because it *is* the same array. When the
+// file changes, the fingerprint differs and we recompute.
+//
+// Memory is bounded by an LRU-ish Map capped at MAX_CACHED_SESSIONS: a `Map`
+// preserves insertion order, so re-inserting on hit marks most-recently-used and
+// the oldest key is evicted first once the cap is exceeded.
+interface ActiveChainCacheEntry {
+  mtimeMs: number;
+  size: number;
+  // mtimeMs of the subagents dir, or -1 when it does not exist. Adding/removing
+  // agent files bumps the dir mtime, so this catches subagent-driven changes even
+  // when the main file happens to be unchanged.
+  subagentsMtimeMs: number;
+  activeChain: SessionMessage[];
+}
+
+const MAX_CACHED_SESSIONS = 4;
+const activeChainCache = new Map<string, ActiveChainCacheEntry>();
+
+function storeActiveChain(key: string, entry: ActiveChainCacheEntry): void {
+  // delete + set moves the key to the end of the Map, marking it most-recently-used.
+  activeChainCache.delete(key);
+  activeChainCache.set(key, entry);
+  // Evict least-recently-used entries (oldest insertion order = first key).
+  while (activeChainCache.size > MAX_CACHED_SESSIONS) {
+    const oldestKey = activeChainCache.keys().next().value;
+    if (oldestKey === undefined) break;
+    activeChainCache.delete(oldestKey);
+  }
+}
+
+// Read the main JSONL, inject subagent progress entries, and apply active-chain
+// filtering. This is the expensive path the cache exists to avoid repeating.
+async function computeActiveChain(
+  sessionFile: string,
+  subagentsDir: string,
+  hasSubagents: boolean,
+): Promise<SessionMessage[]> {
+  const allMessages: SessionMessage[] = await readJsonlEntries(sessionFile);
+
+  // Load subagent files and inject synthetic progress entries
+  if (hasSubagents) {
+    try {
+      // Extract Task tool_use id -> agentId mappings from main messages
+      const toolUseToAgentId = extractTaskAgentMappings(allMessages);
+
+      if (toolUseToAgentId.size > 0) {
+        // Build a map from tool_use id -> index of the assistant message containing that Task tool_use
+        const toolUseToAssistantIndex = new Map<string, number>();
+        for (let i = 0; i < allMessages.length; i++) {
+          const msg = allMessages[i];
+          if (msg.type !== 'assistant') continue;
+          const message = msg.message as Record<string, unknown> | undefined;
+          if (!message) continue;
+          const msgContent = message.content;
+          if (!Array.isArray(msgContent)) continue;
+          for (const block of msgContent) {
+            if (
+              block &&
+              typeof block === 'object' &&
+              (block as Record<string, unknown>).type === 'tool_use' &&
+              ((block as Record<string, unknown>).name === 'Task' || (block as Record<string, unknown>).name === 'Agent')
+            ) {
+              const id = (block as Record<string, unknown>).id;
+              if (typeof id === 'string' && toolUseToAgentId.has(id)) {
+                toolUseToAssistantIndex.set(id, i);
+              }
+            }
+          }
+        }
+
+        // Load all subagent progress entries, keyed by insertion index
+        // We collect (insertAfterIndex, syntheticEntries) pairs, then splice in reverse order
+        const insertions: Array<{ afterIndex: number; entries: SessionMessage[] }> = [];
+
+        for (const [toolUseId, agentId] of toolUseToAgentId.entries()) {
+          const assistantIndex = toolUseToAssistantIndex.get(toolUseId);
+          if (assistantIndex === undefined) continue;
+
+          try {
+            const syntheticEntries = await loadSubagentProgress(subagentsDir, toolUseId, agentId);
+            if (syntheticEntries.length > 0) {
+              insertions.push({ afterIndex: assistantIndex, entries: syntheticEntries });
+            }
+          } catch {
+            // Subagent file missing or unreadable — skip gracefully
+          }
+        }
+
+        // Insert in reverse order of index so earlier insertions don't shift later indices
+        insertions.sort((a, b) => b.afterIndex - a.afterIndex);
+        for (const { afterIndex, entries } of insertions) {
+          allMessages.splice(afterIndex + 1, 0, ...entries);
+        }
+      }
+    } catch {
+      // Any unexpected error in subagent loading
+    }
+  }
+
+  // Apply active chain filtering on the complete history
+  return filterActiveChain(allMessages);
+}
+
+// Return the active-chain snapshot for a session, from cache when the on-disk
+// fingerprint is unchanged, otherwise recomputed and re-cached.
+async function getActiveChain(
+  sessionFile: string,
+  sessionsPath: string,
+  targetSessionId: string,
+): Promise<SessionMessage[]> {
+  // stat the main file first: this both provides the cache fingerprint and throws
+  // (ENOENT) for a missing session, preserving the "return empty on read error"
+  // behavior via the caller's catch.
+  const mainStat = await stat(sessionFile);
+
+  // Fingerprint the subagents dir too (mtime changes when agent files are added).
+  const subagentsDir = join(sessionsPath, targetSessionId, 'subagents');
+  let subagentsMtimeMs = -1;
+  let hasSubagents = false;
+  try {
+    subagentsMtimeMs = (await stat(subagentsDir)).mtimeMs;
+    hasSubagents = true;
+  } catch {
+    // No subagents directory
+  }
+
+  const cached = activeChainCache.get(sessionFile);
+  if (
+    cached &&
+    cached.mtimeMs === mainStat.mtimeMs &&
+    cached.size === mainStat.size &&
+    cached.subagentsMtimeMs === subagentsMtimeMs
+  ) {
+    // Cache hit: refresh LRU position and reuse the snapshot without touching disk.
+    storeActiveChain(sessionFile, cached);
+    return cached.activeChain;
+  }
+
+  // Cache miss or stale fingerprint: recompute from disk and cache the result.
+  const activeChain = await computeActiveChain(sessionFile, subagentsDir, hasSubagents);
+  storeActiveChain(sessionFile, {
+    mtimeMs: mainStat.mtimeMs,
+    size: mainStat.size,
+    subagentsMtimeMs,
+    activeChain,
+  });
+  return activeChain;
+}
+
 export async function loadSessionMessages(
   workingDir: string,
   targetSessionId: string,
   beforeUuid?: string,
   limit?: number,
 ): Promise<PaginatedSessionMessages> {
-  let allMessages: SessionMessage[] = [];
+  let activeChainMessages: SessionMessage[];
   try {
     const sessionsPath = await getProjectSessionsPath(workingDir);
     const sessionFile = join(sessionsPath, `${targetSessionId}.jsonl`);
-
-    allMessages = await readJsonlEntries(sessionFile);
-
-    // Load subagent files and inject synthetic progress entries
-    try {
-      const subagentsDir = join(sessionsPath, targetSessionId, 'subagents');
-
-      // Check if subagents directory exists before proceeding
-      let hasSubagents = false;
-      try {
-        await stat(subagentsDir);
-        hasSubagents = true;
-      } catch {
-        // No subagents directory
-      }
-
-      if (hasSubagents) {
-        // Extract Task tool_use id -> agentId mappings from main messages
-        const toolUseToAgentId = extractTaskAgentMappings(allMessages);
-
-        if (toolUseToAgentId.size > 0) {
-          // Build a map from tool_use id -> index of the assistant message containing that Task tool_use
-          const toolUseToAssistantIndex = new Map<string, number>();
-          for (let i = 0; i < allMessages.length; i++) {
-            const msg = allMessages[i];
-            if (msg.type !== 'assistant') continue;
-            const message = msg.message as Record<string, unknown> | undefined;
-            if (!message) continue;
-            const msgContent = message.content;
-            if (!Array.isArray(msgContent)) continue;
-            for (const block of msgContent) {
-              if (
-                block &&
-                typeof block === 'object' &&
-                (block as Record<string, unknown>).type === 'tool_use' &&
-                ((block as Record<string, unknown>).name === 'Task' || (block as Record<string, unknown>).name === 'Agent')
-              ) {
-                const id = (block as Record<string, unknown>).id;
-                if (typeof id === 'string' && toolUseToAgentId.has(id)) {
-                  toolUseToAssistantIndex.set(id, i);
-                }
-              }
-            }
-          }
-
-          // Load all subagent progress entries, keyed by insertion index
-          // We collect (insertAfterIndex, syntheticEntries) pairs, then splice in reverse order
-          const insertions: Array<{ afterIndex: number; entries: SessionMessage[] }> = [];
-
-          for (const [toolUseId, agentId] of toolUseToAgentId.entries()) {
-            const assistantIndex = toolUseToAssistantIndex.get(toolUseId);
-            if (assistantIndex === undefined) continue;
-
-            try {
-              const syntheticEntries = await loadSubagentProgress(subagentsDir, toolUseId, agentId);
-              if (syntheticEntries.length > 0) {
-                insertions.push({ afterIndex: assistantIndex, entries: syntheticEntries });
-              }
-            } catch {
-              // Subagent file missing or unreadable — skip gracefully
-            }
-          }
-
-          // Insert in reverse order of index so earlier insertions don't shift later indices
-          insertions.sort((a, b) => b.afterIndex - a.afterIndex);
-          for (const { afterIndex, entries } of insertions) {
-            allMessages.splice(afterIndex + 1, 0, ...entries);
-          }
-        }
-      }
-    } catch {
-      // Any unexpected error in subagent loading
-    }
+    activeChainMessages = await getActiveChain(sessionFile, sessionsPath, targetSessionId);
   } catch (err) {
     console.error('[node-backend]', 'Error loading session:', err);
     return {
@@ -224,14 +314,15 @@ export async function loadSessionMessages(
     };
   }
 
-  // Apply active chain filtering on the complete history
-  const activeChainMessages = filterActiveChain(allMessages);
   const total = activeChainMessages.length;
-
   const pageSize = limit ?? 50;
 
   let slicedMessages: SessionMessage[] = [];
   let hasMore = false;
+
+  // Compute the latest (newest) page — shared by the no-cursor case and the
+  // cursor-miss fallback below.
+  const latestPageStart = snapStartToUuid(activeChainMessages, Math.max(0, total - pageSize));
 
   if (beforeUuid) {
     // Find the index of the message with beforeUuid
@@ -241,12 +332,26 @@ export async function loadSessionMessages(
       const startIndex = snapStartToUuid(activeChainMessages, Math.max(0, index - pageSize));
       slicedMessages = activeChainMessages.slice(startIndex, index);
       hasMore = startIndex > 0;
+    } else {
+      // Issue #6: the cursor uuid is not in the active chain. This can happen if
+      // the chain was recomputed and the client's cursor now points at a filtered
+      // or non-existent entry. Returning an empty page with hasMore=false would
+      // permanently strand ALL older history. Instead, log and fall back to the
+      // latest page: its oldestUuid is a real chain uuid, so the client's next
+      // "load older" locates the cursor and paging self-heals. The client dedupes
+      // by uuid, so any overlap with what it already has is harmless.
+      console.warn(
+        '[node-backend]',
+        `loadSessionMessages: cursor uuid not found in active chain (beforeUuid=${beforeUuid}); ` +
+          'returning latest page to avoid stranding history',
+      );
+      slicedMessages = activeChainMessages.slice(latestPageStart);
+      hasMore = latestPageStart > 0;
     }
   } else {
     // Return latest page
-    const startIndex = snapStartToUuid(activeChainMessages, Math.max(0, total - pageSize));
-    slicedMessages = activeChainMessages.slice(startIndex);
-    hasMore = startIndex > 0;
+    slicedMessages = activeChainMessages.slice(latestPageStart);
+    hasMore = latestPageStart > 0;
   }
 
   // The paging cursor must be a real message uuid. The first sliced entry can be a

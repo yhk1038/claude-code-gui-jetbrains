@@ -7,10 +7,20 @@ vi.mock('../getProjectSessionsPath', () => ({
   getProjectSessionsPath: vi.fn(),
 }));
 
+// Wrap the real readJsonlEntries in a spy so tests can assert whether a page
+// request actually touched disk (cache behavior, issue #8) while preserving
+// real parsing behavior for every other test.
+vi.mock('../readJsonlEntries', async (importActual) => {
+  const actual = await importActual<typeof import('../readJsonlEntries')>();
+  return { readJsonlEntries: vi.fn(actual.readJsonlEntries) };
+});
+
 import { loadSessionMessages } from '../loadSessionMessages';
 import { getProjectSessionsPath } from '../getProjectSessionsPath';
+import { readJsonlEntries } from '../readJsonlEntries';
 
 const mockGetPath = vi.mocked(getProjectSessionsPath);
+const mockReadJsonl = vi.mocked(readJsonlEntries);
 
 describe('loadSessionMessages', () => {
   let tmpDir: string;
@@ -122,5 +132,74 @@ describe('loadSessionMessages', () => {
     expect(older.messages.map((m) => m.uuid ?? m.type)).toEqual(['u1', 'a1', 'u2']);
     expect(older.messages.some((m) => m.type === 'summary')).toBe(false);
     expect(older.hasMore).toBe(false);
+  });
+
+  // Issue #8: paging must not re-read the whole file on every page.
+  it('serves a second page from cache without re-reading the unchanged file', async () => {
+    await writeSession('sess-cache', [
+      JSON.stringify({ type: 'user', uuid: 'u1' }),
+      JSON.stringify({ type: 'assistant', uuid: 'a1', parentUuid: 'u1' }),
+      JSON.stringify({ type: 'user', uuid: 'u2', parentUuid: 'a1' }),
+      JSON.stringify({ type: 'assistant', uuid: 'a2', parentUuid: 'u2' }),
+    ]);
+
+    // First load populates the cache and reads the main file exactly once.
+    const first = await loadSessionMessages('/work', 'sess-cache', undefined, 2);
+    expect(first.messages.map((m) => m.uuid)).toEqual(['u2', 'a2']);
+    expect(mockReadJsonl).toHaveBeenCalledTimes(1);
+
+    // A page request against the same (unchanged) file must be served from the
+    // cached snapshot — no additional disk read.
+    mockReadJsonl.mockClear();
+    const older = await loadSessionMessages('/work', 'sess-cache', 'u2', 2);
+    expect(older.messages.map((m) => m.uuid)).toEqual(['u1', 'a1']);
+    expect(mockReadJsonl).not.toHaveBeenCalled();
+  });
+
+  // Issue #8: a real content change (different mtime/size) must invalidate the cache.
+  it('recomputes the snapshot after the session file changes', async () => {
+    await writeSession('sess-inv', [
+      JSON.stringify({ type: 'user', uuid: 'u1' }),
+      JSON.stringify({ type: 'assistant', uuid: 'a1', parentUuid: 'u1' }),
+    ]);
+
+    const first = await loadSessionMessages('/work', 'sess-inv');
+    expect(first.messages.map((m) => m.uuid)).toEqual(['u1', 'a1']);
+
+    // Append a new turn: size (and mtime) change, so the fingerprint no longer matches.
+    await writeSession('sess-inv', [
+      JSON.stringify({ type: 'user', uuid: 'u1' }),
+      JSON.stringify({ type: 'assistant', uuid: 'a1', parentUuid: 'u1' }),
+      JSON.stringify({ type: 'user', uuid: 'u2', parentUuid: 'a1' }),
+      JSON.stringify({ type: 'assistant', uuid: 'a2', parentUuid: 'u2' }),
+    ]);
+
+    mockReadJsonl.mockClear();
+    const second = await loadSessionMessages('/work', 'sess-inv');
+    // The new messages are visible and the file was re-read.
+    expect(second.messages.map((m) => m.uuid)).toEqual(['u1', 'a1', 'u2', 'a2']);
+    expect(mockReadJsonl).toHaveBeenCalledTimes(1);
+  });
+
+  // Issue #6: a cursor that isn't in the active chain must not strand older history.
+  it('does not strand history when beforeUuid is not found', async () => {
+    await writeSession('sess-miss', [
+      JSON.stringify({ type: 'user', uuid: 'u1' }),
+      JSON.stringify({ type: 'assistant', uuid: 'a1', parentUuid: 'u1' }),
+      JSON.stringify({ type: 'user', uuid: 'u2', parentUuid: 'a1' }),
+      JSON.stringify({ type: 'assistant', uuid: 'a2', parentUuid: 'u2' }),
+    ]);
+
+    // Cursor uuid does not exist in the chain: the old code returned an empty page
+    // with hasMore=false, permanently hiding all older messages. The fallback must
+    // instead return a real page whose oldestUuid is a genuine chain uuid so the
+    // client can keep paging.
+    const result = await loadSessionMessages('/work', 'sess-miss', 'does-not-exist', 2);
+    expect(result.messages.length).toBeGreaterThan(0);
+    expect(result.oldestUuid).toBeDefined();
+    // oldestUuid must be an actual message in the chain (so the next page locates it).
+    expect(['u1', 'u2', 'a1', 'a2']).toContain(result.oldestUuid);
+    // hasMore stays honest: there is older history before this fallback page.
+    expect(result.hasMore).toBe(true);
   });
 });
