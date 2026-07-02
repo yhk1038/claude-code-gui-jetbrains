@@ -74,6 +74,7 @@ export interface UseChatStreamReturn {
   addUserMessage: (content: string, context?: Context[], attachments?: Attachment[]) => void;
   clearMessages: () => void;
   loadMessages: (msgs: LoadedMessageDto[]) => void;
+  prependOlderMessages: (msgs: LoadedMessageDto[]) => void;
   appendMessage: (message: LoadedMessageDto) => void;
   updateMessage: (id: string, updates: Partial<LoadedMessageDto>) => void;
 
@@ -89,58 +90,7 @@ export interface UseChatStreamReturn {
   contextWindowUsage: { totalTokens: number; contextWindow: number; maxOutputTokens: number } | null;
 }
 
-/**
- * Filter messages to only include those in active conversation chains.
- * Finds all leaf messages and traces parentUuid backwards from each leaf.
- * This preserves all conversation chains (including pre-compact history)
- * while still filtering out abandoned side-branches.
- * Summary entries (compact markers) and progress entries are always kept.
- */
-function filterActiveChain(messages: LoadedMessageDto[]): LoadedMessageDto[] {
-  if (messages.length === 0) return messages;
 
-  // Build uuid → message lookup
-  const byUuid = new Map<string, LoadedMessageDto>();
-  for (const msg of messages) {
-    if (msg.uuid) byUuid.set(msg.uuid, msg);
-  }
-
-  // Find all child→parent references to identify leaf messages
-  const hasChild = new Set<string>();
-  for (const msg of messages) {
-    if (msg.parentUuid && byUuid.has(msg.parentUuid)) {
-      hasChild.add(msg.parentUuid);
-    }
-  }
-
-  // Find leaf messages (no message references them as parent)
-  // For each leaf, trace back to root — collecting all active UUIDs
-  const activeUuids = new Set<string>();
-  for (const msg of messages) {
-    if (!msg.uuid) continue;
-    if (hasChild.has(msg.uuid)) continue; // not a leaf
-
-    // Trace from this leaf backwards
-    let current: LoadedMessageDto | undefined = msg;
-    while (current) {
-      if (current.uuid) activeUuids.add(current.uuid);
-      const parentUuid = current.parentUuid;
-      if (parentUuid && byUuid.has(parentUuid)) {
-        current = byUuid.get(parentUuid);
-      } else {
-        break;
-      }
-    }
-  }
-
-  // Filter: keep messages in any active chain
-  // progress and summary entries are always kept
-  return messages.filter(msg => {
-    if (msg.type === LoadedMessageType.Progress) return true;
-    if (msg.type === LoadedMessageType.Summary) return true;
-    return msg.uuid ? activeUuids.has(msg.uuid) : false;
-  });
-}
 
 export function useChatStream(options: UseChatStreamOptions): UseChatStreamReturn {
   const { bridge, onStreamStart, onStreamEnd, onError, onSystemMessage, onToolUseStart } = options;
@@ -478,17 +428,14 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
       // .filter(raw => raw.type === LoadedMessageType.User || raw.type === LoadedMessageType.Assistant)
       .map(raw => toInstance(LoadedMessageDto, raw));
 
-    // Build active chain by tracing parentUuid from the last message
-    const activeMessages = filterActiveChain(convertedMessages);
-
-    setMessages(activeMessages);
+    setMessages(convertedMessages);
     setError(null);
     setAuthDiagnosis(null);
-    console.log('[useChatStream] Loaded messages:', convertedMessages.length, '→ active chain:', activeMessages.length);
+    console.log('[useChatStream] Loaded messages:', convertedMessages.length);
 
     // 마지막 assistant 메시지에서 usage 복원
-    for (let i = activeMessages.length - 1; i >= 0; i--) {
-      const msg = activeMessages[i];
+    for (let i = convertedMessages.length - 1; i >= 0; i--) {
+      const msg = convertedMessages[i];
       if (msg.type === LoadedMessageType.Assistant && msg.message?.usage) {
         const usage = msg.message.usage as {
           input_tokens?: number;
@@ -509,6 +456,15 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
         }
       }
     }
+  }, []);
+
+  const prependOlderMessages = useCallback((msgs: LoadedMessageDto[]) => {
+    const convertedMessages = msgs.map(raw => toInstance(LoadedMessageDto, raw));
+    setMessages(prev => {
+      const existingUuids = new Set(prev.map(m => m.uuid).filter(Boolean));
+      const filteredNew = convertedMessages.filter(m => !m.uuid || !existingUuids.has(m.uuid));
+      return [...filteredNew, ...prev];
+    });
   }, []);
 
   // Retry
@@ -1059,6 +1015,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
     addUserMessage,
     clearMessages,
     loadMessages,
+    prependOlderMessages,
     appendMessage,
     updateMessage,
     retry,

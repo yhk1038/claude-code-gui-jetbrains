@@ -3,6 +3,7 @@ import { Select, type SelectOption } from '@/components/Select';
 import { ToggleSwitch } from '@/components/ToggleSwitch';
 import { HostModeRow } from './HostModeRow';
 import { OpenSettingsRow } from './OpenSettingsRow';
+import { ChatPaginationRow } from './ChatPaginationRow';
 import { ClaudeConfigDirRow } from './ClaudeConfigDirRow';
 import { APP_NAME } from '@/config/app';
 import { ROUTE_META, Route } from '@/router/routes';
@@ -103,6 +104,8 @@ export function GeneralSettings() {
         <HostModeRow />
 
         <OpenSettingsRow />
+
+        <ChatPaginationRow />
 
         <ClaudeConfigDirRow />
       </SettingSection>

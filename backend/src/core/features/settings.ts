@@ -18,6 +18,7 @@ const DEFAULT_SETTINGS: Record<string, unknown> = {
   terminalApp: null,
   hostMode: 'editor-tab',
   openSettingsAs: 'overlay',
+  chatPagination: true,
   env: {},
 };
 
@@ -32,6 +33,7 @@ const COMMENT_MAP: Record<string, string> = {
   terminalApp: '터미널 프로그램 (null이면 OS 기본 터미널)',
   hostMode: '채팅을 띄우는 자리: "editor-tab" | "tool-window"',
   openSettingsAs: '설정 화면을 여는 방식: "overlay" | "new-tab"',
+  chatPagination: '채팅 기록을 페이지 단위로 로드(스크롤 시 이전 메시지 추가). false면 전체를 한 번에 로드',
   env: '자식 프로세스(claude, ccb)에 주입할 환경 변수. 예: { CLAUDE_CONFIG_DIR: "..." }',
 };
 
@@ -149,6 +151,11 @@ function validateSetting(key: string, value: unknown): string | null {
     case 'openSettingsAs':
       if (!['overlay', 'new-tab'].includes(value as string)) {
         return 'openSettingsAs must be one of "overlay", "new-tab"';
+      }
+      break;
+    case 'chatPagination':
+      if (typeof value !== 'boolean') {
+        return `${key} must be a boolean`;
       }
       break;
     case 'env': {

@@ -123,6 +123,7 @@ export async function handleMessage(
       await getSessionsHandler(connectionId, message, connections, bridge);
       break;
     case MessageType.LOAD_SESSION:
+    case MessageType.LOAD_OLDER_MESSAGES:
       await loadSessionHandler(connectionId, message, connections, bridge);
       break;
     case MessageType.DELETE_SESSION:

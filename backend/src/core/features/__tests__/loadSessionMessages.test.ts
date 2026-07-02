@@ -36,9 +36,9 @@ describe('loadSessionMessages', () => {
     ]);
 
     const result = await loadSessionMessages('/work', 'sess-1');
-    expect(result).toHaveLength(2);
-    expect(result[0].type).toBe('user');
-    expect(result[1].type).toBe('assistant');
+    expect(result.messages).toHaveLength(2);
+    expect(result.messages[0].type).toBe('user');
+    expect(result.messages[1].type).toBe('assistant');
   });
 
   it('should skip invalid JSON lines', async () => {
@@ -49,12 +49,12 @@ describe('loadSessionMessages', () => {
     ]);
 
     const result = await loadSessionMessages('/work', 'sess-1');
-    expect(result).toHaveLength(1);
+    expect(result.messages).toHaveLength(1);
   });
 
   it('should return empty array on file read error', async () => {
     const result = await loadSessionMessages('/work', 'nonexistent');
-    expect(result).toEqual([]);
+    expect(result.messages).toEqual([]);
   });
 
   it('should pass through all JSONL entry types without filtering', async () => {
@@ -67,13 +67,13 @@ describe('loadSessionMessages', () => {
     ]);
 
     const result = await loadSessionMessages('/work', 'sess-1');
-    expect(result).toHaveLength(5);
+    expect(result.messages).toHaveLength(5);
   });
 
   it('should skip empty lines', async () => {
     await writeSession('sess-1', ['', JSON.stringify({ type: 'user', uuid: 'u1' }), '', '']);
     const result = await loadSessionMessages('/work', 'sess-1');
-    expect(result).toHaveLength(1);
+    expect(result.messages).toHaveLength(1);
   });
 
   // Regression test for issue #19: large session files must stream, not block.
@@ -91,9 +91,9 @@ describe('loadSessionMessages', () => {
     }
     await writeSession('sess-big', lines);
 
-    const result = await loadSessionMessages('/work', 'sess-big');
-    expect(result).toHaveLength(10_000);
-    expect(result[0].type).toBe('user');
-    expect(result[9_999].type).toBe('assistant');
+    const result = await loadSessionMessages('/work', 'sess-big', undefined, 15_000);
+    expect(result.messages).toHaveLength(10_000);
+    expect(result.messages[0].type).toBe('user');
+    expect(result.messages[9_999].type).toBe('assistant');
   }, 15_000);
 });
