@@ -134,7 +134,10 @@ export function JetBrainsActionRenderer(props: RendererProps) {
     const isError = toolResultIsError(toolResult);
     const out = toolResultText(toolResult);
 
-    const patch = suffix === 'apply_patch' ? ((input.input ?? input.patch ?? '') as string) : '';
+    // apply_patch's diff is a string; a non-string (model slip / schema drift) must
+    // not reach PatchView → parseApplyPatch(...).split('\n'), which would throw.
+    const rawPatch = suffix === 'apply_patch' ? (input.input ?? input.patch) : undefined;
+    const patch = typeof rawPatch === 'string' ? rawPatch : '';
     const files = spec?.filesParam && Array.isArray(input[spec.filesParam])
         ? (input[spec.filesParam] as unknown[]).filter((f): f is string => typeof f === 'string')
         : [];

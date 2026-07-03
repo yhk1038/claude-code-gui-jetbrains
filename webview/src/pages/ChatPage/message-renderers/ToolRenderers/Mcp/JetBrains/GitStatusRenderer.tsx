@@ -1,6 +1,6 @@
-import {RendererProps, ToolWrapper, toolResultText, toolResultIsError, Container, LabelValue, ResultCaption} from "../../common";
+import {RendererProps, ToolWrapper, toolResultText, toolResultIsError, ResultCaption} from "../../common";
 import {CollapsibleBox} from "../_common";
-import {JetBrainsToolHeader, JetBrainsResultError, PathRow, Badge, safeParseJson, asArray, prettyResult, inputProjectPath, joinProjectPath} from "./_shared";
+import {JetBrainsToolHeader, JetBrainsResultError, PathRow, Badge, RawJsonResult, safeParseJson, asArray, asObjects, inputProjectPath, joinProjectPath} from "./_shared";
 
 interface GitEntry {
     pathRelativeToRepository: string;
@@ -19,7 +19,7 @@ interface GitStatusResult {
 }
 
 function statusInfo(idx?: string, wt?: string): {label: string; tone: 'default' | 'success' | 'error' | 'warning'} {
-    const c = wt && wt.trim() ? wt : idx;
+    const c = typeof wt === 'string' && wt.trim() ? wt : idx;
     switch (c) {
         case '?': return {label: 'untracked', tone: 'default'};
         case 'M': return {label: 'modified', tone: 'warning'};
@@ -38,9 +38,9 @@ export function GitStatusRenderer(props: RendererProps) {
     const isError = toolResultIsError(props.toolResult);
     const parsed = safeParseJson<GitStatusResult>(out);
     const hasRepos = Array.isArray(parsed?.repositories);
-    const repos = asArray<GitRepo>(parsed?.repositories);
-    const rows = repos.flatMap((r) => asArray<GitEntry>(r.entries).map((e) => ({e, repoRel: r.repositoryPathRelativeToProject ?? ''})));
-    const total = repos.reduce((n, r) => n + (r.totalEntries ?? asArray(r.entries).length), 0);
+    const repos = asObjects<GitRepo>(parsed?.repositories);
+    const rows = repos.flatMap((r) => asObjects<GitEntry>(r.entries).map((e) => ({e, repoRel: r.repositoryPathRelativeToProject ?? ''})));
+    const total = repos.reduce((n, r) => n + (typeof r.totalEntries === 'number' ? r.totalEntries : asArray(r.entries).length), 0);
     const projectPath = inputProjectPath(props.toolUse.input);
     const input = (props.toolUse.input ?? {}) as Record<string, unknown>;
     const flags = [
@@ -63,8 +63,8 @@ export function GitStatusRenderer(props: RendererProps) {
             />
             {isError ? (
                 <JetBrainsResultError toolResult={props.toolResult} />
-            ) : !repos ? (
-                out && <Container className="mt-1.5"><LabelValue maxHeight="max-h-[160px]">{prettyResult(out)}</LabelValue></Container>
+            ) : !hasRepos ? (
+                <RawJsonResult out={out} />
             ) : rows.length === 0 ? (
                 <ResultCaption className="mt-1">Working tree clean</ResultCaption>
             ) : (

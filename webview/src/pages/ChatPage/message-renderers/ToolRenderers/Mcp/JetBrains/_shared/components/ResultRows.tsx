@@ -3,7 +3,7 @@ import type {LoadedMessageDto} from "@/types";
 import {parseUserDeclined} from "@/shared";
 import {toolResultIsError, toolResultText} from "../../../../common";
 import {type DebuggerOutcome} from "../helpers";
-import {surprisingFields} from "../tool-params";
+import {sensitiveFields, surprisingFields} from "../tool-params";
 import {Badge} from "./Badge";
 
 interface DebuggerOutcomeRowProps {
@@ -23,8 +23,12 @@ export const DebuggerOutcomeRow = (props: DebuggerOutcomeRowProps) => {
             {outcome.status && (
                 <Badge tone={outcome.status === 'timeout' ? 'warning' : 'default'}>{outcome.status}</Badge>
             )}
-            {outcome.oldValue !== undefined && (
-                <span className="font-mono text-text-primary/80">{outcome.oldValue} → {outcome.newValue}</span>
+            {(outcome.oldValue !== undefined || outcome.newValue !== undefined) && (
+                <span className="font-mono text-text-primary/80">
+                    {outcome.oldValue !== undefined && outcome.newValue !== undefined
+                        ? `${outcome.oldValue} → ${outcome.newValue}`
+                        : (outcome.oldValue ?? outcome.newValue)}
+                </span>
             )}
             {outcome.applied !== undefined && (
                 <Badge tone={outcome.applied ? 'success' : 'error'}>{outcome.applied ? 'applied' : 'not applied'}</Badge>
@@ -75,6 +79,34 @@ export const UnrecognizedInputNotice = (props: UnrecognizedInputNoticeProps) => 
                     </div>
                 ))}
             </div>
+        </div>
+    );
+};
+
+interface SensitiveInputDisclosureProps {
+    toolName: string;
+    input: Record<string, unknown>;
+}
+
+/**
+ * Always-on disclosure of execution-affecting params (program arguments, working
+ * directory, environment variables). These are valid schema fields, so the
+ * unrecognized-input notice never flags them and the action renderers don't show
+ * them — yet they change WHAT runs, so they must be visible before approval.
+ * Renders nothing when none are present.
+ */
+export const SensitiveInputDisclosure = (props: SensitiveInputDisclosureProps) => {
+    const fields = sensitiveFields(props.toolName, props.input);
+    if (!fields.length) return null;
+
+    return (
+        <div className="mt-1 flex flex-col gap-0.5 font-mono text-[0.8461rem] text-text-primary/80">
+            {fields.map((f) => (
+                <div key={f.key} className="whitespace-pre-wrap break-all">
+                    <span className="text-text-primary/50">{f.key}: </span>
+                    {formatFieldValue(f.value)}
+                </div>
+            ))}
         </div>
     );
 };

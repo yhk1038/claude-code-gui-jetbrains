@@ -3,7 +3,7 @@ import {ContextPills} from "@/pages/ChatPage/message-renderers";
 import type {LoadedMessageDto} from "@/types";
 import {Tooltip} from "@/components";
 import {cn} from "@/utils/cn.ts";
-import {AnyContentBlockDto, ContentBlockType, TextBlockDto, ToolResultBlockDto, ToolUseBlockDto} from "@/dto/message/ContentBlockDto";
+import {ToolUseBlockDto} from "@/dto/message/ContentBlockDto";
 import {useToolStatus, type ToolStatus} from "./toolStatus";
 
 /**
@@ -21,24 +21,18 @@ export * from './RendererProps';
 export * from './toolStatus';
 
 /**
- * Extract displayable text from a tool_result (OUT) message.
- * tool_result content can be a plain string or a content-block array
- * (e.g. [{ type: 'text', text }]); both are normalized to a single string.
+ * Neutral note for a user's denial decision — deliberately NOT styled as an
+ * error, so a declined tool never reads as a failure. Shared by the generic MCP
+ * fallback and any renderer that wants the plain form (the JetBrains cards use
+ * their own badge-styled variant). Shows the instruction the user gave, if any.
  */
-export function toolResultText(toolResult?: LoadedMessageDto): string {
-    const content = toolResult?.message?.content;
-    if (!Array.isArray(content)) return '';
-    const block = content[0];
-    if (!block || block.type !== ContentBlockType.ToolResult) return '';
-    const value = (block as ToolResultBlockDto).content;
-    if (typeof value === 'string') return value;
-    if (Array.isArray(value)) {
-        return value
-            .map((b: AnyContentBlockDto) => (b.type === ContentBlockType.Text ? (b as TextBlockDto).text : ''))
-            .join('');
-    }
-    return '';
-}
+export const DeclinedNote = (props: {instruction?: string}) => (
+    <div className="mt-1 text-[0.8461rem] text-text-tertiary italic whitespace-pre-wrap">
+        {props.instruction
+            ? `You declined this tool. Asked Claude instead: “${props.instruction}”`
+            : 'You declined this tool.'}
+    </div>
+);
 
 export const ToolWrapper = (props: {
     message?: LoadedMessageDto;

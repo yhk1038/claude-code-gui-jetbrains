@@ -8,7 +8,13 @@
  *
  * Mirrored 1:1 in `webview/src/shared/` and `backend/src/shared/` (see CLAUDE.md).
  */
-export const USER_DECLINED_PREFIX = 'User declined to run this tool.';
+// A leading zero-width sentinel (U+200B) makes this marker practically impossible
+// for a real tool output / error string to reproduce by accident, closing the
+// in-band-signaling false-positive gap. It stays invisible to the model that
+// reads this content, and JS `String.prototype.trim()` does NOT strip U+200B, so
+// it survives the CLI round-trip into the persisted tool_result content.
+const DECLINE_SENTINEL = '\u200B';
+export const USER_DECLINED_PREFIX = `${DECLINE_SENTINEL}User declined to run this tool.`;
 const INSTEAD_SEPARATOR = ' Asked Claude instead: ';
 
 /** Build the denial tool_result content (model-friendly and webview-detectable). */

@@ -46,6 +46,14 @@ export interface ToolSpec {
     columnParam?: string;
     /** Existing run configuration name. */
     configParam?: string;
+    /**
+     * Execution-affecting params that must ALWAYS be shown to the user before
+     * approval even though they're in `known` (so `surprisingFields` won't flag
+     * them) and aren't otherwise rendered — e.g. program arguments, working
+     * directory, environment variables. Omitting these would let a run be
+     * launched with args/env the approval never revealed.
+     */
+    sensitiveParams?: string[];
     /** Every schema parameter with its declared type (excludes `projectPath`). */
     known: Record<string, ParamType>;
 }
@@ -130,6 +138,7 @@ export const TOOL_SPECS: Record<string, ToolSpec> = {
         fileParam: 'filePath',
         lineParam: 'line',
         configParam: 'configurationName',
+        sensitiveParams: ['programArguments', 'workingDirectory', 'envs'],
         known: {
             configurationName: 'string', filePath: FILE, line: 'number', timeout: 'number',
             waitForExit: 'boolean', programArguments: 'string', workingDirectory: 'string', envs: 'object',
@@ -161,6 +170,7 @@ export const TOOL_SPECS: Record<string, ToolSpec> = {
         fileParam: 'filePath',
         lineParam: 'line',
         configParam: 'configurationName',
+        sensitiveParams: ['programArguments', 'workingDirectory', 'envs'],
         known: {
             configurationName: 'string', filePath: FILE, line: 'number', timeout: 'number',
             graceWaitMs: 'number', programArguments: 'string', workingDirectory: 'string', envs: 'object',
@@ -251,6 +261,27 @@ export interface SurprisingField {
  * for unmodeled tools (the generic renderer dumps their full input instead) and
  * never flags `projectPath` (always conveyed by the path display).
  */
+export interface DisclosedField {
+    key: string;
+    value: unknown;
+}
+
+/**
+ * Present execution-affecting fields (a tool's {@link ToolSpec.sensitiveParams})
+ * that must always be shown before approval. Only keys actually provided in the
+ * input are returned; `[]` for tools without sensitive params or a clean input.
+ */
+export function sensitiveFields(toolName: string, input: Record<string, unknown>): DisclosedField[] {
+    const spec = getToolSpec(toolName);
+    if (!spec?.sensitiveParams) return [];
+    const out: DisclosedField[] = [];
+    for (const key of spec.sensitiveParams) {
+        const value = input[key];
+        if (value !== undefined && value !== null) out.push({key, value});
+    }
+    return out;
+}
+
 export function surprisingFields(toolName: string, input: Record<string, unknown>): SurprisingField[] {
     const spec = getToolSpec(toolName);
     if (!spec) return [];

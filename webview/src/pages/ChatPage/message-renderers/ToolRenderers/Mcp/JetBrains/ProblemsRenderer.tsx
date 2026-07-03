@@ -1,7 +1,7 @@
 import {ToolUseBlockDto} from "@/dto";
-import {RendererProps, ToolWrapper, toolResultText, toolResultIsError, Container, LabelValue, ResultCaption} from "../../common";
+import {RendererProps, ToolWrapper, toolResultText, toolResultIsError, ResultCaption} from "../../common";
 import {CollapsibleBox} from "../_common";
-import {JetBrainsToolHeader, JetBrainsResultError, PathRow, FileList, Badge, safeParseJson, prettyResult, inputProjectPath, resultIndicatesError} from "./_shared";
+import {JetBrainsToolHeader, JetBrainsResultError, PathRow, FileList, Badge, RawJsonResult, safeParseJson, inputProjectPath, resultIndicatesError} from "./_shared";
 
 class ProblemsToolUseDto extends ToolUseBlockDto {
     declare input: {filePath?: string; files?: string[]};
@@ -85,7 +85,7 @@ export function ProblemsRenderer(props: RendererProps) {
             {isError ? (
                 <JetBrainsResultError toolResult={props.toolResult} />
             ) : problems === null ? (
-                out && <Container className="mt-1.5"><LabelValue maxHeight="max-h-[160px]">{prettyResult(out)}</LabelValue></Container>
+                <RawJsonResult out={out} />
             ) : problems.length === 0 ? (
                 <ResultCaption className="mt-1">{buildSucceeded ? 'Build succeeded' : 'No problems'}</ResultCaption>
             ) : (

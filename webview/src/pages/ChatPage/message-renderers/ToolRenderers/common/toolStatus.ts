@@ -1,6 +1,6 @@
 import {createContext, useContext} from "react";
 import type {LoadedMessageDto} from "@/types";
-import {ContentBlockType, ToolResultBlockDto} from "@/dto/message/ContentBlockDto";
+import {AnyContentBlockDto, ContentBlockType, TextBlockDto, ToolResultBlockDto} from "@/dto/message/ContentBlockDto";
 import {USER_DECLINED_PREFIX} from "@/shared";
 
 /**
@@ -24,6 +24,22 @@ function firstToolResultBlock(toolResult?: LoadedMessageDto): ToolResultBlockDto
     return block as ToolResultBlockDto;
 }
 
+/**
+ * Extract displayable text from a tool_result (OUT) message. tool_result content
+ * can be a plain string or a content-block array (e.g. [{type:'text',text}]);
+ * both are normalized to a single string. Never throws.
+ */
+export function toolResultText(toolResult?: LoadedMessageDto): string {
+    const value = firstToolResultBlock(toolResult)?.content;
+    if (typeof value === 'string') return value;
+    if (Array.isArray(value)) {
+        return value
+            .map((b: AnyContentBlockDto) => (b.type === ContentBlockType.Text ? (b as TextBlockDto).text : ''))
+            .join('');
+    }
+    return '';
+}
+
 /** True when the tool_result block is flagged is_error. Never throws. */
 export function toolResultIsError(toolResult?: LoadedMessageDto): boolean {
     return firstToolResultBlock(toolResult)?.is_error === true;
@@ -32,11 +48,11 @@ export function toolResultIsError(toolResult?: LoadedMessageDto): boolean {
 /**
  * True when this result is a user's denial decision (not a tool/server failure).
  * The marker is set by the backend on denied permissions and persists in the
- * content, so it is recognized live and after a reload.
+ * content, so it is recognized live and after a reload — including when the CLI
+ * re-serializes the content as a text-block array rather than a bare string.
  */
 export function isUserDeclined(toolResult?: LoadedMessageDto): boolean {
-    const content = firstToolResultBlock(toolResult)?.content;
-    return typeof content === 'string' && content.startsWith(USER_DECLINED_PREFIX);
+    return toolResultText(toolResult).startsWith(USER_DECLINED_PREFIX);
 }
 
 /**

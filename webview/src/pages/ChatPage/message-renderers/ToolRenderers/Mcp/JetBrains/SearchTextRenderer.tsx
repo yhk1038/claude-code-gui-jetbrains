@@ -1,7 +1,7 @@
 import {ToolUseBlockDto} from "@/dto";
-import {RendererProps, ToolWrapper, toolResultText, toolResultIsError, Container, LabelValue, ResultCaption} from "../../common";
+import {RendererProps, ToolWrapper, toolResultText, toolResultIsError, ResultCaption} from "../../common";
 import {CollapsibleBox} from "../_common";
-import {JetBrainsToolHeader, JetBrainsResultError, PathRow, ScopeText, safeParseJson, asArray, inputProjectPath, getToolSpec} from "./_shared";
+import {JetBrainsToolHeader, JetBrainsResultError, PathRow, RawJsonResult, ScopeText, safeParseJson, asObjects, inputProjectPath, getToolSpec} from "./_shared";
 
 class SearchTextToolUseDto extends ToolUseBlockDto {
     declare input: {q?: string; query?: string; paths?: string[]};
@@ -22,7 +22,7 @@ export function SearchTextRenderer(props: RendererProps) {
     const out = toolResultText(props.toolResult);
     const isError = toolResultIsError(props.toolResult);
     const parsed = safeParseJson<SearchTextResult>(out);
-    const items = asArray<{filePath: string; startLine?: number}>(parsed?.items);
+    const items = asObjects<{filePath: string; startLine?: number}>(parsed?.items);
 
     return (
         <ToolWrapper message={props.message} groupClassName="pb-2.5">
@@ -48,7 +48,7 @@ export function SearchTextRenderer(props: RendererProps) {
                     </CollapsibleBox>
                 </div>
             ) : (
-                out && <Container className="mt-1.5"><LabelValue maxHeight="max-h-[160px]">{out}</LabelValue></Container>
+                <RawJsonResult out={out} pretty={false} />
             )}
         </ToolWrapper>
     );

@@ -1,6 +1,6 @@
-import {RendererProps, ToolWrapper, toolResultText, toolResultIsError, Container, LabelValue, ResultCaption} from "../../common";
+import {RendererProps, ToolWrapper, toolResultText, toolResultIsError, ResultCaption} from "../../common";
 import {CollapsibleBox} from "../_common";
-import {JetBrainsToolHeader, JetBrainsResultError, PathRow, Badge, safeParseJson, asArray, prettyResult, inputProjectPath} from "./_shared";
+import {JetBrainsToolHeader, JetBrainsResultError, PathRow, Badge, RawJsonResult, safeParseJson, asStrings, inputProjectPath} from "./_shared";
 
 interface OpenFilesResult {
     activeFilePath?: string;
@@ -13,7 +13,7 @@ export function OpenFilesRenderer(props: RendererProps) {
     const isError = toolResultIsError(props.toolResult);
     const parsed = safeParseJson<OpenFilesResult>(out);
     const hasFiles = Array.isArray(parsed?.openFiles);
-    const files = asArray<string>(parsed?.openFiles);
+    const files = asStrings(parsed?.openFiles);
     const active = parsed?.activeFilePath;
     const projectPath = inputProjectPath(props.toolUse.input);
 
@@ -27,7 +27,7 @@ export function OpenFilesRenderer(props: RendererProps) {
             {isError ? (
                 <JetBrainsResultError toolResult={props.toolResult} />
             ) : !hasFiles ? (
-                out && <Container className="mt-1.5"><LabelValue maxHeight="max-h-[160px]">{prettyResult(out)}</LabelValue></Container>
+                <RawJsonResult out={out} />
             ) : files.length === 0 ? (
                 <ResultCaption className="mt-1">No open files</ResultCaption>
             ) : (

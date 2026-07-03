@@ -1,5 +1,6 @@
 import {ReactNode} from "react";
-import {RendererProps, ToolHeader, ToolWrapper, toolResultText} from "../../common";
+import {parseUserDeclined} from "@/shared";
+import {RendererProps, ToolHeader, ToolWrapper, DeclinedNote, toolResultText} from "../../common";
 import {McpToolBody, McpToolRow} from "../_common";
 import {mcpHeaderLabel, mcpInputPreview} from "./cursorMcp";
 
@@ -48,11 +49,16 @@ export function GenericMcpRenderer(props: RendererProps) {
     const {toolUse, toolResult, message} = props;
     const input = toolUse.input as Record<string, unknown> | undefined;
     const outputText = toolResultText(toolResult);
+    // A denied permission is the user's decision, not a tool failure — render it as
+    // a neutral note instead of dumping the raw marker string into the OUT row.
+    const declined = parseUserDeclined(outputText);
 
     return (
         <ToolWrapper message={message} groupClassName="pb-2.5">
             <McpToolHeader name={toolUse.name} input={input} />
-            <McpToolOutput>{outputText}</McpToolOutput>
+            {declined
+                ? <DeclinedNote instruction={declined.instruction} />
+                : <McpToolOutput>{outputText}</McpToolOutput>}
         </ToolWrapper>
     );
 }

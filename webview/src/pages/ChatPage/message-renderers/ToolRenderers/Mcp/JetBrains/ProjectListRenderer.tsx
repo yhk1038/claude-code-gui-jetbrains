@@ -1,6 +1,6 @@
-import {RendererProps, ToolWrapper, toolResultText, toolResultIsError, Container, LabelValue, ResultCaption} from "../../common";
+import {RendererProps, ToolWrapper, toolResultText, toolResultIsError, ResultCaption} from "../../common";
 import {CollapsibleBox} from "../_common";
-import {JetBrainsToolHeader, JetBrainsResultError, Badge, safeParseJson, prettyResult} from "./_shared";
+import {JetBrainsToolHeader, JetBrainsResultError, Badge, RawJsonResult, safeParseJson} from "./_shared";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /** Pick the result array of `get_project_modules` / `get_project_dependencies`. */
@@ -36,7 +36,7 @@ export function ProjectListRenderer(props: RendererProps) {
             {isError ? (
                 <JetBrainsResultError toolResult={props.toolResult} />
             ) : !list ? (
-                out && <Container className="mt-1.5"><LabelValue maxHeight="max-h-[160px]">{prettyResult(out)}</LabelValue></Container>
+                <RawJsonResult out={out} />
             ) : list.length === 0 ? (
                 <ResultCaption className="mt-1">None</ResultCaption>
             ) : (

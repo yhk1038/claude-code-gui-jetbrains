@@ -1022,12 +1022,14 @@ class ClaudeCodePanel(
                         if (virtualFile != null) {
                             if (line != null && line > 0) {
                                 // line/column from tools are 1-based; OpenFileDescriptor is 0-based.
-                                OpenFileDescriptor(project, virtualFile, line - 1, (column ?: 1) - 1)
+                                // coerce so an out-of-contract column 0 can't become a negative offset.
+                                val col = ((column ?: 1) - 1).coerceAtLeast(0)
+                                OpenFileDescriptor(project, virtualFile, line - 1, col)
                                     .navigate(true)
                             } else {
                                 FileEditorManager.getInstance(project).openFile(virtualFile, true)
                             }
-                            logger.info("Opened file: $path${if (line != null) ":$line" else ""}")
+                            logger.info("Opened file: $path${if (line != null && line > 0) ":$line" else ""}")
                         } else {
                             logger.warn("File not found: $path")
                         }

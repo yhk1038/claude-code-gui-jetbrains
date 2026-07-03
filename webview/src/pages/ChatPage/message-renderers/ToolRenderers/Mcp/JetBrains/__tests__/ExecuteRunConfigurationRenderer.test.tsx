@@ -19,6 +19,23 @@ describe('ExecuteRunConfigurationRenderer', () => {
         expect(screen.getByText('BUILD OK')).toBeInTheDocument();
     });
 
+    it('discloses execution-affecting params (args / cwd / env) before approval', () => {
+        renderWithStatus(
+            <ExecuteRunConfigurationRenderer
+                toolUse={makeToolUse({
+                    configurationName: 'build',
+                    programArguments: '--drop-db --force',
+                    workingDirectory: '/tmp/sandbox',
+                    envs: {SECRET: 'x'},
+                }, TOOL)}
+                toolResult={makeToolResult('{"output":"ok","exitCode":0}')}
+            />
+        );
+        expect(screen.getByText(/--drop-db --force/)).toBeInTheDocument();
+        expect(screen.getByText(/\/tmp\/sandbox/)).toBeInTheDocument();
+        expect(screen.getByText(/SECRET/)).toBeInTheDocument();
+    });
+
     it('shows the error message when no run point exists', () => {
         renderWithStatus(
             <ExecuteRunConfigurationRenderer

@@ -10,8 +10,12 @@ export async function openFileHandler(
   bridge: Bridge,
 ): Promise<void> {
   const filePath = message.payload?.filePath as string;
-  const line = message.payload?.line as number | undefined;
-  const column = message.payload?.column as number | undefined;
+  // Validate at runtime rather than asserting: a non-number line/column (a caller
+  // slip) must not flow downstream to the IDE as a bogus coordinate.
+  const rawLine = message.payload?.line;
+  const rawColumn = message.payload?.column;
+  const line = typeof rawLine === 'number' ? rawLine : undefined;
+  const column = typeof rawColumn === 'number' ? rawColumn : undefined;
   if (filePath) {
     try {
       await bridge.openFile(filePath, line, column);

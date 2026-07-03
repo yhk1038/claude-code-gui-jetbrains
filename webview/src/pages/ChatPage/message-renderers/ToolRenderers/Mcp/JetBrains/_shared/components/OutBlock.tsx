@@ -1,5 +1,6 @@
 import {ReactNode} from "react";
 import {Container, LabelValue} from "../../../../common";
+import {prettyResult} from "../helpers";
 
 interface InOutBlockProps {
     inContent?: ReactNode;
@@ -54,3 +55,24 @@ export const OutLabel = (props: OutLabelProps) => (
         {props.children}
     </div>
 );
+
+interface RawJsonResultProps {
+    out: string;
+    /** Pretty-print JSON output (default). Pass false to show the raw text as-is. */
+    pretty?: boolean;
+}
+
+/**
+ * The shared "couldn't parse the result into a rich card, show it raw" fallback
+ * box — a single source for the boilerplate that every list/collection renderer
+ * repeated. Renders nothing for empty output.
+ */
+export const RawJsonResult = (props: RawJsonResultProps) => {
+    const {out, pretty = true} = props;
+    if (!out) return null;
+    return (
+        <Container className="mt-1.5">
+            <LabelValue maxHeight="max-h-[160px]">{pretty ? prettyResult(out) : out}</LabelValue>
+        </Container>
+    );
+};

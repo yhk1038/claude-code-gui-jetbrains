@@ -6,7 +6,7 @@ import {ToolHeader, useCurrentToolUse} from "../../../../common";
 import {jetbrainsProductName, toolTitle, inputProjectPath} from "../helpers";
 import {Badge} from "./Badge";
 import {JetBrainsFileLink} from "./FileLink";
-import {UnrecognizedInputNotice} from "./ResultRows";
+import {SensitiveInputDisclosure, UnrecognizedInputNotice} from "./ResultRows";
 
 interface JetBrainsToolHeaderProps {
     name: string;
@@ -59,6 +59,7 @@ export const JetBrainsToolHeader = (props: JetBrainsToolHeaderProps) => {
                 </div>
             </ToolHeader>
             <ProjectPathChip />
+            {input && <SensitiveInputDisclosure toolName={name} input={input} />}
             {input && <UnrecognizedInputNotice toolName={name} input={input} />}
         </>
     );

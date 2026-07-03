@@ -59,8 +59,11 @@ interface JetBrainsFileLinkProps {
  * link stays plain text until the call succeeds and the file exists.
  */
 export const JetBrainsFileLink = (props: JetBrainsFileLinkProps) => {
-    const {path, label, projectPath, gateOnCreate = false} = props;
+    const {label, projectPath, gateOnCreate = false} = props;
     const status = useToolStatus();
+    // A non-string path (a model slip / future schema change) must never reach the
+    // path helpers or render a broken link — treat it as "no path".
+    const path = typeof props.path === 'string' ? props.path : '';
 
     // A "." / "" path is the project root — show it consistently, not as a dot.
     if (!label && isProjectRoot(path)) return <ProjectRootLink projectPath={projectPath} />;
@@ -103,7 +106,10 @@ interface PathRowProps {
  * against `projectPath`. Always clickable — result rows reference existing files.
  */
 export const PathRow = (props: PathRowProps) => {
-    const {path, line, projectPath, left, right} = props;
+    const {line, projectPath, left, right} = props;
+    // A non-string path (a malformed result element) must never render as an object
+    // (React throws) or reach the path helpers — treat it as an empty, inert row.
+    const path = typeof props.path === 'string' ? props.path : '';
     const clickable = !!path;
     const abs = joinProjectPath(projectPath, path);
     const loc = line ? `${path}:${line}` : path;

@@ -197,6 +197,24 @@ export function asArray<T>(value: unknown): T[] {
     return Array.isArray(value) ? (value as T[]) : [];
 }
 
+/**
+ * Like {@link asArray} but also drops elements that aren't plain objects (null,
+ * strings, numbers). `asArray` only guards the container; a renderer that reads
+ * `it.someField` on each element still throws if an element is `null` or a
+ * primitive (a model slip / future schema change can send `[null]`), so any
+ * per-element property access must go through this. Never throws.
+ */
+export function asObjects<T extends object>(value: unknown): T[] {
+    return asArray<unknown>(value).filter(
+        (it): it is T => typeof it === 'object' && it !== null && !Array.isArray(it),
+    );
+}
+
+/** Like {@link asArray} but keeps only string elements. Never throws. */
+export function asStrings(value: unknown): string[] {
+    return asArray<unknown>(value).filter((it): it is string => typeof it === 'string');
+}
+
 /** Parse a JSON string, returning undefined on any failure. Never throws. */
 export function safeParseJson<T>(text: string): T | undefined {
     if (!text) return undefined;
@@ -220,10 +238,14 @@ export function prettyResult(text: string): string {
     return parsed !== undefined ? JSON.stringify(parsed, null, 2) : text;
 }
 
-/** Final segment of a path (like the unix `basename` command); '' for a non-string. */
+/**
+ * Final segment of a path (like the unix `basename` command); '' for a non-string.
+ * Splits on both `/` and `\` so a Windows-style path (cmd/PowerShell/WSL are all
+ * supported targets) doesn't collapse into a single unsplit segment.
+ */
 export function basename(path: string): string {
     const s = typeof path === 'string' ? path : '';
-    const parts = s.split('/').filter(Boolean);
+    const parts = s.split(/[\\/]/).filter(Boolean);
     return parts.length ? parts[parts.length - 1] : s;
 }
 
@@ -254,10 +276,13 @@ export function inputProjectPath(input: unknown): string | undefined {
     return undefined;
 }
 
-/** Directory portion of a path including the trailing slash ('' when none / non-string). */
+/**
+ * Directory portion of a path including the trailing separator ('' when none /
+ * non-string). Handles both `/` and `\` separators (Windows paths included).
+ */
 export function dirname(path: string): string {
-    const norm = (typeof path === 'string' ? path : '').replace(/\/+$/, '');
-    const idx = norm.lastIndexOf('/');
+    const norm = (typeof path === 'string' ? path : '').replace(/[\\/]+$/, '');
+    const idx = Math.max(norm.lastIndexOf('/'), norm.lastIndexOf('\\'));
     return idx < 0 ? '' : norm.slice(0, idx + 1);
 }
 
@@ -327,7 +352,9 @@ export function debuggerOutcome(out: string): DebuggerOutcome | null {
         newValue: p.newValue !== undefined ? String(p.newValue) : undefined,
         applied: typeof p.applied === 'boolean' ? p.applied : undefined,
     };
-    const hasAny = outcome.status || outcome.message || outcome.oldValue !== undefined || outcome.applied !== undefined;
+    const hasAny = outcome.status || outcome.message
+        || outcome.oldValue !== undefined || outcome.newValue !== undefined
+        || outcome.applied !== undefined;
     return hasAny ? outcome : null;
 }
 
