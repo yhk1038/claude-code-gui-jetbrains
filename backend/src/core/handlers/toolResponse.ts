@@ -2,7 +2,7 @@ import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { sendToolResultToProcess, sendControlResponseToProcess } from '../claude-process';
-import { MessageType } from '../../shared';
+import { MessageType, buildUserDeclinedContent } from '../../shared';
 
 /** WebView -> Backend TOOL_RESPONSE payload */
 interface ToolResponsePayload {
@@ -35,21 +35,29 @@ export function toolResponseHandler(
   const controlRequestId = payload?.controlRequestId;
 
   if (controlRequestId) {
-    // AskUserQuestion: control_response 프로토콜
+    // control_response 프로토콜 (can_use_tool permission, ExitPlanMode, AskUserQuestion).
+    // A denial here is the user's DECISION, not a tool/server failure. This is the
+    // LIVE path for every permission prompt: the CLI turns our `deny` message into
+    // the resulting tool_result content (is_error:true). We stamp that message with
+    // the shared USER_DECLINED_PREFIX marker so the webview can render it as a
+    // neutral "Declined" note instead of a red error — and, since the marker lives
+    // in the persisted content, the distinction survives a reload.
     const response = {
       subtype: 'success' as const,
       request_id: controlRequestId,
       response: approved
         ? { behavior: 'allow', updatedInput: payload?.updatedInput ?? {} }
-        : { behavior: 'deny', message: payload?.reason || 'User declined to answer' },
+        : { behavior: 'deny', message: buildUserDeclinedContent(payload?.reason) },
     };
     sendControlResponseToProcess(connections, sessionId, response);
     console.error('[node-backend]', `CONTROL_RESPONSE sent for request ${controlRequestId} (approved: ${approved})`);
   } else {
-    // 일반 tool permission: tool_result 방식
-    const resultContent =
-      payload?.result ||
-      (approved ? 'Tool execution approved' : 'Tool execution rejected');
+    // Legacy tool_result path (kept for completeness; permission prompts use the
+    // control_response branch above). Same marker rule so a denial reads as a
+    // neutral decision rather than a red error, and survives reload.
+    const resultContent = approved
+      ? (payload?.result || 'Tool execution approved')
+      : buildUserDeclinedContent(payload?.reason);
 
     const toolResult = {
       type: 'tool_result' as const,

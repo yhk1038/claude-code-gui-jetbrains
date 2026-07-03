@@ -40,11 +40,11 @@ export interface IdeAdapter {
   openSettings(): Promise<void>;
 
   /**
-   * Open a file in the IDE editor
-   * - In JetBrains: Opens the file in the IDE editor via Kotlin bridge
-   * - In Browser: Logs the file path (cannot open local files)
+   * Open a file in the IDE editor, optionally focusing a 1-based line/column.
+   * - In JetBrains: opens (and navigates to the line) via the Kotlin bridge
+   * - In Browser: hands the path to the OS opener (line/column can't be focused)
    */
-  openFile(filePath: string): Promise<void>;
+  openFile(filePath: string, line?: number, column?: number): Promise<void>;
 
   /**
    * Open Claude in an external terminal

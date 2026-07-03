@@ -43,6 +43,22 @@ export function formatMcpToolName(name: string): string {
     return `${serverPretty} [${toolSegment}]`;
 }
 
+/**
+ * Per-family naming contract. Each MCP tool family (JetBrains, …) implements ONE
+ * of these and registers it in `Mcp/humanize.ts`; general chat UI (e.g. the
+ * permission dialog) then asks the aggregator for a label and never reaches into
+ * a family's renderer internals. Adding the Nth family is one registry line, not
+ * a new `isXxxTool` branch scattered across general code.
+ */
+export interface McpToolNamer {
+    /** True when this family owns `name` (e.g. a JetBrains launcher server). */
+    matches(name: string): boolean;
+    /** Full human label for "Allow <label>?" — e.g. "IntelliJ IDEA: Create new file". */
+    label(name: string): string;
+    /** Phrase for "Yes, allow all <…> this session" — e.g. `"Create new file"`. */
+    sessionScopeLabel(name: string): string;
+}
+
 export const McpToolBody = (props: {children?: ReactNode}) => {
     const {children} = props;
     return (

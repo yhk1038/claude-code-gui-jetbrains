@@ -8,7 +8,9 @@ import { readSettingsFile } from '../core/features/settings';
  * operations are no-ops since there is no IDE host.
  */
 export class BrowserBridge implements Bridge {
-  async openFile(path: string): Promise<void> {
+  // line/column are accepted for interface parity but can't be honored by the OS
+  // opener (xdg-open/open/explorer) — line focus is a JetBrains-mode feature.
+  async openFile(path: string, _line?: number, _column?: number): Promise<void> {
     return new Promise<void>((resolve) => {
       const cb = (err: Error | null) => {
         if (err) {
