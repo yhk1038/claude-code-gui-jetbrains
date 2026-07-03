@@ -207,6 +207,7 @@ describe('settings', () => {
         terminalApp: null,
         hostMode: 'editor-tab',
         openSettingsAs: 'overlay',
+        chatPagination: true,
         env: {},
       });
       expect(mockWriteFile).toHaveBeenCalled();
@@ -278,6 +279,7 @@ export default {
         terminalApp: null,
         hostMode: 'editor-tab',
         openSettingsAs: 'overlay',
+        chatPagination: true,
         env: {},
       });
     });

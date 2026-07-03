@@ -1,10 +1,9 @@
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
-import { loadSessionMessages } from '../features/loadSessionMessages';
-import { reconstructWorkflowTasks } from '../features/workflow-tracker';
-import { markSessionAsSpawned, isWorkflowRunning } from '../claude-process';
+import { markSessionAsSpawned } from '../claude-process';
 import { MessageType } from '../../shared';
+import { loadAndSendSession } from './loadAndSendSession';
 
 export async function reclaimSessionHandler(
   connectionId: string,
@@ -14,6 +13,7 @@ export async function reclaimSessionHandler(
 ): Promise<void> {
   const sessionId = message.payload?.sessionId as string;
   const workingDir = message.payload?.workingDir as string | undefined;
+  const limit = message.payload?.limit as number | undefined;
 
   if (!sessionId) {
     connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
@@ -43,29 +43,10 @@ export async function reclaimSessionHandler(
   markSessionAsSpawned(sessionId);
 
   // 3. 세션 메시지 로딩 & 전송
+  // Forward the pagination limit so a reclaim honors the user's "Paginate chat
+  // history" setting exactly like the initial load (loadSessionHandler).
   connections.subscribe(connectionId, sessionId);
-  const messages = await loadSessionMessages(workingDir, sessionId);
-  connections.sendTo(connectionId, MessageType.SESSION_LOADED, {
-    sessionId,
-    messages,
-  });
-
-  // Rebuild background-workflow state from the transcript (see loadSession).
-  try {
-    const workflows = await reconstructWorkflowTasks(
-      messages as Array<Record<string, unknown>>,
-      (toolUseId) => isWorkflowRunning(sessionId, toolUseId),
-    );
-    for (const task of workflows) {
-      connections.sendTo(
-        connectionId,
-        MessageType.WORKFLOW_PROGRESS,
-        task as unknown as Record<string, unknown>,
-      );
-    }
-  } catch (err) {
-    console.error('[node-backend]', 'workflow reconstruction failed:', err);
-  }
+  await loadAndSendSession(connectionId, connections, workingDir, sessionId, { limit });
 
   console.error('[node-backend]', `Session ${sessionId} reclaimed successfully`);
   connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });

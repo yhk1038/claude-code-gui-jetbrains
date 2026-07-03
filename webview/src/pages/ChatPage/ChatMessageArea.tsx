@@ -1,30 +1,31 @@
-import { useMemo, useRef } from 'react';
+import { useRef } from 'react';
 import { MessageBubble } from './MessageBubble';
 import { ProjectSelectorPage } from '@/pages/ProjectSelectorPage';
 import { useSessionContext } from '../../contexts/SessionContext';
 import { useChatStreamContext } from '../../contexts/ChatStreamContext';
-import { mergeToolResults } from './mergeToolResults';
 import { StreamErrorBanner } from './StreamErrorBanner';
 import './streaming.css';
 import {StreamingIndicator} from "./StreamingIndicator/index.tsx";
 import { EmptyState } from './EmptyState';
 import { isJetBrains } from '@/config/environment';
+import { LoadedMessageDto } from '../../types';
 
 interface Props {
   isStreaming: boolean;
+  mergedMessages: LoadedMessageDto[];
+  hasMore: boolean;
+  isLoadingMore: boolean;
+  onLoadMore: () => void;
 }
 
 export function ChatMessageArea(props: Props) {
-  const { isStreaming } = props;
+  const { isStreaming, mergedMessages, hasMore, isLoadingMore, onLoadMore } = props;
   const { workingDirectory } = useSessionContext();
-  const { messages, retry: onRetry } = useChatStreamContext();
+  const { retry: onRetry } = useChatStreamContext();
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll is driven entirely by ChatPage's single poll loop, which scrolls
   // the container directly — this component only renders the messages.
-
-  // Merge tool_result user messages into preceding assistant's tool_use blocks
-  const mergedMessages = useMemo(() => mergeToolResults(messages), [messages]);
 
   const isEmpty = mergedMessages.length === 0;
 
@@ -41,11 +42,6 @@ export function ChatMessageArea(props: Props) {
     return <ProjectSelectorPage />;
   }
 
-  const log = () => {
-    // console.log('messages', messages);
-    // console.log('mergedMessages', mergedMessages)
-  }
-
   // Empty state: no messages yet
   if (isEmpty) {
     return <EmptyState />;
@@ -53,9 +49,26 @@ export function ChatMessageArea(props: Props) {
 
   // Render messages with widgets
   return (
-    <div ref={containerRef} className="flex-1 text-xs" onClick={log}>
+    <div ref={containerRef} className="flex-1 text-xs">
+      {(isLoadingMore || hasMore) && (
+        <div className="flex justify-center py-4">
+          {isLoadingMore ? (
+            <span className="inline-flex items-center gap-2 text-xs text-text-tertiary">
+              <span className="w-3.5 h-3.5 border-2 border-border-default border-t-text-secondary rounded-full animate-spin" />
+              Loading earlier messages…
+            </span>
+          ) : (
+            <button
+              onClick={onLoadMore}
+              className="px-4 py-1.5 bg-surface-raised border border-border-default rounded-full text-xs font-medium text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors duration-200 shadow-sm"
+            >
+              Load older messages
+            </button>
+          )}
+        </div>
+      )}
       {mergedMessages.map((message) => (
-        <div key={message.uuid} onClick={() => console.log('message', message.uuid, message)}>
+        <div key={message.uuid}>
           <MessageBubble message={message} onRetry={onRetry} />
         </div>
       ))}

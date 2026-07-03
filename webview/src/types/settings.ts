@@ -25,7 +25,17 @@ export enum SettingKey {
 
   // Settings screen open mode
   OPEN_SETTINGS_AS = 'openSettingsAs',
+
+  // Chat history paging
+  CHAT_PAGINATION = 'chatPagination',
 }
+
+/**
+ * Page size sent when chat pagination is OFF: request the whole active chain in
+ * one shot so the backend returns everything (hasMore=false → no "load older"
+ * UI). Shared by every session-load path so they resolve the setting identically.
+ */
+export const NO_PAGINATION_LIMIT = 1_000_000;
 
 /**
  * How the Settings screen opens from the gear button:
@@ -78,6 +88,7 @@ export interface SettingsState {
   [SettingKey.TERMINAL_APP]: string | null;
   [SettingKey.HOST_MODE]: HostMode;
   [SettingKey.OPEN_SETTINGS_AS]: OpenSettingsMode;
+  [SettingKey.CHAT_PAGINATION]: boolean;
 }
 
 /**
@@ -94,4 +105,5 @@ export const DEFAULT_SETTINGS: SettingsState = {
   [SettingKey.TERMINAL_APP]: null,
   [SettingKey.HOST_MODE]: HostMode.EDITOR_TAB,
   [SettingKey.OPEN_SETTINGS_AS]: OpenSettingsMode.OVERLAY,
+  [SettingKey.CHAT_PAGINATION]: true,
 };

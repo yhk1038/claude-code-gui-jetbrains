@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 import { useCliConfig } from '@/contexts/CliConfigContext';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
 import {
   EFFORT_AUTO,
   EffortLevelDef,
@@ -48,8 +49,9 @@ export interface UseEffortReturn {
 export function useEffort(): UseEffortReturn {
   const { settings, updateSetting } = useClaudeSettings();
   const { controlResponse } = useCliConfig();
+  const currentModel = useCurrentModel();
 
-  const { supportsEffort, levels } = getModelEffortConfig(controlResponse, settings.model);
+  const { supportsEffort, levels } = getModelEffortConfig(controlResponse, currentModel);
   const current = parseEffortLevel(settings.effortLevel, levels);
 
   const ultracodeAvailable =

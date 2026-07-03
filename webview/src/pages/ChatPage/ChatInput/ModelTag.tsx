@@ -1,11 +1,13 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Tag } from '@/pages/ChatPage/ChatInput/Tag';
 import { useChatStreamContext } from '@/contexts/ChatStreamContext';
 import { useCliConfig } from '@/contexts/CliConfigContext';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useBridge } from '@/hooks/useBridge';
 import { SWITCH_MODEL_EVENT } from '@/pages/ChatPage/ModelSwitchOverlay';
-import { DEFAULT_MODEL_ALIAS, resolveModelInfo, resolveModelLabel, toModelAlias } from '@/types/models';
+import { DEFAULT_MODEL_ALIAS, resolveModelInfo, resolveModelLabel, toModelAlias, withFableFallback } from '@/types/models';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
+import { useVersionInfo } from '@/hooks/useVersionInfo';
 import { LoadedMessageType } from '@/types';
 import type { ModelInfo } from '@/types/slashCommand';
 import { MessageType } from '@/shared';
@@ -35,17 +37,24 @@ function fallbackModelLabel(current: string): string {
  * (models not loaded yet), the tag renders nothing.
  */
 export function ModelTag() {
-  const { sessionModel, setSessionModel, appendMessage } = useChatStreamContext();
+  const { setSessionModel, appendMessage } = useChatStreamContext();
   const { controlResponse } = useCliConfig();
   const { currentSessionId } = useSessionContext();
   const { send } = useBridge();
+  const currentModel = useCurrentModel();
+  const { cliVersion } = useVersionInfo();
 
-  const models: ModelInfo[] = controlResponse?.response?.response?.models ?? [];
+  // Memoized on the CLI response so the fallback-augmented array keeps a stable
+  // reference across renders (the rotate effect below depends on `models`).
+  const models: ModelInfo[] = useMemo(
+    () => withFableFallback(controlResponse?.response?.response?.models ?? [], new Date(), cliVersion),
+    [controlResponse, cliVersion],
+  );
 
   useEffect(() => {
     const handleRotate = () => {
       if (models.length === 0) return;
-      const info = resolveModelInfo(models, sessionModel ?? DEFAULT_MODEL_ALIAS);
+      const info = resolveModelInfo(models, currentModel);
       const idx = info ? models.indexOf(info) : -1;
       const next = models[(idx + 1) % models.length];
 
@@ -66,17 +75,16 @@ export function ModelTag() {
 
     window.addEventListener(ROTATE_MODEL_EVENT, handleRotate);
     return () => window.removeEventListener(ROTATE_MODEL_EVENT, handleRotate);
-  }, [models, sessionModel, setSessionModel, appendMessage, currentSessionId, send]);
+  }, [models, currentModel, setSessionModel, appendMessage, currentSessionId, send]);
 
   // Models not loaded yet — nothing meaningful to show. The CLI config arrives
   // shortly and fills this in; this is the ONLY case where the tag is hidden.
   if (models.length === 0) return null;
 
-  const current = sessionModel ?? DEFAULT_MODEL_ALIAS;
-  const info = resolveModelInfo(models, current);
+  const info = resolveModelInfo(models, currentModel);
   // Once models are loaded the tag always renders: a matched label when we can
   // resolve the model, otherwise a humanized fallback so it never disappears.
-  const label = info ? resolveModelLabel(info) : fallbackModelLabel(current);
+  const label = info ? resolveModelLabel(info) : fallbackModelLabel(currentModel);
 
   const handleClick = () => {
     window.dispatchEvent(new CustomEvent(SWITCH_MODEL_EVENT));

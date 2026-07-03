@@ -1,6 +1,7 @@
 import {useState} from "react";
-import {useApi, useSessionContext} from "@/contexts";
+import {useApi, useSessionContext, useSettings} from "@/contexts";
 import { SessionState } from "@/types";
+import { SettingKey, NO_PAGINATION_LIMIT } from "@/types/settings";
 
 export function isSessionConflict(error: Error): boolean {
     return error.message.includes('already in use');
@@ -10,13 +11,18 @@ export function isSessionConflict(error: Error): boolean {
 export const SessionConflictErrorBanner = () => {
     const { currentSessionId, workingDirectory, setSessionState } = useSessionContext();
     const api = useApi();
+    const { settings } = useSettings();
     const [isReclaiming, setIsReclaiming] = useState(false);
 
     const handleReclaim = async () => {
         if (!currentSessionId || !workingDirectory || isReclaiming) return;
         setIsReclaiming(true);
         try {
-            await api.sessions.reclaim(currentSessionId);
+            // Honor the same pagination setting as the initial load — otherwise a
+            // reclaim would truncate a fully-loaded conversation back to one page.
+            const chatPagination = settings[SettingKey.CHAT_PAGINATION] ?? true;
+            const limit = chatPagination ? undefined : NO_PAGINATION_LIMIT;
+            await api.sessions.reclaim(currentSessionId, undefined, limit);
             // SESSION_LOADED 이벤트 → loadMessages → setError(null) 자동 처리
             setSessionState(SessionState.Idle);
         } catch (e) {

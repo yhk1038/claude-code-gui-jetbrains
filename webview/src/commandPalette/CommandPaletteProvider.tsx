@@ -3,8 +3,9 @@ import { useChatStreamContext } from '@/contexts/ChatStreamContext';
 import { useChatInputState } from '@/contexts/ChatInputStateContext';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useCliConfig } from '@/contexts/CliConfigContext';
-import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
 import { getModelEffortConfig } from '@/types/effort';
+import { resolveModelInfo } from '@/types/models';
 import { getAdapter } from '@/adapters';
 import { useConfirmDialog } from '@/components/ConfirmDialog/useConfirmDialog';
 import { useWorkflowState } from '@/contexts/WorkflowStateContext';
@@ -15,6 +16,7 @@ import type { SlashCommandInfo } from '@/types/slashCommand';
 import { CommandPaletteServices } from './types';
 import { CommandPaletteRegistry } from './CommandPaletteRegistry';
 import { KeyboardRegistry } from './KeyboardRegistry';
+import { applyModelCapabilityFlags } from './applyModelCapabilityFlags';
 import {
   ContextSection,
   ModelSection,
@@ -56,15 +58,19 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
   const chatInputState = useChatInputState();
   const session = useSessionContext();
   const { controlResponse } = useCliConfig();
-  const { settings } = useClaudeSettings();
   const { confirmDialog, confirm } = useConfirmDialog();
   const workflowState = useWorkflowState();
+  const currentModel = useCurrentModel();
 
-  // The Effort row only makes sense on models that support effort. On others
-  // (e.g. Haiku) it would render an empty, unresponsive row — the same
-  // "nothing happens" symptom as issue #121 — so we drop it, matching the
-  // Cursor extension (which unregisters the effort action for such models).
-  const supportsEffort = getModelEffortConfig(controlResponse, settings.model).supportsEffort;
+  // The Effort and fast-mode rows only make sense on models that support
+  // them. Rather than hiding them on unsupported models (e.g. Haiku), we
+  // keep them visible but disabled with a hover tooltip explaining why —
+  // matching the pattern already used for other disabled rows in the panel.
+  // See applyModelCapabilityFlags for where this is applied to the built
+  // sections.
+  const supportsEffort = getModelEffortConfig(controlResponse, currentModel).supportsEffort;
+  const models = controlResponse?.response?.response?.models ?? [];
+  const supportsFastMode = resolveModelInfo(models, currentModel)?.supportsFastMode ?? false;
 
   // Services ref - always points to current React state
   const servicesRef = useRef<CommandPaletteServices>({
@@ -226,13 +232,8 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
       registry.registerSection(new SlashCommandsSection(), sortedCommands);
     }
     const built = registry.buildSections();
-    if (supportsEffort) return built;
-    // Hide the Effort row on effort-unsupported models (see note above).
-    return built.map((s) => ({
-      ...s,
-      items: s.items.filter((it) => it.id !== 'effort'),
-    }));
-  }, [registry, commands, supportsEffort]);
+    return built.map((s) => applyModelCapabilityFlags(s, { supportsEffort, supportsFastMode }));
+  }, [registry, commands, supportsEffort, supportsFastMode]);
 
   const contextValue = useMemo<CommandPaletteRegistryContextValue>(
     () => ({ registry, keyboardRegistry, sections }),
