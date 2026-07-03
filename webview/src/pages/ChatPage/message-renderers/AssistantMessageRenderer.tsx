@@ -4,6 +4,7 @@ import { ToolUseBlockDto, ThinkingBlockDto, ContentBlockType } from '../../../dt
 import { StreamingMessage } from '../StreamingMessage';
 import { ToolRenderer } from './ToolRenderer';
 import { AuthErrorRenderer } from './AuthErrorRenderer';
+import { mergeAdjacentTextBlocks } from './mergeAdjacentTextBlocks';
 import {ThinkingStreamingMessage} from "@/pages/ChatPage/ThinkingStreamingMessage.tsx";
 
 interface AssistantMessageRendererProps {
@@ -15,7 +16,10 @@ export const AssistantMessageRenderer: React.FC<AssistantMessageRendererProps> =
   message,
 }) => {
   const content = message.message?.content;
-  const blocks = isContentBlockArray(content) ? content : [];
+  // Merge adjacent text blocks so a single logical block streamed as multiple
+  // text blocks renders as one markdown document (issue #155). Non-text blocks
+  // (tool_use/thinking) stay as boundaries, preserving legitimate splits.
+  const blocks = mergeAdjacentTextBlocks(isContentBlockArray(content) ? content : []);
   const hasContent = blocks.length > 0 || typeof content === 'string';
 
   // Skip rendering if message has no meaningful content (e.g. interrupted empty responses)
