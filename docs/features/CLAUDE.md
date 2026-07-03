@@ -11,3 +11,4 @@
 - [MCP Server Management](./003-mcp_server_management/en.md) — GUI에서 MCP 서버를 조회·추가·편집·제거·활성화·재연결하는 MCP 서버 관리 패널 ([#136](https://github.com/yhk1038/claude-code-gui-jetbrains/pull/136))
 - [Settings Overlay](./004-settings_overlay/en.md) — 설정을 현재 채팅 위 오버레이로 열어 진행 중인 세션을 잃지 않게 하고, 여는 방식(오버레이/새 탭)을 선택할 수 있는 기능 ([#137](https://github.com/yhk1038/claude-code-gui-jetbrains/pull/137))
 - [Claude Code CLI Version & Update](./005-cli_version_update/en.md) — 설치된 CLI 버전을 확인하고, 설치 방식(npm/pnpm/yarn/volta/native/homebrew/winget)에 맞는 공식 명령으로 GUI에서 바로 업데이트하는 기능 ([#150](https://github.com/yhk1038/claude-code-gui-jetbrains/pull/150))
+- [Native rendering for JetBrains IDE MCP tools](./007-jetbrains_mcp_native_rendering/en.md) — IDE 내장 MCP 도구(`mcp__idea__…` 등) 호출을 raw JSON 대신 전용 채팅 카드로 렌더링하고, `file:line` 이동·인간화된 권한 다이얼로그·중립 declined 상태·프로젝트 확인 칩·정직한 상태 점을 제공하는 기능 ([#147](https://github.com/yhk1038/claude-code-gui-jetbrains/pull/147))
