@@ -51,7 +51,13 @@ backend/coverage/
 
 # Claude Code / OMC
 .claude.json
-.claude/
+# .claude/ — whitelist policy: local by default; only shared contributor
+# skills are tracked. Owner-only skills (deploy, precheck, release-monitor,
+# cc-gui-reporter), personal settings/backups, and internal docs stay local.
+.claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/pr-checklist/
 .claude-code-gui/
 .omc/
 .taskmaster/
@@ -71,3 +77,13 @@ backend/coverage/
 npm-debug.log*
 
 www/
+
+# scripts/ — whitelist policy: everything under scripts/ is local by
+# default; only the shared, non-owner developer tools below are tracked.
+# Deploy/marketplace scripts (release.sh, marketplace-monitor.sh,
+# verifier-allowlist.txt) are owner-only — like the .claude/ deploy
+# skills — and intentionally stay local-only (not re-included here).
+scripts/*
+!scripts/build.sh
+!scripts/zombies.sh
+!scripts/all-build-run-ide.sh

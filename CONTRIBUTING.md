@@ -184,6 +184,26 @@ MyComponent/
 - Follow conventional style: `fix:`, `feat:`, `refactor:`, `docs:`, `chore:`, etc.
 - Keep the first line under 72 characters
 
+## Core Principles
+
+These principles are non-negotiable and take priority over convenience. See
+[CLAUDE.md](CLAUDE.md) for the full rationale.
+
+- **CLI equivalence & no official-SDK dependency.** Anything a user can do from
+  the `claude` CLI must be doable from the GUI, and features must be built on the
+  public CLI contract — never on the official SDK library or undocumented internal
+  protocols. Reference apps (Cursor, etc.) are copied for their **UX only**, not
+  for their internal implementation means.
+- **Preserve original data structures.** Claude Code's original data (JSONL
+  entries, session metadata) must reach the WebView with its per-entry structure
+  unedited: no field renaming, no dropping fields the current UI doesn't use.
+  Range-splitting (pagination / active-chain view) is allowed as long as each
+  entry stays structurally intact and the full data remains reachable.
+- **Consistent naming.** The same action uses the same verb everywhere (method,
+  IPC message type, handler). All IPC message `type`s use the `MessageType` enum
+  (mirrored in `webview/src/shared` ↔ `backend/src/shared`), never plain string
+  literals.
+
 ## Submitting Changes
 
 ### Before you start
@@ -194,16 +214,39 @@ MyComponent/
 ### Pull request process
 
 1. Fork the repository and create a branch from `main`
-2. Make your changes following the code style above
-3. Ensure all checks pass:
+2. Make your changes following the code style and core principles above
+3. **Rebase onto the latest `main` before opening the PR.** Always pull the newest
+   `main` and rebase your branch on top of it so the PR applies cleanly on the
+   current tip — do not open a PR from a stale base.
+   ```bash
+   git fetch origin
+   git rebase origin/main
+   ```
+4. **Write feature docs for feature PRs.** Any user-facing feature must ship with a
+   doc under `docs/features/NNN-feature_name/` (per-language `en.md` / `ko.md`,
+   …) plus one index line in `docs/features/CLAUDE.md`. See
+   [docs/features/CLAUDE.md](docs/features/CLAUDE.md) for the format.
+5. **Do not use marketplace-forbidden APIs.** JetBrains **Internal** APIs
+   (`@ApiStatus.Internal`, anything under an `impl` package) are forbidden — they
+   fail the Marketplace Plugin Verifier. Avoid **Deprecated** APIs too (they raise
+   warnings). When a native capability needs a risky API, gate it behind reflection
+   or a public alternative.
+6. **Ensure cross-platform safety.** Any code that can touch the OS must work on
+   Windows, macOS, and Linux. **Windows is not a single environment** — treat
+   `cmd`, PowerShell, **WSL**, and **WSL2** as distinct shells. Use `path.join()`
+   (not hardcoded `/`), `os.tmpdir()` (not `/tmp`); avoid Unix-only commands
+   (`which`, `chmod`, POSIX pipes) and signals (`SIGKILL`); account for `\r\n`
+   vs `\n`, `HOME` vs `USERPROFILE`, and PATH asymmetry on WSL (inherit it via a
+   login shell, e.g. `bash -lic`).
+7. Ensure all checks pass (tests cover all three layers — WebView / Backend / Kotlin):
    ```bash
    bash ./scripts/build.sh wv-test
    bash ./scripts/build.sh wv-lint
    bash ./scripts/build.sh be-lint
    bash ./scripts/build.sh full-build
    ```
-4. Write a clear PR description explaining **what** you changed and **why**
-5. Submit the PR against `main`
+8. Write a clear PR description explaining **what** you changed and **why**
+9. Submit the PR against `main`
 
 ### What to expect
 
