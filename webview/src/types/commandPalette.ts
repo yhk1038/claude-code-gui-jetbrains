@@ -41,6 +41,8 @@ export interface PanelItemBase {
   /** Rendered right after the label (secondary color), e.g. Effort's "(Extra high)". */
   labelSuffix?: () => React.ReactNode;
   disabled?: boolean;
+  /** Hover tooltip shown on a disabled row explaining why it's unavailable (e.g. model capability gating). */
+  disabledReason?: string;
   keepOpen?: boolean;
   /** Hidden from the panel by default; only surfaced when the filter query matches its label. */
   searchOnly?: boolean;

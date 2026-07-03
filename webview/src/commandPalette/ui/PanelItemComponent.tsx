@@ -1,5 +1,5 @@
 import React from 'react';
-import { PanelItem, ToggleItem, CommandItem, PanelItemType, IconType } from '@/types/commandPalette';
+import { PanelItem, PanelItemBase, ToggleItem, CommandItem, PanelItemType, IconType } from '@/types/commandPalette';
 import { ToggleSwitch } from '@/components/ToggleSwitch';
 import { TerminalIcon, LinkIcon } from './icons/PaletteIcons';
 import { cn } from '@/utils/cn';
@@ -34,7 +34,7 @@ export const PanelItemComponent = React.forwardRef<HTMLDivElement, Props>((props
   const isClickable = item.type !== PanelItemType.Info && !item.disabled;
   const hasRightTerminalIcon = item.icon === IconType.Terminal && item.type === PanelItemType.Action;
   const title = item.disabled
-    ? 'Coming soon'
+    ? ((item as PanelItemBase).disabledReason ?? 'Coming soon')
     : item.type === PanelItemType.Command
       ? (item as CommandItem).description
       : undefined;

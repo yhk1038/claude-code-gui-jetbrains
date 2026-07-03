@@ -9,6 +9,9 @@ import { ToggleSwitch } from '@/components/ToggleSwitch';
 
 export const FAST_MODE_TOGGLE_EVENT = 'fast-mode-toggle';
 
+/** Reason shown as a hover tooltip when the row is disabled (model doesn't support fast mode). */
+export const FAST_MODE_UNSUPPORTED_REASON = 'Fast mode is only available on Opus models';
+
 function resolveActiveModel(
   models: ModelInfo[],
   sessionModel: string | null,
@@ -17,9 +20,12 @@ function resolveActiveModel(
   return resolveModelInfo(models, sessionModel ?? settingsModel);
 }
 
-// disabled를 런타임에 동적으로 변경할 수 있도록 backing field + getter/setter 설정
-let _disabled = false;
-const _toggleFastModeItem = new StaticItem('toggle-fast-mode', 'Toggle fast mode', {
+// Actual disabled state is injected by CommandPaletteProvider (via
+// applyModelCapabilityFlags) based on the current model's capability, not
+// mutated here. Mutating module-level state from a render function is a
+// React anti-pattern that caused stale/flickering disabled state (see
+// applyModelCapabilityFlags for the source of truth).
+export const toggleFastModeItem = new StaticItem('toggle-fast-mode', 'Toggle fast mode', {
   disabled: false,
   keepOpen: true,
   valueComponent: () => <FastModeToggle />,
@@ -27,13 +33,6 @@ const _toggleFastModeItem = new StaticItem('toggle-fast-mode', 'Toggle fast mode
     window.dispatchEvent(new CustomEvent(FAST_MODE_TOGGLE_EVENT));
   },
 });
-Object.defineProperty(_toggleFastModeItem, 'disabled', {
-  get: () => _disabled,
-  set: (v: boolean) => { _disabled = v; },
-  enumerable: true,
-  configurable: true,
-});
-export const toggleFastModeItem = _toggleFastModeItem;
 
 const FastModeToggle = () => {
   const { settings, updateSetting } = useClaudeSettings();
@@ -43,9 +42,6 @@ const FastModeToggle = () => {
   const activeModel = resolveActiveModel(models, sessionModel, settings.model);
   const supportsFastMode = activeModel?.supportsFastMode ?? false;
   const enabled = settings.preferFastMode ?? false;
-
-  // 행(row) disabled 상태를 supportsFastMode에 따라 동적으로 갱신
-  (toggleFastModeItem as unknown as { disabled: boolean }).disabled = !supportsFastMode;
 
   // 행(row) 클릭 시 발생하는 이벤트 처리 (지원되는 모델일 때만 토글)
   useEffect(() => {

@@ -27,7 +27,7 @@ export interface ClaudeSettingsState {
   ultracode?: boolean | null; // xhigh effort + standing workflow orchestration; the slider's top step (null = off/cleared)
   disableWorkflows?: boolean; // CLI-owned: when true, the Workflows feature (and ultracode) is unavailable
   alwaysThinkingEnabled: boolean; // extended thinking always on
-  preferFastMode: boolean; // fast output mode (Opus 4.6 only)
+  preferFastMode: boolean; // fast output mode (Opus models only)
   useCtrlEnterToSend: boolean; // when true, Ctrl/Cmd+Enter sends; plain Enter inserts a newline
   focusInputOnEditorContext: boolean; // when true, move focus to chat input after inserting file path via Alt+K
   respectGitignoreForContext: boolean; // when true, exclude body of .gitignore'd files from editor context (path only)
