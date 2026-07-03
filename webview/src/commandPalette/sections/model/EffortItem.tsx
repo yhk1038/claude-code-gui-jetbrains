@@ -4,6 +4,9 @@ import { EffortSlider } from '@/components/EffortSlider';
 
 export const EFFORT_CYCLE_EVENT = 'effort-cycle';
 
+/** Reason shown as a hover tooltip when the row is disabled (model doesn't support effort levels). */
+export const EFFORT_UNSUPPORTED_REASON = "This model doesn't support effort levels";
+
 // Shown right after the "Effort" label, e.g. "(Extra high)" — matches the
 // Cursor extension's labelSuffix. Hidden when the model has no effort support.
 const EffortLabelSuffix = () => {

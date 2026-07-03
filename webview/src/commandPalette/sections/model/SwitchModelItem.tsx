@@ -2,12 +2,14 @@ import { StaticItem } from '../../types';
 import { SWITCH_MODEL_EVENT } from '@/pages/ChatPage/ModelSwitchOverlay';
 import { useCliConfig } from '@/contexts/CliConfigContext';
 import { useCurrentModel } from '@/hooks/useCurrentModel';
+import { useVersionInfo } from '@/hooks/useVersionInfo';
 import { resolveModelInfo, withFableFallback } from '@/types/models';
 
 const SwitchModelValue = () => {
   const { controlResponse } = useCliConfig();
   const currentModel = useCurrentModel();
-  const models = withFableFallback(controlResponse?.response?.response?.models ?? [], new Date());
+  const { cliVersion } = useVersionInfo();
+  const models = withFableFallback(controlResponse?.response?.response?.models ?? [], new Date(), cliVersion);
   const info = resolveModelInfo(models, currentModel);
   const text = info?.displayName ?? currentModel;
   return (
