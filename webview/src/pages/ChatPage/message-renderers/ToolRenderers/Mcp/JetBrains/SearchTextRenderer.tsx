@@ -7,22 +7,36 @@ class SearchTextToolUseDto extends ToolUseBlockDto {
     declare input: {q?: string; query?: string; paths?: string[]};
 }
 
+interface SearchEntry {
+    filePath: string;
+    startLine?: number;
+    lineNumber?: number; // newer `search_in_files_by_*` name for the match line
+}
+
 interface SearchTextResult {
-    items?: Array<{filePath: string; startLine?: number}>;
+    items?: SearchEntry[];  // older search_text / search_regex
+    entries?: SearchEntry[]; // newer search_in_files_by_text / _by_regex
     more?: boolean;
 }
 
-/** `search_text` / `search_regex`: "text/regex `…` in `…`" header, "N matches" + `path:line` rows. */
+/**
+ * `search_text` / `search_regex` and the newer `search_in_files_by_text` /
+ * `search_in_files_by_regex`: "text/regex `…` in `…`" header, "N matches" +
+ * `path:line` rows. The two tool generations differ only in the result key
+ * (`items` vs `entries`) and the match-line field (`startLine` vs `lineNumber`).
+ */
 export function SearchTextRenderer(props: RendererProps) {
     const toolUse = props.toolUse as unknown as SearchTextToolUseDto;
     const input = (toolUse.input ?? {}) as Record<string, unknown>;
-    const q = toolUse.input?.q ?? toolUse.input?.query ?? '';
-    const word = getToolSpec(toolUse.name)?.queryWord ?? 'query';
+    const spec = getToolSpec(toolUse.name);
+    const rawQ = spec?.queryParam ? input[spec.queryParam] : undefined;
+    const q = typeof rawQ === 'string' ? rawQ : (toolUse.input?.q ?? toolUse.input?.query ?? '');
+    const word = spec?.queryWord ?? 'query';
     const projectPath = inputProjectPath(input);
     const out = toolResultText(props.toolResult);
     const isError = toolResultIsError(props.toolResult);
     const parsed = safeParseJson<SearchTextResult>(out);
-    const items = asObjects<{filePath: string; startLine?: number}>(parsed?.items);
+    const items = asObjects<SearchEntry>(parsed?.items ?? parsed?.entries);
 
     return (
         <ToolWrapper message={props.message} groupClassName="pb-2.5">
@@ -44,7 +58,7 @@ export function SearchTextRenderer(props: RendererProps) {
                         {items.length}{parsed?.more ? '+' : ''} {items.length === 1 ? 'match' : 'matches'}
                     </ResultCaption>
                     <CollapsibleBox collapsedMaxHeight={200} className="flex flex-col gap-0.5">
-                        {items.map((it, i) => <PathRow key={i} path={it.filePath} line={it.startLine} projectPath={projectPath} />)}
+                        {items.map((it, i) => <PathRow key={i} path={it.filePath} line={it.startLine ?? it.lineNumber} projectPath={projectPath} />)}
                     </CollapsibleBox>
                 </div>
             ) : (

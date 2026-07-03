@@ -8,6 +8,7 @@ import {CreateNewFileRenderer} from "./CreateNewFileRenderer";
 import {ListDirectoryTreeRenderer} from "./ListDirectoryTreeRenderer";
 import {SearchFileRenderer} from "./SearchFileRenderer";
 import {SearchTextRenderer} from "./SearchTextRenderer";
+import {ReplaceTextRenderer} from "./ReplaceTextRenderer";
 import {ProblemsRenderer} from "./ProblemsRenderer";
 import {GitStatusRenderer} from "./GitStatusRenderer";
 import {ExecuteTerminalCommandRenderer} from "./ExecuteTerminalCommandRenderer";
@@ -26,9 +27,13 @@ import {ProjectListRenderer} from "./ProjectListRenderer";
 const RICH: Record<string, FC<RendererProps>> = {
     // Files / editor
     read_file: ReadFileRenderer,
+    get_file_text_by_path: ReadFileRenderer,
     create_new_file: CreateNewFileRenderer,
+    replace_text_in_file: ReplaceTextRenderer,
     list_directory_tree: ListDirectoryTreeRenderer,
     search_file: SearchFileRenderer,
+    find_files_by_glob: SearchFileRenderer,
+    find_files_by_name_keyword: SearchFileRenderer,
     open_file_in_editor: JetBrainsActionRenderer,
     reformat_file: JetBrainsActionRenderer,
     apply_patch: JetBrainsActionRenderer,
@@ -37,6 +42,8 @@ const RICH: Record<string, FC<RendererProps>> = {
     rename_refactoring: JetBrainsActionRenderer,
     search_text: SearchTextRenderer,
     search_regex: SearchTextRenderer,
+    search_in_files_by_text: SearchTextRenderer,
+    search_in_files_by_regex: SearchTextRenderer,
     // Inspections
     get_file_problems: ProblemsRenderer,
     lint_files: ProblemsRenderer,

@@ -68,8 +68,12 @@ export const TOOL_TITLES: Record<string, string> = {
     open_file_in_editor: 'Open file',
     get_all_open_file_paths: 'Get all open file paths',
     read_file: 'Read file',
+    get_file_text_by_path: 'Read file',
+    replace_text_in_file: 'Replace in file',
     create_new_file: 'Create new file',
     search_file: 'Search files',
+    find_files_by_glob: 'Find files (glob)',
+    find_files_by_name_keyword: 'Find files by name',
     list_directory_tree: 'List files',
     reformat_file: 'Reformat',
     apply_patch: 'Apply patch',
@@ -80,6 +84,8 @@ export const TOOL_TITLES: Record<string, string> = {
     rename_refactoring: 'Rename symbol',
     search_text: 'Search in files',
     search_regex: 'Search in files (regex)',
+    search_in_files_by_text: 'Search in files',
+    search_in_files_by_regex: 'Search in files (regex)',
     generate_psi_tree: 'PSI tree',
     find_threading_requirements_usages: 'Threading usages',
     find_lock_requirements_usages: 'Lock usages',
@@ -155,11 +161,14 @@ export const jetBrainsToolNamer: McpToolNamer = {
 /** Full catalog of JetBrains MCP tool suffixes (identical across IDEs). */
 export const JETBRAINS_TOOLS: string[] = [
     // Files / editor
-    'open_file_in_editor', 'get_all_open_file_paths', 'read_file', 'create_new_file',
-    'search_file', 'list_directory_tree', 'reformat_file', 'apply_patch',
+    'open_file_in_editor', 'get_all_open_file_paths', 'read_file', 'get_file_text_by_path',
+    'create_new_file', 'replace_text_in_file', 'search_file',
+    'find_files_by_glob', 'find_files_by_name_keyword', 'list_directory_tree',
+    'reformat_file', 'apply_patch',
     // Code / symbols
     'get_symbol_info', 'search_symbol', 'analyze_calls', 'rename_refactoring',
-    'search_text', 'search_regex', 'generate_psi_tree',
+    'search_text', 'search_regex', 'search_in_files_by_text', 'search_in_files_by_regex',
+    'generate_psi_tree',
     'find_threading_requirements_usages', 'find_lock_requirements_usages',
     // Inspections
     'get_file_problems', 'lint_files', 'run_inspection_kts',

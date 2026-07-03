@@ -70,6 +70,17 @@ export const TOOL_SPECS: Record<string, ToolSpec> = {
         fileParam: 'file_path',
         known: {file_path: FILE, offset: 'number', limit: 'number'},
     },
+    get_file_text_by_path: {
+        fileParam: 'pathInProject',
+        known: {pathInProject: FILE, maxLinesCount: 'number', truncateMode: 'string'},
+    },
+    replace_text_in_file: {
+        fileParam: 'pathInProject',
+        known: {
+            pathInProject: FILE, oldText: 'string', newText: 'string',
+            caseSensitive: 'boolean', replaceAll: 'boolean',
+        },
+    },
     open_file_in_editor: {
         fileParam: 'filePath',
         known: {filePath: FILE},
@@ -119,6 +130,38 @@ export const TOOL_SPECS: Record<string, ToolSpec> = {
         queryWord: 'regex',
         scopeParam: 'paths',
         known: {q: 'string', paths: 'string[]', limit: 'number'},
+    },
+    // Newer built-in MCP names (2025.2+) for the same in-files search; the result
+    // is `{entries:[{filePath,lineNumber,lineText}]}` (vs the older `{items}`).
+    search_in_files_by_text: {
+        queryParam: 'searchText',
+        queryWord: 'text',
+        known: {
+            searchText: 'string', caseSensitive: 'boolean', directoryToSearch: 'string',
+            fileMask: 'string', maxUsageCount: 'number', timeout: 'number',
+        },
+    },
+    search_in_files_by_regex: {
+        queryParam: 'regexPattern',
+        queryWord: 'regex',
+        known: {
+            regexPattern: 'string', caseSensitive: 'boolean', directoryToSearch: 'string',
+            fileMask: 'string', maxUsageCount: 'number', timeout: 'number',
+        },
+    },
+    // Filename search: result is `{files:[path]}` (glob adds probablyHasMoreMatchingFiles).
+    find_files_by_glob: {
+        queryParam: 'globPattern',
+        queryWord: 'glob',
+        known: {
+            globPattern: 'string', addExcluded: 'boolean', fileCountLimit: 'number',
+            subDirectoryRelativePath: 'string', timeout: 'number',
+        },
+    },
+    find_files_by_name_keyword: {
+        queryParam: 'nameKeyword',
+        queryWord: 'name',
+        known: {nameKeyword: 'string', fileCountLimit: 'number', timeout: 'number'},
     },
     search_symbol: {
         queryParam: 'q',

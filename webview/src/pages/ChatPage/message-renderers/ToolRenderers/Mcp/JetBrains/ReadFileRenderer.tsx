@@ -1,16 +1,20 @@
 import {ToolUseBlockDto} from "@/dto";
 import {RendererProps, ToolWrapper, toolResultText, toolResultIsError, Container, LabelValue} from "../../common";
-import {JetBrainsToolHeader, JetBrainsResultError, inputProjectPath} from "./_shared";
+import {JetBrainsToolHeader, JetBrainsResultError, headerFilePath, inputProjectPath} from "./_shared";
 
 class ReadFileToolUseDto extends ToolUseBlockDto {
     declare input: {file_path: string; offset?: number; limit?: number};
 }
 
-/** `read_file`: clickable file link + numbered-line content (collapsible). */
+/**
+ * `read_file` and `get_file_text_by_path`: clickable file link + file content.
+ * The path key differs per tool (`file_path` vs `pathInProject`), so it is
+ * resolved from the tool spec rather than a hard-coded input key.
+ */
 export function ReadFileRenderer(props: RendererProps) {
     const toolUse = props.toolUse as unknown as ReadFileToolUseDto;
     const input = (toolUse.input ?? {}) as Record<string, unknown>;
-    const path = toolUse.input?.file_path ?? '';
+    const path = headerFilePath(toolUse.name, input) ?? '';
     const out = toolResultText(props.toolResult);
     const isError = toolResultIsError(props.toolResult);
 
