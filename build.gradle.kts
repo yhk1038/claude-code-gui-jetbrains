@@ -146,17 +146,12 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
-            <h3>0.22.1 - CLI updates and reliability fixes</h3>
+            <h3>0.23.0 - The Fable 5 model & native MCP tool cards</h3>
             <ul>
-                <li>You can now update the Claude Code CLI from Settings → About when a newer version is available; the update runs the command that matches your install method (npm/pnpm/yarn/volta, native, Homebrew, winget). The version shown in the command palette is also clickable to re-check.</li>
-                <li>Fixed: the "Sidebar" placement was ignored on WSL2 — the chat now opens in the tool-window sidebar as chosen, instead of always falling back to an editor tab.</li>
-                <li>Fixed: an occasional blank panel / blank history — bundled resources are now extracted once per version instead of per project, so the panel no longer intermittently renders a blank page after restarts or across multiple projects.</li>
-            </ul>
-            <h3>0.22.0 - Multiple accounts, MCP servers, and a smoother Settings</h3>
-            <ul>
-                <li><b>Multi-account management</b> is now available in the GUI — save multiple Claude accounts and switch between them with a click, from Settings → Account or the new avatar button in the chat header. Settings → Usage now compares the usage of every saved account on one screen. Switching physically swaps the live credentials (macOS Keychain / .credentials.json) with automatic rollback on failure. <i>Special thanks to @P1rnazarov.</i></li>
-                <li><b>MCP server management</b> is now available in the GUI — view, add, edit, remove, enable/disable, and reconnect MCP servers, no terminal needed. Open it with <code>/MCP Servers</code> in the slash-command palette or from the Customize section. Everything runs on the official <code>claude mcp</code> commands.</li>
-                <li><b>You can now open Settings as an overlay</b> — opening Settings no longer interrupts a running session. It now appears as an overlay over your chat, which keeps streaming underneath, and closes with the X, Esc, or a backdrop click. Prefer the old behavior? A new General setting lets you open Settings in a dedicated tab instead. <i>Special thanks to @P1rnazarov.</i></li>
+                <li><b>New model: Fable 5</b> — added to the model picker (requires Claude CLI 2.1.170+; you'll be prompted to update if your CLI is older). (#153)</li>
+                <li><b>Native rendering for JetBrains IDE MCP tools</b> — tool calls from your IDE's built-in MCP server (files, editor, symbols, inspections, run/debug, terminal, VCS, database) now render as rich, IDE-quality chat cards — with clickable file:line links, a project chip, and truthful success/failure status — instead of raw JSON. (#147 by @lukaszszczesniak)</li>
+                <li><b>Faster chat history</b> — long conversations now load a page at a time and open at the newest message. Toggle pagination on/off in Settings → General. (#145 by @P1rnazarov)</li>
+                <li><b>Model control fixes</b> — the effort slider now shows correctly on Opus and other models, the fast-mode toggle is stable, and unsupported controls stay visible but disabled with an explanatory tooltip instead of disappearing. (#154, reported by @maicol07)</li>
             </ul>
         """.trimIndent()
     }
