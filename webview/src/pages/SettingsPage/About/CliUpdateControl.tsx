@@ -11,25 +11,12 @@ import {
 import { UpdateMode } from '@/shared';
 import { useCliUpdate } from '@/hooks/queries/useCliUpdate';
 import { useConfirmDialog } from '@/components/ConfirmDialog/useConfirmDialog';
+import { compareVersions } from '@/utils/compareVersions';
 
 const BUTTON_CLASS =
   'flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded ' +
   'bg-accent-primary-hover hover:bg-accent-primary text-text-primary ' +
   'disabled:opacity-50 disabled:cursor-not-allowed transition-colors';
-
-/** Sign of a - b by semver components (>0 a newer, 0 equal, <0 a older). */
-function compareVersions(a: string, b: string): number {
-  const pa = a.split('.').map((n) => parseInt(n, 10));
-  const pb = b.split('.').map((n) => parseInt(n, 10));
-  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-    const x = pa[i] ?? 0;
-    const y = pb[i] ?? 0;
-    if (Number.isNaN(x) || Number.isNaN(y)) return 0;
-    if (x > y) return 1;
-    if (x < y) return -1;
-  }
-  return 0;
-}
 
 /**
  * One channel row in the dropdown. Its state is relative to the installed version:

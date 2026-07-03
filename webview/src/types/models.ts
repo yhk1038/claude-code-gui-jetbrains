@@ -1,4 +1,5 @@
 import type { ModelInfo } from './slashCommand';
+import { isAtLeastVersion } from '@/utils/compareVersions';
 
 /**
  * CLI model alias ("default", "opus", "sonnet", "haiku", "fable") used by the
@@ -55,6 +56,18 @@ export function isFablePromoActive(now: Date): boolean {
 }
 
 /**
+ * Minimum Claude Code CLI version that knows the Fable model (`--model fable`).
+ * Fable landed in CLI 2.1.170; older CLIs don't recognise it, so we must not
+ * surface a fallback they can't select.
+ */
+export const FABLE_MIN_CLI_VERSION = '2.1.170';
+
+/** Whether the running CLI is new enough to select Fable. */
+export function isFableSupportedCli(cliVersion: string | null | undefined): boolean {
+  return isAtLeastVersion(cliVersion, FABLE_MIN_CLI_VERSION);
+}
+
+/**
  * Hardcoded Fable item appended only when the CLI-provided catalog lacks Fable.
  * `value: 'fable'` matches the verified `--model fable` / `set_model` path.
  * `description` is the CLI's own Fable row text (kept verbatim, not invented).
@@ -74,14 +87,27 @@ export const FABLE_FALLBACK_MODEL: ModelInfo = {
  * not us, decides post-promo availability; only our hardcoded fallback is
  * gated on the promo still being active (`now`).
  *
+ * The hardcoded fallback is additionally gated on the CLI version: Fable landed
+ * in CLI 2.1.170 (`FABLE_MIN_CLI_VERSION`), and older CLIs don't recognise
+ * `--model fable`, so offering the fallback to them would surface a model the
+ * user can't actually select. The "CLI already serves it" dedup check runs
+ * BEFORE the version gate on purpose: an entitled account whose catalog carries
+ * Fable is necessarily on a CLI new enough to serve it, so we always trust that
+ * dynamic entry regardless of the parsed version string.
+ *
  * An empty list is left untouched: length 0 means the CLI config hasn't loaded
  * yet, and consumers treat that as "loading" (hide the tag / show a spinner).
  * Injecting Fable there would defeat that, so only a loaded list is augmented.
  */
-export function withFableFallback(models: ModelInfo[], now: Date): ModelInfo[] {
+export function withFableFallback(
+  models: ModelInfo[],
+  now: Date,
+  cliVersion: string | null | undefined,
+): ModelInfo[] {
   if (models.length === 0) return models;
-  if (models.some((m) => toModelAlias(m.value) === 'fable')) return models;
+  if (models.some((m) => toModelAlias(m.value) === 'fable')) return models; // CLI already serves it — always trust, regardless of version
   if (!isFablePromoActive(now)) return models;
+  if (!isFableSupportedCli(cliVersion)) return models; // an old CLI can't select Fable, so don't offer the fallback
   return [...models, FABLE_FALLBACK_MODEL];
 }
 

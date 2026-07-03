@@ -7,6 +7,7 @@ import { useBridge } from '@/hooks/useBridge';
 import { SWITCH_MODEL_EVENT } from '@/pages/ChatPage/ModelSwitchOverlay';
 import { DEFAULT_MODEL_ALIAS, resolveModelInfo, resolveModelLabel, toModelAlias, withFableFallback } from '@/types/models';
 import { useCurrentModel } from '@/hooks/useCurrentModel';
+import { useVersionInfo } from '@/hooks/useVersionInfo';
 import { LoadedMessageType } from '@/types';
 import type { ModelInfo } from '@/types/slashCommand';
 import { MessageType } from '@/shared';
@@ -41,12 +42,13 @@ export function ModelTag() {
   const { currentSessionId } = useSessionContext();
   const { send } = useBridge();
   const currentModel = useCurrentModel();
+  const { cliVersion } = useVersionInfo();
 
   // Memoized on the CLI response so the fallback-augmented array keeps a stable
   // reference across renders (the rotate effect below depends on `models`).
   const models: ModelInfo[] = useMemo(
-    () => withFableFallback(controlResponse?.response?.response?.models ?? [], new Date()),
-    [controlResponse],
+    () => withFableFallback(controlResponse?.response?.response?.models ?? [], new Date(), cliVersion),
+    [controlResponse, cliVersion],
   );
 
   useEffect(() => {

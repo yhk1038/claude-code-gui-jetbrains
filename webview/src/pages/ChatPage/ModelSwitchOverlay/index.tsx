@@ -5,6 +5,7 @@ import { useBridge } from '@/hooks/useBridge';
 import { useSessionContext } from '@/contexts/SessionContext';
 import { useCliConfig } from '@/contexts/CliConfigContext';
 import { useCurrentModel } from '@/hooks/useCurrentModel';
+import { useVersionInfo } from '@/hooks/useVersionInfo';
 import { LoadedMessageType } from '@/types';
 import {
   FABLE_PROMO_BADGE,
@@ -29,10 +30,11 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
   const { currentSessionId } = useSessionContext();
   const { controlResponse } = useCliConfig();
   const currentModel = useCurrentModel();
+  const { cliVersion } = useVersionInfo();
   const panelRef = useRef<HTMLDivElement>(null);
 
   const now = new Date();
-  const models: ModelInfo[] = withFableFallback(controlResponse?.response?.response?.models ?? [], now);
+  const models: ModelInfo[] = withFableFallback(controlResponse?.response?.response?.models ?? [], now, cliVersion);
   const currentInfo = resolveModelInfo(models, currentModel);
   const isMac = navigator.platform.toUpperCase().includes('MAC');
   const promoActive = isFablePromoActive(now);
