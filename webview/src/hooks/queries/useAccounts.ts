@@ -63,6 +63,7 @@ export function useAccounts(): UseAccountsResult {
     void queryClient.invalidateQueries({ queryKey: [MessageType.GET_ACCOUNTS] });
     void queryClient.invalidateQueries({ queryKey: [MessageType.GET_ACCOUNT] });
     void queryClient.invalidateQueries({ queryKey: [MessageType.GET_USAGE] });
+    void queryClient.invalidateQueries({ queryKey: [MessageType.GET_USAGE_REPORT] });
     void queryClient.invalidateQueries({ queryKey: [MessageType.GET_ALL_USAGE] });
   }, [queryClient]);
 

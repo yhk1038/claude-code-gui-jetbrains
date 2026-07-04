@@ -1,6 +1,7 @@
 import {
   spawn as cpSpawn,
   execFile as cpExecFile,
+  execFileSync,
   type ChildProcess,
   type SpawnOptions,
   type ExecFileOptions,
@@ -100,6 +101,26 @@ export class Claude {
         ...options?.env,
       },
     });
+  }
+
+  /**
+   * Terminate a process spawned via {@link spawn} AND its children. On win32
+   * spawn() runs through a shell, so the real `claude` is a grandchild of
+   * cmd.exe — a plain SIGTERM to `proc` leaves it orphaned. `taskkill /T` tears
+   * down the whole tree; macOS/Linux run the launcher directly, so SIGTERM
+   * suffices there. Used by every place that time-limits a spawned CLI child.
+   */
+  static killTree(proc: ChildProcess): void {
+    if (!proc.pid) return;
+    if (process.platform === 'win32') {
+      try {
+        execFileSync('taskkill', ['/F', '/T', '/PID', String(proc.pid)]);
+      } catch {
+        proc.kill();
+      }
+    } else {
+      proc.kill('SIGTERM');
+    }
   }
 
   static async exec(args: string[], options?: ExecFileOptions): Promise<{ stdout: string; stderr: string }> {

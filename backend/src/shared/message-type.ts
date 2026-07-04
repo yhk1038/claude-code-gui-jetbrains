@@ -89,6 +89,8 @@ export enum MessageType {
   DELETE_ACCOUNT = 'DELETE_ACCOUNT',
   /** Read usage/quota information. */
   GET_USAGE = 'GET_USAGE',
+  /** Run `claude -p "/usage"` and return its raw report text for the usage modal. inbound webview→backend */
+  GET_USAGE_REPORT = 'GET_USAGE_REPORT',
   /** Read usage/quota information for all accounts. */
   GET_ALL_USAGE = 'GET_ALL_USAGE',
   /** Read the plugin/backend version info. */

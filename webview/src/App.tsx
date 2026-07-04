@@ -24,7 +24,7 @@ function AppContent() {
 
   return (
     <>
-      {isDev() && <div className="sticky top-0 border-t-2 border-t-fuchsia-500 z-50" />}
+      {isDev() && <div className="fixed w-full top-0 border-t-2 border-t-fuchsia-500 z-50" />}
       <Routes location={backgroundLocation ?? location}>
         <Route path="/" element={<ProjectSelectorPage />} />
         <Route path="/sessions/new" element={<ChatPage />} />

@@ -22,7 +22,7 @@ export function ScopeTabs() {
                         : 'text-text-disabled hover:text-text-secondary'
                 }`}
             >
-                User Settings (Global)
+                <span>User<span className="max-xs:hidden"> Settings</span> (Global)</span>
             </button>
             <button
                 onClick={() => handleScopeChange('project')}
@@ -34,7 +34,7 @@ export function ScopeTabs() {
                 }`}
                 title={!workingDirectory ? 'Open a project to use project settings' : undefined}
             >
-                Project Settings (Local)
+                <span>Project<span className="max-xs:hidden"> Settings</span> (Local)</span>
             </button>
         </div>
     );

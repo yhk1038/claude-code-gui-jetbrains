@@ -76,7 +76,13 @@ export function useFableNotice(cliVersion: string | null | undefined): UseFableN
   // localStorage value is picked up without a manual `dismissed` mirror.
   const [, bump] = useState(0);
   const dismissed = getDismissed(variant);
-  const visible = isFablePromoActive(new Date()) && !dismissed;
+  // Default to hidden; only surface once the CLI version is known. The variant
+  // (and thus which dismissed key applies) depends on cliVersion, so evaluating
+  // before it resolves made the notice flash: it briefly rendered as
+  // 'update-required' (a key the user never dismissed), then vanished once the
+  // version arrived and the already-dismissed 'available' variant took over.
+  const cliKnown = !!cliVersion;
+  const visible = cliKnown && isFablePromoActive(new Date()) && !dismissed;
 
   const dismiss = useCallback(() => {
     persistDismissed(variant);

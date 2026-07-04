@@ -3,6 +3,7 @@ import { ModeIcon } from './ModeIcon';
 import { CheckIcon } from '@heroicons/react/16/solid';
 import { EffortSlider, EffortIcon } from '@/components/EffortSlider';
 import { useEffort } from '@/hooks/useEffort';
+import { isMobile } from '@/config/environment';
 
 interface Props {
   modes: InputMode[];
@@ -21,7 +22,7 @@ export function ModeSelectPanel(props: Props) {
   const { supportsEffort, def } = useEffort();
 
   return (
-    <div className="flex flex-col gap-0.5 rounded-lg border border-border-subtle bg-surface-raised py-1.5 shadow-lg min-w-[320px]">
+    <div className={`flex flex-col gap-0.5 rounded-lg border border-border-subtle bg-surface-raised py-1.5 shadow-lg ${isMobile() ? 'w-full min-w-0' : 'min-w-[320px]'}`}>
       <div className="flex items-center justify-between px-3 py-1.5 text-[0.8461rem] text-text-tertiary">
         <span>Modes</span>
         <span className="flex items-center gap-1">

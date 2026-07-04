@@ -26,7 +26,7 @@ export function useCloseSettings(): () => void {
     } else if (location.key === 'default') {
       navigate(Route.NEW_SESSION);
     } else {
-      goBack();
+      navigate(Route.NEW_SESSION);
     }
   }, [location.state, location.key, nav, navigate, goBack]);
 }

@@ -12,6 +12,8 @@ import { isAutoModeAvailable } from '../types/models';
 import { MessageType } from '@/shared';
 import type { IdeSelectionPayload } from '../hooks/useIdeSelection';
 import { injectIdeContext, InjectedSelectionKey } from '../hooks/ideContextTag';
+import { matchesUsageCommand } from '@/commandPalette/sections/slashCommands/UsageCommand';
+import { OPEN_ACCOUNT_USAGE_EVENT } from '@/commandPalette/sections/model/AccountUsageItem';
 
 /** 스트리밍 중 큐잉된 메시지의 bridge payload */
 interface QueuedMessage {
@@ -376,6 +378,16 @@ export function ChatStreamProvider(props: ChatStreamProviderProps) {
       if (e) e.preventDefault();
       const trimmedInput = inputRef.current.trim();
       if (!trimmedInput && (!attachments || attachments.length === 0)) return;
+      // `/usage` (alone, or followed by a space and anything) opens the usage
+      // modal instead of being sent to the CLI, matching the /usage slash-command
+      // override. Sending it to the CLI just echoed the raw usage text back as a
+      // prompt reply (issue #148). `/usageX` (no space) is a different word and
+      // is sent normally.
+      if (matchesUsageCommand(trimmedInput)) {
+        window.dispatchEvent(new CustomEvent(OPEN_ACCOUNT_USAGE_EVENT));
+        setInput('');
+        return;
+      }
       sendMessage(trimmedInput, inputMode, undefined, attachments);
       setInput('');
     },

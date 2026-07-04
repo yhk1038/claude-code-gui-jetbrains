@@ -1,4 +1,3 @@
-import { execFileSync, type ChildProcess } from 'child_process';
 import { Claude } from '../claude';
 
 export interface SlashCommandInfo {
@@ -130,19 +129,6 @@ export function _resetCliConfigCache(): void {
   pendingByWorkingDir.clear();
 }
 
-function killProcess(proc: ChildProcess): void {
-  if (!proc.pid) return;
-  if (process.platform === 'win32') {
-    try {
-      execFileSync('taskkill', ['/F', '/T', '/PID', String(proc.pid)]);
-    } catch {
-      proc.kill();
-    }
-  } else {
-    proc.kill('SIGTERM');
-  }
-}
-
 function loadCliConfigInternal(workingDir: string): Promise<CliConfigControlResponse | null> {
   return new Promise((resolve) => {
     let resolved = false;
@@ -179,7 +165,7 @@ function loadCliConfigInternal(workingDir: string): Promise<CliConfigControlResp
       if (!config) return;
 
       console.error('[loadCliConfig] resolved from stdout');
-      killProcess(proc);
+      Claude.killTree(proc);
       safeResolve(config);
     });
 
@@ -212,7 +198,7 @@ function loadCliConfigInternal(workingDir: string): Promise<CliConfigControlResp
     // Safety timeout — kill process but let close event handle resolve
     setTimeout(() => {
       console.error('[loadCliConfig] timeout — killing process');
-      killProcess(proc);
+      Claude.killTree(proc);
     }, 15000);
   });
 }

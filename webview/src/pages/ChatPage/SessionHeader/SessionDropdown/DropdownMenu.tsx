@@ -2,6 +2,7 @@ import { KeyboardEvent } from 'react';
 import { GroupedSessions } from '@/components/SessionList/utils';
 import { SearchInput } from '@/components/SessionList/SearchInput';
 import { SessionList } from '@/components/SessionList';
+import { isMobile } from '@/config/environment';
 
 interface Props {
   searchQuery: string;
@@ -31,7 +32,7 @@ export function DropdownMenu(props: Props) {
   } = props;
 
   return (
-    <div className="absolute left-0 top-full mt-1 w-[23rem] bg-surface-raised border border-border-default rounded-md shadow-xl overflow-hidden z-50">
+    <div className={`absolute top-full mt-1 bg-surface-raised border border-border-default rounded-md shadow-xl overflow-hidden z-50 ${isMobile() ? 'left-2 right-2' : 'left-0 w-[23rem]'}`}>
       <SearchInput value={searchQuery} onChange={onSearchChange} onKeyDown={onSearchKeyDown} />
 
       {filteredSessionsCount > 0 ? (

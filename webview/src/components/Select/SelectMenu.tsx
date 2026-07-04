@@ -41,17 +41,28 @@ export function SelectMenu(props: Props) {
     const gap = 4;
     const viewportPadding = 8;
     const menu = menuRef.current;
-    const menuHeight = menu?.offsetHeight ?? 0;
+    // On mobile <html> carries CSS `zoom` (x1.25). getBoundingClientRect() and
+    // window.innerHeight report visual px (zoom already applied), but this menu
+    // is painted through a Portal into <body>, still inside that zoom context —
+    // so a raw fixed `top` would be multiplied by zoom AGAIN and the menu would
+    // drift down (issue: detached below the trigger). Compute the placement in
+    // visual px (promoting the unzoomed offsetWidth/Height by zoom), then divide
+    // the final fixed offsets by zoom to cancel the context scaling. zoom is 1
+    // on desktop, making this a no-op there.
+    const zoom = parseFloat(document.documentElement.style.zoom) || 1;
+    const menuHeight = (menu?.offsetHeight ?? 0) * zoom;
     // Right-align the menu to the trigger: when the list is wider than the
     // trigger it grows leftward, keeping its right edge flush with the trigger.
-    const menuWidth = Math.max(menu?.offsetWidth ?? 0, rect.width);
+    const menuWidth = Math.max((menu?.offsetWidth ?? 0) * zoom, rect.width);
     const spaceBelow = window.innerHeight - rect.bottom;
     const openUp = spaceBelow < menuHeight + gap && rect.top > spaceBelow;
 
+    const leftVisual = Math.max(viewportPadding, rect.right - menuWidth);
+    const topVisual = openUp ? rect.top - menuHeight - gap : rect.bottom + gap;
     setPos({
-      left: Math.max(viewportPadding, rect.right - menuWidth),
-      top: openUp ? rect.top - menuHeight - gap : rect.bottom + gap,
-      minWidth: rect.width,
+      left: leftVisual / zoom,
+      top: topVisual / zoom,
+      minWidth: rect.width / zoom,
     });
   }, [anchorRef, menuRef, options]);
 
