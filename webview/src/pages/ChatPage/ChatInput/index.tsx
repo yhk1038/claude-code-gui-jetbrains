@@ -626,9 +626,12 @@ export function ChatInput() {
         <div className="flex items-center justify-between px-[5px] py-[3px] h-[35px]">
           {/* 좌측: 모드 태그 + 파일 태그들 */}
           <div className="flex items-center gap-0.5 xs:gap-1">
-            <div className="relative flex items-center" ref={modePanelRef}>
+            {/* On mobile the wrapper drops `relative` so the panel anchors to the
+                input box (like the model panel) and can span its full width;
+                on desktop it stays a compact panel above the mode tag. */}
+            <div className={`${isMobile() ? '' : 'relative'} flex items-center`} ref={modePanelRef}>
               {showModePanel && (
-                <div className="absolute bottom-full left-0 z-30 mb-2">
+                <div className={`absolute bottom-full left-0 z-30 mb-2 ${isMobile() ? 'right-0' : ''}`}>
                   <ModeSelectPanel
                     modes={availableModes}
                     currentMode={mode}
