@@ -2,6 +2,18 @@ import { SlashCommand } from '../../types';
 import { OPEN_ACCOUNT_USAGE_EVENT } from '../model/AccountUsageItem';
 
 /**
+ * Whether an already-trimmed input should trigger the usage modal rather than
+ * being sent to the CLI. Matches `/usage` exactly, or `/usage` followed by
+ * whitespace and (optionally) more text — e.g. `/usage`, `/usage `,
+ * `/usage anything`. A non-space suffix like `/usageX` is a different word and
+ * does NOT match. Callers must trim leading/trailing whitespace first, so a
+ * message that starts with `/usage` after trimming counts as starting with it.
+ */
+export function matchesUsageCommand(trimmed: string): boolean {
+  return /^\/usage(\s|$)/.test(trimmed);
+}
+
+/**
  * Local override for the CLI's `/usage` slash command.
  *
  * Typing `/usage` (or picking it from the palette) should do exactly what the
