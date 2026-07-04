@@ -13,4 +13,5 @@
 - [Claude Code CLI Version & Update](./005-cli_version_update/en.md) — 설치된 CLI 버전을 확인하고, 설치 방식(npm/pnpm/yarn/volta/native/homebrew/winget)에 맞는 공식 명령으로 GUI에서 바로 업데이트하는 기능 ([#150](https://github.com/yhk1038/claude-code-gui-jetbrains/pull/150))
 - [Effort & Fast Mode](./006-effort_and_fast_mode/en.md) — 모델별로 추론 깊이(Effort 슬라이더·Ultracode)와 빠른 출력(Fast mode)을 조절하는 Model 섹션 컨트롤. 지원하지 않는 모델에서는 숨기지 않고 비활성+툴팁으로 안내 ([#121](https://github.com/yhk1038/claude-code-gui-jetbrains/issues/121), [#152](https://github.com/yhk1038/claude-code-gui-jetbrains/issues/152))
 - [Native rendering for JetBrains IDE MCP tools](./007-jetbrains_mcp_native_rendering/en.md) — IDE 내장 MCP 도구(`mcp__idea__…` 등) 호출을 raw JSON 대신 전용 채팅 카드로 렌더링하고, `file:line` 이동·인간화된 권한 다이얼로그·중립 declined 상태·프로젝트 확인 칩·정직한 상태 점을 제공하는 기능 ([#147](https://github.com/yhk1038/claude-code-gui-jetbrains/pull/147))
+- [Usage breakdown in the account modal](./008-usage_report/en.md) — `/usage`를 사용량 모달로 연결하고, `claude -p "/usage"`의 상세 분석(기간별 요청/세션 수·인사이트·상위 skills/subagents/plugins/MCP)을 커서처럼 UI로 렌더링. 계정 전환에 반응 ([#148](https://github.com/yhk1038/claude-code-gui-jetbrains/issues/148))
 
