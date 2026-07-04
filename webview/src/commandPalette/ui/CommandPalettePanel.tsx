@@ -104,39 +104,74 @@ export const CommandPalettePanel: React.FC<CommandPalettePanelProps> = ({
         />
       ))}
 
-      <div className="text-[0.7rem] flex items-center justify-between px-3 pt-2 pb-3 -mt-2.5">
-        <div className="flex items-center gap-3">
-          <a className="text-text-tertiary underline hover:text-text-secondary" href="https://github.com/anthropics/claude-code/issues" target="_blank">
-            Report a problem
-          </a>
-          <button
-            type="button"
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="text-text-tertiary underline hover:text-text-secondary disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {refreshing ? 'Reloading…' : 'Reload commands'}
-          </button>
-        </div>
-        <div className="text-text-secondary/80">
-          {cliVersion ? (
-            <>
-              <span>{`v${pluginVersion} · `}</span>
-              {/* "Claude Code <version>" is the clickable unit — the plugin version
-                  (left) doesn't change at runtime, so refetching it makes no sense. */}
-              <button
+      <div>
+        {/* Mobile */}
+        <div className="text-sm block xs:hidden px-3 pt-2 pb-3 -mt-2.5">
+          <div className="flex items-center justify-between py-2">
+            <button
                 type="button"
                 onClick={handleVersionRefresh}
                 disabled={versionRefreshing}
                 title="Refresh version"
-                className="hover:text-text-secondary hover:underline disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {`${APP_NAME} ${cliVersion}`}
-              </button>
-            </>
-          ) : (
-            <span>{`v${pluginVersion}`}</span>
-          )}
+                className="text-text-secondary/80 hover:text-text-secondary hover:underline disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {`${APP_NAME} v${cliVersion}`}
+            </button>
+
+            <a className="text-text-tertiary underline hover:text-text-secondary" href="https://github.com/anthropics/claude-code/issues" target="_blank">
+              Report a problem
+            </a>
+          </div>
+
+          <div className="flex items-center justify-between py-2">
+            <span className="text-text-secondary/80 hover:text-text-secondary hover:underline disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer leading-none">CCG v{pluginVersion}</span>
+
+            <button
+                type="button"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="text-text-tertiary underline hover:text-text-secondary disabled:opacity-60 disabled:cursor-not-allowed leading-none"
+            >
+              {refreshing ? 'Reloading…' : 'Reload commands'}
+            </button>
+          </div>
+        </div>
+
+        {/* PC */}
+        <div className=" text-[0.7rem] hidden xs:flex items-center justify-between px-3 pt-2 pb-3 -mt-2.5">
+          <div className="flex items-center gap-3">
+            <a className="text-text-tertiary underline hover:text-text-secondary" href="https://github.com/anthropics/claude-code/issues" target="_blank">
+              Report a problem
+            </a>
+            <button
+                type="button"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="text-text-tertiary underline hover:text-text-secondary disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {refreshing ? 'Reloading…' : 'Reload commands'}
+            </button>
+          </div>
+          <div className="text-text-secondary/80">
+            {cliVersion ? (
+                <>
+                  <span>{`v${pluginVersion} · `}</span>
+                  {/* "Claude Code <version>" is the clickable unit — the plugin version
+                  (left) doesn't change at runtime, so refetching it makes no sense. */}
+                  <button
+                      type="button"
+                      onClick={handleVersionRefresh}
+                      disabled={versionRefreshing}
+                      title="Refresh version"
+                      className="hover:text-text-secondary hover:underline disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {`${APP_NAME} v${cliVersion}`}
+                  </button>
+                </>
+            ) : (
+                <span>{`v${pluginVersion}`}</span>
+            )}
+          </div>
         </div>
       </div>
     </div>
