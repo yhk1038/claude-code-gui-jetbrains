@@ -303,6 +303,15 @@ export function ChatPage() {
 
         {/* Input Area */}
         <div className="sticky w-full left-0 bottom-0 z-10">
+          {showScrollButton && (
+            <button
+              onClick={scrollToBottom}
+              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-surface-raised border border-border-default rounded-full shadow-md text-xs text-text-primary hover:bg-surface-hover transition-colors"
+            >
+              <ChevronDownIcon className="w-3.5 h-3.5" />
+              Scroll to bottom
+            </button>
+          )}
           {pendingUserAnswer ? (
             <AskUserQuestionInputPanel
               toolUse={pendingUserAnswer.toolUse}
@@ -328,16 +337,6 @@ export function ChatPage() {
         </div>
 
       </div>
-
-      {showScrollButton && (
-        <button
-          onClick={scrollToBottom}
-          className="fixed bottom-[7.5rem] left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-surface-raised border border-border-default rounded-full shadow-md text-xs text-text-primary hover:bg-surface-hover transition-colors"
-        >
-          <ChevronDownIcon className="w-3.5 h-3.5" />
-          Scroll to bottom
-        </button>
-      )}
 
       <BackgroundTasksPanel />
       {mcpModalOpen && <McpModal onClose={() => setMcpModalOpen(false)} />}
