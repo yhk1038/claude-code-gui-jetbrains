@@ -1,6 +1,7 @@
 import { useEffect, ReactNode } from 'react';
 import { Portal } from '@/components/Portal';
 import { useCloseSettings } from './useCloseSettings';
+import { isMobile } from '@/config/environment';
 
 interface SettingsOverlayProps {
   children: ReactNode;
@@ -30,7 +31,7 @@ export function SettingsOverlay({ children }: SettingsOverlayProps) {
           }
         }}
       >
-        <div className="w-full max-w-5xl h-[85vh] bg-surface-base border border-border-default rounded-xl shadow-2xl overflow-hidden flex flex-col">
+        <div className={`w-full max-w-5xl bg-surface-base border border-border-default rounded-xl shadow-2xl overflow-hidden flex flex-col ${isMobile() ? 'h-full' : 'h-[85vh]'}`}>
           {children}
         </div>
       </div>
