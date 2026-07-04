@@ -292,7 +292,7 @@ export function ChatPage() {
       </BannerArea>
 
       {/* Messages Area */}
-      <div ref={scrollContainerRef} onScroll={handleScroll} className={`flex flex-col flex-1 overflow-y-auto w-full h-screen pt-10 ${isMobile() ? 'pb-52' : ''} bg-surface-base z-0`}>
+      <div ref={scrollContainerRef} onScroll={handleScroll} className={`flex flex-col flex-1 overflow-y-auto w-full h-screen pt-10 ${isMobile() ? 'pb-[22rem]' : 'pb-36'} bg-surface-base z-0`}>
         <ChatMessageArea
           isStreaming={isStreaming && !pendingUserAnswer && !pendingPlan && !pendingPermission}
           mergedMessages={mergedMessages}
@@ -300,42 +300,41 @@ export function ChatPage() {
           isLoadingMore={isLoadingMore}
           onLoadMore={loadMore}
         />
+      </div>
 
-        {/* Input Area */}
-        <div className="sticky w-full left-0 bottom-0 z-10">
-          {showScrollButton && (
+      {/* Input Area */}
+      <div className="fixed w-full left-0 bottom-0 z-10">
+        {showScrollButton && (
             <button
-              onClick={scrollToBottom}
-              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-surface-raised border border-border-default rounded-full shadow-md text-xs text-text-primary hover:bg-surface-hover transition-colors"
+                onClick={scrollToBottom}
+                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-surface-raised border border-border-default rounded-full shadow-md text-xs text-text-primary hover:bg-surface-hover transition-colors"
             >
               <ChevronDownIcon className="w-3.5 h-3.5" />
               Scroll to bottom
             </button>
-          )}
-          {pendingUserAnswer ? (
+        )}
+        {pendingUserAnswer ? (
             <AskUserQuestionInputPanel
-              toolUse={pendingUserAnswer.toolUse}
-              controlRequestId={pendingUserAnswer.controlRequestId}
-              onDismiss={() => dismiss(pendingUserAnswer.toolUse.id)}
+                toolUse={pendingUserAnswer.toolUse}
+                controlRequestId={pendingUserAnswer.controlRequestId}
+                onDismiss={() => dismiss(pendingUserAnswer.toolUse.id)}
             />
-          ) : pendingPlan ? (
+        ) : pendingPlan ? (
             <AcceptPlanPanel
-              pending={pendingPlan}
-              onApprove={approvePlan}
-              onDeny={denyPlan}
+                pending={pendingPlan}
+                onApprove={approvePlan}
+                onDeny={denyPlan}
             />
-          ) : pendingPermission ? (
+        ) : pendingPermission ? (
             <PermissionBanner
-              permission={pendingPermission}
-              onApprove={() => approvePermission(pendingPermission.controlRequestId)}
-              onApproveForSession={() => approveForSession(pendingPermission.controlRequestId)}
-              onDeny={(reason) => denyPermission(pendingPermission.controlRequestId, reason)}
+                permission={pendingPermission}
+                onApprove={() => approvePermission(pendingPermission.controlRequestId)}
+                onApproveForSession={() => approveForSession(pendingPermission.controlRequestId)}
+                onDeny={(reason) => denyPermission(pendingPermission.controlRequestId, reason)}
             />
-          ) : (
+        ) : (
             <ChatInput />
-          )}
-        </div>
-
+        )}
       </div>
 
       <BackgroundTasksPanel />
