@@ -5,6 +5,7 @@ import { useAccountData } from './useAccountData';
 import { SectionLabel } from './SectionLabel';
 import { InfoRow, InfoRowSkeleton } from './InfoRow';
 import { UsageSection } from "./UsageSection";
+import { UsageReportSection } from "./UsageReportSection";
 
 interface AccountUsageModalProps {
   onClose: () => void;
@@ -66,6 +67,9 @@ export function AccountUsageModal({ onClose }: AccountUsageModalProps) {
 
           {/* USAGE section */}
           <UsageSection />
+
+          {/* Detailed /usage breakdown (claude -p "/usage") */}
+          <UsageReportSection />
         </div>
       </div>
     </div>
