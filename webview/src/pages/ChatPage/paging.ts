@@ -1,3 +1,6 @@
+import type { LoadedMessageDto } from '../../types';
+import { LoadedMessageType } from '../../dto/common';
+
 /**
  * Decide whether an `oldestLoadedUuid` transition represents an actual
  * older-page prepend (the event the scroll-anchoring layout effect must react
@@ -17,4 +20,26 @@ export function isOlderPagePrepend(
   currentOldestUuid: string | null,
 ): boolean {
   return prevOldestUuid !== null && currentOldestUuid !== prevOldestUuid;
+}
+
+/**
+ * Find the uuid of the newest (last, by array position) `User` type message.
+ *
+ * Used to detect a fresh send so the caller can re-arm auto-follow: a plain
+ * "last element is user" check is not enough, because a non-streaming send
+ * appends both the user message *and* an assistant placeholder
+ * (see `useChatStream.ts` `addUserMessage`), leaving the placeholder as the
+ * last array element. Searching from the back for the first `User` type
+ * message correctly skips that placeholder.
+ *
+ * An older-page prepend inserts past user messages at the *front* of the
+ * array, so it never changes which uuid is newest — no false positive there.
+ */
+export function findNewestUserUuid(messages: LoadedMessageDto[]): string | null {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].type === LoadedMessageType.User) {
+      return messages[i].uuid ?? null;
+    }
+  }
+  return null;
 }
