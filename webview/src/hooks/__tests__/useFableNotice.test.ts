@@ -102,4 +102,24 @@ describe('useFableNotice', () => {
       expect(oldCli.result.current.visible).toBe(true);
     });
   });
+
+  describe('unknown CLI version (still loading)', () => {
+    beforeEach(() => {
+      vi.setSystemTime(new Date('2026-07-03T00:00:00Z'));
+    });
+
+    it('stays hidden until the CLI version resolves, to prevent the flash', () => {
+      expect(renderHook(() => useFableNotice(null)).result.current.visible).toBe(false);
+      expect(renderHook(() => useFableNotice(undefined)).result.current.visible).toBe(false);
+    });
+
+    it('does not flash the update nudge when the available card was already dismissed', () => {
+      // Exact repro of the reported flash: the user dismissed the 'available' card,
+      // but on reload cliVersion is briefly null, so the variant would resolve to
+      // 'update-required' (a different, undismissed key) and show. Guarding on the
+      // resolved version keeps it hidden until the real variant is known.
+      localStorage.setItem(FABLE_NOTICE_DISMISSED_KEY, '1');
+      expect(renderHook(() => useFableNotice(null)).result.current.visible).toBe(false);
+    });
+  });
 });
