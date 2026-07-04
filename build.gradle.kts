@@ -146,6 +146,13 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
+            <h3>0.23.1 - UI fixes and /usage improvements</h3>
+            <ul>
+                <li>Fixed the scroll-to-bottom button position (#156)</li>
+                <li>Fixed UI that broke on narrow / mobile screens (#156)</li>
+                <li>/usage now opens the usage modal with a full breakdown (#148, reported by @georgelvov)</li>
+                <li>Fixed stray line breaks in the middle of sentences (#155, reported by @sarang2dan)</li>
+            </ul>
             <h3>0.23.0 - The Fable 5 model & native MCP tool cards</h3>
             <ul>
                 <li><b>New model: Fable 5</b> — added to the model picker (requires Claude CLI 2.1.170+; you'll be prompted to update if your CLI is older). (#153)</li>
