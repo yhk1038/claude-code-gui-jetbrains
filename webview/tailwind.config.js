@@ -3,6 +3,19 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   darkMode: 'class',
   theme: {
+    // Custom `2xs` (320px) and `xs` (440px) breakpoints added below the default
+    // `sm` (640px). Smaller-than-default breakpoints must redefine the full
+    // `screens` map in order (not via `extend`), otherwise they would be emitted
+    // after `sm`..`2xl` and break mobile-first cascade ordering.
+    screens: {
+      '2xs': '320px',
+      xs: '440px',
+      sm: '640px',
+      md: '768px',
+      lg: '1024px',
+      xl: '1280px',
+      '2xl': '1536px',
+    },
     extend: {
       colors: {
         // Legacy (deprecated, remove after migration)

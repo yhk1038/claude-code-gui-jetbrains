@@ -95,7 +95,8 @@ export function ModelTag() {
 
   return (
     <Tag title={`Switch model (${rotateHint})`} onClick={handleClick}>
-      <span>{label}</span>
+      <span className="hidden xs:inline">{label}</span>
+      <span className="inline xs:hidden">{label.split(' ')[0]}</span>
     </Tag>
   );
 }

@@ -37,7 +37,7 @@ export function ContextWindowTag(props: Props) {
         </div>
       )}
     >
-      <div className="flex items-center">
+      <div className="flex items-center max-xs:hidden">
         <Tag onClick={isClickable ? onClick : undefined} disabled={!isClickable}>
           <span>{percent}% used</span>
         </Tag>

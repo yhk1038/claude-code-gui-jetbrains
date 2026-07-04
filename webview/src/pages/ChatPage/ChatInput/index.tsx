@@ -625,7 +625,7 @@ export function ChatInput() {
         {/* 하단 바: 모드 태그 + 파일 태그 + 액션 버튼 */}
         <div className="flex items-center justify-between px-[5px] py-[3px] h-[35px]">
           {/* 좌측: 모드 태그 + 파일 태그들 */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 xs:gap-1">
             <div className="relative flex items-center" ref={modePanelRef}>
               {showModePanel && (
                 <div className="absolute bottom-full left-0 z-30 mb-2">
@@ -644,7 +644,7 @@ export function ChatInput() {
           </div>
 
           {/* 우측: 모델 태그 + 액션 버튼들 + 첨부 드롭다운 메뉴 */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0.5 xs:gap-1">
             <ModelTag />
             <div className="relative">
             <AttachMenu
@@ -668,7 +668,7 @@ export function ChatInput() {
               }}
               onStop={onStop}
             />
-            </div>
+          </div>
           </div>
         </div>
       </div>
