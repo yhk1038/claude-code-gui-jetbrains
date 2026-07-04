@@ -1,6 +1,7 @@
-import { XMarkIcon, Bars3Icon } from '@heroicons/react/24/outline';
+import { XMarkIcon, Bars3Icon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { Label, ROUTE_META, Route } from '@/router/routes';
 import { useCloseSettings } from './useCloseSettings';
+import { useRouter } from '@/router';
 
 interface SettingsHeaderProps {
   /** On mobile, toggles the sidebar drawer. Omitted (hidden) on desktop. */
@@ -8,11 +9,20 @@ interface SettingsHeaderProps {
 }
 
 export function SettingsHeader({ onToggleSidebar }: SettingsHeaderProps) {
+  const { goBack } = useRouter();
   const onClose = useCloseSettings();
   const meta = ROUTE_META[Route.SETTINGS];
 
   return (
     <header className="flex items-center justify-between gap-2 px-4 py-4 xs:px-2 xs:py-1 border-b border-border-default">
+      <button
+        onClick={() => goBack()}
+        className="hidden xs:inline-block p-1 rounded text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors"
+        title="Back"
+      >
+        <ArrowLeftIcon className="w-6 h-6 xs:w-4 xs:h-4" />
+      </button>
+
       {onToggleSidebar && (
         <button
           onClick={onToggleSidebar}
