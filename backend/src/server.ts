@@ -9,7 +9,7 @@ import { ensureProfile } from './core/features/profile';
 import { trackEvent, reportBackendError } from './core/features/telemetry';
 import { restoreTunnelState } from './core/features/tunnel-manager';
 import { restoreSleepGuardState } from './core/features/sleep-guard';
-import { isJetBrainsMode, serverPort, webviewDir } from './config/environment';
+import { isJetBrainsMode, serverPort, serverHost, webviewDir } from './config/environment';
 import { initLogger, getLogger } from './logging';
 import { LogWebSocketServer } from './logging/log-ws';
 import { Claude } from './core/claude';
@@ -87,7 +87,7 @@ async function startServerWithRetry(
   logWs?: LogWebSocketServer,
 ): Promise<Awaited<ReturnType<typeof startWebSocketServer>>> {
   try {
-    return await startWebSocketServer(serverPort, bridges, handleMessage, webviewDir, logWs);
+    return await startWebSocketServer(serverPort, serverHost, bridges, handleMessage, webviewDir, logWs);
   } catch (err: unknown) {
     const nodeErr = err as NodeJS.ErrnoException;
     if (nodeErr.code !== 'EADDRINUSE') throw err;
@@ -97,7 +97,7 @@ async function startServerWithRetry(
 
     await new Promise((resolve) => setTimeout(resolve, 200));
 
-    return await startWebSocketServer(serverPort, bridges, handleMessage, webviewDir, logWs);
+    return await startWebSocketServer(serverPort, serverHost, bridges, handleMessage, webviewDir, logWs);
   }
 }
 
@@ -220,7 +220,7 @@ async function main() {
 
   console.error(
     '[node-backend]',
-    `Server started on port ${port}`,
+    `Server started on ${serverHost}:${port}`,
     `(mode: ${isJetBrainsMode ? 'JetBrains' : 'browser'})`,
     webviewDir ? `(webviewDir: ${webviewDir})` : '',
   );

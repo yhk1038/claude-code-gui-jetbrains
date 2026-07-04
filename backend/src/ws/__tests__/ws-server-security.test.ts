@@ -1,37 +1,11 @@
 import { describe, it, expect } from 'vitest';
+import { validateOrigin, isNonLoopbackBind } from '../ws-server';
 
-// We need to test validateOrigin which is not exported.
-// We'll replicate the logic here to test it (same as the source).
-const ALLOWED_WS_ORIGINS = new Set([
-  'http://localhost',
-  'http://127.0.0.1',
-  'https://localhost',
-  'https://127.0.0.1',
-]);
-
-const ALLOWED_TUNNEL_SUFFIXES = ['.trycloudflare.com'];
-
-function isImplicitlyAllowedOrigin(origin: string | undefined): boolean {
-  if (!origin) return true;
-  if (origin === 'null') return true;
-  if (origin.startsWith('file://')) return true;
-  return false;
-}
-
-function validateOrigin(origin: string | undefined): boolean {
-  if (isImplicitlyAllowedOrigin(origin)) return true;
-  try {
-    const url = new URL(origin!);
-    const normalized = `${url.protocol}//${url.hostname}`;
-    if (ALLOWED_WS_ORIGINS.has(normalized)) return true;
-    return ALLOWED_TUNNEL_SUFFIXES.some((suffix) => url.hostname.endsWith(suffix));
-  } catch {
-    return false;
-  }
-}
+// These tests exercise the REAL exported validateOrigin (not a replica), so the
+// security contract can never silently drift from the source implementation.
 
 describe('ws-server security', () => {
-  describe('validateOrigin()', () => {
+  describe('validateOrigin() — default loopback bind (allowSameOrigin=false)', () => {
     it('should allow undefined origin (no header)', () => {
       expect(validateOrigin(undefined)).toBe(true);
     });
@@ -76,12 +50,54 @@ describe('ws-server security', () => {
       expect(validateOrigin('http://0.0.0.0')).toBe(false);
     });
 
-    it('should block empty string', () => {
-      expect(validateOrigin('')).toBe(true); // empty is implicitly allowed (falsy)
+    it('should allow empty string (implicitly allowed, falsy)', () => {
+      expect(validateOrigin('')).toBe(true);
     });
 
     it('should block invalid URL', () => {
       expect(validateOrigin('not-a-url')).toBe(false);
     });
+
+    it('should NOT allow a LAN origin even when it matches the Host header, when same-origin is off', () => {
+      expect(validateOrigin('http://192.168.0.5:19836', '192.168.0.5:19836', false)).toBe(false);
+    });
+  });
+
+  describe('validateOrigin() — non-loopback bind (allowSameOrigin=true)', () => {
+    it('should allow a LAN origin whose host exactly matches the Host header', () => {
+      expect(validateOrigin('http://192.168.0.5:19836', '192.168.0.5:19836', true)).toBe(true);
+    });
+
+    it('should still block a LAN origin when the Host header differs (cross-origin / rebinding)', () => {
+      expect(validateOrigin('http://192.168.0.5:19836', 'evil.example.com', true)).toBe(false);
+    });
+
+    it('should block an external origin even with same-origin enabled when hosts differ', () => {
+      expect(validateOrigin('https://evil.example.com', '192.168.0.5:19836', true)).toBe(false);
+    });
+
+    it('should block when the Host header is missing', () => {
+      expect(validateOrigin('http://192.168.0.5:19836', undefined, true)).toBe(false);
+    });
+
+    it('should keep allowing loopback origins', () => {
+      expect(validateOrigin('http://localhost:19836', '192.168.0.5:19836', true)).toBe(true);
+    });
+  });
+
+  describe('isNonLoopbackBind()', () => {
+    it.each(['127.0.0.1', 'localhost', '::1', '', undefined])(
+      'treats %s as loopback',
+      (host) => {
+        expect(isNonLoopbackBind(host)).toBe(false);
+      },
+    );
+
+    it.each(['0.0.0.0', '192.168.0.5', '10.0.0.2', '::'])(
+      'treats %s as non-loopback',
+      (host) => {
+        expect(isNonLoopbackBind(host)).toBe(true);
+      },
+    );
   });
 });

@@ -9,6 +9,8 @@
 _run_dir="$(dirname "${BASH_SOURCE[0]}")"
 # shellcheck source=./decide-action.sh
 source "$_run_dir/decide-action.sh"
+# shellcheck source=./args.sh
+source "$_run_dir/args.sh"
 unset _run_dir
 
 cmd_run_help() {
@@ -21,6 +23,29 @@ cmd_run() {
   case "${1:-}" in
     -h|--help) cmd_run_help; return 0 ;;
   esac
+
+  # Resolve the port (-p/--port). Empty = keep the current CCG_PORT (default
+  # 19836); a value overrides it so port_status/kill/browser + the spawned backend
+  # all target the chosen port. Parse this first so the port-probing below uses it.
+  local port rc
+  port=$(_parse_run_port "$@"); rc=$?
+  case "$rc" in
+    1) printf '%s\n' "$(t err_port_missing_value)" >&2; return 1 ;;
+    2) printf '%s\n' "$(t err_port_invalid)" >&2; return 1 ;;
+  esac
+  [[ -n "$port" ]] && CCG_PORT=$port
+
+  # Resolve the bind address (-b/--bind, default loopback). A non-loopback bind
+  # exposes the backend — which runs `claude` and does file I/O with no auth — to
+  # the local network, so we warn explicitly before spawning.
+  local bind
+  if ! bind=$(_parse_run_bind "$@"); then
+    printf '%s\n' "$(t err_bind_missing_value)" >&2
+    return 1
+  fi
+  if ! _bind_is_loopback "$bind"; then
+    printf '%b\n' "$(t warn_bind_exposed "$bind")" >&2
+  fi
 
   local status current_ver latest_tag latest_ver action
 
@@ -57,7 +82,7 @@ cmd_run() {
         y|Y|yes|YES)
           graceful_kill_port
           printf '%s\n' "$(t update_killed_old "$latest_ver")"
-          _ensure_runtime_and_spawn "$latest_ver"
+          _ensure_runtime_and_spawn "$latest_ver" "$bind"
           ;;
         *)
           printf '%s\n' "$(t update_declined "$current_ver")"
@@ -67,7 +92,7 @@ cmd_run() {
       return 0
       ;;
     install_fresh)
-      _ensure_runtime_and_spawn "$latest_ver"
+      _ensure_runtime_and_spawn "$latest_ver" "$bind"
       return 0
       ;;
     no_release)

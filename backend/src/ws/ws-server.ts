@@ -35,14 +35,38 @@ function isImplicitlyAllowedOrigin(origin: string | undefined): boolean {
   return false;
 }
 
-/** Origin 검증 — /ws, /logs 공통 */
-function validateOrigin(origin: string | undefined): boolean {
+/** Bind hosts that keep the backend on the local machine only. */
+const LOOPBACK_BIND_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '']);
+
+/** True when the server is bound to a non-loopback address (e.g. `ccg run -b 0.0.0.0`). */
+export function isNonLoopbackBind(host: string | undefined): boolean {
+  return !LOOPBACK_BIND_HOSTS.has(host ?? '');
+}
+
+/**
+ * Origin 검증 — /ws, /logs 공통.
+ *
+ * `allowSameOrigin`은 운영자가 명시적으로 비-loopback 바인딩(`ccg run -b <addr>`)을
+ * 선택했을 때만 true다. 그 경우 Origin의 host가 요청이 도착한 Host 헤더와 정확히
+ * 일치하면(strict same-origin) 허용한다 — LAN의 다른 기기가 `http://<이 머신 IP>:19836`
+ * 로 접속하는 실사용 경로를 열어준다. 기본 loopback 바인딩에서는 이 완화가 꺼져 있어
+ * DNS-rebinding(공격자 도메인이 우리 host로 리바인딩되는 경우)이 여전히 차단된다.
+ */
+export function validateOrigin(
+  origin: string | undefined,
+  requestHost?: string,
+  allowSameOrigin = false,
+): boolean {
   if (isImplicitlyAllowedOrigin(origin)) return true;
   try {
     const url = new URL(origin!);
     const normalized = `${url.protocol}//${url.hostname}`;
     if (ALLOWED_WS_ORIGINS.has(normalized)) return true;
-    return ALLOWED_TUNNEL_SUFFIXES.some((suffix) => url.hostname.endsWith(suffix));
+    if (ALLOWED_TUNNEL_SUFFIXES.some((suffix) => url.hostname.endsWith(suffix))) return true;
+    // Strict same-origin: url.host includes the port (hostname:port), matched
+    // against the exact Host header the upgrade request arrived on.
+    if (allowSameOrigin && requestHost && url.host === requestHost) return true;
+    return false;
   } catch {
     return false;
   }
@@ -164,6 +188,7 @@ async function serveStaticFile(
 
 export function startWebSocketServer(
   port: number,
+  host: string,
   bridges: BridgeMap,
   handleMessage: MessageHandler,
   webviewDir?: string,
@@ -171,6 +196,10 @@ export function startWebSocketServer(
 ): Promise<WebSocketServerHandle> {
   return new Promise<WebSocketServerHandle>((resolve, reject) => {
     const connections = new ConnectionManager();
+    // Only relax Origin validation to strict same-origin when the operator
+    // explicitly bound to a non-loopback address. Default loopback bind keeps
+    // the historical allowlist-only behavior (DNS-rebinding stays closed).
+    const allowSameOrigin = isNonLoopbackBind(host);
 
     // wss와 connections는 한 번만 생성
     const wss = new WebSocketServer({ noServer: true });
@@ -287,7 +316,7 @@ export function startWebSocketServer(
 
       // Origin 검증 — /ws, /logs 공통
       const origin = request.headers.origin;
-      if (!validateOrigin(origin)) {
+      if (!validateOrigin(origin, request.headers.host, allowSameOrigin)) {
         console.error('[node-backend]', `WebSocket connection rejected: disallowed origin "${origin}"`);
         socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
         socket.destroy();
@@ -318,10 +347,10 @@ export function startWebSocketServer(
       reject(err);
     });
 
-    httpServer.listen(port, '127.0.0.1', () => {
+    httpServer.listen(port, host, () => {
       const addr = httpServer.address();
       const assignedPort = typeof addr === 'object' && addr !== null ? addr.port : port;
-      console.error('[node-backend]', `WebSocket server listening on port ${assignedPort}`);
+      console.error('[node-backend]', `WebSocket server listening on ${host}:${assignedPort}`);
 
       resolve({
         connections,

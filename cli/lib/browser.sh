@@ -3,7 +3,7 @@
 #
 # Public API:
 #   _urlencode <string>   → percent-encoded string (pure bash)
-#   _webview_url <cwd>    → http://localhost:19836/?workingDir=<encoded cwd>
+#   _webview_url <cwd>    → http://localhost:<CCG_PORT>/?workingDir=<encoded cwd>
 #   _open_browser <url>   → open the URL via open/xdg-open/start
 
 # Percent-encode a string for use in URL query parameters.
@@ -22,10 +22,11 @@ _urlencode() {
   printf '%s' "$out"
 }
 
-# Build the WebView URL for a given working directory.
+# Build the WebView URL for a given working directory. Port comes from CCG_PORT
+# (default 19836) so `ccg run -p <n>` opens the browser on the chosen port.
 _webview_url() {
   local cwd=$1
-  printf 'http://localhost:19836/?workingDir=%s' "$(_urlencode "$cwd")"
+  printf 'http://localhost:%s/?workingDir=%s' "${CCG_PORT:-19836}" "$(_urlencode "$cwd")"
 }
 
 # Open a URL in the platform browser, best-effort (never fails the caller).

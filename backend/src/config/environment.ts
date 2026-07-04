@@ -27,6 +27,15 @@ export const ccgClientInfo = process.env.CCG_CLIENT_INFO ?? '';
 const DEFAULT_PORT = 19836;
 export const serverPort = parseInt(process.env.PORT ?? String(DEFAULT_PORT), 10);
 
+// ── 서버 바인딩 host ────────────────────────────────────
+// 기본은 loopback(127.0.0.1) — 외부 네트워크에 노출되지 않는다. 실행 주체(ccg
+// `run -b <addr>` / JetBrains / 기타 wrapper)가 CCG_BIND 환경변수로 주소를 주입하면
+// 그 주소로 바인딩한다. PORT처럼 흔한 `HOST` 이름은 무관한 셸 환경변수와 충돌할 수
+// 있어 CCG_* 접두 관습을 따른다. 비-loopback 바인딩은 LAN 노출을 뜻하므로, 그 경우
+// ws-server가 strict same-origin 완화를 함께 켠다(ws-server.ts::startWebSocketServer).
+const DEFAULT_HOST = '127.0.0.1';
+export const serverHost = process.env.CCG_BIND?.trim() || DEFAULT_HOST;
+
 // ── 재기동 신호 ─────────────────────────────────────────
 // "플러그인 재기동"의 통일 신호. 프론트엔드 실행환경(브라우저 환경/JetBrains)이나
 // 백엔드 관리 주체(Kotlin/ccg)와 무관하게, Node가 이 종료코드로 스스로 exit하면
