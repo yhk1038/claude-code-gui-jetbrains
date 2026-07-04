@@ -25,6 +25,7 @@ import {
   SettingsSection,
   SupportSection,
   ClearCommand,
+  UsageCommand,
   CliPassthroughCommand,
   contextItems,
   modelItems,
@@ -215,7 +216,7 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
 
   const sections = useMemo(() => {
     if (commands.length > 0) {
-      const localCommands = [new ClearCommand()];
+      const localCommands = [new ClearCommand(), new UsageCommand()];
       const localLabels: Set<string> = new Set(localCommands.map(c => c.label));
       const seen = new Set<string>();
       const dynamicCommands = commands
