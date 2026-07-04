@@ -6,6 +6,7 @@ import { useSessionList } from '@/components/SessionList/useSessionList';
 import { useSessionListKeyboard } from '@/components/SessionList/useSessionListKeyboard';
 import { useChatInputFocus } from '@/contexts/ChatInputFocusContext';
 import { OPEN_SESSION_DROPDOWN_EVENT } from '@/commandPalette/sections/context/items';
+import { isMobile } from '@/config/environment';
 
 export function SessionDropdown() {
   const { currentSession, switchSession, loadSessions } = useSessionContext();
@@ -72,7 +73,7 @@ export function SessionDropdown() {
   }, [isOpen, setSearchQuery]);
 
   return (
-    <div className="relative min-w-0" ref={dropdownRef}>
+    <div className={`${isMobile() ? '' : 'relative'} min-w-0`} ref={dropdownRef}>
       <DropdownToggle
         sessionTitle={sessionTitle}
         isOpen={isOpen}
