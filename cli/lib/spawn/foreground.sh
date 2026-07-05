@@ -10,14 +10,16 @@ readonly _CCG_RESTART_EXIT_CODE=75
 # Minimum seconds between successive restarts (crash-loop guard).
 readonly _CCG_RESTART_MIN_INTERVAL=2
 
-# _spawn_one_iteration <cache_dir> <first_run>
+# _spawn_one_iteration <cache_dir> <first_run> [bind]
 #   Spawns node backend.mjs once. Blocks until node exits.
 #   Outputs log lines (including PORT:n handshake) to stdout.
 #   Browser is opened only when first_run=1.
+#   <bind> (default loopback) is passed to node as CCG_BIND (bind address).
 #   Returns node's exit code.
 _spawn_one_iteration() {
   local cache_dir=$1
   local first_run=$2
+  local bind=${3:-127.0.0.1}
   local backend="$cache_dir/backend.mjs"
   local webview="$cache_dir/webview"
   local cwd_url
@@ -31,7 +33,8 @@ _spawn_one_iteration() {
 
   # Start node directly (no wrapping subshell) so $! is node's actual PID.
   # </dev/null detaches stdin: the backend cannot swallow Ctrl+C as 0x03.
-  WEBVIEW_DIR="$webview" node "$backend" </dev/null >"$fifo" 2>&1 &
+  # PORT/CCG_BIND select the backend's listen port/host (default 19836/loopback).
+  PORT="${CCG_PORT:-19836}" CCG_BIND="$bind" WEBVIEW_DIR="$webview" node "$backend" </dev/null >"$fifo" 2>&1 &
   local pid=$!
 
   # Background reader: forward log lines, detect PORT:n, print URL + open browser.
@@ -42,7 +45,7 @@ _spawn_one_iteration() {
         local port=${line#PORT:}
         port=${port%%[![:digit:]]*}
         port_seen=1
-        local url="${cwd_url/localhost:19836/localhost:$port}"
+        local url="${cwd_url/localhost:${CCG_PORT:-19836}/localhost:$port}"
         printf '%s\n' "$(t backend_started "$port")"
         if (( first_run )); then
           printf '%s\n' "$(t opening_browser "$url")"
@@ -79,8 +82,10 @@ _spawn_one_iteration() {
 # browser, then pass through stdout/stderr until node exits.
 # On exit code 75 (RESTART_EXIT_CODE), respawn (without reopening the browser).
 # A crash-loop guard aborts if restarts happen too quickly.
+# <bind> (default loopback) is forwarded to each spawn iteration as CCG_BIND.
 _spawn_backend_and_open_browser() {
   local cache_dir=$1
+  local bind=${2:-127.0.0.1}
   local first_run=1
   local last_start rc
 
@@ -89,7 +94,7 @@ _spawn_backend_and_open_browser() {
     rc=0
 
     # Capture exit code without triggering set -e on nonzero returns.
-    _spawn_one_iteration "$cache_dir" "$first_run" || rc=$?
+    _spawn_one_iteration "$cache_dir" "$first_run" "$bind" || rc=$?
 
     if [[ "$rc" -ne "$_CCG_RESTART_EXIT_CODE" ]]; then
       # Normal exit or unrelated error — propagate the exit code.

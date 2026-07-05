@@ -4,8 +4,8 @@
 # runner sibling.
 #
 # Public API:
-#   _ensure_runtime_and_spawn <version>      → download if needed, then spawn
-#   _spawn_backend_and_open_browser <dir>    → run node backend.mjs, open browser
+#   _ensure_runtime_and_spawn <version> [bind]   → download if needed, then spawn
+#   _spawn_backend_and_open_browser <dir> [bind] → run node backend.mjs, open browser
 #
 # Requires runtime.sh (runtime_is_cached, runtime_download, runtime_cache_dir),
 # browser.sh (_webview_url, _open_browser), port/* (_kill_pid), i18n.sh (t).
@@ -16,8 +16,10 @@ source "$_spawn_dir/foreground.sh"
 unset _spawn_dir
 
 # Ensure the given runtime version is on disk, then spawn it (foreground).
+# <bind> defaults to loopback; a non-loopback value is passed to node as CCG_BIND.
 _ensure_runtime_and_spawn() {
   local version=$1
+  local bind=${2:-127.0.0.1}
 
   if ! command -v node >/dev/null 2>&1; then
     printf '%s\n' "$(t err_node_missing)" >&2
@@ -37,5 +39,5 @@ _ensure_runtime_and_spawn() {
   cache_dir=$(runtime_cache_dir "$version")
 
   printf '%s\n' "$(t backend_starting "$version")"
-  _spawn_backend_and_open_browser "$cache_dir"
+  _spawn_backend_and_open_browser "$cache_dir" "$bind"
 }

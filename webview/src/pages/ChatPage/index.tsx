@@ -23,13 +23,12 @@ import { usePendingAskUserQuestion } from '../../hooks/usePendingAskUserQuestion
 import { usePendingPermissions } from '../../hooks/usePendingPermissions';
 import { usePendingPlanApproval } from '../../hooks/usePendingPlanApproval';
 import { useNotificationSound } from '@/notifications';
-import {isMobile} from "@/config/environment.ts";
 import { useSettings } from '@/contexts/SettingsContext';
 import { SettingKey } from '@/types/settings';
 import { clampAutoScrollThreshold, nextAutoFollow, shouldShowScrollToBottom, AUTO_SCROLL_THRESHOLD_DEFAULT, AUTO_SCROLL_BOTTOM_EPS } from '@/utils/autoScroll';
 import { useApi } from '../../contexts/ApiContext';
 import { mergeToolResults } from './mergeToolResults';
-import { isOlderPagePrepend } from './paging';
+import { isOlderPagePrepend, findNewestUserUuid } from './paging';
 
 export function ChatPage() {
   // Redirect logged-out users to the login screen before they hit a failing chat.
@@ -97,6 +96,10 @@ export function ChatPage() {
   const lastScrollHeightRef = useRef(0);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
+  // uuid of the newest user message we last re-armed auto-follow for, so a
+  // fresh send is detected even after the user scrolled auto-follow off.
+  const lastFollowedUserUuidRef = useRef<string | null>(null);
+
   useEffect(() => {
     hasMoreOlderRef.current = hasMoreOlder;
   }, [hasMoreOlder]);
@@ -116,6 +119,19 @@ export function ChatPage() {
     isLoadingMoreRef.current = false;
     setIsLoadingMore(false);
   }, [currentSessionId]);
+
+  // Re-arm auto-follow whenever a new user message is sent, even if the user had
+  // scrolled up and turned auto-follow off. Detected via the newest User-typed
+  // message's uuid changing (not "last array element is user" — a non-streaming
+  // send also appends an assistant placeholder after it). This effect only
+  // writes refs, so it never triggers an extra render.
+  useEffect(() => {
+    const uuid = findNewestUserUuid(messages);
+    if (uuid && uuid !== lastFollowedUserUuidRef.current) {
+      lastFollowedUserUuidRef.current = uuid;
+      autoFollowRef.current = true;
+    }
+  }, [messages]);
 
   const mergedMessages = useMemo(() => mergeToolResults(messages), [messages]);
 
@@ -204,11 +220,9 @@ export function ChatPage() {
   }, [autoScrollThreshold]);
 
   const scrollToBottom = useCallback(() => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-    autoFollowRef.current = true;
-    setShowScrollButton(false);
-    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    const marker = document.getElementById('scroll-bottom-marker');
+    if (!marker) return;
+    marker.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
   useAwaitingNotifications(currentSession?.title ?? null, soundSelection, {
@@ -279,7 +293,7 @@ export function ChatPage() {
   }, [textareaRef, focusInput]);
 
   return (
-    <div className="flex flex-col w-full h-screen bg-surface-base text-text-primary fixed left-0 top-0" onMouseDown={handleContainerMouseDown}>
+    <div className="flex flex-col w-full h-full bg-surface-base text-text-primary fixed left-0 top-0" onMouseDown={handleContainerMouseDown}>
       {/* Header - Minimal */}
       <div className="fixed w-full top-0 bg-blend-darken bg-surface-base z-30">
         <SessionHeader />
@@ -292,7 +306,7 @@ export function ChatPage() {
       </BannerArea>
 
       {/* Messages Area */}
-      <div ref={scrollContainerRef} onScroll={handleScroll} className={`flex flex-col flex-1 overflow-y-auto w-full h-screen pt-10 ${isMobile() ? 'pb-[22rem]' : 'pb-36'} bg-surface-base z-0`}>
+      <div ref={scrollContainerRef} onScroll={handleScroll} className="flex flex-col flex-1 overflow-y-auto w-full h-screen pt-10 pb-0 bg-surface-base z-0">
         <ChatMessageArea
           isStreaming={isStreaming && !pendingUserAnswer && !pendingPlan && !pendingPermission}
           mergedMessages={mergedMessages}
@@ -300,41 +314,43 @@ export function ChatPage() {
           isLoadingMore={isLoadingMore}
           onLoadMore={loadMore}
         />
-      </div>
 
-      {/* Input Area */}
-      <div className="fixed w-full left-0 bottom-0 z-10">
-        {showScrollButton && (
-            <button
-                onClick={scrollToBottom}
-                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-surface-raised border border-border-default rounded-full shadow-md text-xs text-text-primary hover:bg-surface-hover transition-colors"
-            >
-              <ChevronDownIcon className="w-3.5 h-3.5" />
-              Scroll to bottom
-            </button>
-        )}
-        {pendingUserAnswer ? (
-            <AskUserQuestionInputPanel
-                toolUse={pendingUserAnswer.toolUse}
-                controlRequestId={pendingUserAnswer.controlRequestId}
-                onDismiss={() => dismiss(pendingUserAnswer.toolUse.id)}
-            />
-        ) : pendingPlan ? (
-            <AcceptPlanPanel
-                pending={pendingPlan}
-                onApprove={approvePlan}
-                onDeny={denyPlan}
-            />
-        ) : pendingPermission ? (
-            <PermissionBanner
-                permission={pendingPermission}
-                onApprove={() => approvePermission(pendingPermission.controlRequestId)}
-                onApproveForSession={() => approveForSession(pendingPermission.controlRequestId)}
-                onDeny={(reason) => denyPermission(pendingPermission.controlRequestId, reason)}
-            />
-        ) : (
-            <ChatInput />
-        )}
+        <div id="scroll-bottom-marker" />
+
+        {/* Input Area */}
+        <div className="sticky w-full left-0 bottom-0 z-10">
+          {showScrollButton && (
+              <button
+                  onClick={scrollToBottom}
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-surface-raised border border-border-default rounded-full shadow-md text-xs text-text-primary hover:bg-surface-hover transition-colors"
+              >
+                <ChevronDownIcon className="w-3.5 h-3.5" />
+                Scroll to bottom
+              </button>
+          )}
+          {pendingUserAnswer ? (
+              <AskUserQuestionInputPanel
+                  toolUse={pendingUserAnswer.toolUse}
+                  controlRequestId={pendingUserAnswer.controlRequestId}
+                  onDismiss={() => dismiss(pendingUserAnswer.toolUse.id)}
+              />
+          ) : pendingPlan ? (
+              <AcceptPlanPanel
+                  pending={pendingPlan}
+                  onApprove={approvePlan}
+                  onDeny={denyPlan}
+              />
+          ) : pendingPermission ? (
+              <PermissionBanner
+                  permission={pendingPermission}
+                  onApprove={() => approvePermission(pendingPermission.controlRequestId)}
+                  onApproveForSession={() => approveForSession(pendingPermission.controlRequestId)}
+                  onDeny={(reason) => denyPermission(pendingPermission.controlRequestId, reason)}
+              />
+          ) : (
+              <ChatInput />
+          )}
+        </div>
       </div>
 
       <BackgroundTasksPanel />

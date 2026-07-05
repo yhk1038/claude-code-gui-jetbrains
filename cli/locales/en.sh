@@ -21,6 +21,14 @@ MSG_en_update_prompt_question="Update now? (y/N): "
 MSG_en_update_declined="Keeping existing v%s. Opening browser..."
 MSG_en_update_killed_old="Stopped old backend. Installing v%s..."
 
+# Port (-p/--port)
+MSG_en_err_port_missing_value="Error: -p/--port requires a port number (e.g. ccg run -p 20000)."
+MSG_en_err_port_invalid="Error: -p/--port must be a number in 1-65535."
+
+# Bind (-b/--bind)
+MSG_en_err_bind_missing_value="Error: -b/--bind requires an address (e.g. ccg run -b 0.0.0.0)."
+MSG_en_warn_bind_exposed="WARNING: binding to %s — the backend (runs 'claude' + file I/O, no authentication)\n         will be reachable by other devices on your network. Only do this on a trusted network.\n         If a backend is already running on 127.0.0.1, run 'ccg stop' first so the new bind takes effect."
+
 # Errors
 MSG_en_err_port_foreign="Port 19836 is in use by another process (not claude-code-gui)."
 MSG_en_err_port_foreign_hint="Please stop that process and try again. (Hint: lsof -i :19836)"
@@ -95,7 +103,7 @@ MSG_en_help_stop_body="  ccg stop                 Stop the backend on port 19836
 
 # Help: run / update / version / doctor / self-update / uninstall
 MSG_en_help_run_header="ccg run — start (or reuse) the backend and open the browser"
-MSG_en_help_run_body="  ccg run              Check port 19836, spawn the backend (or reuse a running one),\n                       then open the WebView in your browser. This is the default\n                       command, so 'ccg' alone behaves the same. Takes no arguments.\n  ccg run -h, --help   Show this help."
+MSG_en_help_run_body="  ccg run              Check port 19836, spawn the backend (or reuse a running one),\n                       then open the WebView in your browser. This is the default\n                       command, so 'ccg' alone behaves the same.\n  ccg run -b, --bind <addr>\n                       Bind the backend to <addr> instead of loopback (127.0.0.1).\n                       Use 0.0.0.0 to let other devices on your network open the\n                       WebView at http://<this-machine-ip>:19836. WARNING: the backend\n                       runs 'claude' and file I/O with no authentication — only expose\n                       it on trusted networks.\n  ccg run -p, --port <n>\n                       Bind the backend to port <n> instead of 19836. Affects the\n                       whole run (probe, reuse, kill, browser URL).\n  ccg run -h, --help   Show this help."
 MSG_en_help_update_header="ccg update — force-update the runtime to the latest release"
 MSG_en_help_update_body="  ccg update             Refresh the runtime to the latest GitHub release. If a\n                         backend is running it is stopped first, then replaced.\n  ccg update -h, --help  Show this help."
 MSG_en_help_version_header="ccg version — show ccg, runtime, and backend versions"
