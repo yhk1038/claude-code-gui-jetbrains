@@ -7,6 +7,7 @@ import {ToolWrapper} from "@/pages/ChatPage/message-renderers/ToolRenderers/comm
 import {useChatStreamContext} from '../../contexts/ChatStreamContext';
 import {formatThinkingTokens} from '../../utils/formatThinkingTokens';
 import {useTranslation} from '@/i18n';
+import {useAnimatedThinkingTokens} from '../../hooks/useAnimatedThinkingTokens';
 
 interface ThinkingStreamingMessageProps {
     thinking: string;
@@ -63,8 +64,11 @@ export const ThinkingStreamingMessage: React.FC<ThinkingStreamingMessageProps> =
         : isThinking
             ? t('thinking.thinkingEllipsis')
             : t('thinking.thinking');
-    // Live token count is only meaningful while actively thinking.
-    const tokenText = isThinking ? formatThinkingTokens(estimatedTokens) : null;
+    // Live token count is only meaningful while actively thinking. The CLI emits
+    // the estimate in coarse steps; animate it toward each target so the count
+    // scrolls smoothly (matching the Claude Code extension) instead of jumping.
+    const animatedTokens = useAnimatedThinkingTokens(isThinking ? estimatedTokens : undefined);
+    const tokenText = formatThinkingTokens(animatedTokens);
 
     // Handle streaming animation
     useEffect(() => {
