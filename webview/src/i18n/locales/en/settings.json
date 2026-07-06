@@ -29,7 +29,8 @@
     "language": {
       "label": "Language",
       "description": "Claude's preferred response language",
-      "notSet": "Not set (use global)"
+      "notSet": "Not set (use global)",
+      "placeholder": "English"
     },
     "uiLanguage": {
       "label": "Interface Language",

@@ -29,7 +29,8 @@
     "language": {
       "label": "Idioma",
       "description": "Idioma de resposta preferido do Claude",
-      "notSet": "Não definido (usar global)"
+      "notSet": "Não definido (usar global)",
+      "placeholder": "Inglês"
     },
     "uiLanguage": {
       "label": "Idioma da interface",

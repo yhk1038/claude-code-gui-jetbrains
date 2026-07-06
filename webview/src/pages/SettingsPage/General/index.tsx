@@ -27,9 +27,10 @@ export function GeneralSettings() {
   const { t } = useTranslation('settings');
   const { scopeSettings, updateSetting, scope, resetToGlobal } = useClaudeSettings();
 
-  const rawLanguage = scopeSettings.language as string | undefined;
-  const isNotSet = rawLanguage === undefined && scope === 'project';
-  const currentLanguage = isNotSet ? NOT_SET_VALUE : ((rawLanguage as string) ?? '');
+  // Claude's response language is a free-text field in Claude's settings.json.
+  // Show the value stored at the current scope (empty → English placeholder);
+  // clearing the input removes the key at this scope (never overwrites on upgrade).
+  const responseLanguage = (scopeSettings.language as string | undefined) ?? '';
 
   const rawUiLanguage = scopeSettings.uiLanguage as string | undefined;
   const isUiNotSet = rawUiLanguage === undefined && scope === 'project';
@@ -56,20 +57,13 @@ export function GeneralSettings() {
           label={t('general.language.label')}
           description={t('general.language.description')}
         >
-          <Select
-            value={currentLanguage}
-            options={languageOptions}
-            ariaLabel={t('general.language.label')}
-            className={`bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm ${
-              isNotSet ? 'text-text-tertiary' : 'text-text-primary'
-            }`}
-            onChange={(value) => {
-              if (value === NOT_SET_VALUE) {
-                resetToGlobal('language');
-                return;
-              }
-              updateSetting('language', value);
-            }}
+          <input
+            type="text"
+            value={responseLanguage}
+            onChange={(e) => updateSetting('language', e.target.value || null)}
+            placeholder={t('general.language.placeholder')}
+            aria-label={t('general.language.label')}
+            className="w-48 bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm text-text-primary placeholder-text-tertiary"
           />
         </SettingRow>
 

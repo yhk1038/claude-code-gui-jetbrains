@@ -29,7 +29,8 @@
     "language": {
       "label": "语言",
       "description": "Claude 回复时使用的首选语言",
-      "notSet": "未设置(使用全局)"
+      "notSet": "未设置(使用全局)",
+      "placeholder": "英语"
     },
     "uiLanguage": {
       "label": "界面语言",

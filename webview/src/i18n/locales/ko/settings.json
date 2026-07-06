@@ -29,7 +29,8 @@
     "language": {
       "label": "언어",
       "description": "Claude가 선호하는 응답 언어",
-      "notSet": "설정 안 함 (전역 설정 사용)"
+      "notSet": "설정 안 함 (전역 설정 사용)",
+      "placeholder": "영어"
     },
     "uiLanguage": {
       "label": "인터페이스 언어",
