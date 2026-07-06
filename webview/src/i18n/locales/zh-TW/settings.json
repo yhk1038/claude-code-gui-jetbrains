@@ -1,0 +1,335 @@
+{
+  "layout": {
+    "title": "設定",
+    "back": "返回",
+    "toggleMenu": "切換選單",
+    "close": "關閉"
+  },
+  "nav": {
+    "general": "一般",
+    "appearance": "外觀",
+    "permissions": "權限",
+    "privacy": "隱私",
+    "cli": "CLI",
+    "browser": "瀏覽器",
+    "account": "帳戶",
+    "usage": "用量",
+    "tunnel": "隧道",
+    "releases": "版本發布",
+    "about": "關於"
+  },
+  "scope": {
+    "global": "使用者設定(全域)",
+    "globalShort": "使用者(全域)",
+    "project": "專案設定(本機)",
+    "projectShort": "專案(本機)",
+    "projectDisabledTooltip": "開啟專案以使用專案設定"
+  },
+  "general": {
+    "language": {
+      "label": "語言",
+      "description": "Claude 回覆時使用的偏好語言",
+      "notSet": "未設定(使用全域)",
+      "placeholder": "英文"
+    },
+    "uiLanguage": {
+      "label": "介面語言",
+      "description": "應用程式介面所使用的語言,與 Claude 的回覆語言各自獨立。"
+    },
+    "useCtrlEnterToSend": {
+      "label": "使用 Ctrl+Enter 傳送",
+      "description": "啟用後,將以 Ctrl/Cmd+Enter 傳送提示,而不只是按 Enter。這樣 Enter 鍵就能用來換行。"
+    },
+    "focusInputOnEditorContext": {
+      "label": "附加檔案路徑後將焦點移至聊天輸入框",
+      "description": "在編輯器中按下 Alt+K 插入檔案路徑後,自動將焦點移至聊天輸入框。"
+    },
+    "respectGitignoreForContext": {
+      "label": "編輯器上下文遵循 .gitignore",
+      "description": "啟用時,被 .gitignore 忽略的檔案內容不會包含在編輯器上下文中 — 只會傳送檔案路徑。"
+    },
+    "hostMode": {
+      "label": "偏好位置",
+      "description": "Claude 預設開啟的位置。",
+      "sidebar": "側邊欄",
+      "panel": "面板"
+    },
+    "openSettings": {
+      "label": "設定的開啟方式",
+      "description": "以覆蓋層或新分頁的形式顯示設定。",
+      "overlay": "覆蓋層",
+      "newTab": "新分頁"
+    },
+    "chatPagination": {
+      "label": "分頁載入聊天記錄",
+      "description": "捲動時載入較舊的訊息。關閉時會一次載入整個對話。"
+    },
+    "configDir": {
+      "description": "Claude 設定所在的主目錄。與 CLAUDE_CONFIG_DIR 環境變數相同。",
+      "placeholder": "預設(~/.claude)",
+      "active": "使用中:{{value}}",
+      "projectUnavailable": "開啟專案以設定專案層級的值。"
+    }
+  },
+  "appearance": {
+    "title": "外觀",
+    "theme": {
+      "sectionTitle": "主題",
+      "colorTheme": {
+        "label": "配色主題",
+        "description": "選擇介面的配色主題",
+        "notSet": "未設定(使用全域)",
+        "systemIde": "跟隨系統(IDE)",
+        "systemOs": "跟隨系統(作業系統)",
+        "light": "淺色",
+        "dark": "深色"
+      },
+      "fontSize": {
+        "label": "字型大小",
+        "description": "介面的基礎字型大小",
+        "notSetPlaceholder": "未設定"
+      }
+    },
+    "scrolling": {
+      "sectionTitle": "捲動",
+      "autoScrollThreshold": {
+        "label": "自動捲動恢復距離",
+        "description": "向上捲動時一律會暫停自動捲動,讓您可以自由閱讀。當您捲回到距離底部這個像素範圍內時,會恢復自動捲動。數值越小,代表您必須捲得越靠近底部才會重新啟用。預設值為 {{value}}。",
+        "notSetPlaceholder": "未設定"
+      }
+    }
+  },
+  "advanced": {
+    "title": "進階",
+    "debugging": {
+      "sectionTitle": "偵錯",
+      "debugMode": {
+        "label": "偵錯模式",
+        "description": "啟用偵錯記錄與診斷",
+        "notSet": "未設定(使用全域)"
+      },
+      "logLevel": {
+        "label": "記錄層級",
+        "description": "顯示的最低記錄層級",
+        "notSet": "未設定(使用全域)",
+        "debug": "偵錯",
+        "info": "資訊",
+        "warning": "警告",
+        "error": "錯誤"
+      }
+    }
+  },
+  "privacy": {
+    "title": "隱私",
+    "privacyPolicyLink": "隱私權政策",
+    "telemetry": {
+      "sectionTitle": "遙測",
+      "sendUsageStatistics": {
+        "label": "傳送使用統計資料",
+        "description": "傳送不會直接識別您身分的使用統計資料,協助我們改善產品。絕不會傳送原始碼或個人資料。您可以隨時關閉這項功能。"
+      }
+    }
+  },
+  "account": {
+    "heading": "帳戶",
+    "addAccount": "新增帳戶",
+    "actionFailed": "操作失敗",
+    "loading": "正在載入帳戶…",
+    "empty": "尚無已儲存的帳戶。",
+    "plan": "方案",
+    "authMethod": "驗證方式",
+    "lastAccess": "上次存取",
+    "inUse": "使用中",
+    "switch": "切換",
+    "removeAccount": "移除帳戶",
+    "lastActive": {
+      "today": "今天",
+      "yesterday": "昨天",
+      "daysAgo": "{{value}} 天前",
+      "hoursAgo": "{{value}} 小時前",
+      "minutesAgo": "{{value}} 分鐘前",
+      "justNow": "剛剛"
+    }
+  },
+  "permissions": {
+    "heading": "權限",
+    "notSet": "未設定(使用全域)",
+    "bypassMode": {
+      "sectionTitle": "略過模式",
+      "label": "停用略過模式",
+      "description": "防止啟用略過權限模式"
+    },
+    "defaultMode": {
+      "sectionTitle": "預設輸入模式",
+      "label": "預設輸入模式",
+      "description": "開啟新工作階段時的初始權限模式"
+    }
+  },
+  "about": {
+    "heading": "關於",
+    "versionInfo": {
+      "title": "版本資訊",
+      "pluginVersion": "外掛版本",
+      "cliVersion": "{{appName}} 版本",
+      "notDetected": "未偵測到",
+      "refreshVersion": "重新整理版本",
+      "refresh": "重新整理"
+    },
+    "links": {
+      "title": "連結",
+      "documentation": "文件",
+      "viewOnGithub": "在 GitHub 上檢視",
+      "reportIssue": "回報問題",
+      "openIssue": "開啟 Issue"
+    },
+    "cliUpdate": {
+      "upToDate": "已是最新版本",
+      "confirmTitle": "更新 Claude Code",
+      "confirmMessage": "更新會取代 Claude Code CLI,可能會中斷正在執行的工作階段。要繼續嗎?",
+      "update": "更新",
+      "updating": "正在更新…",
+      "channel": {
+        "stable": "穩定版",
+        "latest": "最新版"
+      },
+      "updateSuccess": "Claude Code v{{value}} 已更新",
+      "updateFailed": "更新失敗"
+    }
+  },
+  "browser": {
+    "notifications": {
+      "title": "通知",
+      "sound": {
+        "label": "音效",
+        "ariaLabel": "通知音效",
+        "off": "關閉",
+        "description": "桌面通知觸發時播放的音效。選擇音效時會試播一次。",
+        "loadingDescription": "正在載入系統音效...",
+        "emptyDescription": "未偵測到系統音效。選擇「關閉」以將通知靜音。",
+        "errorDescription": "無法載入系統音效:{{error}}"
+      }
+    },
+    "permissions": {
+      "title": "權限",
+      "revokeHint": "如需撤銷,請在瀏覽器設定中變更。",
+      "deniedHint": "請從瀏覽器設定中啟用",
+      "granted": "已授予",
+      "denied": "已拒絕",
+      "request": "請求"
+    }
+  },
+  "tunnel": {
+    "connection": {
+      "title": "連線",
+      "enable": {
+        "label": "遠端隧道(非官方)",
+        "description": "透過 cloudflared 對外公開您的本機伺服器,以便遠端存取。不需要帳戶。如果尚未安裝 cloudflared,系統會先提示您安裝。"
+      },
+      "installingProgress": "正在安裝 cloudflared…({{seconds}} 秒)",
+      "establishingProgress": "正在建立隧道連線…({{seconds}} 秒)",
+      "estimatedTime": "通常大約需要 1 分鐘(如需安裝,大約需要 3 分鐘)。"
+    },
+    "sleepPrevention": {
+      "title": "防止休眠",
+      "label": "防止休眠",
+      "description": "隧道啟用期間讓您的裝置保持喚醒狀態,即使闔上筆電上蓋也一樣。"
+    }
+  },
+  "cli": {
+    "terminal": {
+      "title": "終端機",
+      "app": {
+        "label": "終端機應用程式",
+        "description": "執行「在終端機中開啟 Claude」時所使用的終端機應用程式",
+        "jetbrainsDescription": "一律使用 JetBrains IDE 內建終端機。",
+        "jetbrainsValue": "JetBrains 內建終端機",
+        "detecting": "正在偵測終端機...",
+        "systemDefault": "系統預設",
+        "defaultSuffix": "{{label}}(預設)",
+        "custom": "自訂...",
+        "customPlaceholder": "例如:Kitty"
+      }
+    },
+    "model": {
+      "title": "模型",
+      "label": "預設模型",
+      "description": "新工作階段使用的預設模型",
+      "defaultRecommended": "預設(建議)"
+    },
+    "path": {
+      "title": "Claude CLI",
+      "label": "CLI 路徑",
+      "description": "Claude CLI 執行檔的路徑(留空以自動偵測)",
+      "placeholder": "自動偵測"
+    },
+    "nodePath": {
+      "title": "Node.js",
+      "label": "Node 路徑",
+      "description": "執行後端所用 Node.js 執行檔的路徑(留空以自動偵測)。重新啟動後才會生效。",
+      "placeholder": "自動偵測"
+    }
+  },
+  "releases": {
+    "title": "版本發布",
+    "restartRequired": "需要重新啟動 IDE",
+    "updateButton": "更新至 v{{version}}",
+    "current": "目前版本",
+    "noNotes": "尚無發布說明",
+    "empty": "找不到任何版本。",
+    "unknownDate": "日期未知",
+    "refresh": "重新整理"
+  },
+  "usage": {
+    "title": "用量",
+    "learnMore": "深入了解用量限制",
+    "lastUpdated": "上次更新:{{time}}",
+    "refresh": "重新整理",
+    "relativeTime": {
+      "justNow": "剛剛",
+      "oneMinuteAgo": "1 分鐘前",
+      "minutesAgo": "{{count}} 分鐘前",
+      "oneHourAgo": "1 小時前",
+      "hoursAgo": "{{count}} 小時前"
+    },
+    "account": {
+      "active": "使用中",
+      "errorPrefix": "無法取得用量:{{error}}",
+      "currentSession": "目前工作階段(5 小時)",
+      "weeklyLimits": "每週限額",
+      "allModels": "所有模型",
+      "sonnetOnly": "僅 Sonnet",
+      "opusOnly": "僅 Opus"
+    },
+    "meter": {
+      "resetsSoon": "即將重置",
+      "resetsOnDay": "將於 {{day}} {{period}} {{time}} 重置",
+      "resetsInHours": "將於 {{hours}} 小時 {{minutes}} 分鐘後重置",
+      "resetsInMinutes": "將於 {{minutes}} 分鐘後重置",
+      "am": "上午",
+      "pm": "下午",
+      "days": {
+        "sun": "週日",
+        "mon": "週一",
+        "tue": "週二",
+        "wed": "週三",
+        "thu": "週四",
+        "fri": "週五",
+        "sat": "週六"
+      }
+    },
+    "notInstalled": {
+      "title": "必要的相依套件",
+      "description": "由於市集政策限制,此功能無法內建。它是以獨立函式庫的形式發布,需要您自行安裝。",
+      "installVia": "透過 npm 全域安裝:",
+      "copy": "複製",
+      "copied": "已複製",
+      "copyFailed": "複製失敗",
+      "retryHint": "安裝完成後,點選下方的「重試」— 不需要重新啟動 IDE。",
+      "checking": "正在檢查...",
+      "retry": "重試"
+    },
+    "errors": {
+      "unknown": "未知錯誤"
+    }
+  }
+}

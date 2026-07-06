@@ -1,0 +1,12 @@
+{
+  "newSession": "新增工作階段",
+  "scope": {
+    "local": "本機",
+    "web": "網頁"
+  },
+  "empty": {
+    "noMatches": "沒有符合的工作階段",
+    "noSessions": "尚無工作階段",
+    "noWebSessions": "尚無網頁工作階段"
+  }
+}

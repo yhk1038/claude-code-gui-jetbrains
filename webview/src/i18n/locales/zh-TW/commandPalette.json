@@ -1,0 +1,60 @@
+{
+  "sections": {
+    "context": "上下文",
+    "model": "模型",
+    "customize": "自訂",
+    "slashCommands": "斜線指令",
+    "settings": "設定",
+    "support": "支援"
+  },
+  "context": {
+    "attachFile": "附加檔案...",
+    "mentionFile": "提及此專案中的檔案...",
+    "clearConversation": "清除對話",
+    "resumeConversation": "繼續對話",
+    "showBackgroundTasks": "工作流程:顯示背景工作"
+  },
+  "model": {
+    "switchModel": "切換模型...",
+    "effort": "強度",
+    "thinking": "思考",
+    "accountUsage": "帳戶與用量...",
+    "toggleFastMode": "切換快速模式",
+    "effortUnsupportedReason": "此模型不支援強度等級",
+    "fastModeUnsupportedReason": "快速模式僅適用於 Opus 模型"
+  },
+  "customize": {
+    "outputStyles": "輸出樣式",
+    "agents": "代理",
+    "hooks": "Hooks",
+    "memory": "記憶",
+    "permissions": "權限",
+    "mcpServers": "MCP 伺服器",
+    "managePlugins": "管理外掛",
+    "openInTerminal": "在終端機中開啟 Claude"
+  },
+  "settings": {
+    "switchAccount": "切換帳戶",
+    "generalConfig": "一般設定..."
+  },
+  "support": {
+    "viewHelpDocs": "檢視說明文件",
+    "restartPlugin": "重新啟動外掛",
+    "restartConfirm": {
+      "title": "要重新啟動外掛嗎?",
+      "message": "進行中的工作將被中斷。",
+      "confirmLabel": "重新啟動"
+    }
+  },
+  "slashCommands": {
+    "clearDescription": "清除對話",
+    "usageDescription": "帳戶與用量"
+  },
+  "panel": {
+    "reportProblem": "回報問題",
+    "reloading": "正在重新載入…",
+    "reloadCommands": "重新載入指令",
+    "refreshVersion": "重新整理版本",
+    "comingSoon": "即將推出"
+  }
+}

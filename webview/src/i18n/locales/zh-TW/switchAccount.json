@@ -1,0 +1,36 @@
+{
+  "welcomeArtAlt": "歡迎插圖",
+  "intro": "Claude Code 可以使用您的 Claude 訂閱,也可以透過 Console 帳戶依 API 用量計費。",
+  "loginPrompt": "您想用哪種方式登入?",
+  "errors": {
+    "loginFailed": "登入失敗,請再試一次。"
+  },
+  "claudeAi": {
+    "label": "Claude.ai 訂閱",
+    "description": "使用您的 Claude Pro、Team 或 Enterprise 訂閱"
+  },
+  "console": {
+    "label": "Anthropic Console",
+    "description": "透過 Console 帳戶依 API 用量付費"
+  },
+  "providers": {
+    "label": "Bedrock、Foundry 或 Vertex",
+    "description": "了解如何使用 API 金鑰或第三方提供者。"
+  },
+  "terminal": {
+    "prompt": "偏好使用終端機?",
+    "action": "在終端機中執行 claude"
+  },
+  "codeInput": {
+    "title": "貼上瀏覽器顯示的代碼",
+    "description": "登入後,瀏覽器會顯示一組代碼。將它貼到這裡以完成登入。",
+    "placeholder": "在此貼上代碼",
+    "submit": "送出代碼"
+  },
+  "urlModal": {
+    "title": "登入 Claude",
+    "description": "Claude 正在開啟瀏覽器供您登入。如果沒有自動開啟,請使用下方按鈕。",
+    "openButton": "開啟登入頁面",
+    "revealCode": "在瀏覽器收到代碼了嗎?點此輸入"
+  }
+}

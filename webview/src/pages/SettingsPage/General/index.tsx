@@ -11,16 +11,20 @@ import { useTranslation } from '@/i18n';
 
 const NOT_SET_VALUE = '__NOT_SET__';
 
+// Interface-language options. Labels use the endonym (the language's own name)
+// only, matching how the Claude Code docs present them. `value` is the stored
+// setting mapped to a locale in languageMap.ts.
 const LANGUAGE_OPTIONS = [
   { value: 'english', label: 'English' },
-  { value: 'korean', label: 'Korean (한국어)' },
-  { value: 'japanese', label: 'Japanese (日本語)' },
-  { value: 'chinese', label: 'Chinese (中文)' },
-  { value: 'spanish', label: 'Spanish (Español)' },
-  { value: 'french', label: 'French (Français)' },
-  { value: 'german', label: 'German (Deutsch)' },
-  { value: 'portuguese', label: 'Portuguese (Português)' },
-  { value: 'russian', label: 'Russian (Русский)' },
+  { value: 'korean', label: '한국어' },
+  { value: 'japanese', label: '日本語' },
+  { value: 'chinese', label: '简体中文' },
+  { value: 'chinese-traditional', label: '繁體中文' },
+  { value: 'spanish', label: 'Español' },
+  { value: 'french', label: 'Français' },
+  { value: 'german', label: 'Deutsch' },
+  { value: 'portuguese', label: 'Português' },
+  { value: 'russian', label: 'Русский' },
 ] as const;
 
 export function GeneralSettings() {

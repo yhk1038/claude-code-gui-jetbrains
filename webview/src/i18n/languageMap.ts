@@ -1,15 +1,15 @@
-// Bridge between two distinct concepts (see #141):
-//   - the stored Claude setting value (Settings → General → Language,
-//     e.g. 'english', 'korean') which primarily drives "Claude's preferred
-//     response language", and
-//   - the BCP-47 locale code used by i18next for the UI (e.g. 'en', 'ko').
-//
-// We deliberately reuse the response-language setting as the UI locale, so
-// this map is the single, explicit place that translates one into the other.
+// Bridge between the stored "Interface Language" setting value
+// (Settings → General → Interface Language, e.g. 'english', 'korean') and the
+// BCP-47 locale code used by i18next for the UI (e.g. 'en', 'ko'). This is the
+// single, explicit place that translates one into the other.
 // Keep the keys in sync with LANGUAGE_OPTIONS in
 // pages/SettingsPage/General/index.tsx.
+//
+// Chinese is split into Simplified ('chinese' → 'zh') and Traditional
+// ('chinese-traditional' → 'zh-TW'), matching how Chinese locales are
+// conventionally separated.
 
-export const SUPPORTED_LOCALES = ['en', 'ko', 'ja', 'zh', 'es', 'fr', 'de', 'pt', 'ru'] as const;
+export const SUPPORTED_LOCALES = ['en', 'ko', 'ja', 'zh', 'zh-TW', 'es', 'fr', 'de', 'pt', 'ru'] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
 
 export const DEFAULT_LOCALE: Locale = 'en';
@@ -19,6 +19,7 @@ const LANGUAGE_TO_LOCALE: Record<string, Locale> = {
   korean: 'ko',
   japanese: 'ja',
   chinese: 'zh',
+  'chinese-traditional': 'zh-TW',
   spanish: 'es',
   french: 'fr',
   german: 'de',

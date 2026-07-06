@@ -1,0 +1,185 @@
+{
+  "confirmDialog": {
+    "confirm": "確認",
+    "cancel": "取消"
+  },
+  "contextChip": {
+    "removeContext": "移除上下文"
+  },
+  "errorBoundary": {
+    "somethingWentWrong": "發生錯誤了。",
+    "retry": "重試"
+  },
+  "effortSlider": {
+    "tooltip": "點按或拖曳以設定強度等級",
+    "tooltipUltracode": "點按或拖曳以設定強度等級(最高檔 = ultracode)"
+  },
+  "accountUsage": {
+    "title": "帳戶與用量",
+    "accountSection": "帳戶",
+    "authMethod": "驗證方式",
+    "email": "電子郵件",
+    "plan": "方案"
+  },
+  "usageSection": {
+    "title": "用量",
+    "updated": "更新於 {{time}}",
+    "refresh": "重新整理",
+    "session5hr": "工作階段(5 小時)",
+    "weekly7day": "每週(7 天)",
+    "weeklySonnet": "每週 Sonnet",
+    "weeklyOpus": "每週 Opus"
+  },
+  "usageReport": {
+    "title": "用量明細",
+    "refresh": "重新整理",
+    "empty": "尚無用量明細。",
+    "requests": "{{value}} 次請求",
+    "sessions": "{{value}} 個工作階段",
+    "percentOfUsage": "% 的用量"
+  },
+  "mcpModal": {
+    "title": "MCP 伺服器",
+    "refreshServers": "重新整理 MCP 伺服器",
+    "browseRegistry": "瀏覽 MCP 註冊表",
+    "addServer": "新增 MCP 伺服器",
+    "checkingHealth": "正在檢查 MCP 伺服器健康狀態…",
+    "serverNotFound": "找不到伺服器。",
+    "learnMore": "深入了解 MCP",
+    "editReplaceSingle": "編輯會取代單一伺服器 — 請貼上恰好一個伺服器設定。",
+    "saved": "已儲存 {{name}}",
+    "added": "已新增 {{name}}",
+    "addFailed": "{{failed}}/{{total}} 個伺服器新增失敗:",
+    "form": {
+      "editTitle": "編輯 MCP 伺服器",
+      "addTitle": "新增 MCP 伺服器",
+      "back": "返回",
+      "nameLabel": "名稱",
+      "nameHint": "選填 — 僅在您的 JSON 沒有「mcpServers」包裹時使用",
+      "namePlaceholder": "my-server",
+      "scopeLabel": "範圍",
+      "scopeUser": "使用者(所有專案)",
+      "scopeProject": "專案(.mcp.json)",
+      "scopeLocal": "本機(僅限此專案)",
+      "configLabel": "設定(JSON)",
+      "configHint": "貼上 mcpServers 設定或單一伺服器設定",
+      "cancel": "取消",
+      "saving": "正在儲存",
+      "adding": "正在新增",
+      "save": "儲存",
+      "addButton": "新增伺服器"
+    },
+    "marketplace": {
+      "back": "返回",
+      "searchPlaceholder": "搜尋 MCP 註冊表…",
+      "searchPrompt": "搜尋官方 MCP 註冊表以尋找並安裝伺服器。",
+      "searching": "正在搜尋…",
+      "noServers": "找不到伺服器。",
+      "openRepo": "開啟 {{url}}",
+      "needsInputs": "需要 {{count}} 項輸入:{{inputs}}",
+      "needsInputs_one": "需要 {{count}} 項輸入:{{inputs}}",
+      "needsInputs_other": "需要 {{count}} 項輸入:{{inputs}}",
+      "configureAdd": "設定並新增",
+      "noInstallInfo": "沒有可用的安裝資訊",
+      "add": "新增"
+    },
+    "list": {
+      "noServersConfigured": "尚未設定任何 MCP 伺服器。",
+      "addOne": "新增一個",
+      "scope": {
+        "project": "專案",
+        "local": "本機",
+        "user": "使用者",
+        "claudeai": "claude.ai",
+        "managed": "託管",
+        "enterprise": "企業版"
+      }
+    },
+    "detail": {
+      "backToList": "返回清單",
+      "edit": "編輯",
+      "type": "類型:{{value}}",
+      "authenticate": "進行驗證",
+      "reconnect": "重新連線",
+      "reconnecting": "正在重新連線",
+      "clearAuth": "清除驗證資訊",
+      "enable": "啟用",
+      "disable": "停用",
+      "loadingTools": "正在載入工具…",
+      "loadToolsError": "無法載入工具",
+      "viewTools": "檢視工具({{count}})",
+      "readOnly": "唯讀",
+      "destructive": "破壞性",
+      "removeConfirm": "要移除「{{name}}」嗎?",
+      "remove": "移除",
+      "cancel": "取消",
+      "removeServer": "移除伺服器"
+    },
+    "status": {
+      "connected": "已連線",
+      "failed": "失敗",
+      "needsAuth": "需要驗證",
+      "connecting": "正在連線…",
+      "disabled": "已停用"
+    }
+  },
+  "tunnelModal": {
+    "title": "遠端隧道",
+    "remoteTunnelUnofficial": "遠端隧道(非官方)",
+    "exposeVia": "透過 cloudflared 對外公開",
+    "installingCloudflared": "正在安裝 cloudflared…",
+    "connecting": "正在連線…",
+    "typicalTime": "通常約 1 分鐘(安裝:約 3 分鐘)",
+    "preventSleep": "防止休眠",
+    "keepAwake": "隧道啟用時保持喚醒"
+  },
+  "tunnelStatusNotice": {
+    "tryAgain": "重試",
+    "installGuide": "安裝指南",
+    "copyCommand": "複製指令",
+    "installConsent": "尚未安裝 cloudflared。要立即安裝並啟用隧道嗎?這會下載 cloudflared(第一次約需 3 分鐘)。",
+    "installAndEnable": "安裝並啟用",
+    "cancel": "取消",
+    "notInstalledWarning": "尚未安裝 cloudflared。開啟隧道時會要求下載(第一次約需 3 分鐘)。",
+    "errors": {
+      "cloudflaredMissing": {
+        "title": "無法安裝 cloudflared",
+        "detail": "隧道需要 cloudflared,但無法自動安裝。請手動安裝後再試一次。"
+      },
+      "timeout": {
+        "title": "隧道連線逾時",
+        "detail": "未能及時連上 Cloudflare 隧道伺服器。請檢查您的網路或防火牆 — 部分地區會限制連上 Cloudflare。"
+      },
+      "exited": {
+        "title": "cloudflared 意外停止",
+        "detail": "隧道處理程序在就緒前就結束了。請再試一次。"
+      },
+      "unknown": {
+        "title": "無法啟動隧道",
+        "detail": "發生未預期的錯誤。請再試一次。"
+      }
+    }
+  },
+  "sessionList": {
+    "searchPlaceholder": "搜尋工作階段...",
+    "loadingSessions": "正在載入工作階段...",
+    "refreshSessions": "重新整理工作階段",
+    "renameSession": "重新命名工作階段",
+    "deleteSession": "刪除工作階段",
+    "groups": {
+      "today": "今天",
+      "yesterday": "昨天",
+      "pastWeek": "過去一週",
+      "pastMonth": "過去一個月",
+      "pastYear": "過去一年"
+    },
+    "relativeTime": {
+      "now": "剛剛",
+      "years": "{{n}}年",
+      "months": "{{n}}月",
+      "days": "{{n}}天",
+      "hours": "{{n}}時",
+      "minutes": "{{n}}分"
+    }
+  }
+}
