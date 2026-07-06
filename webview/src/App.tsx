@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AppProviders } from './contexts';
-import { I18nLocaleSync } from './i18n';
+import { I18nLocaleSync } from './i18n/I18nLocaleSync';
 import { ChatPage, SettingsPage, SettingsOverlay, SwitchAccountPage, ProjectSelectorPage, SessionPanelPage } from './pages';
 import { AccountUsageModal } from './components/AccountUsageModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
