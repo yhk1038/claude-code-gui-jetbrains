@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from './languageMap';
 import enSettings from './locales/en/settings.json';
+import koSettings from './locales/ko/settings.json';
 
 // Namespaces mirror pages/areas. Migrating a page == adding one JSON file
 // per locale and registering it here. English is always bundled so it can
@@ -11,6 +12,9 @@ export const defaultNS = 'settings';
 export const resources = {
   en: {
     settings: enSettings,
+  },
+  ko: {
+    settings: koSettings,
   },
 } as const;
 
