@@ -33,7 +33,8 @@ export function GeneralSettings() {
 
   const rawUiLanguage = scopeSettings.uiLanguage as string | undefined;
   const isUiNotSet = rawUiLanguage === undefined && scope === 'project';
-  const currentUiLanguage = isUiNotSet ? NOT_SET_VALUE : ((rawUiLanguage as string) ?? '');
+  // Interface language defaults to English when unset (does not follow the response language).
+  const currentUiLanguage = isUiNotSet ? NOT_SET_VALUE : ((rawUiLanguage as string) ?? 'english');
 
   const useCtrlEnterToSend = (scopeSettings.useCtrlEnterToSend as boolean | undefined) ?? false;
   const focusInputOnEditorContext = (scopeSettings.focusInputOnEditorContext as boolean | undefined) ?? true;

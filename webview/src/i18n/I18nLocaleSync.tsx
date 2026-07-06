@@ -8,22 +8,20 @@ import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
  * (Settings → General → Interface Language), which is independent from
  * `language` (Claude's response language). Renders nothing.
  *
- * Source of truth is `settings.uiLanguage`. When it is unset we fall back to
- * `settings.language` so existing users keep the language they already had,
- * then to English — but once the user picks an interface language it wins.
+ * Source of truth is `settings.uiLanguage`. When it is unset the UI defaults
+ * to English (toLocale falls back to DEFAULT_LOCALE) — it does NOT follow the
+ * response language.
  */
 export function I18nLocaleSync() {
   const { settings } = useClaudeSettings();
   const uiLanguage = settings.uiLanguage as string | undefined;
-  const responseLanguage = settings.language as string | undefined;
-  const effective = uiLanguage ?? responseLanguage;
 
   useEffect(() => {
-    const locale = toLocale(effective);
+    const locale = toLocale(uiLanguage);
     if (i18n.language !== locale) {
       void i18n.changeLanguage(locale);
     }
-  }, [effective]);
+  }, [uiLanguage]);
 
   return null;
 }
