@@ -1,0 +1,36 @@
+{
+  "welcomeArtAlt": "Ilustración de bienvenida",
+  "intro": "Claude Code se puede usar con tu suscripción de Claude o facturarse según el uso de la API a través de tu cuenta de Console.",
+  "loginPrompt": "¿Cómo quieres iniciar sesión?",
+  "errors": {
+    "loginFailed": "Error al iniciar sesión. Inténtalo de nuevo."
+  },
+  "claudeAi": {
+    "label": "Suscripción de Claude.ai",
+    "description": "Usa tu suscripción Claude Pro, Team o Enterprise"
+  },
+  "console": {
+    "label": "Anthropic Console",
+    "description": "Paga por el uso de la API a través de tu cuenta de Console"
+  },
+  "providers": {
+    "label": "Bedrock, Foundry o Vertex",
+    "description": "Instrucciones sobre cómo usar claves de API o proveedores externos."
+  },
+  "terminal": {
+    "prompt": "¿Prefieres la experiencia de terminal?",
+    "action": "Ejecutar claude en la terminal"
+  },
+  "codeInput": {
+    "title": "Pega el código de tu navegador",
+    "description": "Después de iniciar sesión, tu navegador mostrará un código. Pégalo aquí para completar el inicio de sesión.",
+    "placeholder": "Pega el código aquí",
+    "submit": "Enviar código"
+  },
+  "urlModal": {
+    "title": "Iniciar sesión en Claude",
+    "description": "Claude está abriendo tu navegador para iniciar sesión. Si no se abrió automáticamente, usa el botón de abajo.",
+    "openButton": "Abrir página de inicio de sesión",
+    "revealCode": "¿Recibiste un código en tu navegador? Introdúcelo"
+  }
+}

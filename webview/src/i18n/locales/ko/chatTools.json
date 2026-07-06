@@ -1,0 +1,276 @@
+{
+  "tool": {
+    "in": "IN",
+    "out": "OUT",
+    "declined": "이 도구를 거부했습니다.",
+    "declinedWithInstruction": "이 도구를 거부했습니다. 대신 Claude에게 다음을 요청했습니다: “{{instruction}}”"
+  },
+  "message": {
+    "copyMessage": "메시지 복사",
+    "retry": "재시도",
+    "unknownTool": "알 수 없음"
+  },
+  "interrupted": {
+    "default": "중단됨",
+    "toolInterrupted": "도구 중단됨"
+  },
+  "attachments": {
+    "imageAlt": "이미지 {{index}}",
+    "fullSizeAlt": "원본 크기"
+  },
+  "edit": {
+    "modified": "수정됨"
+  },
+  "write": {
+    "lineCount": "{{count}}줄"
+  },
+  "glob": {
+    "pattern": "패턴: \"{{pattern}}\"",
+    "foundFiles": "파일 {{count}}개 찾음",
+    "foundFiles_one": "파일 {{count}}개 찾음",
+    "foundFiles_other": "파일 {{count}}개 찾음"
+  },
+  "grep": {
+    "inPath": "({{path}}에서)",
+    "globPattern": "(glob: {{glob}})"
+  },
+  "webFetch": {
+    "fetchedFrom": "가져온 위치"
+  },
+  "todoWrite": {
+    "title": "할 일 업데이트"
+  },
+  "notebookEdit": {
+    "title": "노트북 셀 편집",
+    "noContent": "[내용 없음]",
+    "status": {
+      "inserted": "삽입됨",
+      "replaced": "교체됨",
+      "deleted": "삭제됨",
+      "success": "성공"
+    }
+  },
+  "skill": {
+    "fallback": "스킬",
+    "expandLabel": "스킬"
+  },
+  "askUserQuestion": {
+    "ask": "ASK",
+    "out": "OUT"
+  },
+  "exitPlanMode": {
+    "title": "Claude의 계획",
+    "planModeTitle": "계획 모드",
+    "approved": "사용자가 계획을 승인했습니다",
+    "stayedInPlanMode": "계획 모드 유지",
+    "feedbackLabel": "RE:"
+  },
+  "task": {
+    "common": {
+      "in": "IN",
+      "out": "OUT",
+      "form": "FORM",
+      "taskPrefix": "task:"
+    },
+    "create": {
+      "what": "WHAT"
+    },
+    "update": {
+      "status": "STATUS",
+      "subject": "SUBJECT",
+      "desc": "DESC",
+      "owner": "OWNER",
+      "blocks": "BLOCKS",
+      "blockedBy": "BLOCKED-BY"
+    },
+    "output": {
+      "type": "유형",
+      "status": "상태",
+      "retrieval": "조회",
+      "copied": "복사됨",
+      "retrievalCompleted": "완료",
+      "retrievalTimedOut": "시간 초과",
+      "retrievalError": "오류"
+    }
+  },
+  "workflow": {
+    "agentsMeta": "에이전트 {{count}}명",
+    "tokensMeta": "토큰 {{value}}개",
+    "phaseSuffix": " ({{count}}단계)",
+    "phaseSuffix_one": " ({{count}}단계)",
+    "phaseSuffix_other": " ({{count}}단계)",
+    "taskIdDetail": "작업 ID: {{taskId}}",
+    "runningInBackground": "백그라운드에서 실행 중…",
+    "agentsUsageLabel": "에이전트 {{count}}",
+    "tokensUsageLabel": "토큰 {{value}}",
+    "toolsUsageLabel": "도구 {{count}}"
+  },
+  "mcp": {
+    "common": {
+      "out": "OUT"
+    }
+  },
+  "filesystem": {
+    "common": {
+      "in": "IN",
+      "out": "OUT"
+    },
+    "editFile": {
+      "dryRun": "(드라이런)"
+    },
+    "readMultipleFiles": {
+      "fileCount": "파일 {{count}}개"
+    }
+  },
+  "gmail": {
+    "common": {
+      "unknownSender": "(보낸 사람 알 수 없음)"
+    },
+    "action": {
+      "addLabelsToThread": "스레드에 라벨 {{count}}개 추가",
+      "removeLabelsFromThread": "스레드에서 라벨 {{count}}개 제거",
+      "addLabelsToMessage": "메시지에 라벨 {{count}}개 추가",
+      "removeLabelsFromMessage": "메시지에서 라벨 {{count}}개 제거",
+      "createLabel": "라벨 만들기",
+      "createLabelNamed": "라벨 만들기: {{name}}",
+      "updateLabel": "라벨 업데이트",
+      "updateLabelNamed": "라벨 업데이트: {{name}}",
+      "deleteLabel": "라벨 삭제",
+      "moveToTrash": "{{target}}을(를) 휴지통으로 이동",
+      "markAsSpam": "{{target}}을(를) 스팸으로 표시",
+      "applySensitiveLabel": "{{target}}에 민감 라벨 적용",
+      "targetMessage": "메시지",
+      "targetThread": "스레드"
+    },
+    "createDraft": {
+      "description": "초안 생성됨",
+      "to": "받는사람",
+      "cc": "참조",
+      "bcc": "숨은참조"
+    },
+    "listDrafts": {
+      "count": "초안 {{count}}개"
+    },
+    "listLabels": {
+      "count": "라벨 {{count}}개",
+      "unnamed": "(이름 없음)"
+    },
+    "searchThreads": {
+      "resultsFound": "{{count}}건 찾음"
+    }
+  },
+  "jetbrains": {
+    "common": {
+      "in": "IN",
+      "out": "OUT",
+      "exitCode": "종료 코드 {{code}}",
+      "projectRoot": "프로젝트 루트",
+      "scopeIn": "내",
+      "currentProject": "현재 프로젝트",
+      "differentProject": "다른 프로젝트",
+      "applied": "적용됨",
+      "notApplied": "적용 안 됨",
+      "declined": "거부됨",
+      "declinedNote": "이 도구를 거부했습니다.",
+      "unrecognizedInputTitle": "인식할 수 없는 입력 — 허용하기 전에 검토하세요",
+      "unexpectedType": "(예기치 않은 유형)",
+      "debuggerStatus": {
+        "paused": "일시 정지됨",
+        "running": "실행 중",
+        "stopped": "정지됨",
+        "timeout": "시간 초과"
+      }
+    },
+    "action": {
+      "debuggerAction": "디버거: {{action}}",
+      "line": "{{line}}번째 줄",
+      "patchOp": {
+        "add": "추가",
+        "delete": "삭제",
+        "update": "업데이트"
+      }
+    },
+    "breakpoint": {
+      "logpoint": "로그포인트",
+      "suspend": "일시 중단: {{policy}}",
+      "breakpointsMuted": "중단점 음소거됨",
+      "breakpointsUnmuted": "중단점 음소거 해제됨",
+      "temporary": "임시",
+      "disabled": "비활성화됨",
+      "logMessage": "로그 메시지",
+      "logStack": "로그 스택",
+      "id": "id {{id}}",
+      "owner": "소유자: {{owner}}",
+      "conditionLabel": "if",
+      "logLabel": "log"
+    },
+    "createNewFile": {
+      "overwritesExisting": "기존 파일을 덮어씀",
+      "lineCount": "{{count}}줄",
+      "lineCount_one": "{{count}}줄",
+      "lineCount_other": "{{count}}줄"
+    },
+    "executeTerminalCommand": {
+      "executionModeTooltip": "사용자의 기본 셸에서 실행할지, 직접 프로세스로 실행할지 설정",
+      "shell": "셸",
+      "direct": "직접"
+    },
+    "getRunConfigurations": {
+      "none": "실행 구성 없음"
+    },
+    "gitStatus": {
+      "includeIgnored": "무시된 파일 포함",
+      "includeUntracked": "추적되지 않은 파일 포함",
+      "changeCount": "변경 사항 {{count}}개",
+      "changeCount_one": "변경 사항 {{count}}개",
+      "changeCount_other": "변경 사항 {{count}}개",
+      "clean": "작업 트리가 깨끗합니다",
+      "status": {
+        "untracked": "추적 안 됨",
+        "modified": "수정됨",
+        "added": "추가됨",
+        "deleted": "삭제됨",
+        "renamed": "이름 변경됨",
+        "copied": "복사됨",
+        "conflict": "충돌",
+        "changed": "변경됨"
+      }
+    },
+    "openFiles": {
+      "none": "열린 파일 없음",
+      "active": "활성"
+    },
+    "problems": {
+      "errorsOnly": "오류만",
+      "buildSucceeded": "빌드 성공",
+      "none": "문제 없음",
+      "count": "문제 {{count}}개",
+      "count_one": "문제 {{count}}개",
+      "count_other": "문제 {{count}}개",
+      "infoSeverity": "정보"
+    },
+    "projectList": {
+      "none": "없음"
+    },
+    "replaceText": {
+      "all": "전체",
+      "caseSensitive": "대소문자 구분",
+      "old": "이전",
+      "new": "새로운"
+    },
+    "search": {
+      "matchCount": "일치",
+      "matchCount_one": "일치",
+      "matchCount_other": "일치",
+      "word": {
+        "pattern": "패턴",
+        "text": "텍스트",
+        "regex": "정규식",
+        "glob": "glob",
+        "name": "이름",
+        "symbol": "심볼",
+        "query": "쿼리"
+      }
+    }
+  }
+}

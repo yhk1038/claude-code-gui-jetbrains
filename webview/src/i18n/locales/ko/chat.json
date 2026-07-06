@@ -1,0 +1,401 @@
+{
+  "inputBanner": {
+    "close": "닫기"
+  },
+  "connectionLost": {
+    "offline": "인터넷에 연결되어 있지 않습니다. 네트워크 연결을 기다리는 중{{dots}}",
+    "reconnecting": "백엔드 연결이 끊어졌습니다. 재연결하는 중{{dots}}"
+  },
+  "updateBanner": {
+    "released": "v{{version}} 출시!",
+    "restartRequired": "IDE 재시작 필요",
+    "update": "업데이트",
+    "skip": "건너뛰기"
+  },
+  "fableNotice": {
+    "availableTitle": "이제 Fable을 사용할 수 있습니다",
+    "updateRequiredTitle": "Fable 5를 사용하려면 업데이트하세요",
+    "availableBody": "7월 7일까지 Fable 5에서 플랜 한도의 최대 50%를 사용할 수 있습니다. 이후에는 계속 사용하려면 사용량 크레딧으로 전환하세요.",
+    "updateRequiredBody": "Fable 5를 사용하려면 Claude Code CLI v2.1.170 이상이 필요합니다. 설정 → 정보에서 CLI를 업데이트해 선택하세요.",
+    "learnMore": "자세히 알아보기"
+  },
+  "telemetry": {
+    "title": "제품 개선을 위해 사용 통계 수집을 허용하시겠습니까?",
+    "subtitle": "소스 코드와 개인 데이터는 전송되지 않습니다. 설정에서 언제든지 끌 수 있습니다.",
+    "accept": "허용",
+    "deny": "거부",
+    "privacyPolicy": "개인정보 처리방침"
+  },
+  "browserPermission": {
+    "enableFromSettings": "브라우저 설정에서 사용",
+    "allow": "허용",
+    "dismiss": "닫기"
+  },
+  "streamError": {
+    "authDiagnosis": {
+      "title": "~/.claude/settings.json의 env에 API 키가 설정되어 있습니다:",
+      "hint": "이 키들이 만료되었거나 유효하지 않을 수 있습니다. 확인 후 제거하거나 갱신하세요."
+    },
+    "sessionConflict": {
+      "message": "오류: 이 세션은 이미 사용 중입니다.",
+      "reclaiming": "되찾는 중...",
+      "reclaim": "세션 되찾기"
+    }
+  },
+  "chatInput": {
+    "actionButtons": {
+      "attachFile": "파일 첨부",
+      "slashCommands": "슬래시 명령어",
+      "stopGenerating": "생성 중지",
+      "sendMessage": "메시지 보내기"
+    },
+    "attachMenu": {
+      "image": "이미지",
+      "file": "파일",
+      "folder": "폴더"
+    },
+    "attachmentPreview": {
+      "fullSize": "원본 크기"
+    },
+    "attachments": {
+      "errors": {
+        "unsupportedType": "지원하지 않는 파일 형식: {{type}}",
+        "tooLarge": "파일이 너무 큽니다: {{size}}MB (최대 {{max}}MB)"
+      }
+    },
+    "contextWindow": {
+      "remaining": "자동 압축까지 컨텍스트 {{percent}}% 남음.",
+      "tokensUsed": "토큰 {{tokens}}개 사용",
+      "clickToCompact": "클릭하면 지금 압축합니다.",
+      "used": "{{percent}}% 사용됨"
+    },
+    "dragOverlay": {
+      "dropHere": "파일이나 폴더를 여기에 드롭하세요"
+    },
+    "ideSelectionTag": {
+      "including": "다음 메시지에 {{path}} 포함 — 클릭하면 제외",
+      "excluding": "{{path}} 제외됨 — 클릭하면 포함"
+    },
+    "mentionDropdown": {
+      "searching": "검색 중...",
+      "noMatchingFiles": "일치하는 파일이 없습니다",
+      "closeAriaLabel": "멘션 드롭다운 닫기"
+    },
+    "modeSelectPanel": {
+      "modes": "모드",
+      "toSwitch": "전환",
+      "effort": "Effort"
+    },
+    "modelTag": {
+      "switchModel": "모델 전환 ({{hint}})",
+      "setModelNotification": "모델을 {{model}}(으)로 설정"
+    },
+    "placeholder": {
+      "queueMessage": "다음 메시지 대기열에 추가...",
+      "focusHint": "⌘ Esc로 Claude에 포커스 지정/해제"
+    },
+    "ariaLabel": "Claude에게 메시지 보내기",
+    "autoModeFallback": "여기서는 자동 모드를 사용할 수 없어 기본 권한 모드를 대신 사용합니다."
+  },
+  "sessionHeader": {
+    "newTab": {
+      "title": "새 탭 열기"
+    },
+    "backgroundTasks": {
+      "title": "백그라운드 작업"
+    },
+    "tokenBattery": {
+      "setupTitle": "클릭해서 사용량 추적 설정",
+      "setupLabel": "설정"
+    },
+    "tunnel": {
+      "title": "원격 터널 (비공식)"
+    },
+    "accountSwitcher": {
+      "title": "계정",
+      "noSavedAccounts": "저장된 계정이 없습니다.",
+      "addAccount": "계정 추가",
+      "manageAccounts": "계정 관리",
+      "switchedTo": "{{account}}(으)로 전환됨",
+      "switchFailed": "전환 실패",
+      "fallbackAccountLabel": "계정",
+      "relativeTime": {
+        "daysAgo": "{{count}}일 전",
+        "hoursAgo": "{{count}}시간 전",
+        "minutesAgo": "{{count}}분 전",
+        "justNow": "방금 전"
+      }
+    },
+    "sessionDropdown": {
+      "pastConversations": "지난 대화",
+      "newChat": "새 채팅",
+      "noMatchingSessions": "일치하는 세션이 없습니다",
+      "noSessionsYet": "아직 세션이 없습니다"
+    },
+    "workingDir": {
+      "switchDisabledTitle": "세션이 활성 상태인 동안에는 작업 디렉터리를 전환할 수 없습니다",
+      "switchTitle": "작업 디렉터리 전환",
+      "draftBadge": "임시",
+      "draftBadgeTitle": "'추가'로 선택됨 — 여기서 세션을 시작하면 영구 작업 디렉터리가 됩니다.",
+      "ideRootTitle": "IDE 프로젝트 루트",
+      "loading": "불러오는 중…",
+      "noWorkingDirectoriesFound": "작업 디렉터리를 찾을 수 없습니다",
+      "browseAll": "전체 찾아보기…",
+      "addNew": "+ 새로 추가"
+    }
+  },
+  "acceptPlan": {
+    "title": "이 계획을 승인하시겠습니까?",
+    "subtitle": "미리보기에서 텍스트를 선택하면 댓글을 추가할 수 있습니다",
+    "textareaPlaceholder": "대신 Claude가 무엇을 할지 알려주세요",
+    "options": {
+      "autoAccept": "예, 자동 승인",
+      "manualApprove": "예, 수동으로 편집 승인",
+      "keepPlanning": "아니요, 계속 계획하기"
+    }
+  },
+  "approvalPanel": {
+    "defaultTextareaPlaceholder": "대신 Claude가 무엇을 할지 알려주세요",
+    "escToCancel": "취소하려면 Esc"
+  },
+  "askUserQuestion": {
+    "escToCancel": "취소하려면 Esc",
+    "submit": "답변 제출",
+    "next": "다음",
+    "other": "기타",
+    "otherPlaceholder": "답변을 입력하세요..."
+  },
+  "backgroundTasks": {
+    "title": "백그라운드 작업",
+    "close": "닫기",
+    "empty": "아직 백그라운드 워크플로가 없습니다.",
+    "running": "실행 중",
+    "finishedCount": "{{count}}개 완료",
+    "clear": "지우기",
+    "dismiss": "닫기",
+    "dismissRunning": "닫기 (멈춘 워크플로를 정리합니다)",
+    "workflowLabel": "워크플로",
+    "agentsCount": "에이전트 {{count}}명",
+    "agentsCount_one": "에이전트 {{count}}명",
+    "agentsCount_other": "에이전트 {{count}}명",
+    "tokensLabel": "토큰 {{tokens}}개",
+    "phasesLabel": "단계",
+    "tableHeader": {
+      "agent": "에이전트",
+      "tokens": "토큰",
+      "tools": "도구",
+      "time": "시간"
+    }
+  },
+  "modelSwitch": {
+    "selectModel": "모델 선택",
+    "loadingModels": "모델 불러오는 중…",
+    "setModelTo": "모델을 {{model}}(으)로 설정"
+  },
+  "permissionBanner": {
+    "textareaPlaceholder": "대신 Claude가 무엇을 할지 알려주세요",
+    "workflowNotice": "동적 워크플로는 여러 서브에이전트를 동시에 실행하며 사용량 한도를 많이 소모할 수 있습니다. 작업 패널에서 언제든지 중지할 수 있습니다.",
+    "yes": "예",
+    "no": "아니요",
+    "allowMcpTool": "{{tool}}을(를) 허용하시겠습니까?",
+    "editWithFile": "{{file}}에 이 편집을 적용하시겠습니까?",
+    "editNoFile": "이 편집을 적용하시겠습니까?",
+    "writeWithFile": "{{file}}에 쓰시겠습니까?",
+    "writeNoFile": "이 파일을 쓰시겠습니까?",
+    "deleteWithFile": "{{file}}을(를) 삭제하시겠습니까?",
+    "deleteNoFile": "이 파일을 삭제하시겠습니까?",
+    "runCommand": "이 명령어를 실행하시겠습니까?",
+    "readWithFile": "{{file}}을(를) 읽으시겠습니까?",
+    "readNoFile": "이 파일을 읽으시겠습니까?",
+    "editNotebookWithFile": "노트북 {{file}}을(를) 편집하시겠습니까?",
+    "editNotebookNoFile": "이 노트북을 편집하시겠습니까?",
+    "allowWorkflow": "Claude가 워크플로 {{name}}을(를) 실행하도록 허용하시겠습니까?",
+    "allowTool": "{{tool}}을(를) 허용하시겠습니까?",
+    "sessionLabel": {
+      "edit": "예, 이번 세션에서 모든 편집 허용",
+      "write": "예, 이번 세션에서 모든 쓰기 허용",
+      "bash": "예, 이번 세션에서 모든 명령어 허용",
+      "delete": "예, 이번 세션에서 모든 삭제 허용",
+      "read": "예, 이번 세션에서 모든 읽기 허용",
+      "workflow": "예, 이번 세션에서 모든 워크플로 허용",
+      "mcp": "예, 이번 세션에서 모든 {{scope}} 허용",
+      "default": "예, 이번 세션에서 모든 {{tool}} 허용"
+    }
+  },
+  "loginCta": {
+    "signed": "로그인됨",
+    "reSign": "다시 로그인"
+  },
+  "diffCard": {
+    "operation": {
+      "create": "생성",
+      "modify": "수정",
+      "delete": "삭제"
+    },
+    "status": {
+      "pending": "대기 중",
+      "applied": "적용됨",
+      "rejected": "거부됨"
+    },
+    "collapse": "접기",
+    "expand": "펼치기",
+    "openInIdeTitle": "IDE diff 뷰어에서 열기",
+    "opening": "여는 중...",
+    "openInIde": "IDE에서 열기",
+    "applying": "적용 중...",
+    "apply": "적용",
+    "reject": "거부"
+  },
+  "diffList": {
+    "noChanges": "파일 변경 사항 없음",
+    "noChangesHint": "변경 사항이 있으면 여기에 표시됩니다",
+    "pendingCount": "대기 중인 변경 사항",
+    "pendingCount_one": "대기 중인 변경 사항",
+    "pendingCount_other": "대기 중인 변경 사항",
+    "applyingAll": "전체 적용 중...",
+    "applyAll": "전체 적용",
+    "rejectAll": "전체 거부"
+  },
+  "diffViewer": {
+    "noDiff": "표시할 diff가 없습니다",
+    "unknownError": "알 수 없는 오류",
+    "parseError": "diff 파싱 실패: {{message}}"
+  },
+  "toolCard": {
+    "status": {
+      "pending": "승인 대기 중",
+      "approved": "승인됨",
+      "denied": "거부됨",
+      "executing": "실행 중",
+      "completed": "완료됨",
+      "failed": "실패"
+    },
+    "toolId": "도구 ID: {{id}}...",
+    "inputParameters": "입력 매개변수",
+    "result": "결과",
+    "error": "오류",
+    "approve": "승인",
+    "deny": "거부"
+  },
+  "emptyState": {
+    "initialHint": "무엇부터 시작할까요? 이 코드베이스에 대해 물어보거나 바로 코드를 작성할 수 있습니다.",
+    "hints": {
+      "todoStart": "// TODO: 전부 다. 시작해 봅시다.",
+      "readyToCodeLine1": "코딩할 준비 되셨나요?",
+      "readyToCodeLine2": "배포할 만한 가치가 있는 걸 만들어 봅시다.",
+      "pickModel": "/model을 입력해서 작업에 맞는 도구를 고르세요.",
+      "claudeMdInstructions": "Claude가 매번 읽을 지침을 담은 CLAUDE.md 파일을 만드세요.",
+      "claudeMdRemember": "매번 같은 말을 반복하기 지치셨나요? CLAUDE.md를 이용해 Claude에게 알려준 내용을 기억하게 하세요.",
+      "approveEditsPrefix": "누르면",
+      "approveEditsSuffix": "코드 편집을 자동으로 승인합니다",
+      "highlightChatPrefix": "아무 텍스트나 선택하고",
+      "highlightChatSuffix": "을(를) 눌러 그것에 대해 채팅하세요",
+      "mcpManagePrefix": "입력하면",
+      "mcpManageSuffix": "여기서 바로 MCP 서버를 추가, 제거, 관리할 수 있습니다.",
+      "planningModePrefix": "커밋 전에 큰 변경 사항을 미리 이야기하려면 계획 모드를 사용하세요. 누르면",
+      "planningModeSuffix": "모드 사이를 전환합니다.",
+      "rightPlace": "정확히 알맞은 곳에 오셨습니다!"
+    }
+  },
+  "streamingIndicator": {
+    "verbs": [
+      "완수하는 중",
+      "처리하는 중",
+      "실현하는 중",
+      "굽는 중",
+      "콕콕 찌르는 중",
+      "우려내는 중",
+      "계산하는 중",
+      "궁리하는 중",
+      "채널링하는 중",
+      "휘젓는 중",
+      "클로딩 중",
+      "뭉치는 중",
+      "사색하는 중",
+      "연산하는 중",
+      "정돈하는 중",
+      "궁리해 만드는 중",
+      "고려하는 중",
+      "숙고하는 중",
+      "요리하는 중",
+      "공들여 만드는 중",
+      "만드는 중",
+      "숫자 굴리는 중",
+      "해독하는 중",
+      "심사숙고하는 중",
+      "판단하는 중",
+      "혼란스러워 하는 중",
+      "하는 중",
+      "이뤄내는 중",
+      "명쾌하게 설명하는 중",
+      "마법 거는 중",
+      "그려보는 중",
+      "요령껏 해내는 중",
+      "촐랑대는 중",
+      "벼려내는 중",
+      "빚어내는 중",
+      "신나게 뛰노는 중",
+      "생성하는 중",
+      "싹틔우는 중",
+      "부화시키는 중",
+      "몰아가는 중",
+      "꽥꽥거리는 중",
+      "아이디어 짜내는 중",
+      "상상하는 중",
+      "숙성시키는 중",
+      "추론하는 중",
+      "현실로 만드는 중",
+      "재워두는 중",
+      "이리저리 헤매는 중",
+      "어슬렁거리는 중",
+      "곰곰이 생각하는 중",
+      "끌어모으는 중",
+      "사색에 잠기는 중",
+      "만지작거리는 중",
+      "스며드는 중",
+      "훑어보는 중",
+      "철학하는 중",
+      "거창하게 설파하는 중",
+      "곱씹는 중",
+      "가공하는 중",
+      "꼼지락거리는 중",
+      "골머리 앓는 중",
+      "그물 짜는 중",
+      "되새기는 중",
+      "음모 꾸미는 중",
+      "낑낑대며 옮기는 중",
+      "살랑살랑 움직이는 중",
+      "은근히 끓이는 중",
+      "뭉개는 중",
+      "탐험하는 중",
+      "굴리는 중",
+      "푹 끓이는 중",
+      "알아채는 중",
+      "종합하는 중",
+      "생각하는 중",
+      "만지작거리며 손보는 중",
+      "변모시키는 중",
+      "펼치는 중",
+      "풀어내는 중",
+      "분위기 타는 중",
+      "거니는 중",
+      "윙윙거리는 중",
+      "흔들흔들거리는 중",
+      "작업하는 중",
+      "다루는 중"
+    ]
+  },
+  "thinking": {
+    "thoughtFor": "{{seconds}}초 동안 생각함",
+    "thinkingEllipsis": "생각하는 중...",
+    "thinking": "생각 중"
+  },
+  "chatMessageArea": {
+    "loadingWorkingDirectory": "작업 디렉터리 불러오는 중...",
+    "loadingEarlierMessages": "이전 메시지 불러오는 중…",
+    "loadOlderMessages": "이전 메시지 더 보기"
+  },
+  "chatPage": {
+    "scrollToBottom": "맨 아래로 스크롤"
+  }
+}

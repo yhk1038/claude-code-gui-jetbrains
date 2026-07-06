@@ -1,0 +1,36 @@
+{
+  "welcomeArtAlt": "환영 이미지",
+  "intro": "Claude Code는 Claude 구독으로 사용하거나 Console 계정을 통해 API 사용량 기준으로 청구받을 수 있습니다.",
+  "loginPrompt": "어떤 방식으로 로그인하시겠습니까?",
+  "errors": {
+    "loginFailed": "로그인에 실패했습니다. 다시 시도해 주세요."
+  },
+  "claudeAi": {
+    "label": "Claude.ai 구독",
+    "description": "Claude Pro, Team 또는 Enterprise 구독을 사용합니다"
+  },
+  "console": {
+    "label": "Anthropic Console",
+    "description": "Console 계정을 통해 API 사용량만큼 결제합니다"
+  },
+  "providers": {
+    "label": "Bedrock, Foundry 또는 Vertex",
+    "description": "API 키나 서드파티 제공자를 사용하는 방법에 대한 안내입니다."
+  },
+  "terminal": {
+    "prompt": "터미널 환경을 선호하시나요?",
+    "action": "터미널에서 claude 실행"
+  },
+  "codeInput": {
+    "title": "브라우저에서 받은 코드를 붙여넣으세요",
+    "description": "로그인하면 브라우저에 코드가 표시됩니다. 로그인을 완료하려면 여기에 붙여넣으세요.",
+    "placeholder": "여기에 코드 붙여넣기",
+    "submit": "코드 제출"
+  },
+  "urlModal": {
+    "title": "Claude에 로그인",
+    "description": "Claude가 로그인을 위해 브라우저를 엽니다. 자동으로 열리지 않았다면 아래 버튼을 사용하세요.",
+    "openButton": "로그인 페이지 열기",
+    "revealCode": "브라우저에서 코드를 받으셨나요? 입력하기"
+  }
+}

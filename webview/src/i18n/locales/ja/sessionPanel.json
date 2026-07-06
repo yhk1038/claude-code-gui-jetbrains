@@ -1,0 +1,12 @@
+{
+  "newSession": "新規セッション",
+  "scope": {
+    "local": "ローカル",
+    "web": "ウェブ"
+  },
+  "empty": {
+    "noMatches": "一致するセッションがありません",
+    "noSessions": "セッションはまだありません",
+    "noWebSessions": "ウェブセッションはありません"
+  }
+}

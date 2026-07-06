@@ -1,0 +1,17 @@
+{
+  "sessionComplete": {
+    "body": "応答が完了しました"
+  },
+  "streamError": {
+    "body": "応答に失敗しました"
+  },
+  "awaitingPermission": {
+    "body": "権限の確認が必要です"
+  },
+  "awaitingPlanApproval": {
+    "body": "プランの確認待ちです"
+  },
+  "awaitingUserInput": {
+    "body": "回答をお待ちしています"
+  }
+}

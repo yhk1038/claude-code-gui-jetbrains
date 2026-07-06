@@ -1,0 +1,17 @@
+{
+  "sessionComplete": {
+    "body": "Antwort abgeschlossen"
+  },
+  "streamError": {
+    "body": "Antwort fehlgeschlagen"
+  },
+  "awaitingPermission": {
+    "body": "Berechtigung angefordert"
+  },
+  "awaitingPlanApproval": {
+    "body": "Plan bereit zur Überprüfung"
+  },
+  "awaitingUserInput": {
+    "body": "Wartet auf deine Antwort"
+  }
+}

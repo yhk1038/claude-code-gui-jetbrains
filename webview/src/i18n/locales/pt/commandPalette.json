@@ -1,0 +1,60 @@
+{
+  "sections": {
+    "context": "Contexto",
+    "model": "Modelo",
+    "customize": "Personalizar",
+    "slashCommands": "Comandos de Barra",
+    "settings": "Configurações",
+    "support": "Suporte"
+  },
+  "context": {
+    "attachFile": "Anexar arquivo...",
+    "mentionFile": "Mencionar arquivo deste projeto...",
+    "clearConversation": "Limpar conversa",
+    "resumeConversation": "Retomar conversa",
+    "showBackgroundTasks": "Fluxo de trabalho: Mostrar tarefas em segundo plano"
+  },
+  "model": {
+    "switchModel": "Trocar modelo...",
+    "effort": "Esforço",
+    "thinking": "Pensamento",
+    "accountUsage": "Conta e uso...",
+    "toggleFastMode": "Alternar modo rápido",
+    "effortUnsupportedReason": "Este modelo não suporta níveis de esforço",
+    "fastModeUnsupportedReason": "O modo rápido só está disponível em modelos Opus"
+  },
+  "customize": {
+    "outputStyles": "Estilos de saída",
+    "agents": "Agentes",
+    "hooks": "Hooks",
+    "memory": "Memória",
+    "permissions": "Permissões",
+    "mcpServers": "Servidores MCP",
+    "managePlugins": "Gerenciar plugins",
+    "openInTerminal": "Abrir Claude no Terminal"
+  },
+  "settings": {
+    "switchAccount": "Trocar conta",
+    "generalConfig": "Configuração geral..."
+  },
+  "support": {
+    "viewHelpDocs": "Ver documentação de ajuda",
+    "restartPlugin": "Reiniciar plugin",
+    "restartConfirm": {
+      "title": "Reiniciar plugin?",
+      "message": "O trabalho em andamento será interrompido.",
+      "confirmLabel": "Reiniciar"
+    }
+  },
+  "slashCommands": {
+    "clearDescription": "Limpar conversa",
+    "usageDescription": "Conta e uso"
+  },
+  "panel": {
+    "reportProblem": "Reportar um problema",
+    "reloading": "Recarregando…",
+    "reloadCommands": "Recarregar comandos",
+    "refreshVersion": "Atualizar versão",
+    "comingSoon": "Em breve"
+  }
+}

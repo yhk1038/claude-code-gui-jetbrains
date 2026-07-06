@@ -1,0 +1,401 @@
+{
+  "inputBanner": {
+    "close": "Fechar"
+  },
+  "connectionLost": {
+    "offline": "Sem conexão com a internet. Aguardando a rede{{dots}}",
+    "reconnecting": "Backend desconectado. Reconectando{{dots}}"
+  },
+  "updateBanner": {
+    "released": "v{{version}} lançada!",
+    "restartRequired": "Reinicialização do IDE necessária",
+    "update": "Atualizar",
+    "skip": "Pular"
+  },
+  "fableNotice": {
+    "availableTitle": "O Fable já está disponível",
+    "updateRequiredTitle": "Atualize para usar o Fable 5",
+    "availableBody": "Você pode usar até 50% dos limites do seu plano no Fable 5 até 7 de julho. Depois disso, mude para créditos de uso para continuar utilizando-o.",
+    "updateRequiredBody": "O Fable 5 requer o Claude Code CLI v2.1.170 ou mais recente. Atualize seu CLI em Configurações → Sobre para selecioná-lo.",
+    "learnMore": "Saiba mais"
+  },
+  "telemetry": {
+    "title": "Permitir a coleta de estatísticas de uso para melhorar o produto?",
+    "subtitle": "Código-fonte e dados pessoais nunca são enviados. Você pode desativar isso a qualquer momento nas configurações.",
+    "accept": "Permitir",
+    "deny": "Recusar",
+    "privacyPolicy": "Política de Privacidade"
+  },
+  "browserPermission": {
+    "enableFromSettings": "Ativar nas configurações do navegador",
+    "allow": "Permitir",
+    "dismiss": "Dispensar"
+  },
+  "streamError": {
+    "authDiagnosis": {
+      "title": "Há chaves de API definidas no env de ~/.claude/settings.json:",
+      "hint": "Essas chaves podem estar expiradas ou inválidas. Verifique e depois remova ou renove-as."
+    },
+    "sessionConflict": {
+      "message": "Erro: Esta sessão já está em uso.",
+      "reclaiming": "Reivindicando...",
+      "reclaim": "Reivindicar Sessão"
+    }
+  },
+  "chatInput": {
+    "actionButtons": {
+      "attachFile": "Anexar arquivo",
+      "slashCommands": "Comandos de barra",
+      "stopGenerating": "Parar geração",
+      "sendMessage": "Enviar mensagem"
+    },
+    "attachMenu": {
+      "image": "Imagem",
+      "file": "Arquivo",
+      "folder": "Pasta"
+    },
+    "attachmentPreview": {
+      "fullSize": "Tamanho completo"
+    },
+    "attachments": {
+      "errors": {
+        "unsupportedType": "Tipo de arquivo não suportado: {{type}}",
+        "tooLarge": "Arquivo muito grande: {{size}}MB (máx. {{max}}MB)"
+      }
+    },
+    "contextWindow": {
+      "remaining": "{{percent}}% de contexto restante até a compactação automática.",
+      "tokensUsed": "{{tokens}} tokens usados",
+      "clickToCompact": "Clique para compactar agora.",
+      "used": "{{percent}}% usado"
+    },
+    "dragOverlay": {
+      "dropHere": "Solte arquivos ou pastas aqui"
+    },
+    "ideSelectionTag": {
+      "including": "Incluindo {{path}} na próxima mensagem — clique para excluir",
+      "excluding": "Excluindo {{path}} — clique para incluir"
+    },
+    "mentionDropdown": {
+      "searching": "Pesquisando...",
+      "noMatchingFiles": "Nenhum arquivo correspondente",
+      "closeAriaLabel": "Fechar menu de menções"
+    },
+    "modeSelectPanel": {
+      "modes": "Modos",
+      "toSwitch": "para trocar",
+      "effort": "Esforço"
+    },
+    "modelTag": {
+      "switchModel": "Trocar modelo ({{hint}})",
+      "setModelNotification": "Modelo definido como {{model}}"
+    },
+    "placeholder": {
+      "queueMessage": "Enfileirar outra mensagem...",
+      "focusHint": "⌘ Esc para focar ou desfocar o Claude"
+    },
+    "ariaLabel": "Mensagem para o Claude",
+    "autoModeFallback": "O modo automático não está disponível aqui — usando o modo de permissão padrão."
+  },
+  "sessionHeader": {
+    "newTab": {
+      "title": "Abrir Nova Aba"
+    },
+    "backgroundTasks": {
+      "title": "Tarefas em segundo plano"
+    },
+    "tokenBattery": {
+      "setupTitle": "Clique para configurar o rastreamento de uso",
+      "setupLabel": "Configurar"
+    },
+    "tunnel": {
+      "title": "Túnel Remoto (Não oficial)"
+    },
+    "accountSwitcher": {
+      "title": "Contas",
+      "noSavedAccounts": "Nenhuma conta salva.",
+      "addAccount": "Adicionar conta",
+      "manageAccounts": "Gerenciar contas",
+      "switchedTo": "Trocado para {{account}}",
+      "switchFailed": "Falha ao trocar",
+      "fallbackAccountLabel": "conta",
+      "relativeTime": {
+        "daysAgo": "há {{count}}d",
+        "hoursAgo": "há {{count}}h",
+        "minutesAgo": "há {{count}}min",
+        "justNow": "agora mesmo"
+      }
+    },
+    "sessionDropdown": {
+      "pastConversations": "Conversas Anteriores",
+      "newChat": "Novo Chat",
+      "noMatchingSessions": "Nenhuma sessão correspondente",
+      "noSessionsYet": "Ainda não há sessões"
+    },
+    "workingDir": {
+      "switchDisabledTitle": "Não é possível trocar o diretório de trabalho enquanto uma sessão está ativa",
+      "switchTitle": "Trocar diretório de trabalho",
+      "draftBadge": "Rascunho",
+      "draftBadgeTitle": "Escolhido via Adicionar novo — torna-se um diretório de trabalho permanente ao iniciar uma sessão aqui.",
+      "ideRootTitle": "Raiz do projeto do IDE",
+      "loading": "Carregando…",
+      "noWorkingDirectoriesFound": "Nenhum diretório de trabalho encontrado",
+      "browseAll": "Procurar todos…",
+      "addNew": "+ Adicionar novo"
+    }
+  },
+  "acceptPlan": {
+    "title": "Aceitar este plano?",
+    "subtitle": "Selecione texto na pré-visualização para adicionar comentários",
+    "textareaPlaceholder": "Diga ao Claude o que fazer em vez disso",
+    "options": {
+      "autoAccept": "Sim, e aceitar automaticamente",
+      "manualApprove": "Sim, e aprovar as edições manualmente",
+      "keepPlanning": "Não, continuar planejando"
+    }
+  },
+  "approvalPanel": {
+    "defaultTextareaPlaceholder": "Diga ao Claude o que fazer em vez disso",
+    "escToCancel": "Esc para cancelar"
+  },
+  "askUserQuestion": {
+    "escToCancel": "Esc para cancelar",
+    "submit": "Enviar respostas",
+    "next": "Próximo",
+    "other": "Outro",
+    "otherPlaceholder": "Digite sua resposta..."
+  },
+  "backgroundTasks": {
+    "title": "Tarefas em segundo plano",
+    "close": "Fechar",
+    "empty": "Ainda não há fluxos de trabalho em segundo plano.",
+    "running": "Em execução",
+    "finishedCount": "Concluídos {{count}}",
+    "clear": "Limpar",
+    "dismiss": "Dispensar",
+    "dismissRunning": "Dispensar (limpa um fluxo de trabalho travado)",
+    "workflowLabel": "Fluxo de trabalho",
+    "agentsCount": "{{count}} agentes",
+    "agentsCount_one": "{{count}} agente",
+    "agentsCount_other": "{{count}} agentes",
+    "tokensLabel": "{{tokens}} tokens",
+    "phasesLabel": "Fases",
+    "tableHeader": {
+      "agent": "Agente",
+      "tokens": "Tokens",
+      "tools": "Ferramentas",
+      "time": "Tempo"
+    }
+  },
+  "modelSwitch": {
+    "selectModel": "Selecione um modelo",
+    "loadingModels": "Carregando modelos…",
+    "setModelTo": "Definir modelo como {{model}}"
+  },
+  "permissionBanner": {
+    "textareaPlaceholder": "Diga ao Claude o que fazer em vez disso",
+    "workflowNotice": "Fluxos de trabalho dinâmicos executam muitos subagentes em paralelo e podem consumir boa parte do seu limite de uso. Pare-os a qualquer momento no painel de tarefas.",
+    "yes": "Sim",
+    "no": "Não",
+    "allowMcpTool": "Permitir {{tool}}?",
+    "editWithFile": "Fazer esta edição em {{file}}?",
+    "editNoFile": "Fazer esta edição?",
+    "writeWithFile": "Escrever em {{file}}?",
+    "writeNoFile": "Escrever este arquivo?",
+    "deleteWithFile": "Excluir {{file}}?",
+    "deleteNoFile": "Excluir este arquivo?",
+    "runCommand": "Executar este comando?",
+    "readWithFile": "Ler {{file}}?",
+    "readNoFile": "Ler este arquivo?",
+    "editNotebookWithFile": "Editar o notebook {{file}}?",
+    "editNotebookNoFile": "Editar este notebook?",
+    "allowWorkflow": "Permitir que o Claude execute um fluxo de trabalho {{name}}?",
+    "allowTool": "Permitir {{tool}}?",
+    "sessionLabel": {
+      "edit": "Sim, permitir todas as edições nesta sessão",
+      "write": "Sim, permitir todas as escritas nesta sessão",
+      "bash": "Sim, permitir todos os comandos nesta sessão",
+      "delete": "Sim, permitir todas as exclusões nesta sessão",
+      "read": "Sim, permitir todas as leituras nesta sessão",
+      "workflow": "Sim, permitir todos os fluxos de trabalho nesta sessão",
+      "mcp": "Sim, permitir todo(a) {{scope}} nesta sessão",
+      "default": "Sim, permitir todo(a) {{tool}} nesta sessão"
+    }
+  },
+  "loginCta": {
+    "signed": "Conectado",
+    "reSign": "Reconectar"
+  },
+  "diffCard": {
+    "operation": {
+      "create": "Criar",
+      "modify": "Modificar",
+      "delete": "Excluir"
+    },
+    "status": {
+      "pending": "Pendente",
+      "applied": "Aplicado",
+      "rejected": "Rejeitado"
+    },
+    "collapse": "Recolher",
+    "expand": "Expandir",
+    "openInIdeTitle": "Abrir no visualizador de diferenças do IDE",
+    "opening": "Abrindo...",
+    "openInIde": "Abrir no IDE",
+    "applying": "Aplicando...",
+    "apply": "Aplicar",
+    "reject": "Rejeitar"
+  },
+  "diffList": {
+    "noChanges": "Nenhuma alteração de arquivo",
+    "noChangesHint": "As alterações aparecerão aqui quando disponíveis",
+    "pendingCount": "alterações pendentes",
+    "pendingCount_one": "alteração pendente",
+    "pendingCount_other": "alterações pendentes",
+    "applyingAll": "Aplicando tudo...",
+    "applyAll": "Aplicar tudo",
+    "rejectAll": "Rejeitar tudo"
+  },
+  "diffViewer": {
+    "noDiff": "Nenhuma diferença disponível",
+    "unknownError": "Erro desconhecido",
+    "parseError": "Falha ao analisar a diferença: {{message}}"
+  },
+  "toolCard": {
+    "status": {
+      "pending": "Aprovação Pendente",
+      "approved": "Aprovado",
+      "denied": "Negado",
+      "executing": "Executando",
+      "completed": "Concluído",
+      "failed": "Falhou"
+    },
+    "toolId": "ID da ferramenta: {{id}}...",
+    "inputParameters": "Parâmetros de Entrada",
+    "result": "Resultado",
+    "error": "Erro",
+    "approve": "Aprovar",
+    "deny": "Negar"
+  },
+  "emptyState": {
+    "initialHint": "O que fazer primeiro? Pergunte sobre este código ou podemos começar a escrever.",
+    "hints": {
+      "todoStart": "// TODO: Tudo. Vamos começar.",
+      "readyToCodeLine1": "Pronto para codar?",
+      "readyToCodeLine2": "Vamos escrever algo que valha a pena implantar.",
+      "pickModel": "Digite /model para escolher a ferramenta certa para a tarefa.",
+      "claudeMdInstructions": "Crie um arquivo CLAUDE.md com instruções que o Claude lerá sempre.",
+      "claudeMdRemember": "Cansado de se repetir? Diga ao Claude para lembrar o que você disse usando o CLAUDE.md.",
+      "approveEditsPrefix": "Pressione",
+      "approveEditsSuffix": "para aprovar automaticamente as edições de código",
+      "highlightChatPrefix": "Selecione qualquer texto e pressione",
+      "highlightChatSuffix": "para conversar sobre ele",
+      "mcpManagePrefix": "Digite",
+      "mcpManageSuffix": "para adicionar, remover e gerenciar servidores MCP aqui mesmo.",
+      "planningModePrefix": "Use o modo de planejamento para discutir grandes mudanças antes de um commit. Pressione",
+      "planningModeSuffix": "para alternar entre os modos.",
+      "rightPlace": "Você veio ao lugar certo!"
+    }
+  },
+  "streamingIndicator": {
+    "verbs": [
+      "Realizando",
+      "Acionando",
+      "Concretizando",
+      "Assando",
+      "Cutucando",
+      "Fermentando",
+      "Calculando",
+      "Cerebrando",
+      "Canalizando",
+      "Batendo",
+      "Claudeando",
+      "Coalescendo",
+      "Cogitando",
+      "Computando",
+      "Combobulando",
+      "Tramando",
+      "Considerando",
+      "Contemplando",
+      "Cozinhando",
+      "Elaborando",
+      "Criando",
+      "Triturando",
+      "Decifrando",
+      "Deliberando",
+      "Determinando",
+      "Desconcertando",
+      "Fazendo",
+      "Efetuando",
+      "Elucidando",
+      "Encantando",
+      "Visualizando",
+      "Manobrando",
+      "Tagarelando",
+      "Forjando",
+      "Formando",
+      "Brincando",
+      "Gerando",
+      "Germinando",
+      "Chocando",
+      "Pastoreando",
+      "Buzinando",
+      "Idealizando",
+      "Imaginando",
+      "Incubando",
+      "Inferindo",
+      "Manifestando",
+      "Marinando",
+      "Divagando",
+      "Vagueando",
+      "Matutando",
+      "Reunindo",
+      "Meditando",
+      "Improvisando",
+      "Percolando",
+      "Folheando",
+      "Filosofando",
+      "Pontificando",
+      "Ponderando",
+      "Processando",
+      "Remexendo",
+      "Resolvendo",
+      "Reticulando",
+      "Ruminando",
+      "Maquinando",
+      "Carregando",
+      "Sacudindo",
+      "Fervendo",
+      "Amassando",
+      "Espeleologando",
+      "Girando",
+      "Refogando",
+      "Investigando",
+      "Sintetizando",
+      "Pensando",
+      "Remendando",
+      "Transmutando",
+      "Desdobrando",
+      "Desvendando",
+      "Vibrando",
+      "Vagando",
+      "Zunindo",
+      "Cambaleando",
+      "Trabalhando",
+      "Domando"
+    ]
+  },
+  "thinking": {
+    "thoughtFor": "Pensou por {{seconds}}s",
+    "thinkingEllipsis": "Pensando...",
+    "thinking": "Pensando"
+  },
+  "chatMessageArea": {
+    "loadingWorkingDirectory": "Carregando diretório de trabalho...",
+    "loadingEarlierMessages": "Carregando mensagens anteriores…",
+    "loadOlderMessages": "Carregar mensagens mais antigas"
+  },
+  "chatPage": {
+    "scrollToBottom": "Rolar até o final"
+  }
+}

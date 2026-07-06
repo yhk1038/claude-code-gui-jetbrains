@@ -1,0 +1,60 @@
+{
+  "sections": {
+    "context": "컨텍스트",
+    "model": "모델",
+    "customize": "사용자 지정",
+    "slashCommands": "슬래시 명령어",
+    "settings": "설정",
+    "support": "지원"
+  },
+  "context": {
+    "attachFile": "파일 첨부...",
+    "mentionFile": "이 프로젝트의 파일 멘션...",
+    "clearConversation": "대화 지우기",
+    "resumeConversation": "대화 재개",
+    "showBackgroundTasks": "워크플로: 백그라운드 작업 보기"
+  },
+  "model": {
+    "switchModel": "모델 전환...",
+    "effort": "Effort",
+    "thinking": "Thinking",
+    "accountUsage": "계정 및 사용량...",
+    "toggleFastMode": "고속 모드 전환",
+    "effortUnsupportedReason": "이 모델은 Effort 레벨을 지원하지 않습니다",
+    "fastModeUnsupportedReason": "고속 모드는 Opus 모델에서만 사용할 수 있습니다"
+  },
+  "customize": {
+    "outputStyles": "출력 스타일",
+    "agents": "에이전트",
+    "hooks": "훅",
+    "memory": "메모리",
+    "permissions": "권한",
+    "mcpServers": "MCP 서버",
+    "managePlugins": "플러그인 관리",
+    "openInTerminal": "터미널에서 Claude 열기"
+  },
+  "settings": {
+    "switchAccount": "계정 전환",
+    "generalConfig": "일반 설정..."
+  },
+  "support": {
+    "viewHelpDocs": "도움말 문서 보기",
+    "restartPlugin": "플러그인 재시작",
+    "restartConfirm": {
+      "title": "플러그인을 재시작하시겠습니까?",
+      "message": "진행 중인 작업이 중단됩니다.",
+      "confirmLabel": "재시작"
+    }
+  },
+  "slashCommands": {
+    "clearDescription": "대화 지우기",
+    "usageDescription": "계정 및 사용량"
+  },
+  "panel": {
+    "reportProblem": "문제 신고",
+    "reloading": "다시 불러오는 중…",
+    "reloadCommands": "명령어 다시 불러오기",
+    "refreshVersion": "버전 새로고침",
+    "comingSoon": "출시 예정"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "notifications": {
+    "label": "デスクトップ通知",
+    "description": "応答が完了したときに通知を受け取る"
+  }
+}

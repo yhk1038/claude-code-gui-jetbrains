@@ -1,0 +1,167 @@
+{
+  "confirmDialog": {
+    "confirm": "确认",
+    "cancel": "取消"
+  },
+  "contextChip": {
+    "removeContext": "移除上下文"
+  },
+  "errorBoundary": {
+    "somethingWentWrong": "出错了。",
+    "retry": "重试"
+  },
+  "effortSlider": {
+    "tooltip": "点击或拖动以设置强度等级",
+    "tooltipUltracode": "点击或拖动以设置强度等级(最高档 = ultracode)"
+  },
+  "accountUsage": {
+    "title": "账户与用量",
+    "accountSection": "账户",
+    "authMethod": "认证方式",
+    "email": "邮箱",
+    "plan": "套餐"
+  },
+  "usageSection": {
+    "title": "用量",
+    "updated": "更新于 {{time}}",
+    "refresh": "刷新",
+    "session5hr": "会话(5 小时)",
+    "weekly7day": "每周(7 天)",
+    "weeklySonnet": "每周 Sonnet",
+    "weeklyOpus": "每周 Opus"
+  },
+  "usageReport": {
+    "title": "用量构成",
+    "refresh": "刷新",
+    "empty": "暂无用量明细。",
+    "requests": "{{value}} 次请求",
+    "sessions": "{{value}} 个会话",
+    "percentOfUsage": "% 的用量"
+  },
+  "mcpModal": {
+    "title": "MCP 服务器",
+    "refreshServers": "刷新 MCP 服务器",
+    "browseRegistry": "浏览 MCP 注册表",
+    "addServer": "添加 MCP 服务器",
+    "checkingHealth": "正在检查 MCP 服务器状态…",
+    "serverNotFound": "未找到服务器。",
+    "learnMore": "了解更多关于 MCP 的信息",
+    "editReplaceSingle": "编辑会替换单个服务器 — 请粘贴恰好一个服务器配置。",
+    "saved": "已保存 {{name}}",
+    "added": "已添加 {{name}}",
+    "addFailed": "{{failed}}/{{total}} 个服务器添加失败:",
+    "form": {
+      "editTitle": "编辑 MCP 服务器",
+      "addTitle": "添加 MCP 服务器",
+      "back": "返回",
+      "nameLabel": "名称",
+      "nameHint": "可选 — 仅当您的 JSON 没有“mcpServers”包裹时使用",
+      "namePlaceholder": "my-server",
+      "scopeLabel": "范围",
+      "scopeUser": "用户(所有项目)",
+      "scopeProject": "项目(.mcp.json)",
+      "scopeLocal": "本地(仅此项目)",
+      "configLabel": "配置(JSON)",
+      "configHint": "粘贴 mcpServers 配置或单个服务器配置",
+      "cancel": "取消",
+      "saving": "正在保存",
+      "adding": "正在添加",
+      "save": "保存",
+      "addButton": "添加服务器"
+    },
+    "marketplace": {
+      "back": "返回",
+      "searchPlaceholder": "搜索 MCP 注册表…",
+      "searchPrompt": "搜索官方 MCP 注册表以查找并安装服务器。",
+      "searching": "正在搜索…",
+      "noServers": "未找到服务器。",
+      "openRepo": "打开 {{url}}",
+      "needsInputs": "需要 {{count}} 项输入:{{inputs}}",
+      "needsInputs_one": "需要 {{count}} 项输入:{{inputs}}",
+      "needsInputs_other": "需要 {{count}} 项输入:{{inputs}}",
+      "configureAdd": "配置并添加",
+      "noInstallInfo": "暂无安装信息",
+      "add": "添加"
+    },
+    "list": {
+      "noServersConfigured": "尚未配置 MCP 服务器。",
+      "addOne": "添加一个",
+      "scope": {
+        "project": "项目",
+        "local": "本地",
+        "user": "用户",
+        "claudeai": "claude.ai",
+        "managed": "托管",
+        "enterprise": "企业版"
+      }
+    },
+    "detail": {
+      "backToList": "返回列表",
+      "edit": "编辑",
+      "type": "类型:{{value}}",
+      "authenticate": "进行身份验证",
+      "reconnect": "重新连接",
+      "reconnecting": "正在重新连接",
+      "clearAuth": "清除身份验证",
+      "enable": "启用",
+      "disable": "禁用",
+      "loadingTools": "正在加载工具…",
+      "loadToolsError": "无法加载工具",
+      "viewTools": "查看工具({{count}})",
+      "readOnly": "只读",
+      "destructive": "破坏性",
+      "removeConfirm": "移除“{{name}}”?",
+      "remove": "移除",
+      "cancel": "取消",
+      "removeServer": "移除服务器"
+    },
+    "status": {
+      "connected": "已连接",
+      "failed": "失败",
+      "needsAuth": "需要身份验证",
+      "connecting": "正在连接…",
+      "disabled": "已禁用"
+    }
+  },
+  "tunnelModal": {
+    "title": "远程隧道",
+    "remoteTunnelUnofficial": "远程隧道(非官方)",
+    "exposeVia": "通过 cloudflared 暴露",
+    "installingCloudflared": "正在安装 cloudflared…",
+    "connecting": "正在连接…",
+    "typicalTime": "通常约 1 分钟(如需安装,约 3 分钟)",
+    "preventSleep": "防止休眠",
+    "keepAwake": "隧道处于活动状态时保持唤醒"
+  },
+  "tunnelStatusNotice": {
+    "tryAgain": "重试",
+    "installGuide": "安装指南",
+    "copyCommand": "复制命令",
+    "installConsent": "尚未安装 cloudflared。是否立即安装并启用隧道?这将下载 cloudflared(首次约需 3 分钟)。",
+    "installAndEnable": "安装并启用",
+    "cancel": "取消",
+    "notInstalledWarning": "尚未安装 cloudflared。开启隧道将提示下载(首次约需 3 分钟)。"
+  },
+  "sessionList": {
+    "searchPlaceholder": "搜索会话...",
+    "loadingSessions": "正在加载会话...",
+    "refreshSessions": "刷新会话",
+    "renameSession": "重命名会话",
+    "deleteSession": "删除会话",
+    "groups": {
+      "today": "今天",
+      "yesterday": "昨天",
+      "pastWeek": "过去一周",
+      "pastMonth": "过去一个月",
+      "pastYear": "过去一年"
+    },
+    "relativeTime": {
+      "now": "刚刚",
+      "years": "{{count}}年",
+      "months": "{{count}}月",
+      "days": "{{count}}天",
+      "hours": "{{count}}时",
+      "minutes": "{{count}}分"
+    }
+  }
+}

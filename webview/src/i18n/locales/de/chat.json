@@ -1,0 +1,401 @@
+{
+  "inputBanner": {
+    "close": "Schließen"
+  },
+  "connectionLost": {
+    "offline": "Keine Internetverbindung. Warte auf Netzwerk{{dots}}",
+    "reconnecting": "Backend getrennt. Verbinde erneut{{dots}}"
+  },
+  "updateBanner": {
+    "released": "v{{version}} veröffentlicht!",
+    "restartRequired": "IDE-Neustart erforderlich",
+    "update": "Aktualisieren",
+    "skip": "Überspringen"
+  },
+  "fableNotice": {
+    "availableTitle": "Fable ist jetzt verfügbar",
+    "updateRequiredTitle": "Update erforderlich, um Fable 5 zu nutzen",
+    "availableBody": "Du kannst bis zum 7. Juli bis zu 50 % deiner Tariflimits für Fable 5 nutzen. Danach wechsle zu Nutzungsguthaben, um es weiter zu verwenden.",
+    "updateRequiredBody": "Fable 5 erfordert Claude Code CLI v2.1.170 oder neuer. Aktualisiere deine CLI unter Einstellungen → Über, um es auszuwählen.",
+    "learnMore": "Mehr erfahren"
+  },
+  "telemetry": {
+    "title": "Nutzungsstatistiken zur Produktverbesserung erlauben?",
+    "subtitle": "Quellcode und persönliche Daten werden niemals gesendet. Du kannst dies jederzeit in den Einstellungen deaktivieren.",
+    "accept": "Erlauben",
+    "deny": "Ablehnen",
+    "privacyPolicy": "Datenschutzrichtlinie"
+  },
+  "browserPermission": {
+    "enableFromSettings": "In den Browsereinstellungen aktivieren",
+    "allow": "Erlauben",
+    "dismiss": "Verwerfen"
+  },
+  "streamError": {
+    "authDiagnosis": {
+      "title": "API-Schlüssel sind in der env von ~/.claude/settings.json festgelegt:",
+      "hint": "Diese Schlüssel könnten abgelaufen oder ungültig sein. Bitte überprüfe sie und entferne oder erneuere sie."
+    },
+    "sessionConflict": {
+      "message": "Fehler: Diese Sitzung wird bereits verwendet.",
+      "reclaiming": "Wird zurückgeholt...",
+      "reclaim": "Sitzung zurückholen"
+    }
+  },
+  "chatInput": {
+    "actionButtons": {
+      "attachFile": "Datei anhängen",
+      "slashCommands": "Slash-Befehle",
+      "stopGenerating": "Generierung stoppen",
+      "sendMessage": "Nachricht senden"
+    },
+    "attachMenu": {
+      "image": "Bild",
+      "file": "Datei",
+      "folder": "Ordner"
+    },
+    "attachmentPreview": {
+      "fullSize": "Vollbild"
+    },
+    "attachments": {
+      "errors": {
+        "unsupportedType": "Nicht unterstützter Dateityp: {{type}}",
+        "tooLarge": "Datei zu groß: {{size}}MB (max. {{max}}MB)"
+      }
+    },
+    "contextWindow": {
+      "remaining": "{{percent}}% des Kontexts verbleiben bis zur automatischen Komprimierung.",
+      "tokensUsed": "{{tokens}} Tokens verwendet",
+      "clickToCompact": "Klicken, um jetzt zu komprimieren.",
+      "used": "{{percent}}% verwendet"
+    },
+    "dragOverlay": {
+      "dropHere": "Dateien oder Ordner hier ablegen"
+    },
+    "ideSelectionTag": {
+      "including": "{{path}} wird in die nächste Nachricht einbezogen — klicken zum Ausschließen",
+      "excluding": "{{path}} wird ausgeschlossen — klicken zum Einbeziehen"
+    },
+    "mentionDropdown": {
+      "searching": "Wird gesucht...",
+      "noMatchingFiles": "Keine passenden Dateien",
+      "closeAriaLabel": "Erwähnungs-Dropdown schließen"
+    },
+    "modeSelectPanel": {
+      "modes": "Modi",
+      "toSwitch": "zum Wechseln",
+      "effort": "Aufwand"
+    },
+    "modelTag": {
+      "switchModel": "Modell wechseln ({{hint}})",
+      "setModelNotification": "Modell auf {{model}} gesetzt"
+    },
+    "placeholder": {
+      "queueMessage": "Weitere Nachricht in die Warteschlange...",
+      "focusHint": "⌘ Esc, um Claude zu fokussieren oder Fokus zu entfernen"
+    },
+    "ariaLabel": "Nachricht an Claude",
+    "autoModeFallback": "Der Auto-Modus ist hier nicht verfügbar — der Standard-Berechtigungsmodus wird stattdessen verwendet."
+  },
+  "sessionHeader": {
+    "newTab": {
+      "title": "Neuen Tab öffnen"
+    },
+    "backgroundTasks": {
+      "title": "Hintergrundaufgaben"
+    },
+    "tokenBattery": {
+      "setupTitle": "Klicken, um die Nutzungsverfolgung einzurichten",
+      "setupLabel": "Einrichten"
+    },
+    "tunnel": {
+      "title": "Remote-Tunnel (Inoffiziell)"
+    },
+    "accountSwitcher": {
+      "title": "Konten",
+      "noSavedAccounts": "Keine gespeicherten Konten.",
+      "addAccount": "Konto hinzufügen",
+      "manageAccounts": "Konten verwalten",
+      "switchedTo": "Zu {{account}} gewechselt",
+      "switchFailed": "Wechsel fehlgeschlagen",
+      "fallbackAccountLabel": "Konto",
+      "relativeTime": {
+        "daysAgo": "vor {{count}}T",
+        "hoursAgo": "vor {{count}}Std",
+        "minutesAgo": "vor {{count}}Min",
+        "justNow": "gerade eben"
+      }
+    },
+    "sessionDropdown": {
+      "pastConversations": "Frühere Unterhaltungen",
+      "newChat": "Neuer Chat",
+      "noMatchingSessions": "Keine passenden Sitzungen",
+      "noSessionsYet": "Noch keine Sitzungen"
+    },
+    "workingDir": {
+      "switchDisabledTitle": "Arbeitsverzeichnis kann nicht gewechselt werden, während eine Sitzung aktiv ist",
+      "switchTitle": "Arbeitsverzeichnis wechseln",
+      "draftBadge": "Entwurf",
+      "draftBadgeTitle": "Über „Neu hinzufügen“ ausgewählt — wird zu einem dauerhaften Arbeitsverzeichnis, sobald du hier eine Sitzung startest.",
+      "ideRootTitle": "IDE-Projektstamm",
+      "loading": "Wird geladen…",
+      "noWorkingDirectoriesFound": "Keine Arbeitsverzeichnisse gefunden",
+      "browseAll": "Alle durchsuchen…",
+      "addNew": "+ Neu hinzufügen"
+    }
+  },
+  "acceptPlan": {
+    "title": "Diesen Plan akzeptieren?",
+    "subtitle": "Text in der Vorschau markieren, um Kommentare hinzuzufügen",
+    "textareaPlaceholder": "Sag Claude, was stattdessen getan werden soll",
+    "options": {
+      "autoAccept": "Ja, und automatisch akzeptieren",
+      "manualApprove": "Ja, und Änderungen manuell genehmigen",
+      "keepPlanning": "Nein, weiter planen"
+    }
+  },
+  "approvalPanel": {
+    "defaultTextareaPlaceholder": "Sag Claude, was stattdessen getan werden soll",
+    "escToCancel": "Esc zum Abbrechen"
+  },
+  "askUserQuestion": {
+    "escToCancel": "Esc zum Abbrechen",
+    "submit": "Antworten senden",
+    "next": "Weiter",
+    "other": "Andere",
+    "otherPlaceholder": "Gib deine Antwort ein..."
+  },
+  "backgroundTasks": {
+    "title": "Hintergrundaufgaben",
+    "close": "Schließen",
+    "empty": "Noch keine Hintergrund-Workflows.",
+    "running": "Läuft",
+    "finishedCount": "{{count}} abgeschlossen",
+    "clear": "Leeren",
+    "dismiss": "Verwerfen",
+    "dismissRunning": "Verwerfen (löscht einen hängenden Workflow)",
+    "workflowLabel": "Workflow",
+    "agentsCount": "{{count}} Agenten",
+    "agentsCount_one": "{{count}} Agent",
+    "agentsCount_other": "{{count}} Agenten",
+    "tokensLabel": "{{tokens}} Tokens",
+    "phasesLabel": "Phasen",
+    "tableHeader": {
+      "agent": "Agent",
+      "tokens": "Tokens",
+      "tools": "Tools",
+      "time": "Zeit"
+    }
+  },
+  "modelSwitch": {
+    "selectModel": "Modell auswählen",
+    "loadingModels": "Modelle werden geladen…",
+    "setModelTo": "Modell auf {{model}} setzen"
+  },
+  "permissionBanner": {
+    "textareaPlaceholder": "Sag Claude, was stattdessen getan werden soll",
+    "workflowNotice": "Dynamische Workflows führen viele Subagenten parallel aus und können einen großen Teil deines Nutzungslimits verbrauchen. Stoppe sie jederzeit über das Aufgabenpanel.",
+    "yes": "Ja",
+    "no": "Nein",
+    "allowMcpTool": "{{tool}} erlauben?",
+    "editWithFile": "Diese Änderung an {{file}} vornehmen?",
+    "editNoFile": "Diese Änderung vornehmen?",
+    "writeWithFile": "In {{file}} schreiben?",
+    "writeNoFile": "Diese Datei schreiben?",
+    "deleteWithFile": "{{file}} löschen?",
+    "deleteNoFile": "Diese Datei löschen?",
+    "runCommand": "Diesen Befehl ausführen?",
+    "readWithFile": "{{file}} lesen?",
+    "readNoFile": "Diese Datei lesen?",
+    "editNotebookWithFile": "Notebook {{file}} bearbeiten?",
+    "editNotebookNoFile": "Dieses Notebook bearbeiten?",
+    "allowWorkflow": "Claude erlauben, einen Workflow {{name}} auszuführen?",
+    "allowTool": "{{tool}} erlauben?",
+    "sessionLabel": {
+      "edit": "Ja, alle Änderungen in dieser Sitzung erlauben",
+      "write": "Ja, alle Schreibvorgänge in dieser Sitzung erlauben",
+      "bash": "Ja, alle Befehle in dieser Sitzung erlauben",
+      "delete": "Ja, alle Löschvorgänge in dieser Sitzung erlauben",
+      "read": "Ja, alle Lesevorgänge in dieser Sitzung erlauben",
+      "workflow": "Ja, alle Workflows in dieser Sitzung erlauben",
+      "mcp": "Ja, alle {{scope}} in dieser Sitzung erlauben",
+      "default": "Ja, alle {{tool}} in dieser Sitzung erlauben"
+    }
+  },
+  "loginCta": {
+    "signed": "Angemeldet",
+    "reSign": "Erneut anmelden"
+  },
+  "diffCard": {
+    "operation": {
+      "create": "Erstellen",
+      "modify": "Ändern",
+      "delete": "Löschen"
+    },
+    "status": {
+      "pending": "Ausstehend",
+      "applied": "Angewendet",
+      "rejected": "Abgelehnt"
+    },
+    "collapse": "Einklappen",
+    "expand": "Ausklappen",
+    "openInIdeTitle": "Im IDE-Diff-Viewer öffnen",
+    "opening": "Wird geöffnet...",
+    "openInIde": "In der IDE öffnen",
+    "applying": "Wird angewendet...",
+    "apply": "Anwenden",
+    "reject": "Ablehnen"
+  },
+  "diffList": {
+    "noChanges": "Keine Dateiänderungen",
+    "noChangesHint": "Änderungen werden hier angezeigt, sobald sie verfügbar sind",
+    "pendingCount": "ausstehende Änderungen",
+    "pendingCount_one": "ausstehende Änderung",
+    "pendingCount_other": "ausstehende Änderungen",
+    "applyingAll": "Alle werden angewendet...",
+    "applyAll": "Alle anwenden",
+    "rejectAll": "Alle ablehnen"
+  },
+  "diffViewer": {
+    "noDiff": "Kein Diff verfügbar",
+    "unknownError": "Unbekannter Fehler",
+    "parseError": "Diff konnte nicht verarbeitet werden: {{message}}"
+  },
+  "toolCard": {
+    "status": {
+      "pending": "Genehmigung ausstehend",
+      "approved": "Genehmigt",
+      "denied": "Abgelehnt",
+      "executing": "Wird ausgeführt",
+      "completed": "Abgeschlossen",
+      "failed": "Fehlgeschlagen"
+    },
+    "toolId": "Tool-ID: {{id}}...",
+    "inputParameters": "Eingabeparameter",
+    "result": "Ergebnis",
+    "error": "Fehler",
+    "approve": "Genehmigen",
+    "deny": "Ablehnen"
+  },
+  "emptyState": {
+    "initialHint": "Was zuerst tun? Frag etwas zu dieser Codebasis oder wir fangen an, Code zu schreiben.",
+    "hints": {
+      "todoStart": "// TODO: Alles. Fangen wir an.",
+      "readyToCodeLine1": "Bereit zu coden?",
+      "readyToCodeLine2": "Schreiben wir etwas, das es wert ist, deployed zu werden.",
+      "pickModel": "Gib /model ein, um das richtige Werkzeug für die Aufgabe zu wählen.",
+      "claudeMdInstructions": "Erstelle eine CLAUDE.md-Datei mit Anweisungen, die Claude jedes Mal liest.",
+      "claudeMdRemember": "Müde davon, dich zu wiederholen? Sag Claude, sich zu merken, was du ihm über CLAUDE.md mitgeteilt hast.",
+      "approveEditsPrefix": "Drücke",
+      "approveEditsSuffix": "um Codeänderungen automatisch zu genehmigen",
+      "highlightChatPrefix": "Markiere beliebigen Text und drücke",
+      "highlightChatSuffix": "um darüber zu chatten",
+      "mcpManagePrefix": "Gib",
+      "mcpManageSuffix": "ein, um MCP-Server direkt hier hinzuzufügen, zu entfernen und zu verwalten.",
+      "planningModePrefix": "Nutze den Planungsmodus, um größere Änderungen vor einem Commit zu besprechen. Drücke",
+      "planningModeSuffix": "um zwischen den Modi zu wechseln.",
+      "rightPlace": "Du bist absolut richtig hier!"
+    }
+  },
+  "streamingIndicator": {
+    "verbs": [
+      "Erledigt",
+      "Aktioniert",
+      "Aktualisiert",
+      "Backt",
+      "Boopt",
+      "Braut",
+      "Berechnet",
+      "Zerebriert",
+      "Kanalisiert",
+      "Wirbelt",
+      "Claudet",
+      "Verschmilzt",
+      "Grübelt",
+      "Rechnet",
+      "Kombobuliert",
+      "Braut zusammen",
+      "Erwägt",
+      "Sinniert",
+      "Kocht",
+      "Werkelt",
+      "Erschafft",
+      "Knirscht",
+      "Entziffert",
+      "Beratschlagt",
+      "Ermittelt",
+      "Diskombobuliert",
+      "Tut",
+      "Bewirkt",
+      "Erhellt",
+      "Verzaubert",
+      "Visioniert",
+      "Fingert herum",
+      "Flibbertigibbetet",
+      "Schmiedet",
+      "Formt",
+      "Tollt herum",
+      "Generiert",
+      "Keimt",
+      "Brütet aus",
+      "Treibt zusammen",
+      "Hupt",
+      "Ideiert",
+      "Fantasiert",
+      "Brütet",
+      "Folgert",
+      "Manifestiert",
+      "Mariniert",
+      "Mäandert",
+      "Schlendert",
+      "Grübelt vor sich hin",
+      "Mustert Kräfte",
+      "Sinniert",
+      "Nudelt",
+      "Perkoliert",
+      "Durchstöbert",
+      "Philosophiert",
+      "Doziert",
+      "Grübelt nach",
+      "Verarbeitet",
+      "Werkelt herum",
+      "Rätselt",
+      "Retikuliert",
+      "Ruminiert",
+      "Schmiedet Pläne",
+      "Schleppt",
+      "Wackelt",
+      "Simmert",
+      "Schmust",
+      "Erkundet Höhlen",
+      "Dreht sich",
+      "Köchelt",
+      "Erahnt",
+      "Synthetisiert",
+      "Denkt nach",
+      "Bastelt",
+      "Transmutiert",
+      "Entfaltet",
+      "Entwirrt",
+      "Vibet",
+      "Wandert",
+      "Surrt",
+      "Wibbelt",
+      "Arbeitet",
+      "Rangelt"
+    ]
+  },
+  "thinking": {
+    "thoughtFor": "{{seconds}}s nachgedacht",
+    "thinkingEllipsis": "Denkt nach...",
+    "thinking": "Denkt nach"
+  },
+  "chatMessageArea": {
+    "loadingWorkingDirectory": "Arbeitsverzeichnis wird geladen...",
+    "loadingEarlierMessages": "Frühere Nachrichten werden geladen…",
+    "loadOlderMessages": "Ältere Nachrichten laden"
+  },
+  "chatPage": {
+    "scrollToBottom": "Nach unten scrollen"
+  }
+}

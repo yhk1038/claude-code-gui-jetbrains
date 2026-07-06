@@ -1,0 +1,401 @@
+{
+  "inputBanner": {
+    "close": "关闭"
+  },
+  "connectionLost": {
+    "offline": "无网络连接。正在等待网络{{dots}}",
+    "reconnecting": "后端连接已断开。正在重新连接{{dots}}"
+  },
+  "updateBanner": {
+    "released": "v{{version}} 已发布!",
+    "restartRequired": "需要重启 IDE",
+    "update": "更新",
+    "skip": "跳过"
+  },
+  "fableNotice": {
+    "availableTitle": "Fable 现已推出",
+    "updateRequiredTitle": "更新以使用 Fable 5",
+    "availableBody": "在 7 月 7 日之前,您最多可将套餐额度的 50% 用于 Fable 5。此后,需切换到用量额度才能继续使用。",
+    "updateRequiredBody": "Fable 5 需要 Claude Code CLI v2.1.170 或更高版本。请在“设置 → 关于”中更新 CLI 后选择它。",
+    "learnMore": "了解更多"
+  },
+  "telemetry": {
+    "title": "是否允许收集使用统计信息以改进产品?",
+    "subtitle": "绝不会发送源代码或个人数据。您可以随时在设置中关闭此选项。",
+    "accept": "允许",
+    "deny": "拒绝",
+    "privacyPolicy": "隐私政策"
+  },
+  "browserPermission": {
+    "enableFromSettings": "在浏览器设置中启用",
+    "allow": "允许",
+    "dismiss": "关闭"
+  },
+  "streamError": {
+    "authDiagnosis": {
+      "title": "在 ~/.claude/settings.json 的 env 中设置了以下 API 密钥:",
+      "hint": "这些密钥可能已过期或无效。请检查后移除或更新它们。"
+    },
+    "sessionConflict": {
+      "message": "错误:此会话正在被使用。",
+      "reclaiming": "正在接管...",
+      "reclaim": "接管会话"
+    }
+  },
+  "chatInput": {
+    "actionButtons": {
+      "attachFile": "附加文件",
+      "slashCommands": "斜杠命令",
+      "stopGenerating": "停止生成",
+      "sendMessage": "发送消息"
+    },
+    "attachMenu": {
+      "image": "图片",
+      "file": "文件",
+      "folder": "文件夹"
+    },
+    "attachmentPreview": {
+      "fullSize": "原始大小"
+    },
+    "attachments": {
+      "errors": {
+        "unsupportedType": "不支持的文件类型:{{type}}",
+        "tooLarge": "文件过大:{{size}}MB(最大 {{max}}MB)"
+      }
+    },
+    "contextWindow": {
+      "remaining": "距自动压缩还剩 {{percent}}% 的上下文。",
+      "tokensUsed": "已使用 {{tokens}} 个 token",
+      "clickToCompact": "点击立即压缩。",
+      "used": "已使用 {{percent}}%"
+    },
+    "dragOverlay": {
+      "dropHere": "将文件或文件夹拖放到此处"
+    },
+    "ideSelectionTag": {
+      "including": "下一条消息将包含 {{path}} — 点击以排除",
+      "excluding": "已排除 {{path}} — 点击以包含"
+    },
+    "mentionDropdown": {
+      "searching": "正在搜索...",
+      "noMatchingFiles": "没有匹配的文件",
+      "closeAriaLabel": "关闭提及下拉菜单"
+    },
+    "modeSelectPanel": {
+      "modes": "模式",
+      "toSwitch": "切换",
+      "effort": "强度"
+    },
+    "modelTag": {
+      "switchModel": "切换模型({{hint}})",
+      "setModelNotification": "已将模型设置为 {{model}}"
+    },
+    "placeholder": {
+      "queueMessage": "排队发送下一条消息...",
+      "focusHint": "⌘ Esc 聚焦或取消聚焦 Claude"
+    },
+    "ariaLabel": "给 Claude 发消息",
+    "autoModeFallback": "此处无法使用自动模式 — 将改用默认权限模式。"
+  },
+  "sessionHeader": {
+    "newTab": {
+      "title": "打开新标签页"
+    },
+    "backgroundTasks": {
+      "title": "后台任务"
+    },
+    "tokenBattery": {
+      "setupTitle": "点击设置用量跟踪",
+      "setupLabel": "设置"
+    },
+    "tunnel": {
+      "title": "远程隧道(非官方)"
+    },
+    "accountSwitcher": {
+      "title": "账户",
+      "noSavedAccounts": "没有已保存的账户。",
+      "addAccount": "添加账户",
+      "manageAccounts": "管理账户",
+      "switchedTo": "已切换到 {{account}}",
+      "switchFailed": "切换失败",
+      "fallbackAccountLabel": "账户",
+      "relativeTime": {
+        "daysAgo": "{{count}} 天前",
+        "hoursAgo": "{{count}} 小时前",
+        "minutesAgo": "{{count}} 分钟前",
+        "justNow": "刚刚"
+      }
+    },
+    "sessionDropdown": {
+      "pastConversations": "历史对话",
+      "newChat": "新建对话",
+      "noMatchingSessions": "没有匹配的会话",
+      "noSessionsYet": "暂无会话"
+    },
+    "workingDir": {
+      "switchDisabledTitle": "会话进行中无法切换工作目录",
+      "switchTitle": "切换工作目录",
+      "draftBadge": "草稿",
+      "draftBadgeTitle": "通过“新增”选择 — 在此开始会话后将成为永久工作目录。",
+      "ideRootTitle": "IDE 项目根目录",
+      "loading": "正在加载…",
+      "noWorkingDirectoriesFound": "未找到工作目录",
+      "browseAll": "浏览全部…",
+      "addNew": "+ 新增"
+    }
+  },
+  "acceptPlan": {
+    "title": "接受此计划?",
+    "subtitle": "在预览中选择文本以添加批注",
+    "textareaPlaceholder": "告诉 Claude 该做些什么",
+    "options": {
+      "autoAccept": "是,并自动接受",
+      "manualApprove": "是,并手动批准编辑",
+      "keepPlanning": "否,继续规划"
+    }
+  },
+  "approvalPanel": {
+    "defaultTextareaPlaceholder": "告诉 Claude 该做些什么",
+    "escToCancel": "按 Esc 取消"
+  },
+  "askUserQuestion": {
+    "escToCancel": "按 Esc 取消",
+    "submit": "提交答案",
+    "next": "下一步",
+    "other": "其他",
+    "otherPlaceholder": "输入您的答案..."
+  },
+  "backgroundTasks": {
+    "title": "后台任务",
+    "close": "关闭",
+    "empty": "暂无后台工作流。",
+    "running": "运行中",
+    "finishedCount": "已完成 {{count}} 个",
+    "clear": "清除",
+    "dismiss": "关闭",
+    "dismissRunning": "关闭(清除卡住的工作流)",
+    "workflowLabel": "工作流",
+    "agentsCount": "{{count}} 个智能体",
+    "agentsCount_one": "{{count}} 个智能体",
+    "agentsCount_other": "{{count}} 个智能体",
+    "tokensLabel": "{{tokens}} 个 token",
+    "phasesLabel": "阶段",
+    "tableHeader": {
+      "agent": "智能体",
+      "tokens": "Token",
+      "tools": "工具",
+      "time": "时间"
+    }
+  },
+  "modelSwitch": {
+    "selectModel": "选择模型",
+    "loadingModels": "正在加载模型…",
+    "setModelTo": "已将模型设置为 {{model}}"
+  },
+  "permissionBanner": {
+    "textareaPlaceholder": "告诉 Claude 该做些什么",
+    "workflowNotice": "动态工作流会并行运行多个子智能体,可能消耗大量用量额度。您可以随时从任务面板停止它们。",
+    "yes": "是",
+    "no": "否",
+    "allowMcpTool": "允许 {{tool}}?",
+    "editWithFile": "对 {{file}} 执行此编辑?",
+    "editNoFile": "执行此编辑?",
+    "writeWithFile": "写入 {{file}}?",
+    "writeNoFile": "写入此文件?",
+    "deleteWithFile": "删除 {{file}}?",
+    "deleteNoFile": "删除此文件?",
+    "runCommand": "运行此命令?",
+    "readWithFile": "读取 {{file}}?",
+    "readNoFile": "读取此文件?",
+    "editNotebookWithFile": "编辑笔记本 {{file}}?",
+    "editNotebookNoFile": "编辑此笔记本?",
+    "allowWorkflow": "允许 Claude 运行工作流 {{name}}?",
+    "allowTool": "允许 {{tool}}?",
+    "sessionLabel": {
+      "edit": "是,本次会话中允许所有编辑",
+      "write": "是,本次会话中允许所有写入",
+      "bash": "是,本次会话中允许所有命令",
+      "delete": "是,本次会话中允许所有删除",
+      "read": "是,本次会话中允许所有读取",
+      "workflow": "是,本次会话中允许所有工作流",
+      "mcp": "是,本次会话中允许所有 {{scope}}",
+      "default": "是,本次会话中允许所有 {{tool}}"
+    }
+  },
+  "loginCta": {
+    "signed": "已登录",
+    "reSign": "重新登录"
+  },
+  "diffCard": {
+    "operation": {
+      "create": "创建",
+      "modify": "修改",
+      "delete": "删除"
+    },
+    "status": {
+      "pending": "待处理",
+      "applied": "已应用",
+      "rejected": "已拒绝"
+    },
+    "collapse": "折叠",
+    "expand": "展开",
+    "openInIdeTitle": "在 IDE 差异查看器中打开",
+    "opening": "正在打开...",
+    "openInIde": "在 IDE 中打开",
+    "applying": "正在应用...",
+    "apply": "应用",
+    "reject": "拒绝"
+  },
+  "diffList": {
+    "noChanges": "没有文件更改",
+    "noChangesHint": "有更改时会显示在此处",
+    "pendingCount": "个待处理更改",
+    "pendingCount_one": "个待处理更改",
+    "pendingCount_other": "个待处理更改",
+    "applyingAll": "正在全部应用...",
+    "applyAll": "全部应用",
+    "rejectAll": "全部拒绝"
+  },
+  "diffViewer": {
+    "noDiff": "没有可用的差异",
+    "unknownError": "未知错误",
+    "parseError": "解析差异失败:{{message}}"
+  },
+  "toolCard": {
+    "status": {
+      "pending": "待批准",
+      "approved": "已批准",
+      "denied": "已拒绝",
+      "executing": "执行中",
+      "completed": "已完成",
+      "failed": "失败"
+    },
+    "toolId": "工具 ID:{{id}}...",
+    "inputParameters": "输入参数",
+    "result": "结果",
+    "error": "错误",
+    "approve": "批准",
+    "deny": "拒绝"
+  },
+  "emptyState": {
+    "initialHint": "从哪里开始?可以先问问关于这个代码库的问题,或者直接开始写代码。",
+    "hints": {
+      "todoStart": "// TODO: 全部都要做。开始吧。",
+      "readyToCodeLine1": "准备好写代码了吗?",
+      "readyToCodeLine2": "写点值得部署的东西吧。",
+      "pickModel": "输入 /model 挑选合适的模型。",
+      "claudeMdInstructions": "创建一个 CLAUDE.md 文件,让 Claude 每次都会读取其中的说明。",
+      "claudeMdRemember": "厌倦了重复交代?让 Claude 用 CLAUDE.md 记住你说过的内容。",
+      "approveEditsPrefix": "按",
+      "approveEditsSuffix": "自动批准代码编辑",
+      "highlightChatPrefix": "选中任意文本后按",
+      "highlightChatSuffix": "就此展开对话",
+      "mcpManagePrefix": "输入",
+      "mcpManageSuffix": "即可在此添加、移除和管理 MCP 服务器。",
+      "planningModePrefix": "使用规划模式,在提交前先讨论重大更改。按",
+      "planningModeSuffix": "可在各模式间切换。",
+      "rightPlace": "你来对地方了!"
+    }
+  },
+  "streamingIndicator": {
+    "verbs": [
+      "完成中",
+      "行动中",
+      "落实中",
+      "烘焙中",
+      "戳弄中",
+      "酝酿中",
+      "计算中",
+      "动脑中",
+      "引导中",
+      "搅动中",
+      "Claude 附体中",
+      "融合中",
+      "思索中",
+      "运算中",
+      "整理思路中",
+      "调配中",
+      "考虑中",
+      "沉思中",
+      "烹制中",
+      "打造中",
+      "创造中",
+      "演算中",
+      "解读中",
+      "斟酌中",
+      "判断中",
+      "绕晕自己中",
+      "处理中",
+      "施展中",
+      "阐明中",
+      "施法中",
+      "构想中",
+      "耍花招中",
+      "瞎折腾中",
+      "锻造中",
+      "成形中",
+      "嬉戏中",
+      "生成中",
+      "萌芽中",
+      "孵化中",
+      "放牧中",
+      "鸣笛中",
+      "构思中",
+      "想象中",
+      "孕育中",
+      "推断中",
+      "显现中",
+      "腌制中",
+      "漫游中",
+      "溜达中",
+      "琢磨中",
+      "集结中",
+      "冥想中",
+      "摆弄中",
+      "渗透中",
+      "细读中",
+      "思辨中",
+      "高谈中",
+      "沉吟中",
+      "处理中",
+      "忙活中",
+      "苦思中",
+      "编织网格中",
+      "反刍思考中",
+      "谋划中",
+      "折腾中",
+      "扭动中",
+      "小火慢炖中",
+      "揉捏中",
+      "探洞中",
+      "转动中",
+      "炖煮中",
+      "摸底中",
+      "综合中",
+      "思考中",
+      "捣鼓中",
+      "蜕变中",
+      "展开中",
+      "解开中",
+      "感受氛围中",
+      "游荡中",
+      "嗡嗡运转中",
+      "摇摆不定中",
+      "工作中",
+      "驯服中"
+    ]
+  },
+  "thinking": {
+    "thoughtFor": "思考了 {{seconds}} 秒",
+    "thinkingEllipsis": "思考中...",
+    "thinking": "思考中"
+  },
+  "chatMessageArea": {
+    "loadingWorkingDirectory": "正在加载工作目录...",
+    "loadingEarlierMessages": "正在加载更早的消息…",
+    "loadOlderMessages": "加载更早的消息"
+  },
+  "chatPage": {
+    "scrollToBottom": "滚动到底部"
+  }
+}

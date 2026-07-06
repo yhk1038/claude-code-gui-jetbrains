@@ -1,0 +1,60 @@
+{
+  "sections": {
+    "context": "Kontext",
+    "model": "Modell",
+    "customize": "Anpassen",
+    "slashCommands": "Slash-Befehle",
+    "settings": "Einstellungen",
+    "support": "Support"
+  },
+  "context": {
+    "attachFile": "Datei anhängen...",
+    "mentionFile": "Datei aus diesem Projekt erwähnen...",
+    "clearConversation": "Unterhaltung löschen",
+    "resumeConversation": "Unterhaltung fortsetzen",
+    "showBackgroundTasks": "Workflow: Hintergrundaufgaben anzeigen"
+  },
+  "model": {
+    "switchModel": "Modell wechseln...",
+    "effort": "Aufwand",
+    "thinking": "Denkprozess",
+    "accountUsage": "Konto & Nutzung...",
+    "toggleFastMode": "Schnellmodus umschalten",
+    "effortUnsupportedReason": "Dieses Modell unterstützt keine Aufwandsstufen",
+    "fastModeUnsupportedReason": "Der Schnellmodus ist nur bei Opus-Modellen verfügbar"
+  },
+  "customize": {
+    "outputStyles": "Ausgabestile",
+    "agents": "Agenten",
+    "hooks": "Hooks",
+    "memory": "Speicher",
+    "permissions": "Berechtigungen",
+    "mcpServers": "MCP-Server",
+    "managePlugins": "Plugins verwalten",
+    "openInTerminal": "Claude im Terminal öffnen"
+  },
+  "settings": {
+    "switchAccount": "Konto wechseln",
+    "generalConfig": "Allgemeine Konfiguration..."
+  },
+  "support": {
+    "viewHelpDocs": "Hilfedokumente ansehen",
+    "restartPlugin": "Plugin neu starten",
+    "restartConfirm": {
+      "title": "Plugin neu starten?",
+      "message": "Laufende Arbeiten werden unterbrochen.",
+      "confirmLabel": "Neu starten"
+    }
+  },
+  "slashCommands": {
+    "clearDescription": "Unterhaltung löschen",
+    "usageDescription": "Konto & Nutzung"
+  },
+  "panel": {
+    "reportProblem": "Problem melden",
+    "reloading": "Wird neu geladen…",
+    "reloadCommands": "Befehle neu laden",
+    "refreshVersion": "Version aktualisieren",
+    "comingSoon": "Demnächst verfügbar"
+  }
+}

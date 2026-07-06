@@ -1,0 +1,169 @@
+{
+  "confirmDialog": {
+    "confirm": "Подтвердить",
+    "cancel": "Отмена"
+  },
+  "contextChip": {
+    "removeContext": "Удалить контекст"
+  },
+  "errorBoundary": {
+    "somethingWentWrong": "Что-то пошло не так.",
+    "retry": "Повторить"
+  },
+  "effortSlider": {
+    "tooltip": "Нажмите или перетащите, чтобы задать уровень усилий",
+    "tooltipUltracode": "Нажмите или перетащите, чтобы задать уровень усилий (верхняя ступень = ultracode)"
+  },
+  "accountUsage": {
+    "title": "Аккаунт и использование",
+    "accountSection": "Аккаунт",
+    "authMethod": "Способ авторизации",
+    "email": "Email",
+    "plan": "Тариф"
+  },
+  "usageSection": {
+    "title": "Использование",
+    "updated": "Обновлено {{time}}",
+    "refresh": "Обновить",
+    "session5hr": "Сессия (5 ч)",
+    "weekly7day": "Неделя (7 дней)",
+    "weeklySonnet": "Sonnet за неделю",
+    "weeklyOpus": "Opus за неделю"
+  },
+  "usageReport": {
+    "title": "Расход использования",
+    "refresh": "Обновить",
+    "empty": "Нет данных о расходе использования.",
+    "requests": "{{value}} запросов",
+    "sessions": "{{value}} сессий",
+    "percentOfUsage": "% от использования"
+  },
+  "mcpModal": {
+    "title": "MCP-серверы",
+    "refreshServers": "Обновить MCP-серверы",
+    "browseRegistry": "Просмотреть реестр MCP",
+    "addServer": "Добавить MCP-сервер",
+    "checkingHealth": "Проверка состояния MCP-сервера…",
+    "serverNotFound": "Сервер не найден.",
+    "learnMore": "Подробнее об MCP",
+    "editReplaceSingle": "Редактирование заменяет один сервер — вставьте конфигурацию ровно одного сервера.",
+    "saved": "Сохранено: {{name}}",
+    "added": "Добавлено: {{name}}",
+    "addFailed": "Не удалось добавить сервер(ы): {{failed}}/{{total}}",
+    "form": {
+      "editTitle": "Изменить MCP-сервер",
+      "addTitle": "Добавить MCP-сервер",
+      "back": "Назад",
+      "nameLabel": "Имя",
+      "nameHint": "Необязательно — используется только если в вашем JSON нет обёртки «mcpServers»",
+      "namePlaceholder": "my-server",
+      "scopeLabel": "Область",
+      "scopeUser": "Пользователь (все проекты)",
+      "scopeProject": "Проект (.mcp.json)",
+      "scopeLocal": "Локально (только этот проект)",
+      "configLabel": "Конфигурация (JSON)",
+      "configHint": "Вставьте конфигурацию mcpServers или конфигурацию одного сервера",
+      "cancel": "Отмена",
+      "saving": "Сохранение",
+      "adding": "Добавление",
+      "save": "Сохранить",
+      "addButton": "Добавить сервер"
+    },
+    "marketplace": {
+      "back": "Назад",
+      "searchPlaceholder": "Поиск по реестру MCP…",
+      "searchPrompt": "Найдите и установите серверы в официальном реестре MCP.",
+      "searching": "Поиск…",
+      "noServers": "Серверы не найдены.",
+      "openRepo": "Открыть {{url}}",
+      "needsInputs": "Требуется {{count}} параметров: {{inputs}}",
+      "needsInputs_one": "Требуется {{count}} параметр: {{inputs}}",
+      "needsInputs_few": "Требуется {{count}} параметра: {{inputs}}",
+      "needsInputs_many": "Требуется {{count}} параметров: {{inputs}}",
+      "needsInputs_other": "Требуется {{count}} параметра: {{inputs}}",
+      "configureAdd": "Настроить и добавить",
+      "noInstallInfo": "Нет информации об установке",
+      "add": "Добавить"
+    },
+    "list": {
+      "noServersConfigured": "Нет настроенных MCP-серверов.",
+      "addOne": "Добавить сервер",
+      "scope": {
+        "project": "Проект",
+        "local": "Локально",
+        "user": "Пользователь",
+        "claudeai": "claude.ai",
+        "managed": "Управляемый",
+        "enterprise": "Enterprise"
+      }
+    },
+    "detail": {
+      "backToList": "Назад к списку",
+      "edit": "Изменить",
+      "type": "Тип: {{value}}",
+      "authenticate": "Авторизоваться",
+      "reconnect": "Переподключить",
+      "reconnecting": "Переподключение",
+      "clearAuth": "Очистить авторизацию",
+      "enable": "Включить",
+      "disable": "Отключить",
+      "loadingTools": "Загрузка инструментов…",
+      "loadToolsError": "Не удалось загрузить инструменты",
+      "viewTools": "Просмотреть инструменты ({{count}})",
+      "readOnly": "только чтение",
+      "destructive": "деструктивный",
+      "removeConfirm": "Удалить «{{name}}»?",
+      "remove": "Удалить",
+      "cancel": "Отмена",
+      "removeServer": "Удалить сервер"
+    },
+    "status": {
+      "connected": "Подключено",
+      "failed": "Ошибка",
+      "needsAuth": "Требуется авторизация",
+      "connecting": "Подключение…",
+      "disabled": "Отключено"
+    }
+  },
+  "tunnelModal": {
+    "title": "Удалённый туннель",
+    "remoteTunnelUnofficial": "Удалённый туннель (неофициальный)",
+    "exposeVia": "Открыть доступ через cloudflared",
+    "installingCloudflared": "Установка cloudflared…",
+    "connecting": "Подключение…",
+    "typicalTime": "Обычно ~1 мин (установка: ~3 мин)",
+    "preventSleep": "Не переходить в спящий режим",
+    "keepAwake": "Не давать системе уснуть, пока туннель активен"
+  },
+  "tunnelStatusNotice": {
+    "tryAgain": "Повторить",
+    "installGuide": "Инструкция по установке",
+    "copyCommand": "Скопировать команду",
+    "installConsent": "cloudflared не установлен. Установить его сейчас и включить туннель? Это загрузит cloudflared (около 3 минут при первом запуске).",
+    "installAndEnable": "Установить и включить",
+    "cancel": "Отмена",
+    "notInstalledWarning": "cloudflared ещё не установлен. Включение туннеля предложит загрузить его (около 3 минут при первом запуске)."
+  },
+  "sessionList": {
+    "searchPlaceholder": "Поиск сессий...",
+    "loadingSessions": "Загрузка сессий...",
+    "refreshSessions": "Обновить сессии",
+    "renameSession": "Переименовать сессию",
+    "deleteSession": "Удалить сессию",
+    "groups": {
+      "today": "Сегодня",
+      "yesterday": "Вчера",
+      "pastWeek": "На прошлой неделе",
+      "pastMonth": "В прошлом месяце",
+      "pastYear": "В прошлом году"
+    },
+    "relativeTime": {
+      "now": "сейчас",
+      "years": "{{count}} г",
+      "months": "{{count}} мес",
+      "days": "{{count}} дн",
+      "hours": "{{count}} ч",
+      "minutes": "{{count}} мин"
+    }
+  }
+}

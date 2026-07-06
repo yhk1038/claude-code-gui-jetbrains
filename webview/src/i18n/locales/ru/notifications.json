@@ -1,0 +1,17 @@
+{
+  "sessionComplete": {
+    "body": "Ответ завершён"
+  },
+  "streamError": {
+    "body": "Ошибка ответа"
+  },
+  "awaitingPermission": {
+    "body": "Запрошено разрешение"
+  },
+  "awaitingPlanApproval": {
+    "body": "План готов к рассмотрению"
+  },
+  "awaitingUserInput": {
+    "body": "Ожидание вашего ответа"
+  }
+}

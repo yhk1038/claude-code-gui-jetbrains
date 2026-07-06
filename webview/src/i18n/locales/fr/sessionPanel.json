@@ -1,0 +1,12 @@
+{
+  "newSession": "Nouvelle session",
+  "scope": {
+    "local": "Local",
+    "web": "Web"
+  },
+  "empty": {
+    "noMatches": "Aucune session correspondante",
+    "noSessions": "Aucune session pour le moment",
+    "noWebSessions": "Aucune session web"
+  }
+}

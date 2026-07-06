@@ -1,0 +1,60 @@
+{
+  "sections": {
+    "context": "上下文",
+    "model": "模型",
+    "customize": "自定义",
+    "slashCommands": "斜杠命令",
+    "settings": "设置",
+    "support": "支持"
+  },
+  "context": {
+    "attachFile": "附加文件...",
+    "mentionFile": "提及此项目中的文件...",
+    "clearConversation": "清除对话",
+    "resumeConversation": "恢复对话",
+    "showBackgroundTasks": "工作流:显示后台任务"
+  },
+  "model": {
+    "switchModel": "切换模型...",
+    "effort": "强度",
+    "thinking": "思考",
+    "accountUsage": "账户与用量...",
+    "toggleFastMode": "切换快速模式",
+    "effortUnsupportedReason": "此模型不支持强度等级",
+    "fastModeUnsupportedReason": "快速模式仅适用于 Opus 模型"
+  },
+  "customize": {
+    "outputStyles": "输出样式",
+    "agents": "智能体",
+    "hooks": "Hooks",
+    "memory": "记忆",
+    "permissions": "权限",
+    "mcpServers": "MCP 服务器",
+    "managePlugins": "管理插件",
+    "openInTerminal": "在终端中打开 Claude"
+  },
+  "settings": {
+    "switchAccount": "切换账户",
+    "generalConfig": "常规配置..."
+  },
+  "support": {
+    "viewHelpDocs": "查看帮助文档",
+    "restartPlugin": "重启插件",
+    "restartConfirm": {
+      "title": "重启插件?",
+      "message": "进行中的工作将被中断。",
+      "confirmLabel": "重启"
+    }
+  },
+  "slashCommands": {
+    "clearDescription": "清除对话",
+    "usageDescription": "账户与用量"
+  },
+  "panel": {
+    "reportProblem": "反馈问题",
+    "reloading": "正在重新加载…",
+    "reloadCommands": "重新加载命令",
+    "refreshVersion": "刷新版本",
+    "comingSoon": "即将推出"
+  }
+}

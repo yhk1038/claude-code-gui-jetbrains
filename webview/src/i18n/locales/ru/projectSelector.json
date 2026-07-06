@@ -1,0 +1,18 @@
+{
+  "loading": "Загрузка проектов...",
+  "select": {
+    "title": "Выберите проект",
+    "subtitle": "Выберите проект для работы"
+  },
+  "empty": "Нет доступных проектов",
+  "addProject": "Добавить проект",
+  "retry": "Повторить",
+  "sessionCount": "{{count}} сессий",
+  "sessionCount_one": "{{count}} сессия",
+  "sessionCount_few": "{{count}} сессии",
+  "sessionCount_many": "{{count}} сессий",
+  "sessionCount_other": "{{count}} сессии",
+  "errors": {
+    "loadFailed": "Не удалось загрузить проекты"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "sessionComplete": {
+    "body": "回复已完成"
+  },
+  "streamError": {
+    "body": "回复失败"
+  },
+  "awaitingPermission": {
+    "body": "请求权限"
+  },
+  "awaitingPlanApproval": {
+    "body": "计划待审核"
+  },
+  "awaitingUserInput": {
+    "body": "等待您的回答"
+  }
+}

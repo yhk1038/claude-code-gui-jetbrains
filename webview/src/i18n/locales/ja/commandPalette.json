@@ -1,0 +1,60 @@
+{
+  "sections": {
+    "context": "コンテキスト",
+    "model": "モデル",
+    "customize": "カスタマイズ",
+    "slashCommands": "スラッシュコマンド",
+    "settings": "設定",
+    "support": "サポート"
+  },
+  "context": {
+    "attachFile": "ファイルを添付...",
+    "mentionFile": "このプロジェクトのファイルをメンション...",
+    "clearConversation": "会話をクリア",
+    "resumeConversation": "会話を再開",
+    "showBackgroundTasks": "ワークフロー: バックグラウンドタスクを表示"
+  },
+  "model": {
+    "switchModel": "モデルを切り替え...",
+    "effort": "エフォート",
+    "thinking": "思考",
+    "accountUsage": "アカウントと使用状況...",
+    "toggleFastMode": "高速モードの切り替え",
+    "effortUnsupportedReason": "このモデルはエフォートレベルに対応していません",
+    "fastModeUnsupportedReason": "高速モードはOpusモデルでのみ利用できます"
+  },
+  "customize": {
+    "outputStyles": "出力スタイル",
+    "agents": "エージェント",
+    "hooks": "フック",
+    "memory": "メモリ",
+    "permissions": "権限",
+    "mcpServers": "MCPサーバー",
+    "managePlugins": "プラグインを管理",
+    "openInTerminal": "ターミナルでClaudeを開く"
+  },
+  "settings": {
+    "switchAccount": "アカウントを切り替え",
+    "generalConfig": "一般設定..."
+  },
+  "support": {
+    "viewHelpDocs": "ヘルプドキュメントを表示",
+    "restartPlugin": "プラグインを再起動",
+    "restartConfirm": {
+      "title": "プラグインを再起動しますか?",
+      "message": "進行中の作業は中断されます。",
+      "confirmLabel": "再起動"
+    }
+  },
+  "slashCommands": {
+    "clearDescription": "会話をクリア",
+    "usageDescription": "アカウントと使用状況"
+  },
+  "panel": {
+    "reportProblem": "問題を報告",
+    "reloading": "再読み込み中…",
+    "reloadCommands": "コマンドを再読み込み",
+    "refreshVersion": "バージョンを更新",
+    "comingSoon": "近日公開"
+  }
+}

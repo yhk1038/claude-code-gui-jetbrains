@@ -1,0 +1,60 @@
+{
+  "sections": {
+    "context": "Контекст",
+    "model": "Модель",
+    "customize": "Настроить",
+    "slashCommands": "Слэш-команды",
+    "settings": "Настройки",
+    "support": "Поддержка"
+  },
+  "context": {
+    "attachFile": "Прикрепить файл...",
+    "mentionFile": "Упомянуть файл из этого проекта...",
+    "clearConversation": "Очистить разговор",
+    "resumeConversation": "Возобновить разговор",
+    "showBackgroundTasks": "Рабочий процесс: показать фоновые задачи"
+  },
+  "model": {
+    "switchModel": "Сменить модель...",
+    "effort": "Усилия",
+    "thinking": "Размышление",
+    "accountUsage": "Аккаунт и использование...",
+    "toggleFastMode": "Переключить быстрый режим",
+    "effortUnsupportedReason": "Эта модель не поддерживает уровни усилий",
+    "fastModeUnsupportedReason": "Быстрый режим доступен только для моделей Opus"
+  },
+  "customize": {
+    "outputStyles": "Стили вывода",
+    "agents": "Агенты",
+    "hooks": "Хуки",
+    "memory": "Память",
+    "permissions": "Разрешения",
+    "mcpServers": "MCP-серверы",
+    "managePlugins": "Управление плагинами",
+    "openInTerminal": "Открыть Claude в терминале"
+  },
+  "settings": {
+    "switchAccount": "Сменить аккаунт",
+    "generalConfig": "Общая конфигурация..."
+  },
+  "support": {
+    "viewHelpDocs": "Открыть справочную документацию",
+    "restartPlugin": "Перезапустить плагин",
+    "restartConfirm": {
+      "title": "Перезапустить плагин?",
+      "message": "Незавершённая работа будет прервана.",
+      "confirmLabel": "Перезапустить"
+    }
+  },
+  "slashCommands": {
+    "clearDescription": "Очистить разговор",
+    "usageDescription": "Аккаунт и использование"
+  },
+  "panel": {
+    "reportProblem": "Сообщить о проблеме",
+    "reloading": "Перезагрузка…",
+    "reloadCommands": "Перезагрузить команды",
+    "refreshVersion": "Обновить версию",
+    "comingSoon": "Скоро"
+  }
+}
