@@ -2,6 +2,7 @@ import { SettingRow } from '../common';
 import { ToggleSwitch } from '@/components/ToggleSwitch';
 import { useSettings } from '@/contexts/SettingsContext';
 import { SettingKey } from '@/types/settings';
+import { useTranslation } from '@/i18n';
 
 /**
  * Toggles chat-history paging. On (default): the chat loads the latest page and
@@ -10,18 +11,19 @@ import { SettingKey } from '@/types/settings';
  */
 export function ChatPaginationRow() {
   const { settings, updateSettingWithScope } = useSettings();
+  const { t } = useTranslation('settings');
 
   const enabled = settings[SettingKey.CHAT_PAGINATION] ?? true;
 
   return (
     <SettingRow
-      label="Paginate chat history"
-      description="Load older messages as you scroll. Off loads the whole conversation at once."
+      label={t('general.chatPagination.label')}
+      description={t('general.chatPagination.description')}
     >
       <ToggleSwitch
         checked={enabled}
         onChange={(checked) => updateSettingWithScope(SettingKey.CHAT_PAGINATION, checked, 'global')}
-        ariaLabel="Paginate chat history"
+        ariaLabel={t('general.chatPagination.label')}
       />
     </SettingRow>
   );

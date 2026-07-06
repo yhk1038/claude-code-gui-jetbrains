@@ -6,7 +6,6 @@ import { OpenSettingsRow } from './OpenSettingsRow';
 import { ChatPaginationRow } from './ChatPaginationRow';
 import { ClaudeConfigDirRow } from './ClaudeConfigDirRow';
 import { APP_NAME } from '@/config/app';
-import { ROUTE_META, Route } from '@/router/routes';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 import { useTranslation } from '@/i18n';
 
@@ -25,7 +24,6 @@ const LANGUAGE_OPTIONS = [
 ] as const;
 
 export function GeneralSettings() {
-  const meta = ROUTE_META[Route.SETTINGS_GENERAL];
   const { t } = useTranslation('settings');
   const { scopeSettings, updateSetting, scope, resetToGlobal } = useClaudeSettings();
 
@@ -46,7 +44,7 @@ export function GeneralSettings() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-text-primary mb-6">{meta.label}</h2>
+      <h2 className="text-xl font-semibold text-text-primary mb-6">{t('nav.general')}</h2>
 
       <SettingSection title={APP_NAME}>
         <SettingRow

@@ -1,4 +1,30 @@
 {
+  "layout": {
+    "title": "Settings",
+    "back": "Back",
+    "toggleMenu": "Toggle menu",
+    "close": "Close"
+  },
+  "nav": {
+    "general": "General",
+    "appearance": "Appearance",
+    "permissions": "Permissions",
+    "privacy": "Privacy",
+    "cli": "CLI",
+    "browser": "Browser",
+    "account": "Account",
+    "usage": "Usage",
+    "tunnel": "Tunnel",
+    "releases": "Releases",
+    "about": "About"
+  },
+  "scope": {
+    "global": "User Settings (Global)",
+    "globalShort": "User (Global)",
+    "project": "Project Settings (Local)",
+    "projectShort": "Project (Local)",
+    "projectDisabledTooltip": "Open a project to use project settings"
+  },
   "general": {
     "language": {
       "label": "Language",
@@ -16,6 +42,28 @@
     "respectGitignoreForContext": {
       "label": "Respect .gitignore for editor context",
       "description": "When on, contents of .gitignore'd files are excluded from the editor context — only the file path is sent."
+    },
+    "hostMode": {
+      "label": "Preferred Location",
+      "description": "Where Claude opens by default.",
+      "sidebar": "Sidebar",
+      "panel": "Panel"
+    },
+    "openSettings": {
+      "label": "Open Settings as",
+      "description": "Show Settings as an overlay or in a new tab.",
+      "overlay": "Overlay",
+      "newTab": "New tab"
+    },
+    "chatPagination": {
+      "label": "Paginate chat history",
+      "description": "Load older messages as you scroll. Off loads the whole conversation at once."
+    },
+    "configDir": {
+      "description": "Home directory for Claude's config. Same as the CLAUDE_CONFIG_DIR environment variable.",
+      "placeholder": "Default (~/.claude)",
+      "active": "Active: {{value}}",
+      "projectUnavailable": "Open a project to set a project value."
     }
   }
 }

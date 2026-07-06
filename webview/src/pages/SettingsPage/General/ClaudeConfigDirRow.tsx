@@ -4,6 +4,7 @@ import { useBridge } from '@/hooks/useBridge';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useWorkingDir } from '@/contexts/WorkingDirContext';
 import { MessageType } from '@/shared';
+import { useTranslation } from '@/i18n';
 
 interface ConfigDirInfo {
   effective: string;
@@ -25,6 +26,7 @@ export function ClaudeConfigDirRow() {
   const { send } = useBridge();
   const { scope } = useSettings();
   const { workingDirectory } = useWorkingDir();
+  const { t } = useTranslation('settings');
   const [info, setInfo] = useState<ConfigDirInfo | null>(null);
   const [draft, setDraft] = useState('');
 
@@ -62,7 +64,7 @@ export function ClaudeConfigDirRow() {
   return (
     <SettingRow
       label="CLAUDE_CONFIG_DIR"
-      description="Home directory for Claude's config. Same as the CLAUDE_CONFIG_DIR environment variable."
+      description={t('general.configDir.description')}
     >
       <div className="flex flex-col items-end gap-1">
         <input
@@ -70,17 +72,17 @@ export function ClaudeConfigDirRow() {
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => void commit()}
-          placeholder="Default (~/.claude)"
+          placeholder={t('general.configDir.placeholder')}
           disabled={projectScopeUnavailable}
           aria-label="CLAUDE_CONFIG_DIR"
           className="w-64 bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm text-text-primary placeholder-text-tertiary disabled:opacity-50"
         />
         {projectScopeUnavailable ? (
-          <span className="text-xs text-text-tertiary">Open a project to set a project value.</span>
+          <span className="text-xs text-text-tertiary">{t('general.configDir.projectUnavailable')}</span>
         ) : (
           info && (
             <span className="text-xs text-text-tertiary truncate max-w-64" title={info.effective}>
-              Active: {info.effective}
+              {t('general.configDir.active', { value: info.effective })}
             </span>
           )
         )}
