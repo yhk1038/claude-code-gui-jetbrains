@@ -58,6 +58,7 @@ backend/coverage/
 !.claude/skills/
 .claude/skills/*
 !.claude/skills/pr-checklist/
+!.claude/skills/add-locale/
 .claude-code-gui/
 .omc/
 .taskmaster/
