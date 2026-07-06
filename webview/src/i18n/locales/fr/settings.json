@@ -31,6 +31,10 @@
       "description": "Langue de réponse préférée de Claude",
       "notSet": "Non défini (utiliser le paramètre global)"
     },
+    "uiLanguage": {
+      "label": "Langue de l'interface",
+      "description": "Langue de l'interface de l'application, indépendante de la langue de réponse de Claude."
+    },
     "useCtrlEnterToSend": {
       "label": "Utiliser Ctrl+Entrée pour envoyer",
       "description": "Lorsque cette option est activée, utilisez Ctrl/Cmd+Entrée pour envoyer les invites au lieu de simplement Entrée. Cela permet à Entrée de créer de nouvelles lignes."

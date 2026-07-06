@@ -31,6 +31,10 @@
       "description": "Claude가 선호하는 응답 언어",
       "notSet": "설정 안 함 (전역 설정 사용)"
     },
+    "uiLanguage": {
+      "label": "인터페이스 언어",
+      "description": "앱 인터페이스 언어입니다. Claude의 응답 언어와 별개로 설정됩니다."
+    },
     "useCtrlEnterToSend": {
       "label": "Ctrl+Enter로 전송",
       "description": "켜면 Enter 대신 Ctrl/Cmd+Enter로 프롬프트를 전송합니다. 이렇게 하면 Enter로 줄바꿈을 넣을 수 있습니다."

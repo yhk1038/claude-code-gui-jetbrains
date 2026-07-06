@@ -31,6 +31,10 @@
       "description": "Idioma de resposta preferido do Claude",
       "notSet": "Não definido (usar global)"
     },
+    "uiLanguage": {
+      "label": "Idioma da interface",
+      "description": "Idioma da interface do aplicativo, independente do idioma de resposta do Claude."
+    },
     "useCtrlEnterToSend": {
       "label": "Usar Ctrl+Enter para enviar",
       "description": "Quando ativado, use Ctrl/Cmd+Enter para enviar mensagens em vez de apenas Enter. Isso permite que Enter crie novas linhas."

@@ -31,6 +31,10 @@
       "description": "Claude's preferred response language",
       "notSet": "Not set (use global)"
     },
+    "uiLanguage": {
+      "label": "Interface Language",
+      "description": "Language for the app interface, independent of Claude's response language."
+    },
     "useCtrlEnterToSend": {
       "label": "Use Ctrl Enter To Send",
       "description": "When enabled, use Ctrl/Cmd+Enter to send prompts instead of just Enter. This allows Enter to create new lines."

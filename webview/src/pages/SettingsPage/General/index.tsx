@@ -31,6 +31,10 @@ export function GeneralSettings() {
   const isNotSet = rawLanguage === undefined && scope === 'project';
   const currentLanguage = isNotSet ? NOT_SET_VALUE : ((rawLanguage as string) ?? '');
 
+  const rawUiLanguage = scopeSettings.uiLanguage as string | undefined;
+  const isUiNotSet = rawUiLanguage === undefined && scope === 'project';
+  const currentUiLanguage = isUiNotSet ? NOT_SET_VALUE : ((rawUiLanguage as string) ?? '');
+
   const useCtrlEnterToSend = (scopeSettings.useCtrlEnterToSend as boolean | undefined) ?? false;
   const focusInputOnEditorContext = (scopeSettings.focusInputOnEditorContext as boolean | undefined) ?? true;
   const respectGitignoreForContext = (scopeSettings.respectGitignoreForContext as boolean | undefined) ?? false;
@@ -64,6 +68,27 @@ export function GeneralSettings() {
                 return;
               }
               updateSetting('language', value);
+            }}
+          />
+        </SettingRow>
+
+        <SettingRow
+          label={t('general.uiLanguage.label')}
+          description={t('general.uiLanguage.description')}
+        >
+          <Select
+            value={currentUiLanguage}
+            options={languageOptions}
+            ariaLabel={t('general.uiLanguage.label')}
+            className={`bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm ${
+              isUiNotSet ? 'text-text-tertiary' : 'text-text-primary'
+            }`}
+            onChange={(value) => {
+              if (value === NOT_SET_VALUE) {
+                resetToGlobal('uiLanguage');
+                return;
+              }
+              updateSetting('uiLanguage', value);
             }}
           />
         </SettingRow>

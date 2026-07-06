@@ -31,6 +31,10 @@
       "description": "Bevorzugte Antwortsprache von Claude",
       "notSet": "Nicht festgelegt (global verwenden)"
     },
+    "uiLanguage": {
+      "label": "Sprache der Oberfläche",
+      "description": "Sprache der App-Oberfläche, unabhängig von der Antwortsprache von Claude."
+    },
     "useCtrlEnterToSend": {
       "label": "Mit Strg+Enter senden",
       "description": "Wenn aktiviert, wird Strg/Cmd+Enter statt nur Enter verwendet, um Prompts zu senden. So kann mit Enter ein Zeilenumbruch eingefügt werden."
