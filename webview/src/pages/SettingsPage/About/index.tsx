@@ -1,32 +1,32 @@
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { SettingSection, SettingRow } from '../common';
 import { APP_NAME } from '@/config/app';
-import { ROUTE_META, Route } from '@/router/routes';
 import { useVersionInfo } from '@/hooks/useVersionInfo';
+import { useTranslation } from '@/i18n';
 import { CliUpdateControl } from './CliUpdateControl';
 
 export function AboutSettings() {
-  const meta = ROUTE_META[Route.SETTINGS_ABOUT];
+  const { t } = useTranslation('settings');
   const { pluginVersion, cliVersion, refresh, isLoading } = useVersionInfo();
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-text-primary mb-6">{meta.label}</h2>
+      <h2 className="text-xl font-semibold text-text-primary mb-6">{t('about.heading')}</h2>
 
-      <SettingSection title="Version Information">
-        <SettingRow label="Plugin Version">
+      <SettingSection title={t('about.versionInfo.title')}>
+        <SettingRow label={t('about.versionInfo.pluginVersion')}>
           <span className="text-sm text-text-secondary">{pluginVersion}</span>
         </SettingRow>
 
-        <SettingRow label={`${APP_NAME} Version`}>
+        <SettingRow label={t('about.versionInfo.cliVersion', { appName: APP_NAME })}>
           <div className="flex items-center gap-2">
             <CliUpdateControl />
-            <span className="text-sm text-text-secondary">{cliVersion ?? 'not detected'}</span>
+            <span className="text-sm text-text-secondary">{cliVersion ?? t('about.versionInfo.notDetected')}</span>
             <button
               onClick={refresh}
               disabled={isLoading}
-              aria-label="Refresh version"
-              title="Refresh"
+              aria-label={t('about.versionInfo.refreshVersion')}
+              title={t('about.versionInfo.refresh')}
               className="text-text-tertiary hover:text-text-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <ArrowPathIcon className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -35,26 +35,26 @@ export function AboutSettings() {
         </SettingRow>
       </SettingSection>
 
-      <SettingSection title="Links">
-        <SettingRow label="Documentation">
+      <SettingSection title={t('about.links.title')}>
+        <SettingRow label={t('about.links.documentation')}>
           <a
             href="https://github.com/yhk1038/claude-code-gui-jetbrains"
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-text-link hover:text-text-link hover:underline"
           >
-            View on GitHub
+            {t('about.links.viewOnGithub')}
           </a>
         </SettingRow>
 
-        <SettingRow label="Report Issue">
+        <SettingRow label={t('about.links.reportIssue')}>
           <a
             href="https://github.com/yhk1038/claude-code-gui-jetbrains/issues"
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-text-link hover:text-text-link hover:underline"
           >
-            Open Issue
+            {t('about.links.openIssue')}
           </a>
         </SettingRow>
       </SettingSection>

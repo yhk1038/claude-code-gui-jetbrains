@@ -3,11 +3,12 @@ import { QRCodeSVG } from 'qrcode.react';
 import { ClipboardDocumentIcon, ClipboardDocumentCheckIcon } from '@heroicons/react/24/outline';
 import { ToggleSwitch } from '@/components/ToggleSwitch';
 import { TunnelStatusNotice } from '@/components/TunnelStatusNotice';
-import { ROUTE_META, Route } from '@/router/routes';
 import { SettingSection, SettingRow } from '../common';
 import { useTunnelStatus } from '@/hooks';
+import { useTranslation } from '@/i18n';
 
 export function TunnelSettings() {
+  const { t } = useTranslation('settings');
   const {
     tunnelEnabled,
     tunnelUrl,
@@ -29,8 +30,6 @@ export function TunnelSettings() {
   const [copied, setCopied] = useState(false);
   const [elapsedSec, setElapsedSec] = useState(0);
   const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const meta = ROUTE_META[Route.SETTINGS_TUNNEL];
 
   useEffect(() => {
     if (tunnelLoading || installing) {
@@ -57,9 +56,9 @@ export function TunnelSettings() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-text-primary mb-6">{meta.label}</h2>
+      <h2 className="text-xl font-semibold text-text-primary mb-6">{t('nav.tunnel')}</h2>
 
-      <SettingSection title="Connection">
+      <SettingSection title={t('tunnel.connection.title')}>
         <TunnelStatusNotice
           cloudflaredAvailable={cloudflaredAvailable}
           tunnelEnabled={tunnelEnabled}
@@ -73,8 +72,8 @@ export function TunnelSettings() {
           onCancelInstall={cancelInstall}
         />
         <SettingRow
-          label="Remote Tunnel (Unofficial)"
-          description="Expose your local server via cloudflared for remote access. No account required. If cloudflared isn’t installed, you’ll be asked to install it first."
+          label={t('tunnel.connection.enable.label')}
+          description={t('tunnel.connection.enable.description')}
         >
           <ToggleSwitch
             checked={tunnelEnabled}
@@ -90,9 +89,13 @@ export function TunnelSettings() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              <span>{installing ? 'Installing cloudflared…' : 'Establishing tunnel connection…'} ({elapsedSec}s)</span>
+              <span>
+                {installing
+                  ? t('tunnel.connection.installingProgress', { seconds: elapsedSec })
+                  : t('tunnel.connection.establishingProgress', { seconds: elapsedSec })}
+              </span>
             </div>
-            <p className="text-xs text-text-disabled">This typically takes ~1 min (If installation is required, it takes about 3 mins.)</p>
+            <p className="text-xs text-text-disabled">{t('tunnel.connection.estimatedTime')}</p>
           </div>
         )}
 
@@ -116,10 +119,10 @@ export function TunnelSettings() {
         )}
       </SettingSection>
 
-      <SettingSection title="Sleep Prevention">
+      <SettingSection title={t('tunnel.sleepPrevention.title')}>
         <SettingRow
-          label="Prevent Sleep"
-          description="Keep your machine awake while the tunnel is active, even with the lid closed."
+          label={t('tunnel.sleepPrevention.label')}
+          description={t('tunnel.sleepPrevention.description')}
         >
           <ToggleSwitch
             checked={preventSleep}

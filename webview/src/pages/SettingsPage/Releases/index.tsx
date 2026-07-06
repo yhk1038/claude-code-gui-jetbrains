@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
-import { ROUTE_META, Route } from '@/router/routes';
 import { ArrowPathIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { usePluginUpdates } from '@/hooks/usePluginUpdates';
 import { useVersionInfo } from '@/hooks/useVersionInfo';
 import { useBridgeContext } from '@/contexts/BridgeContext';
 import { MessageType } from '@/shared';
+import { useTranslation } from '@/i18n';
+import type { TFunction } from 'i18next';
 
 /**
  * Sanitize HTML by stripping all tags except a safe allowlist.
@@ -87,9 +88,9 @@ function walkBottomUp(node: Node): void {
   }
 }
 
-function formatDate(cdate: string | number): string {
+function formatDate(cdate: string | number, t: TFunction): string {
   const ms = typeof cdate === 'string' ? parseInt(cdate, 10) : cdate;
-  if (isNaN(ms)) return 'Unknown date';
+  if (isNaN(ms)) return t('releases.unknownDate');
   const d = new Date(ms);
   const pad = (n: number) => String(n).padStart(2, '0');
   const yyyy = d.getFullYear();
@@ -146,6 +147,7 @@ interface ReleaseAccordionProps {
 
 function ReleaseAccordion(props: ReleaseAccordionProps) {
   const { update, isCurrent, defaultOpen } = props;
+  const { t } = useTranslation('settings');
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   const title = extractTitle(update.notes);
@@ -166,11 +168,11 @@ function ReleaseAccordion(props: ReleaseAccordionProps) {
             v{update.version}
           </span>
           <span className="text-xs text-text-tertiary shrink-0 ml-auto">
-            {formatDate(update.cdate)}
+            {formatDate(update.cdate, t)}
           </span>
           {isCurrent && (
             <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-surface-tooltip text-text-secondary shrink-0">
-              Current
+              {t('releases.current')}
             </span>
           )}
         </div>
@@ -189,7 +191,7 @@ function ReleaseAccordion(props: ReleaseAccordionProps) {
               dangerouslySetInnerHTML={{ __html: body }}
             />
           ) : (
-            <p className="text-sm text-text-disabled italic">No release notes</p>
+            <p className="text-sm text-text-disabled italic">{t('releases.noNotes')}</p>
           )}
         </div>
       )}
@@ -198,7 +200,7 @@ function ReleaseAccordion(props: ReleaseAccordionProps) {
 }
 
 export function ReleasesSettings() {
-  const meta = ROUTE_META[Route.SETTINGS_RELEASES];
+  const { t } = useTranslation('settings');
   const { updates, isLoading, error, refresh } = usePluginUpdates();
   const { pluginVersion, requiresRestart } = useVersionInfo();
   const { send } = useBridgeContext();
@@ -214,17 +216,17 @@ export function ReleasesSettings() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-text-primary">{meta.label}</h2>
+        <h2 className="text-xl font-semibold text-text-primary">{t('releases.title')}</h2>
         <div className="flex items-center gap-3">
           <span className="text-sm text-text-secondary">v{pluginVersion}</span>
           {hasNewVersion && (
             <div className="flex flex-col items-end gap-1">
-              {requiresRestart && <span className="text-xs text-text-secondary">IDE restart required</span>}
+              {requiresRestart && <span className="text-xs text-text-secondary">{t('releases.restartRequired')}</span>}
               <button
                 onClick={handleUpdate}
                 className="px-3 py-1.5 rounded-md text-sm font-medium bg-accent-primary-hover hover:bg-accent-primary text-text-primary transition-colors"
               >
-                Update to v{latestUpdate.version}
+                {t('releases.updateButton', { version: latestUpdate.version })}
               </button>
             </div>
           )}
@@ -251,7 +253,7 @@ export function ReleasesSettings() {
           ))}
         </div>
       ) : !isLoading ? (
-        <p className="text-sm text-text-tertiary">No releases found.</p>
+        <p className="text-sm text-text-tertiary">{t('releases.empty')}</p>
       ) : null}
 
       <div className="flex items-center gap-2 text-xs text-text-tertiary mt-4">
@@ -259,7 +261,7 @@ export function ReleasesSettings() {
           onClick={refresh}
           disabled={isLoading}
           className="p-1 rounded hover:bg-surface-hover transition-colors disabled:opacity-50"
-          title="Refresh"
+          title={t('releases.refresh')}
         >
           <ArrowPathIcon className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
         </button>

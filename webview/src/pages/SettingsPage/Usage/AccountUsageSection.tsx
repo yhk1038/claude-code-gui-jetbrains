@@ -1,12 +1,14 @@
 import type { AccountUsage } from '@/shared';
 import { formatPlan } from '@/utils/accountFormat';
 import { UsageMeter } from './UsageMeter';
+import { useTranslation } from '@/i18n';
 
 interface AccountUsageSectionProps {
   account: AccountUsage;
 }
 
 export function AccountUsageSection({ account }: AccountUsageSectionProps) {
+  const { t } = useTranslation('settings');
   // If the error is ccb_missing, we do not render any error block here.
   // The global notice in parent will display it.
   const hasDisplayError = account.error && account.errorKind !== 'ccb_missing';
@@ -20,7 +22,7 @@ export function AccountUsageSection({ account }: AccountUsageSectionProps) {
         </h3>
         {account.active && (
           <span className="px-2 py-0.5 text-xs font-semibold bg-emerald-500/10 text-emerald-500 rounded border border-emerald-500/20">
-            Active
+            {t('usage.account.active')}
           </span>
         )}
 
@@ -35,7 +37,7 @@ export function AccountUsageSection({ account }: AccountUsageSectionProps) {
 
       {hasDisplayError && (
         <div className="mb-4 p-3 bg-state-error-bg border border-state-error-border rounded-lg text-sm text-state-error-fg">
-          Usage unavailable: {account.error}
+          {t('usage.account.errorPrefix', { error: account.error })}
         </div>
       )}
 
@@ -43,7 +45,7 @@ export function AccountUsageSection({ account }: AccountUsageSectionProps) {
         <div className="bg-surface-raised rounded-lg border border-border-default px-4">
           {account.usage.five_hour && (
             <UsageMeter
-              label="Current Session (5h)"
+              label={t('usage.account.currentSession')}
               utilization={account.usage.five_hour.utilization}
               resetsAt={account.usage.five_hour.resets_at}
             />
@@ -52,25 +54,25 @@ export function AccountUsageSection({ account }: AccountUsageSectionProps) {
           {(account.usage.seven_day || account.usage.seven_day_sonnet || account.usage.seven_day_opus) && (
             <div className="pt-8">
               <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
-                Weekly Limits
+                {t('usage.account.weeklyLimits')}
               </h4>
               {account.usage.seven_day && (
                 <UsageMeter
-                  label="All Models"
+                  label={t('usage.account.allModels')}
                   utilization={account.usage.seven_day.utilization}
                   resetsAt={account.usage.seven_day.resets_at}
                 />
               )}
               {account.usage.seven_day_sonnet && (
                 <UsageMeter
-                  label="Sonnet only"
+                  label={t('usage.account.sonnetOnly')}
                   utilization={account.usage.seven_day_sonnet.utilization}
                   resetsAt={account.usage.seven_day_sonnet.resets_at}
                 />
               )}
               {account.usage.seven_day_opus && (
                 <UsageMeter
-                  label="Opus only"
+                  label={t('usage.account.opusOnly')}
                   utilization={account.usage.seven_day_opus.utilization}
                   resetsAt={account.usage.seven_day_opus.resets_at}
                 />

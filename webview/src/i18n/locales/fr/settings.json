@@ -1,0 +1,330 @@
+{
+  "layout": {
+    "title": "Paramètres",
+    "back": "Retour",
+    "toggleMenu": "Afficher/masquer le menu",
+    "close": "Fermer"
+  },
+  "nav": {
+    "general": "Général",
+    "appearance": "Apparence",
+    "permissions": "Autorisations",
+    "privacy": "Confidentialité",
+    "cli": "CLI",
+    "browser": "Navigateur",
+    "account": "Compte",
+    "usage": "Utilisation",
+    "tunnel": "Tunnel",
+    "releases": "Versions",
+    "about": "À propos"
+  },
+  "scope": {
+    "global": "Paramètres utilisateur (Global)",
+    "globalShort": "Utilisateur (Global)",
+    "project": "Paramètres du projet (Local)",
+    "projectShort": "Projet (Local)",
+    "projectDisabledTooltip": "Ouvrez un projet pour utiliser les paramètres du projet"
+  },
+  "general": {
+    "language": {
+      "label": "Langue",
+      "description": "Langue de réponse préférée de Claude",
+      "notSet": "Non défini (utiliser le paramètre global)"
+    },
+    "useCtrlEnterToSend": {
+      "label": "Utiliser Ctrl+Entrée pour envoyer",
+      "description": "Lorsque cette option est activée, utilisez Ctrl/Cmd+Entrée pour envoyer les invites au lieu de simplement Entrée. Cela permet à Entrée de créer de nouvelles lignes."
+    },
+    "focusInputOnEditorContext": {
+      "label": "Focaliser la saisie de chat après l'ajout d'un chemin de fichier",
+      "description": "Lorsque vous appuyez sur Alt+K dans l'éditeur, déplace le focus vers la saisie de chat après l'insertion du chemin de fichier."
+    },
+    "respectGitignoreForContext": {
+      "label": "Respecter .gitignore pour le contexte de l'éditeur",
+      "description": "Lorsque activé, le contenu des fichiers ignorés par .gitignore est exclu du contexte de l'éditeur — seul le chemin du fichier est envoyé."
+    },
+    "hostMode": {
+      "label": "Emplacement préféré",
+      "description": "Où Claude s'ouvre par défaut.",
+      "sidebar": "Barre latérale",
+      "panel": "Panneau"
+    },
+    "openSettings": {
+      "label": "Ouvrir les paramètres en tant que",
+      "description": "Afficher les paramètres en superposition ou dans un nouvel onglet.",
+      "overlay": "Superposition",
+      "newTab": "Nouvel onglet"
+    },
+    "chatPagination": {
+      "label": "Paginer l'historique des conversations",
+      "description": "Charger les anciens messages au fur et à mesure du défilement. Désactivé charge toute la conversation en une seule fois."
+    },
+    "configDir": {
+      "description": "Répertoire personnel pour la configuration de Claude. Identique à la variable d'environnement CLAUDE_CONFIG_DIR.",
+      "placeholder": "Par défaut (~/.claude)",
+      "active": "Actif : {{value}}",
+      "projectUnavailable": "Ouvrez un projet pour définir une valeur de projet."
+    }
+  },
+  "appearance": {
+    "title": "Apparence",
+    "theme": {
+      "sectionTitle": "Thème",
+      "colorTheme": {
+        "label": "Thème de couleur",
+        "description": "Choisissez le thème de couleur de l'interface",
+        "notSet": "Non défini (utiliser le paramètre global)",
+        "systemIde": "Système (IDE)",
+        "systemOs": "Système (OS)",
+        "light": "Clair",
+        "dark": "Sombre"
+      },
+      "fontSize": {
+        "label": "Taille de police",
+        "description": "Taille de police de base pour l'interface",
+        "notSetPlaceholder": "Non défini"
+      }
+    },
+    "scrolling": {
+      "sectionTitle": "Défilement",
+      "autoScrollThreshold": {
+        "label": "Distance de reprise du défilement automatique",
+        "description": "Le défilement vers le haut met toujours en pause le défilement automatique afin que vous puissiez lire librement. Il reprend une fois que vous revenez à ce nombre de pixels du bas. Plus la valeur est petite, plus vous devez revenir près du bas pour réactiver. Par défaut {{value}}.",
+        "notSetPlaceholder": "Non défini"
+      }
+    }
+  },
+  "advanced": {
+    "title": "Avancé",
+    "debugging": {
+      "sectionTitle": "Débogage",
+      "debugMode": {
+        "label": "Mode débogage",
+        "description": "Activer la journalisation de débogage et les diagnostics",
+        "notSet": "Non défini (utiliser le paramètre global)"
+      },
+      "logLevel": {
+        "label": "Niveau de journalisation",
+        "description": "Niveau de journalisation minimum à afficher",
+        "notSet": "Non défini (utiliser le paramètre global)",
+        "debug": "Débogage",
+        "info": "Info",
+        "warning": "Avertissement",
+        "error": "Erreur"
+      }
+    }
+  },
+  "privacy": {
+    "title": "Confidentialité",
+    "privacyPolicyLink": "Politique de confidentialité",
+    "telemetry": {
+      "sectionTitle": "Télémétrie",
+      "sendUsageStatistics": {
+        "label": "Envoyer les statistiques d'utilisation",
+        "description": "Envoie des statistiques d'utilisation qui ne vous identifient pas directement, afin d'aider à améliorer le produit. Le code source et les données personnelles ne sont jamais envoyés. Vous pouvez désactiver cette option à tout moment."
+      }
+    }
+  },
+  "account": {
+    "heading": "Compte",
+    "addAccount": "Ajouter un compte",
+    "actionFailed": "Échec de l'action",
+    "loading": "Chargement des comptes…",
+    "empty": "Aucun compte enregistré pour le moment.",
+    "plan": "Forfait",
+    "authMethod": "Méthode d'authentification",
+    "lastAccess": "Dernier accès",
+    "inUse": "En cours d'utilisation",
+    "switch": "Changer",
+    "removeAccount": "Supprimer le compte",
+    "lastActive": {
+      "today": "Aujourd'hui",
+      "yesterday": "Hier",
+      "daysAgo": "il y a {{value}} j",
+      "hoursAgo": "il y a {{value}} h",
+      "minutesAgo": "il y a {{value}} min",
+      "justNow": "à l'instant"
+    }
+  },
+  "permissions": {
+    "heading": "Autorisations",
+    "notSet": "Non défini (utiliser le paramètre global)",
+    "bypassMode": {
+      "sectionTitle": "Mode contournement",
+      "label": "Désactiver le mode contournement",
+      "description": "Empêche l'activation du mode de contournement des autorisations"
+    },
+    "defaultMode": {
+      "sectionTitle": "Mode de saisie par défaut",
+      "label": "Mode de saisie par défaut",
+      "description": "Mode d'autorisation initial lors de l'ouverture d'une nouvelle session"
+    }
+  },
+  "about": {
+    "heading": "À propos",
+    "versionInfo": {
+      "title": "Informations de version",
+      "pluginVersion": "Version du plugin",
+      "cliVersion": "Version de {{appName}}",
+      "notDetected": "non détecté",
+      "refreshVersion": "Actualiser la version",
+      "refresh": "Actualiser"
+    },
+    "links": {
+      "title": "Liens",
+      "documentation": "Documentation",
+      "viewOnGithub": "Voir sur GitHub",
+      "reportIssue": "Signaler un problème",
+      "openIssue": "Ouvrir un problème"
+    },
+    "cliUpdate": {
+      "upToDate": "À jour",
+      "confirmTitle": "Mettre à jour Claude Code",
+      "confirmMessage": "La mise à jour remplace le CLI de Claude Code et peut interrompre les sessions en cours. Continuer ?",
+      "update": "Mettre à jour",
+      "updating": "Mise à jour…",
+      "channel": {
+        "stable": "Stable",
+        "latest": "Dernière version"
+      },
+      "updateSuccess": "Claude Code v{{value}} mis à jour",
+      "updateFailed": "Échec de la mise à jour"
+    }
+  },
+  "browser": {
+    "notifications": {
+      "title": "Notifications",
+      "sound": {
+        "label": "Son",
+        "ariaLabel": "Son de notification",
+        "off": "Désactivé",
+        "description": "Son joué lorsqu'une notification de bureau se déclenche. Sélectionner un son le prévisualise une fois.",
+        "loadingDescription": "Chargement des sons système...",
+        "emptyDescription": "Aucun son système détecté. Sélectionnez Désactivé pour couper les notifications.",
+        "errorDescription": "Impossible de charger les sons système : {{error}}"
+      }
+    },
+    "permissions": {
+      "title": "Autorisations",
+      "revokeHint": "Pour révoquer, modifiez les paramètres de votre navigateur.",
+      "deniedHint": "Activer depuis les paramètres du navigateur",
+      "granted": "Accordée",
+      "denied": "Refusée",
+      "request": "Demander"
+    }
+  },
+  "tunnel": {
+    "connection": {
+      "title": "Connexion",
+      "enable": {
+        "label": "Tunnel distant (non officiel)",
+        "description": "Exposez votre serveur local via cloudflared pour un accès à distance. Aucun compte requis. Si cloudflared n'est pas installé, il vous sera demandé de l'installer d'abord."
+      },
+      "installingProgress": "Installation de cloudflared… ({{seconds}} s)",
+      "establishingProgress": "Établissement de la connexion du tunnel… ({{seconds}} s)",
+      "estimatedTime": "Cela prend généralement ~1 min (si une installation est requise, environ 3 min)."
+    },
+    "sleepPrevention": {
+      "title": "Prévention de la mise en veille",
+      "label": "Empêcher la mise en veille",
+      "description": "Garde votre machine éveillée tant que le tunnel est actif, même avec le capot fermé."
+    }
+  },
+  "cli": {
+    "terminal": {
+      "title": "Terminal",
+      "app": {
+        "label": "Application de terminal",
+        "description": "Application de terminal utilisée lors de l'exécution de « Ouvrir Claude dans le terminal »",
+        "jetbrainsDescription": "Le terminal intégré de l'IDE JetBrains est toujours utilisé.",
+        "jetbrainsValue": "Terminal intégré JetBrains",
+        "detecting": "Détection des terminaux...",
+        "systemDefault": "Par défaut du système",
+        "defaultSuffix": "{{label}} (Par défaut)",
+        "custom": "Personnalisé...",
+        "customPlaceholder": "ex. Kitty"
+      }
+    },
+    "model": {
+      "title": "Modèle",
+      "label": "Modèle par défaut",
+      "description": "Modèle par défaut pour les nouvelles sessions",
+      "defaultRecommended": "Par défaut (recommandé)"
+    },
+    "path": {
+      "title": "Claude CLI",
+      "label": "Chemin du CLI",
+      "description": "Chemin vers l'exécutable Claude CLI (laisser vide pour la détection automatique)",
+      "placeholder": "Détection automatique"
+    },
+    "nodePath": {
+      "title": "Node.js",
+      "label": "Chemin Node",
+      "description": "Chemin vers l'exécutable Node.js qui exécute le backend (laisser vide pour la détection automatique). Prend effet après redémarrage.",
+      "placeholder": "Détection automatique"
+    }
+  },
+  "releases": {
+    "title": "Versions",
+    "restartRequired": "Redémarrage de l'IDE requis",
+    "updateButton": "Mettre à jour vers v{{version}}",
+    "current": "Actuelle",
+    "noNotes": "Aucune note de version",
+    "empty": "Aucune version trouvée.",
+    "unknownDate": "Date inconnue",
+    "refresh": "Actualiser"
+  },
+  "usage": {
+    "title": "Utilisation",
+    "learnMore": "En savoir plus sur les limites d'utilisation",
+    "lastUpdated": "Dernière mise à jour : {{time}}",
+    "refresh": "Actualiser",
+    "relativeTime": {
+      "justNow": "À l'instant",
+      "oneMinuteAgo": "il y a 1 min",
+      "minutesAgo": "il y a {{count}} min",
+      "oneHourAgo": "il y a 1 h",
+      "hoursAgo": "il y a {{count}} h"
+    },
+    "account": {
+      "active": "Actif",
+      "errorPrefix": "Utilisation indisponible : {{error}}",
+      "currentSession": "Session actuelle (5 h)",
+      "weeklyLimits": "Limites hebdomadaires",
+      "allModels": "Tous les modèles",
+      "sonnetOnly": "Sonnet uniquement",
+      "opusOnly": "Opus uniquement"
+    },
+    "meter": {
+      "resetsSoon": "Réinitialisation bientôt",
+      "resetsOnDay": "Réinitialisation {{day}} {{period}} {{time}}",
+      "resetsInHours": "Réinitialisation dans {{hours}} h {{minutes}} min",
+      "resetsInMinutes": "Réinitialisation dans {{minutes}} min",
+      "am": "AM",
+      "pm": "PM",
+      "days": {
+        "sun": "Dim",
+        "mon": "Lun",
+        "tue": "Mar",
+        "wed": "Mer",
+        "thu": "Jeu",
+        "fri": "Ven",
+        "sat": "Sam"
+      }
+    },
+    "notInstalled": {
+      "title": "Une dépendance requise",
+      "description": "En raison de la politique de la marketplace, cette fonctionnalité ne peut pas être intégrée. Elle est publiée sous forme de bibliothèque distincte que vous devez installer vous-même.",
+      "installVia": "Installez-la globalement via npm :",
+      "copy": "Copier",
+      "copied": "Copié",
+      "copyFailed": "Échec de la copie",
+      "retryHint": "Après l'installation, cliquez sur Réessayer ci-dessous — aucun redémarrage de l'IDE n'est nécessaire.",
+      "checking": "Vérification...",
+      "retry": "Réessayer"
+    },
+    "errors": {
+      "unknown": "Erreur inconnue"
+    }
+  }
+}

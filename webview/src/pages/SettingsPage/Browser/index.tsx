@@ -1,6 +1,6 @@
-import { ROUTE_META, Route } from '@/router/routes';
 import { PermissionsSection } from './PermissionsSection';
 import { NotificationsSection } from './NotificationsSection';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   className?: string;
@@ -8,11 +8,11 @@ interface Props {
 
 export const BrowserSettings = (props: Props) => {
   const { className = '' } = props;
-  const meta = ROUTE_META[Route.SETTINGS_BROWSER];
+  const { t } = useTranslation('settings');
 
   return (
     <div className={className}>
-      <h2 className="text-xl font-semibold text-text-primary mb-6">{meta.label}</h2>
+      <h2 className="text-xl font-semibold text-text-primary mb-6">{t('nav.browser')}</h2>
       <PermissionsSection />
       <NotificationsSection />
     </div>

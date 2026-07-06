@@ -5,11 +5,11 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 import { useBridge } from '@/hooks/useBridge';
 import { SettingKey } from '@/types/settings';
-import { ROUTE_META, Route } from '@/router/routes';
 import { isJetBrains } from '@/config/environment';
 import { useCliConfig } from '@/contexts/CliConfigContext';
 import { DEFAULT_MODEL_ALIAS, toModelAlias } from '@/types/models';
 import { MessageType } from '@/shared';
+import { useTranslation } from '@/i18n';
 
 interface TerminalInfo {
   id: string;
@@ -26,8 +26,8 @@ function toSelectValue(app: string | null, terminals: TerminalInfo[]): string {
 }
 
 export function CliSettings() {
+  const { t } = useTranslation('settings');
   const { settings, updateSetting, scope } = useSettings();
-  const meta = ROUTE_META[Route.SETTINGS_CLI];
   const { send } = useBridge();
   const isJetBrainsEnv = isJetBrains();
   const { settings: claudeSettings, updateSetting: updateClaudeSetting } = useClaudeSettings();
@@ -84,17 +84,19 @@ export function CliSettings() {
   };
 
   const terminalOptions: SelectOption[] = [
-    { value: '', label: 'System Default' },
-    ...terminals.map((t) => ({
-      value: t.label,
-      label: t.isDefault ? `${t.label} (Default)` : t.label,
+    { value: '', label: t('cli.terminal.app.systemDefault') },
+    ...terminals.map((terminal) => ({
+      value: terminal.label,
+      label: terminal.isDefault
+        ? t('cli.terminal.app.defaultSuffix', { label: terminal.label })
+        : terminal.label,
     })),
-    { value: CUSTOM_MARKER, label: 'Custom...' },
+    { value: CUSTOM_MARKER, label: t('cli.terminal.app.custom') },
   ];
 
   const modelOptions: SelectOption[] =
     availableModels.length === 0
-      ? [{ value: '', label: 'Default (recommended)' }]
+      ? [{ value: '', label: t('cli.model.defaultRecommended') }]
       : availableModels.map((m) => ({
           value: m.value === DEFAULT_MODEL_ALIAS ? '' : m.value,
           label: m.displayName,
@@ -102,28 +104,28 @@ export function CliSettings() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-text-primary mb-6">{meta.label}</h2>
+      <h2 className="text-xl font-semibold text-text-primary mb-6">{t('nav.cli')}</h2>
 
       <ScopeGuard supportedScope="global" currentScope={scope}>
-        <SettingSection title="Terminal">
+        <SettingSection title={t('cli.terminal.title')}>
           <SettingRow
-            label="Terminal App"
+            label={t('cli.terminal.app.label')}
             description={
               isJetBrainsEnv
-                ? 'JetBrains IDE built-in terminal is always used.'
-                : "Terminal application used when running 'Open Claude in Terminal'"
+                ? t('cli.terminal.app.jetbrainsDescription')
+                : t('cli.terminal.app.description')
             }
           >
             {isJetBrainsEnv ? (
-              <span className="text-sm text-text-tertiary">JetBrains built-in terminal</span>
+              <span className="text-sm text-text-tertiary">{t('cli.terminal.app.jetbrainsValue')}</span>
             ) : loading ? (
-              <span className="text-sm text-text-tertiary">Detecting terminals...</span>
+              <span className="text-sm text-text-tertiary">{t('cli.terminal.app.detecting')}</span>
             ) : (
               <div className="flex items-center gap-2">
                 <Select
                   value={selectValue}
                   options={terminalOptions}
-                  ariaLabel="Terminal App"
+                  ariaLabel={t('cli.terminal.app.label')}
                   onChange={handleSelectChange}
                   className="bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm text-text-primary"
                 />
@@ -132,7 +134,7 @@ export function CliSettings() {
                     type="text"
                     value={customInput}
                     onChange={(e) => handleCustomInput(e.target.value)}
-                    placeholder="e.g., Kitty"
+                    placeholder={t('cli.terminal.app.customPlaceholder')}
                     className="w-40 bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm text-text-primary placeholder-text-tertiary"
                   />
                 )}
@@ -142,15 +144,15 @@ export function CliSettings() {
         </SettingSection>
       </ScopeGuard>
 
-      <SettingSection title="Model">
+      <SettingSection title={t('cli.model.title')}>
         <SettingRow
-          label="Default Model"
-          description="Default model for new sessions"
+          label={t('cli.model.label')}
+          description={t('cli.model.description')}
         >
           <Select
             value={claudeSettings.model ? toModelAlias(claudeSettings.model) : ''}
             options={modelOptions}
-            ariaLabel="Default Model"
+            ariaLabel={t('cli.model.label')}
             onChange={(value) => void updateClaudeSetting('model', value || null)}
             className="bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm text-text-primary"
           />
@@ -158,17 +160,17 @@ export function CliSettings() {
       </SettingSection>
 
       <ScopeGuard supportedScope="global" currentScope={scope}>
-        <SettingSection title="Claude CLI">
+        <SettingSection title={t('cli.path.title')}>
           <SettingRow
-            label="CLI Path"
-            description="Path to Claude CLI executable (leave empty for auto-detect)"
+            label={t('cli.path.label')}
+            description={t('cli.path.description')}
           >
             <div className="flex flex-col items-end gap-1">
               <input
                 type="text"
                 value={settings[SettingKey.CLI_PATH] || ''}
                 onChange={(e) => updateSetting(SettingKey.CLI_PATH, e.target.value || null)}
-                placeholder="Auto-detect"
+                placeholder={t('cli.path.placeholder')}
                 className="w-64 bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm text-text-primary placeholder-text-tertiary"
               />
               {detectedCliPath && !settings[SettingKey.CLI_PATH] && (
@@ -180,17 +182,17 @@ export function CliSettings() {
           </SettingRow>
         </SettingSection>
 
-        <SettingSection title="Node.js">
+        <SettingSection title={t('cli.nodePath.title')}>
           <SettingRow
-            label="Node Path"
-            description="Path to Node.js executable that runs the backend (leave empty for auto-detect). Takes effect after restart."
+            label={t('cli.nodePath.label')}
+            description={t('cli.nodePath.description')}
           >
             <div className="flex flex-col items-end gap-1">
               <input
                 type="text"
                 value={settings[SettingKey.NODE_PATH] || ''}
                 onChange={(e) => updateSetting(SettingKey.NODE_PATH, e.target.value || null)}
-                placeholder="Auto-detect"
+                placeholder={t('cli.nodePath.placeholder')}
                 className="w-64 bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm text-text-primary placeholder-text-tertiary"
               />
               {detectedNodePath && !settings[SettingKey.NODE_PATH] && (

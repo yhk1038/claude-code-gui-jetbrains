@@ -1,0 +1,330 @@
+{
+  "layout": {
+    "title": "Configuración",
+    "back": "Atrás",
+    "toggleMenu": "Alternar menú",
+    "close": "Cerrar"
+  },
+  "nav": {
+    "general": "General",
+    "appearance": "Apariencia",
+    "permissions": "Permisos",
+    "privacy": "Privacidad",
+    "cli": "CLI",
+    "browser": "Navegador",
+    "account": "Cuenta",
+    "usage": "Uso",
+    "tunnel": "Túnel",
+    "releases": "Versiones",
+    "about": "Acerca de"
+  },
+  "scope": {
+    "global": "Configuración de usuario (Global)",
+    "globalShort": "Usuario (Global)",
+    "project": "Configuración del proyecto (Local)",
+    "projectShort": "Proyecto (Local)",
+    "projectDisabledTooltip": "Abre un proyecto para usar la configuración del proyecto"
+  },
+  "general": {
+    "language": {
+      "label": "Idioma",
+      "description": "Idioma de respuesta preferido de Claude",
+      "notSet": "Sin definir (usar global)"
+    },
+    "useCtrlEnterToSend": {
+      "label": "Usar Ctrl+Enter para enviar",
+      "description": "Cuando está activado, usa Ctrl/Cmd+Enter para enviar mensajes en lugar de solo Enter. Esto permite usar Enter para crear nuevas líneas."
+    },
+    "focusInputOnEditorContext": {
+      "label": "Enfocar el chat tras adjuntar una ruta de archivo",
+      "description": "Al presionar Alt+K en el editor, mueve el foco al campo de chat después de insertar la ruta del archivo."
+    },
+    "respectGitignoreForContext": {
+      "label": "Respetar .gitignore en el contexto del editor",
+      "description": "Cuando está activado, el contenido de los archivos excluidos por .gitignore no se incluye en el contexto del editor — solo se envía la ruta del archivo."
+    },
+    "hostMode": {
+      "label": "Ubicación preferida",
+      "description": "Dónde se abre Claude de forma predeterminada.",
+      "sidebar": "Barra lateral",
+      "panel": "Panel"
+    },
+    "openSettings": {
+      "label": "Abrir Configuración como",
+      "description": "Mostrar Configuración como superposición o en una nueva pestaña.",
+      "overlay": "Superposición",
+      "newTab": "Nueva pestaña"
+    },
+    "chatPagination": {
+      "label": "Paginar historial de chat",
+      "description": "Carga mensajes antiguos a medida que te desplazas. Desactivado carga toda la conversación de una vez."
+    },
+    "configDir": {
+      "description": "Directorio base para la configuración de Claude. Igual que la variable de entorno CLAUDE_CONFIG_DIR.",
+      "placeholder": "Predeterminado (~/.claude)",
+      "active": "Activo: {{value}}",
+      "projectUnavailable": "Abre un proyecto para definir un valor de proyecto."
+    }
+  },
+  "appearance": {
+    "title": "Apariencia",
+    "theme": {
+      "sectionTitle": "Tema",
+      "colorTheme": {
+        "label": "Tema de color",
+        "description": "Elige el tema de color para la interfaz",
+        "notSet": "Sin definir (usar global)",
+        "systemIde": "Sistema (IDE)",
+        "systemOs": "Sistema (SO)",
+        "light": "Claro",
+        "dark": "Oscuro"
+      },
+      "fontSize": {
+        "label": "Tamaño de fuente",
+        "description": "Tamaño de fuente base para la interfaz",
+        "notSetPlaceholder": "Sin definir"
+      }
+    },
+    "scrolling": {
+      "sectionTitle": "Desplazamiento",
+      "autoScrollThreshold": {
+        "label": "Distancia de reanudación del autodesplazamiento",
+        "description": "Desplazarse hacia arriba siempre pausa el autodesplazamiento para que puedas leer con libertad. Se reanuda al volver a estar dentro de esta cantidad de píxeles del final. Un valor menor significa que debes acercarte más para reactivarlo. Predeterminado {{value}}.",
+        "notSetPlaceholder": "Sin definir"
+      }
+    }
+  },
+  "advanced": {
+    "title": "Avanzado",
+    "debugging": {
+      "sectionTitle": "Depuración",
+      "debugMode": {
+        "label": "Modo de depuración",
+        "description": "Activar registro de depuración y diagnósticos",
+        "notSet": "Sin definir (usar global)"
+      },
+      "logLevel": {
+        "label": "Nivel de registro",
+        "description": "Nivel mínimo de registro a mostrar",
+        "notSet": "Sin definir (usar global)",
+        "debug": "Depuración",
+        "info": "Información",
+        "warning": "Advertencia",
+        "error": "Error"
+      }
+    }
+  },
+  "privacy": {
+    "title": "Privacidad",
+    "privacyPolicyLink": "Política de privacidad",
+    "telemetry": {
+      "sectionTitle": "Telemetría",
+      "sendUsageStatistics": {
+        "label": "Enviar estadísticas de uso",
+        "description": "Envía estadísticas de uso que no te identifican directamente, para ayudar a mejorar el producto. El código fuente y los datos personales nunca se envían. Puedes desactivarlo en cualquier momento."
+      }
+    }
+  },
+  "account": {
+    "heading": "Cuenta",
+    "addAccount": "Agregar cuenta",
+    "actionFailed": "La acción falló",
+    "loading": "Cargando cuentas…",
+    "empty": "Aún no hay cuentas guardadas.",
+    "plan": "Plan",
+    "authMethod": "Método de autenticación",
+    "lastAccess": "Último acceso",
+    "inUse": "En uso",
+    "switch": "Cambiar",
+    "removeAccount": "Eliminar cuenta",
+    "lastActive": {
+      "today": "Hoy",
+      "yesterday": "Ayer",
+      "daysAgo": "hace {{value}}d",
+      "hoursAgo": "hace {{value}}h",
+      "minutesAgo": "hace {{value}}m",
+      "justNow": "justo ahora"
+    }
+  },
+  "permissions": {
+    "heading": "Permisos",
+    "notSet": "Sin definir (usar global)",
+    "bypassMode": {
+      "sectionTitle": "Modo de omisión",
+      "label": "Desactivar modo de omisión",
+      "description": "Evita que se active el modo de omisión de permisos"
+    },
+    "defaultMode": {
+      "sectionTitle": "Modo de entrada predeterminado",
+      "label": "Modo de entrada predeterminado",
+      "description": "Modo de permisos inicial al abrir una nueva sesión"
+    }
+  },
+  "about": {
+    "heading": "Acerca de",
+    "versionInfo": {
+      "title": "Información de versión",
+      "pluginVersion": "Versión del plugin",
+      "cliVersion": "Versión de {{appName}}",
+      "notDetected": "no detectada",
+      "refreshVersion": "Actualizar versión",
+      "refresh": "Actualizar"
+    },
+    "links": {
+      "title": "Enlaces",
+      "documentation": "Documentación",
+      "viewOnGithub": "Ver en GitHub",
+      "reportIssue": "Reportar un problema",
+      "openIssue": "Abrir incidencia"
+    },
+    "cliUpdate": {
+      "upToDate": "Actualizado",
+      "confirmTitle": "Actualizar Claude Code",
+      "confirmMessage": "Actualizar reemplaza el CLI de Claude Code y puede interrumpir las sesiones en curso. ¿Continuar?",
+      "update": "Actualizar",
+      "updating": "Actualizando…",
+      "channel": {
+        "stable": "Estable",
+        "latest": "Más reciente"
+      },
+      "updateSuccess": "Claude Code v{{value}} actualizado",
+      "updateFailed": "La actualización falló"
+    }
+  },
+  "browser": {
+    "notifications": {
+      "title": "Notificaciones",
+      "sound": {
+        "label": "Sonido",
+        "ariaLabel": "Sonido de notificación",
+        "off": "Desactivado",
+        "description": "Sonido que se reproduce cuando aparece una notificación de escritorio. Al seleccionar un sonido se escucha una vista previa una sola vez.",
+        "loadingDescription": "Cargando sonidos del sistema...",
+        "emptyDescription": "No se detectaron sonidos del sistema. Selecciona Desactivado para silenciar las notificaciones.",
+        "errorDescription": "No se pudieron cargar los sonidos del sistema: {{error}}"
+      }
+    },
+    "permissions": {
+      "title": "Permisos",
+      "revokeHint": "Para revocarlo, cámbialo en la configuración de tu navegador.",
+      "deniedHint": "Actívalo desde la configuración del navegador",
+      "granted": "Concedido",
+      "denied": "Denegado",
+      "request": "Solicitar"
+    }
+  },
+  "tunnel": {
+    "connection": {
+      "title": "Conexión",
+      "enable": {
+        "label": "Túnel remoto (no oficial)",
+        "description": "Expone tu servidor local mediante cloudflared para acceso remoto. No requiere cuenta. Si cloudflared no está instalado, se te pedirá instalarlo primero."
+      },
+      "installingProgress": "Instalando cloudflared… ({{seconds}}s)",
+      "establishingProgress": "Estableciendo conexión de túnel… ({{seconds}}s)",
+      "estimatedTime": "Esto suele tardar ~1 min (si se requiere instalación, toma unos 3 min)."
+    },
+    "sleepPrevention": {
+      "title": "Prevención de suspensión",
+      "label": "Evitar suspensión",
+      "description": "Mantiene tu equipo activo mientras el túnel está en uso, incluso con la tapa cerrada."
+    }
+  },
+  "cli": {
+    "terminal": {
+      "title": "Terminal",
+      "app": {
+        "label": "Aplicación de terminal",
+        "description": "Aplicación de terminal usada al ejecutar 'Abrir Claude en terminal'",
+        "jetbrainsDescription": "Siempre se usa la terminal integrada del IDE de JetBrains.",
+        "jetbrainsValue": "Terminal integrada de JetBrains",
+        "detecting": "Detectando terminales...",
+        "systemDefault": "Predeterminada del sistema",
+        "defaultSuffix": "{{label}} (Predeterminada)",
+        "custom": "Personalizada...",
+        "customPlaceholder": "p. ej., Kitty"
+      }
+    },
+    "model": {
+      "title": "Modelo",
+      "label": "Modelo predeterminado",
+      "description": "Modelo predeterminado para nuevas sesiones",
+      "defaultRecommended": "Predeterminado (recomendado)"
+    },
+    "path": {
+      "title": "Claude CLI",
+      "label": "Ruta del CLI",
+      "description": "Ruta al ejecutable de Claude CLI (déjalo vacío para detección automática)",
+      "placeholder": "Detección automática"
+    },
+    "nodePath": {
+      "title": "Node.js",
+      "label": "Ruta de Node",
+      "description": "Ruta al ejecutable de Node.js que ejecuta el backend (déjalo vacío para detección automática). Surte efecto tras reiniciar.",
+      "placeholder": "Detección automática"
+    }
+  },
+  "releases": {
+    "title": "Versiones",
+    "restartRequired": "Se requiere reiniciar el IDE",
+    "updateButton": "Actualizar a v{{version}}",
+    "current": "Actual",
+    "noNotes": "Sin notas de versión",
+    "empty": "No se encontraron versiones.",
+    "unknownDate": "Fecha desconocida",
+    "refresh": "Actualizar"
+  },
+  "usage": {
+    "title": "Uso",
+    "learnMore": "Más información sobre los límites de uso",
+    "lastUpdated": "Última actualización: {{time}}",
+    "refresh": "Actualizar",
+    "relativeTime": {
+      "justNow": "Justo ahora",
+      "oneMinuteAgo": "hace 1m",
+      "minutesAgo": "hace {{count}}m",
+      "oneHourAgo": "hace 1h",
+      "hoursAgo": "hace {{count}}h"
+    },
+    "account": {
+      "active": "Activa",
+      "errorPrefix": "Uso no disponible: {{error}}",
+      "currentSession": "Sesión actual (5h)",
+      "weeklyLimits": "Límites semanales",
+      "allModels": "Todos los modelos",
+      "sonnetOnly": "Solo Sonnet",
+      "opusOnly": "Solo Opus"
+    },
+    "meter": {
+      "resetsSoon": "Se reinicia pronto",
+      "resetsOnDay": "Se reinicia el {{day}} {{period}} {{time}}",
+      "resetsInHours": "Se reinicia en {{hours}}h {{minutes}}m",
+      "resetsInMinutes": "Se reinicia en {{minutes}}m",
+      "am": "AM",
+      "pm": "PM",
+      "days": {
+        "sun": "Dom",
+        "mon": "Lun",
+        "tue": "Mar",
+        "wed": "Mié",
+        "thu": "Jue",
+        "fri": "Vie",
+        "sat": "Sáb"
+      }
+    },
+    "notInstalled": {
+      "title": "Una dependencia necesaria",
+      "description": "Debido a la política del marketplace, esta función no puede incluirse en el paquete. Se publica como una biblioteca independiente que debes instalar tú mismo.",
+      "installVia": "Instálala globalmente con npm:",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "copyFailed": "Error al copiar",
+      "retryHint": "Después de instalarla, haz clic en Reintentar abajo — no se necesita reiniciar el IDE.",
+      "checking": "Comprobando...",
+      "retry": "Reintentar"
+    },
+    "errors": {
+      "unknown": "Error desconocido"
+    }
+  }
+}

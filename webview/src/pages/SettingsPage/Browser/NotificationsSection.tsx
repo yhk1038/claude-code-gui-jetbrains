@@ -7,6 +7,7 @@ import {
 } from '@/notifications';
 import { SettingSection, SettingRow } from '../common';
 import { Select, type SelectOption } from '@/components/Select';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   className?: string;
@@ -25,6 +26,7 @@ interface Props {
  */
 export const NotificationsSection = (props: Props) => {
   const { className = '' } = props;
+  const { t } = useTranslation('settings');
   const { selection, setSelection } = useNotificationSound();
   const { sounds, loading, error } = useSystemSounds();
 
@@ -39,28 +41,28 @@ export const NotificationsSection = (props: Props) => {
   };
 
   const soundOptions: SelectOption[] = [
-    { value: SOUND_OFF, label: 'Off' },
+    { value: SOUND_OFF, label: t('browser.notifications.sound.off') },
     ...sounds.map((sound) => ({ value: sound.id, label: sound.label })),
   ];
 
   const isEmpty = !loading && error === null && sounds.length === 0;
   const description =
     error !== null
-      ? `Couldn't load system sounds: ${error}`
+      ? t('browser.notifications.sound.errorDescription', { error })
       : loading
-        ? 'Loading system sounds...'
+        ? t('browser.notifications.sound.loadingDescription')
         : isEmpty
-          ? 'No system sounds detected. Select Off to silence notifications.'
-          : 'Sound played when a desktop notification fires. Selecting a sound previews it once.';
+          ? t('browser.notifications.sound.emptyDescription')
+          : t('browser.notifications.sound.description');
 
   return (
     <div className={className}>
-      <SettingSection title="Notifications">
-        <SettingRow label="Sound" description={description}>
+      <SettingSection title={t('browser.notifications.title')}>
+        <SettingRow label={t('browser.notifications.sound.label')} description={description}>
           <Select
             value={selection}
             options={soundOptions}
-            ariaLabel="Notification Sound"
+            ariaLabel={t('browser.notifications.sound.ariaLabel')}
             disabled={loading || error !== null}
             onChange={(value) => handleChange(value as SoundSelection)}
             className="bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm text-text-primary"

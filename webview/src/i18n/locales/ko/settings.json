@@ -65,5 +65,266 @@
       "active": "적용됨: {{value}}",
       "projectUnavailable": "프로젝트 값을 설정하려면 프로젝트를 여세요."
     }
+  },
+  "appearance": {
+    "title": "모양",
+    "theme": {
+      "sectionTitle": "테마",
+      "colorTheme": {
+        "label": "색상 테마",
+        "description": "인터페이스의 색상 테마를 선택합니다",
+        "notSet": "설정 안 함 (전역 설정 사용)",
+        "systemIde": "시스템 (IDE)",
+        "systemOs": "시스템 (OS)",
+        "light": "라이트",
+        "dark": "다크"
+      },
+      "fontSize": {
+        "label": "글꼴 크기",
+        "description": "인터페이스의 기본 글꼴 크기",
+        "notSetPlaceholder": "설정 안 함"
+      }
+    },
+    "scrolling": {
+      "sectionTitle": "스크롤",
+      "autoScrollThreshold": {
+        "label": "자동 스크롤 재개 거리",
+        "description": "위로 스크롤하면 자유롭게 읽을 수 있도록 자동 스크롤이 항상 일시 정지됩니다. 하단에서 이 픽셀 수 이내로 다시 스크롤하면 재개됩니다. 값이 작을수록 더 가까이 돌아와야 다시 활성화됩니다. 기본값 {{value}}.",
+        "notSetPlaceholder": "설정 안 함"
+      }
+    }
+  },
+  "advanced": {
+    "title": "고급",
+    "debugging": {
+      "sectionTitle": "디버깅",
+      "debugMode": {
+        "label": "디버그 모드",
+        "description": "디버그 로깅 및 진단을 활성화합니다",
+        "notSet": "설정 안 함 (전역 설정 사용)"
+      },
+      "logLevel": {
+        "label": "로그 레벨",
+        "description": "표시할 최소 로그 레벨",
+        "notSet": "설정 안 함 (전역 설정 사용)",
+        "debug": "디버그",
+        "info": "정보",
+        "warning": "경고",
+        "error": "오류"
+      }
+    }
+  },
+  "privacy": {
+    "title": "개인정보",
+    "privacyPolicyLink": "개인정보 처리방침",
+    "telemetry": {
+      "sectionTitle": "텔레메트리",
+      "sendUsageStatistics": {
+        "label": "사용 통계 전송",
+        "description": "제품 개선을 위해 사용자를 직접 식별하지 않는 사용 통계를 전송합니다. 소스 코드와 개인정보는 전송되지 않습니다. 언제든지 끌 수 있습니다."
+      }
+    }
+  },
+  "account": {
+    "heading": "계정",
+    "addAccount": "계정 추가",
+    "actionFailed": "작업 실패",
+    "loading": "계정 불러오는 중…",
+    "empty": "저장된 계정이 아직 없습니다.",
+    "plan": "플랜",
+    "authMethod": "인증 방식",
+    "lastAccess": "마지막 접속",
+    "inUse": "사용 중",
+    "switch": "전환",
+    "removeAccount": "계정 제거",
+    "lastActive": {
+      "today": "오늘",
+      "yesterday": "어제",
+      "daysAgo": "{{value}}일 전",
+      "hoursAgo": "{{value}}시간 전",
+      "minutesAgo": "{{value}}분 전",
+      "justNow": "방금 전"
+    }
+  },
+  "permissions": {
+    "heading": "권한",
+    "notSet": "설정 안 함 (전역 설정 사용)",
+    "bypassMode": {
+      "sectionTitle": "우회 모드",
+      "label": "우회 모드 비활성화",
+      "description": "권한 우회 모드가 활성화되지 않도록 합니다"
+    },
+    "defaultMode": {
+      "sectionTitle": "기본 입력 모드",
+      "label": "기본 입력 모드",
+      "description": "새 세션을 열 때의 초기 권한 모드"
+    }
+  },
+  "about": {
+    "heading": "정보",
+    "versionInfo": {
+      "title": "버전 정보",
+      "pluginVersion": "플러그인 버전",
+      "cliVersion": "{{appName}} 버전",
+      "notDetected": "감지되지 않음",
+      "refreshVersion": "버전 새로고침",
+      "refresh": "새로고침"
+    },
+    "links": {
+      "title": "링크",
+      "documentation": "문서",
+      "viewOnGithub": "GitHub에서 보기",
+      "reportIssue": "이슈 제보",
+      "openIssue": "이슈 열기"
+    },
+    "cliUpdate": {
+      "upToDate": "최신 버전",
+      "confirmTitle": "Claude Code 업데이트",
+      "confirmMessage": "업데이트하면 Claude Code CLI가 교체되며 실행 중인 세션이 중단될 수 있습니다. 계속하시겠습니까?",
+      "update": "업데이트",
+      "updating": "업데이트 중…",
+      "channel": {
+        "stable": "안정 버전",
+        "latest": "최신 버전"
+      },
+      "updateSuccess": "Claude Code v{{value}}로 업데이트되었습니다",
+      "updateFailed": "업데이트 실패"
+    }
+  },
+  "browser": {
+    "notifications": {
+      "title": "알림",
+      "sound": {
+        "label": "소리",
+        "ariaLabel": "알림 소리",
+        "off": "끄기",
+        "description": "데스크톱 알림이 표시될 때 재생되는 소리입니다. 소리를 선택하면 한 번 미리 들을 수 있습니다.",
+        "loadingDescription": "시스템 소리를 불러오는 중...",
+        "emptyDescription": "감지된 시스템 소리가 없습니다. 알림을 끄려면 끄기를 선택하세요.",
+        "errorDescription": "시스템 소리를 불러오지 못했습니다: {{error}}"
+      }
+    },
+    "permissions": {
+      "title": "권한",
+      "revokeHint": "취소하려면 브라우저 설정에서 변경하세요.",
+      "deniedHint": "브라우저 설정에서 활성화하세요",
+      "granted": "허용됨",
+      "denied": "거부됨",
+      "request": "요청"
+    }
+  },
+  "tunnel": {
+    "connection": {
+      "title": "연결",
+      "enable": {
+        "label": "원격 터널 (비공식)",
+        "description": "cloudflared를 통해 로컬 서버를 외부에 노출해 원격으로 접속합니다. 계정이 필요하지 않습니다. cloudflared가 설치되어 있지 않으면 먼저 설치를 안내합니다."
+      },
+      "installingProgress": "cloudflared 설치 중… ({{seconds}}초)",
+      "establishingProgress": "터널 연결 수립 중… ({{seconds}}초)",
+      "estimatedTime": "보통 약 1분이 걸립니다. (설치가 필요한 경우 약 3분이 걸립니다.)"
+    },
+    "sleepPrevention": {
+      "title": "절전 방지",
+      "label": "절전 방지",
+      "description": "덮개를 닫아도 터널이 활성화된 동안 기기가 잠들지 않도록 합니다."
+    }
+  },
+  "cli": {
+    "terminal": {
+      "title": "터미널",
+      "app": {
+        "label": "터미널 앱",
+        "description": "'터미널에서 Claude 열기'를 실행할 때 사용할 터미널 애플리케이션",
+        "jetbrainsDescription": "JetBrains IDE 내장 터미널이 항상 사용됩니다.",
+        "jetbrainsValue": "JetBrains 내장 터미널",
+        "detecting": "터미널 감지 중...",
+        "systemDefault": "시스템 기본값",
+        "defaultSuffix": "{{label}} (기본값)",
+        "custom": "사용자 지정...",
+        "customPlaceholder": "예: Kitty"
+      }
+    },
+    "model": {
+      "title": "모델",
+      "label": "기본 모델",
+      "description": "새 세션의 기본 모델",
+      "defaultRecommended": "기본값 (권장)"
+    },
+    "path": {
+      "title": "Claude CLI",
+      "label": "CLI 경로",
+      "description": "Claude CLI 실행 파일 경로 (자동 감지하려면 비워두세요)",
+      "placeholder": "자동 감지"
+    },
+    "nodePath": {
+      "title": "Node.js",
+      "label": "Node 경로",
+      "description": "백엔드를 실행할 Node.js 실행 파일 경로 (자동 감지하려면 비워두세요). 재시작 후 적용됩니다.",
+      "placeholder": "자동 감지"
+    }
+  },
+  "releases": {
+    "title": "릴리스",
+    "restartRequired": "IDE 재시작 필요",
+    "updateButton": "v{{version}}(으)로 업데이트",
+    "current": "현재",
+    "noNotes": "릴리스 노트 없음",
+    "empty": "릴리스를 찾을 수 없습니다.",
+    "unknownDate": "알 수 없는 날짜",
+    "refresh": "새로고침"
+  },
+  "usage": {
+    "title": "사용량",
+    "learnMore": "사용량 제한에 대해 자세히 알아보기",
+    "lastUpdated": "마지막 업데이트: {{time}}",
+    "refresh": "새로고침",
+    "relativeTime": {
+      "justNow": "방금 전",
+      "oneMinuteAgo": "1분 전",
+      "minutesAgo": "{{count}}분 전",
+      "oneHourAgo": "1시간 전",
+      "hoursAgo": "{{count}}시간 전"
+    },
+    "account": {
+      "active": "활성",
+      "errorPrefix": "사용량을 가져올 수 없습니다: {{error}}",
+      "currentSession": "현재 세션 (5시간)",
+      "weeklyLimits": "주간 한도",
+      "allModels": "모든 모델",
+      "sonnetOnly": "Sonnet만",
+      "opusOnly": "Opus만"
+    },
+    "meter": {
+      "resetsSoon": "곧 초기화",
+      "resetsOnDay": "{{day}} {{period}} {{time}}에 초기화",
+      "resetsInHours": "{{hours}}시간 {{minutes}}분 후 초기화",
+      "resetsInMinutes": "{{minutes}}분 후 초기화",
+      "am": "오전",
+      "pm": "오후",
+      "days": {
+        "sun": "일",
+        "mon": "월",
+        "tue": "화",
+        "wed": "수",
+        "thu": "목",
+        "fri": "금",
+        "sat": "토"
+      }
+    },
+    "notInstalled": {
+      "title": "필요한 종속성",
+      "description": "마켓플레이스 정책상 이 기능은 번들로 포함할 수 없습니다. 별도 라이브러리로 배포되며 직접 설치해야 합니다.",
+      "installVia": "npm으로 전역 설치:",
+      "copy": "복사",
+      "copied": "복사됨",
+      "copyFailed": "복사 실패",
+      "retryHint": "설치 후 아래 재시도를 클릭하세요 — IDE 재시작이 필요 없습니다.",
+      "checking": "확인 중...",
+      "retry": "재시도"
+    },
+    "errors": {
+      "unknown": "알 수 없는 오류"
+    }
   }
 }

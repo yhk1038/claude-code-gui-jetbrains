@@ -1,15 +1,18 @@
+import { useTranslation } from '@/i18n';
+import type { TFunction } from 'i18next';
+
 interface UsageMeterProps {
   label: string;
   utilization: number;
   resetsAt: string | null;
 }
 
-function formatTimeUntil(isoString: string): string {
+function formatTimeUntil(isoString: string, t: TFunction): string {
   const target = new Date(isoString);
   const now = new Date();
   const diffMs = target.getTime() - now.getTime();
 
-  if (diffMs <= 0) return 'Resets soon';
+  if (diffMs <= 0) return t('usage.meter.resetsSoon');
 
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
   const diffHours = Math.floor(diffMinutes / 60);
@@ -18,21 +21,29 @@ function formatTimeUntil(isoString: string): string {
 
   if (diffDays > 0) {
     // For weekly limits, show day-of-week and time format
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const days = [
+      t('usage.meter.days.sun'),
+      t('usage.meter.days.mon'),
+      t('usage.meter.days.tue'),
+      t('usage.meter.days.wed'),
+      t('usage.meter.days.thu'),
+      t('usage.meter.days.fri'),
+      t('usage.meter.days.sat'),
+    ];
     const dayName = days[target.getDay()];
     const hours = target.getHours();
     const minutes = target.getMinutes();
-    const period = hours >= 12 ? 'PM' : 'AM';
+    const period = hours >= 12 ? t('usage.meter.pm') : t('usage.meter.am');
     const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
     const displayMinutes = minutes > 0 ? `:${String(minutes).padStart(2, '0')}` : ':00';
-    return `Resets ${dayName} ${period} ${displayHours}${displayMinutes}`;
+    return t('usage.meter.resetsOnDay', { day: dayName, period, time: `${displayHours}${displayMinutes}` });
   }
 
   if (diffHours > 0) {
-    return `Resets in ${diffHours}h ${remainingMinutes}m`;
+    return t('usage.meter.resetsInHours', { hours: diffHours, minutes: remainingMinutes });
   }
 
-  return `Resets in ${remainingMinutes}m`;
+  return t('usage.meter.resetsInMinutes', { minutes: remainingMinutes });
 }
 
 function formatExactTime(isoString: string): string {
@@ -59,6 +70,7 @@ function getBarColorClass(utilization: number): string {
 }
 
 export function UsageMeter({ label, utilization, resetsAt }: UsageMeterProps) {
+  const { t } = useTranslation('settings');
   const clamped = Math.min(100, Math.max(0, utilization));
 
   return (
@@ -77,7 +89,7 @@ export function UsageMeter({ label, utilization, resetsAt }: UsageMeterProps) {
 
       {resetsAt && (
         <div className="flex items-center justify-between mt-1.5">
-          <p className="text-xs text-text-tertiary">{formatTimeUntil(resetsAt)}</p>
+          <p className="text-xs text-text-tertiary">{formatTimeUntil(resetsAt, t)}</p>
           <p className="text-xs text-text-disabled">{formatExactTime(resetsAt)}</p>
         </div>
       )}

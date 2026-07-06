@@ -12,6 +12,7 @@ import { UpdateMode } from '@/shared';
 import { useCliUpdate } from '@/hooks/queries/useCliUpdate';
 import { useConfirmDialog } from '@/components/ConfirmDialog/useConfirmDialog';
 import { compareVersions } from '@/utils/compareVersions';
+import { useTranslation } from '@/i18n';
 
 const BUTTON_CLASS =
   'flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded ' +
@@ -63,6 +64,7 @@ function VersionItem(props: { label: string; version: string; current: string | 
  * then shows a spinner while running and a toast with the new version on success.
  */
 export function CliUpdateControl() {
+  const { t } = useTranslation('settings');
   const { info, updating, update } = useCliUpdate();
   const { confirmDialog, confirm } = useConfirmDialog();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -77,7 +79,7 @@ export function CliUpdateControl() {
     return (
       <span className="flex items-center gap-1 text-xs text-text-tertiary">
         <CheckCircleIcon className="w-3.5 h-3.5 text-state-success-fg" />
-        Up to date
+        {t('about.cliUpdate.upToDate')}
       </span>
     );
   }
@@ -85,16 +87,16 @@ export function CliUpdateControl() {
   const runUpdate = async (version: string | null, fallbackLabel: string | null) => {
     setMenuOpen(false);
     const ok = await confirm({
-      title: 'Update Claude Code',
-      message: 'Updating replaces the Claude Code CLI and may interrupt running sessions. Continue?',
-      confirmLabel: 'Update',
+      title: t('about.cliUpdate.confirmTitle'),
+      message: t('about.cliUpdate.confirmMessage'),
+      confirmLabel: t('about.cliUpdate.update'),
     });
     if (!ok) return;
     try {
       const newVersion = await update(version);
-      toast.success(`Claude Code v${newVersion ?? version ?? fallbackLabel ?? ''} Updated`);
+      toast.success(t('about.cliUpdate.updateSuccess', { value: newVersion ?? version ?? fallbackLabel ?? '' }));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Update failed');
+      toast.error(err instanceof Error ? err.message : t('about.cliUpdate.updateFailed'));
     }
   };
 
@@ -105,7 +107,7 @@ export function CliUpdateControl() {
       <>
         <button className={BUTTON_CLASS} disabled={updating} onClick={() => runUpdate(null, info.latest)}>
           {updating ? spinner : null}
-          {updating ? 'Updating…' : 'Update'}
+          {updating ? t('about.cliUpdate.updating') : t('about.cliUpdate.update')}
         </button>
         {confirmDialog}
       </>
@@ -129,7 +131,7 @@ export function CliUpdateControl() {
           >
             {info.stable && (
               <VersionItem
-                label="Stable"
+                label={t('about.cliUpdate.channel.stable')}
                 version={info.stable}
                 current={info.cliVersion}
                 onClick={() => runUpdate(info.stable, info.stable)}
@@ -137,7 +139,7 @@ export function CliUpdateControl() {
             )}
             {info.latest && (
               <VersionItem
-                label="Latest"
+                label={t('about.cliUpdate.channel.latest')}
                 version={info.latest}
                 current={info.cliVersion}
                 onClick={() => runUpdate(info.latest, info.latest)}
@@ -154,7 +156,7 @@ export function CliUpdateControl() {
           aria-expanded={menuOpen}
         >
           {updating ? spinner : null}
-          {updating ? 'Updating…' : 'Update'}
+          {updating ? t('about.cliUpdate.updating') : t('about.cliUpdate.update')}
           {!updating && <ChevronDownIcon className="w-3 h-3" />}
         </button>
       </Tippy>
