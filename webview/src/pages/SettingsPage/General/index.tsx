@@ -8,6 +8,7 @@ import { ClaudeConfigDirRow } from './ClaudeConfigDirRow';
 import { APP_NAME } from '@/config/app';
 import { ROUTE_META, Route } from '@/router/routes';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
+import { useTranslation } from '@/i18n';
 
 const NOT_SET_VALUE = '__NOT_SET__';
 
@@ -25,6 +26,7 @@ const LANGUAGE_OPTIONS = [
 
 export function GeneralSettings() {
   const meta = ROUTE_META[Route.SETTINGS_GENERAL];
+  const { t } = useTranslation('settings');
   const { scopeSettings, updateSetting, scope, resetToGlobal } = useClaudeSettings();
 
   const rawLanguage = scopeSettings.language as string | undefined;
@@ -37,7 +39,7 @@ export function GeneralSettings() {
 
   const languageOptions: SelectOption[] = [
     ...(scope === 'project'
-      ? [{ value: NOT_SET_VALUE, label: 'Not set (use global)', italic: true }]
+      ? [{ value: NOT_SET_VALUE, label: t('general.language.notSet'), italic: true }]
       : []),
     ...LANGUAGE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label })),
   ];
@@ -48,13 +50,13 @@ export function GeneralSettings() {
 
       <SettingSection title={APP_NAME}>
         <SettingRow
-          label="Language"
-          description="Claude's preferred response language"
+          label={t('general.language.label')}
+          description={t('general.language.description')}
         >
           <Select
             value={currentLanguage}
             options={languageOptions}
-            ariaLabel="Language"
+            ariaLabel={t('general.language.label')}
             className={`bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm ${
               isNotSet ? 'text-text-tertiary' : 'text-text-primary'
             }`}
@@ -69,35 +71,35 @@ export function GeneralSettings() {
         </SettingRow>
 
         <SettingRow
-          label="Use Ctrl Enter To Send"
-          description="When enabled, use Ctrl/Cmd+Enter to send prompts instead of just Enter. This allows Enter to create new lines."
+          label={t('general.useCtrlEnterToSend.label')}
+          description={t('general.useCtrlEnterToSend.description')}
         >
           <ToggleSwitch
             checked={useCtrlEnterToSend}
             onChange={(checked) => updateSetting('useCtrlEnterToSend', checked)}
-            ariaLabel="Use Ctrl Enter To Send"
+            ariaLabel={t('general.useCtrlEnterToSend.label')}
           />
         </SettingRow>
 
         <SettingRow
-          label="Focus chat input after attaching file path"
-          description="When you press Alt+K in the editor, move focus to the chat input after inserting the file path."
+          label={t('general.focusInputOnEditorContext.label')}
+          description={t('general.focusInputOnEditorContext.description')}
         >
           <ToggleSwitch
             checked={focusInputOnEditorContext}
             onChange={(checked) => updateSetting('focusInputOnEditorContext', checked)}
-            ariaLabel="Focus chat input after attaching file path"
+            ariaLabel={t('general.focusInputOnEditorContext.label')}
           />
         </SettingRow>
 
         <SettingRow
-          label="Respect .gitignore for editor context"
-          description="When on, contents of .gitignore'd files are excluded from the editor context — only the file path is sent."
+          label={t('general.respectGitignoreForContext.label')}
+          description={t('general.respectGitignoreForContext.description')}
         >
           <ToggleSwitch
             checked={respectGitignoreForContext}
             onChange={(checked) => updateSetting('respectGitignoreForContext', checked)}
-            ariaLabel="Respect .gitignore for editor context"
+            ariaLabel={t('general.respectGitignoreForContext.label')}
           />
         </SettingRow>
 

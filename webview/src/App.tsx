@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AppProviders } from './contexts';
+import { I18nLocaleSync } from './i18n';
 import { ChatPage, SettingsPage, SettingsOverlay, SwitchAccountPage, ProjectSelectorPage, SessionPanelPage } from './pages';
 import { AccountUsageModal } from './components/AccountUsageModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -24,6 +25,7 @@ function AppContent() {
 
   return (
     <>
+      <I18nLocaleSync />
       {isDev() && <div className="fixed w-full top-0 border-t-2 border-t-fuchsia-500 z-50" />}
       <Routes location={backgroundLocation ?? location}>
         <Route path="/" element={<ProjectSelectorPage />} />
