@@ -1,3 +1,4 @@
+import {useTranslation} from "@/i18n";
 import {RendererProps, ToolWrapper, toolResultText, toolResultIsError, ResultCaption} from "../../common";
 import {CollapsibleBox} from "../_common";
 import {JetBrainsToolHeader, JetBrainsResultError, Badge, RawJsonResult, safeParseJson, asObjects} from "./_shared";
@@ -13,6 +14,7 @@ interface RunConfigsResult {
 
 /** `get_run_configurations`: list of config rows (name + description badge), or "No run configurations". */
 export function GetRunConfigurationsRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const out = toolResultText(props.toolResult);
     const isError = toolResultIsError(props.toolResult);
     const rawConfigs = safeParseJson<RunConfigsResult>(out)?.configurations;
@@ -31,7 +33,7 @@ export function GetRunConfigurationsRenderer(props: RendererProps) {
             ) : !hasConfigs ? (
                 <RawJsonResult out={out} />
             ) : configs.length === 0 ? (
-                <ResultCaption className="mt-1">No run configurations</ResultCaption>
+                <ResultCaption className="mt-1">{t('jetbrains.getRunConfigurations.none')}</ResultCaption>
             ) : (
                 <div className="mt-1.5">
                     <CollapsibleBox collapsedMaxHeight={200} className="flex flex-col gap-1">

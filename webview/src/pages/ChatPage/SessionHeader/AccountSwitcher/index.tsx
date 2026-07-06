@@ -4,6 +4,7 @@ import { useAccounts } from '@/hooks/queries/useAccounts';
 import { useAuthContext } from '@/contexts';
 import { AccountSwitcherMenu } from './AccountSwitcherMenu';
 import { AccountAvatar } from './AccountAvatar';
+import { useTranslation } from '@/i18n';
 
 /**
  * Header "persona" button next to Settings: an avatar showing the active
@@ -12,6 +13,7 @@ import { AccountAvatar } from './AccountAvatar';
  * SessionDropdown.
  */
 export function AccountSwitcher() {
+  const { t } = useTranslation('chat');
   const { loggedIn } = useAuthContext();
   const { accounts } = useAccounts();
   const [open, setOpen] = useState(false);
@@ -35,7 +37,7 @@ export function AccountSwitcher() {
       <button
         onClick={() => setOpen((v) => !v)}
         className="p-1 rounded transition-colors hover:bg-surface-hover"
-        title="Accounts"
+        title={t('sessionHeader.accountSwitcher.title')}
       >
         {activeAccount ? (
           <AccountAvatar account={activeAccount} className="w-5 h-5 text-[0.6153rem]" />

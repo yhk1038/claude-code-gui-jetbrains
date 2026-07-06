@@ -1,6 +1,7 @@
 import {ReactNode} from "react";
 import {Tooltip} from "@/components";
 import {cn} from "@/utils/cn";
+import {useTranslation} from "@/i18n";
 import {useWorkingDirOrNull} from "@/contexts/WorkingDirContext";
 import {ToolHeader, useCurrentToolUse} from "../../../../common";
 import {jetbrainsProductName, toolTitle, inputProjectPath} from "../helpers";
@@ -72,6 +73,7 @@ export const JetBrainsToolHeader = (props: JetBrainsToolHeaderProps) => {
  * or none was specified — so a tool can't silently act on the wrong project.
  */
 export const ProjectPathChip = () => {
+    const {t} = useTranslation('chatTools');
     const toolUse = useCurrentToolUse();
     const wd = useWorkingDirOrNull();
     const raw = inputProjectPath(toolUse?.input);
@@ -93,7 +95,7 @@ export const ProjectPathChip = () => {
     if (matches) {
         return (
             <div className="mt-1">
-                <Badge tone="default" title={path}>current project</Badge>
+                <Badge tone="default" title={path}>{t('jetbrains.common.currentProject')}</Badge>
             </div>
         );
     }
@@ -101,7 +103,7 @@ export const ProjectPathChip = () => {
     // either way show the full path; warn only when we know it differs.
     return (
         <div className="mt-1 flex items-center gap-1.5 min-w-0">
-            {known && <Badge tone="warning">different project</Badge>}
+            {known && <Badge tone="warning">{t('jetbrains.common.differentProject')}</Badge>}
             <Tooltip content={path}>
                 <span className={cn("font-mono text-[0.8461rem] truncate", known ? "text-state-warning-fg" : "text-text-primary/60")}>
                     {path}

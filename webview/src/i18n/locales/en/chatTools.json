@@ -1,0 +1,276 @@
+{
+  "tool": {
+    "in": "IN",
+    "out": "OUT",
+    "declined": "You declined this tool.",
+    "declinedWithInstruction": "You declined this tool. Asked Claude instead: “{{instruction}}”"
+  },
+  "message": {
+    "copyMessage": "Copy message",
+    "retry": "Retry",
+    "unknownTool": "unknown"
+  },
+  "interrupted": {
+    "default": "interrupted",
+    "toolInterrupted": "Tool interrupted"
+  },
+  "attachments": {
+    "imageAlt": "Image {{index}}",
+    "fullSizeAlt": "Full size"
+  },
+  "edit": {
+    "modified": "Modified"
+  },
+  "write": {
+    "lineCount": "{{count}} lines"
+  },
+  "glob": {
+    "pattern": "pattern: \"{{pattern}}\"",
+    "foundFiles": "Found {{count}} files",
+    "foundFiles_one": "Found {{count}} file",
+    "foundFiles_other": "Found {{count}} files"
+  },
+  "grep": {
+    "inPath": "(in {{path}})",
+    "globPattern": "(glob: {{glob}})"
+  },
+  "webFetch": {
+    "fetchedFrom": "Fetched from"
+  },
+  "todoWrite": {
+    "title": "Update Todos"
+  },
+  "notebookEdit": {
+    "title": "Edit Notebook Cell",
+    "noContent": "[No content]",
+    "status": {
+      "inserted": "Inserted",
+      "replaced": "Replaced",
+      "deleted": "Deleted",
+      "success": "Success"
+    }
+  },
+  "skill": {
+    "fallback": "Skill",
+    "expandLabel": "skill"
+  },
+  "askUserQuestion": {
+    "ask": "ASK",
+    "out": "OUT"
+  },
+  "exitPlanMode": {
+    "title": "Claude's Plan",
+    "planModeTitle": "Plan Mode",
+    "approved": "User approved the plan",
+    "stayedInPlanMode": "Stayed in plan mode",
+    "feedbackLabel": "RE:"
+  },
+  "task": {
+    "common": {
+      "in": "IN",
+      "out": "OUT",
+      "form": "FORM",
+      "taskPrefix": "task:"
+    },
+    "create": {
+      "what": "WHAT"
+    },
+    "update": {
+      "status": "STATUS",
+      "subject": "SUBJECT",
+      "desc": "DESC",
+      "owner": "OWNER",
+      "blocks": "BLOCKS",
+      "blockedBy": "BLOCKED-BY"
+    },
+    "output": {
+      "type": "type",
+      "status": "status",
+      "retrieval": "retrieval",
+      "copied": "Copied",
+      "retrievalCompleted": "completed",
+      "retrievalTimedOut": "timed out",
+      "retrievalError": "error"
+    }
+  },
+  "workflow": {
+    "agentsMeta": "{{count}} agents",
+    "tokensMeta": "{{value}} tokens",
+    "phaseSuffix": " ({{count}} phases)",
+    "phaseSuffix_one": " ({{count}} phase)",
+    "phaseSuffix_other": " ({{count}} phases)",
+    "taskIdDetail": "Task ID: {{taskId}}",
+    "runningInBackground": "Running in background…",
+    "agentsUsageLabel": "agents {{count}}",
+    "tokensUsageLabel": "tokens {{value}}",
+    "toolsUsageLabel": "tools {{count}}"
+  },
+  "mcp": {
+    "common": {
+      "out": "OUT"
+    }
+  },
+  "filesystem": {
+    "common": {
+      "in": "IN",
+      "out": "OUT"
+    },
+    "editFile": {
+      "dryRun": "(dry run)"
+    },
+    "readMultipleFiles": {
+      "fileCount": "{{count}} files"
+    }
+  },
+  "gmail": {
+    "common": {
+      "unknownSender": "(unknown sender)"
+    },
+    "action": {
+      "addLabelsToThread": "Add {{count}} label(s) to thread",
+      "removeLabelsFromThread": "Remove {{count}} label(s) from thread",
+      "addLabelsToMessage": "Add {{count}} label(s) to message",
+      "removeLabelsFromMessage": "Remove {{count}} label(s) from message",
+      "createLabel": "Create label",
+      "createLabelNamed": "Create label: {{name}}",
+      "updateLabel": "Update label",
+      "updateLabelNamed": "Update label: {{name}}",
+      "deleteLabel": "Delete label",
+      "moveToTrash": "Move {{target}} to Trash",
+      "markAsSpam": "Mark {{target}} as Spam",
+      "applySensitiveLabel": "Apply sensitive label to {{target}}",
+      "targetMessage": "message",
+      "targetThread": "thread"
+    },
+    "createDraft": {
+      "description": "Draft created",
+      "to": "To",
+      "cc": "Cc",
+      "bcc": "Bcc"
+    },
+    "listDrafts": {
+      "count": "{{count}} draft(s)"
+    },
+    "listLabels": {
+      "count": "{{count}} label(s)",
+      "unnamed": "(unnamed)"
+    },
+    "searchThreads": {
+      "resultsFound": "{{count}} found"
+    }
+  },
+  "jetbrains": {
+    "common": {
+      "in": "IN",
+      "out": "OUT",
+      "exitCode": "exit {{code}}",
+      "projectRoot": "project root",
+      "scopeIn": "in",
+      "currentProject": "current project",
+      "differentProject": "different project",
+      "applied": "applied",
+      "notApplied": "not applied",
+      "declined": "declined",
+      "declinedNote": "You declined this tool.",
+      "unrecognizedInputTitle": "Unrecognized input — review before allowing",
+      "unexpectedType": "(unexpected type)",
+      "debuggerStatus": {
+        "paused": "paused",
+        "running": "running",
+        "stopped": "stopped",
+        "timeout": "timeout"
+      }
+    },
+    "action": {
+      "debuggerAction": "Debugger: {{action}}",
+      "line": "line {{line}}",
+      "patchOp": {
+        "add": "add",
+        "delete": "delete",
+        "update": "update"
+      }
+    },
+    "breakpoint": {
+      "logpoint": "logpoint",
+      "suspend": "suspend: {{policy}}",
+      "breakpointsMuted": "breakpoints muted",
+      "breakpointsUnmuted": "breakpoints unmuted",
+      "temporary": "temporary",
+      "disabled": "disabled",
+      "logMessage": "log msg",
+      "logStack": "log stack",
+      "id": "id {{id}}",
+      "owner": "owner: {{owner}}",
+      "conditionLabel": "if",
+      "logLabel": "log"
+    },
+    "createNewFile": {
+      "overwritesExisting": "overwrites existing file",
+      "lineCount": "{{count}} lines",
+      "lineCount_one": "{{count}} line",
+      "lineCount_other": "{{count}} lines"
+    },
+    "executeTerminalCommand": {
+      "executionModeTooltip": "Run in the user's default shell vs. as a direct process",
+      "shell": "shell",
+      "direct": "direct"
+    },
+    "getRunConfigurations": {
+      "none": "No run configurations"
+    },
+    "gitStatus": {
+      "includeIgnored": "incl. ignored",
+      "includeUntracked": "incl. untracked",
+      "changeCount": "{{count}} changes",
+      "changeCount_one": "{{count}} change",
+      "changeCount_other": "{{count}} changes",
+      "clean": "Working tree clean",
+      "status": {
+        "untracked": "untracked",
+        "modified": "modified",
+        "added": "added",
+        "deleted": "deleted",
+        "renamed": "renamed",
+        "copied": "copied",
+        "conflict": "conflict",
+        "changed": "changed"
+      }
+    },
+    "openFiles": {
+      "none": "No open files",
+      "active": "active"
+    },
+    "problems": {
+      "errorsOnly": "errors only",
+      "buildSucceeded": "Build succeeded",
+      "none": "No problems",
+      "count": "{{count}} problems",
+      "count_one": "{{count}} problem",
+      "count_other": "{{count}} problems",
+      "infoSeverity": "info"
+    },
+    "projectList": {
+      "none": "None"
+    },
+    "replaceText": {
+      "all": "all",
+      "caseSensitive": "case-sensitive",
+      "old": "old",
+      "new": "new"
+    },
+    "search": {
+      "matchCount": "matches",
+      "matchCount_one": "match",
+      "matchCount_other": "matches",
+      "word": {
+        "pattern": "pattern",
+        "text": "text",
+        "regex": "regex",
+        "glob": "glob",
+        "name": "name",
+        "symbol": "symbol",
+        "query": "query"
+      }
+    }
+  }
+}

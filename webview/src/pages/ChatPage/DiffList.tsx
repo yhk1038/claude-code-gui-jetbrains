@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { PendingDiff, DiffStatus } from '../../types';
 import { DiffCard } from './DiffCard';
+import { useTranslation } from '@/i18n';
 
 interface DiffListProps {
   diffs: PendingDiff[];
@@ -17,6 +18,7 @@ export function DiffList({
   onApplyAll,
   onRejectAll,
 }: DiffListProps) {
+  const { t } = useTranslation('chat');
   const [isApplyingAll, setIsApplyingAll] = useState(false);
 
   const pendingDiffs = diffs.filter(d => d.status === DiffStatus.Pending);
@@ -48,8 +50,8 @@ export function DiffList({
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
             />
           </svg>
-          <p className="text-lg font-medium">No file changes</p>
-          <p className="text-sm mt-1">Changes will appear here when available</p>
+          <p className="text-lg font-medium">{t('diffList.noChanges')}</p>
+          <p className="text-sm mt-1">{t('diffList.noChangesHint')}</p>
         </div>
       </div>
     );
@@ -61,8 +63,8 @@ export function DiffList({
       {hasPending && (
         <div className="px-4 py-3 border-b border-border-default bg-surface-hover flex items-center justify-between">
           <div className="text-sm text-text-secondary">
-            <span className="font-medium">{pendingDiffs.length}</span> pending change
-            {pendingDiffs.length !== 1 ? 's' : ''}
+            <span className="font-medium">{pendingDiffs.length}</span>{' '}
+            {t('diffList.pendingCount', { count: pendingDiffs.length })}
           </div>
           <div className="flex gap-2">
             <button
@@ -70,14 +72,14 @@ export function DiffList({
               disabled={isApplyingAll}
               className="px-3 py-1.5 text-sm rounded bg-state-success-fg hover:bg-state-success-fg text-text-inverse transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isApplyingAll ? 'Applying All...' : 'Apply All'}
+              {isApplyingAll ? t('diffList.applyingAll') : t('diffList.applyAll')}
             </button>
             <button
               onClick={onRejectAll}
               disabled={isApplyingAll}
               className="px-3 py-1.5 text-sm rounded bg-surface-tooltip hover:bg-surface-pressed text-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Reject All
+              {t('diffList.rejectAll')}
             </button>
           </div>
         </div>

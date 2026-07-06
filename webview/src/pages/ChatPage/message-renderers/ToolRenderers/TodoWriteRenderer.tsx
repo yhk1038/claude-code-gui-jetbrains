@@ -1,4 +1,5 @@
 import {ToolUseBlockDto} from "@/dto";
+import {useTranslation} from "@/i18n";
 import {ToolHeader, ToolWrapper} from "./common";
 import {RendererProps} from "./common";
 
@@ -15,6 +16,7 @@ class TodoWriteToolUseDto extends ToolUseBlockDto {
 }
 
 export function TodoWriteRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const toolUse = props.toolUse as unknown as TodoWriteToolUseDto;
     const rawTodos = toolUse.input?.todos;
     const todos = (Array.isArray(rawTodos) ? rawTodos : []).filter(
@@ -29,7 +31,7 @@ export function TodoWriteRenderer(props: RendererProps) {
 
     return (
         <ToolWrapper message={props.message} onClick={() => console.log(props.toolUse, todos)}>
-            <ToolHeader name="Update Todos" className="mb-[12px]" />
+            <ToolHeader name={t('todoWrite.title')} className="mb-[12px]" />
 
             <div className="text-[0.9230rem] font-mono flex flex-col gap-[8px]">
                 {todos.map((todo, i) => {

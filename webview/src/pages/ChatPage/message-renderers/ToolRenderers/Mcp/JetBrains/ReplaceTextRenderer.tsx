@@ -1,3 +1,4 @@
+import {useTranslation} from "@/i18n";
 import {RendererProps, ToolWrapper, toolResultText, toolResultIsError, Container, LabelValue} from "../../common";
 import {JetBrainsToolHeader, JetBrainsResultError, Badge, RawJsonResult, headerFilePath, inputProjectPath, isTrivialResult} from "./_shared";
 
@@ -8,6 +9,7 @@ import {JetBrainsToolHeader, JetBrainsResultError, Badge, RawJsonResult, headerF
  * meaningful result text is shown; a trivial "ok" is left to the status dot.
  */
 export function ReplaceTextRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const {toolUse, toolResult, message} = props;
     const input = (toolUse.input ?? {}) as Record<string, unknown>;
     const oldText = typeof input.oldText === 'string' ? input.oldText : '';
@@ -16,8 +18,8 @@ export function ReplaceTextRenderer(props: RendererProps) {
     const out = toolResultText(toolResult);
 
     const flags = [
-        input.replaceAll === true && <Badge key="all">all</Badge>,
-        input.caseSensitive === true && <Badge key="cs">case-sensitive</Badge>,
+        input.replaceAll === true && <Badge key="all">{t('jetbrains.replaceText.all')}</Badge>,
+        input.caseSensitive === true && <Badge key="cs">{t('jetbrains.replaceText.caseSensitive')}</Badge>,
     ].filter(Boolean);
 
     return (
@@ -34,10 +36,10 @@ export function ReplaceTextRenderer(props: RendererProps) {
             ) : (
                 <div className="mt-1.5 flex flex-col gap-1">
                     <Container>
-                        <LabelValue label="old" maxHeight="max-h-[120px]">{oldText}</LabelValue>
+                        <LabelValue label={t('jetbrains.replaceText.old')} maxHeight="max-h-[120px]">{oldText}</LabelValue>
                     </Container>
                     <Container>
-                        <LabelValue label="new" maxHeight="max-h-[120px]">{newText}</LabelValue>
+                        <LabelValue label={t('jetbrains.replaceText.new')} maxHeight="max-h-[120px]">{newText}</LabelValue>
                     </Container>
                     {out && !isTrivialResult(out) && <RawJsonResult out={out} />}
                 </div>

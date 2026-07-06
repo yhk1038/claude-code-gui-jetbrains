@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { OptionButton, OptionItem } from './OptionButton';
 import { useApprovalKeyboard } from './useApprovalKeyboard';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   title: string;
@@ -15,7 +16,8 @@ interface Props {
 }
 
 export function ApprovalPanel(props: Props) {
-  const { title, subtitle, notice, options, onOptionSelect, textareaPlaceholder = 'Tell Claude what to do instead', onTextSubmit, onCancel } = props;
+  const { t } = useTranslation('chat');
+  const { title, subtitle, notice, options, onOptionSelect, textareaPlaceholder = t('approvalPanel.defaultTextareaPlaceholder'), onTextSubmit, onCancel } = props;
 
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [feedbackText, setFeedbackText] = useState('');
@@ -104,7 +106,7 @@ export function ApprovalPanel(props: Props) {
 
         {/* 푸터 */}
         <div className="px-2 pb-2 pt-0.5">
-          <span className="text-[0.8461rem] text-text-secondary">Esc to cancel</span>
+          <span className="text-[0.8461rem] text-text-secondary">{t('approvalPanel.escToCancel')}</span>
         </div>
       </div>
     </div>

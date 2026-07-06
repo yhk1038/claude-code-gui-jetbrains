@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useBridgeContext } from '@/contexts/BridgeContext';
+import { useTranslation } from '@/i18n';
 
 function useOnlineStatus() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -24,6 +25,7 @@ export function ConnectionLostBanner() {
   const { isConnected } = useBridgeContext();
   const isOnline = useOnlineStatus();
   const [dots, setDots] = useState('');
+  const { t } = useTranslation('chat');
 
   const showBanner = !isConnected || !isOnline;
 
@@ -40,8 +42,8 @@ export function ConnectionLostBanner() {
   if (!showBanner) return null;
 
   const message = !isOnline
-    ? `No internet connection. Waiting for network${dots}`
-    : `Backend disconnected. Reconnecting${dots}`;
+    ? t('connectionLost.offline', { dots })
+    : t('connectionLost.reconnecting', { dots });
 
   return (
     <div className="w-full z-20 border-t border-b border-state-warning-border bg-state-warning-bg px-4 py-1.5 flex items-center">

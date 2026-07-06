@@ -1,4 +1,5 @@
 import {ToolUseBlockDto} from "@/dto";
+import {useTranslation} from "@/i18n";
 import {RendererProps, ToolHeader, ToolWrapper} from "../../common";
 import {McpToolBody, McpToolRow} from "../_common";
 
@@ -9,6 +10,7 @@ class ReadMultipleFilesToolUseDto extends ToolUseBlockDto {
 }
 
 export function ReadMultipleFilesRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const {toolUse: rawToolUse, toolResult} = props;
     const toolUse = rawToolUse as unknown as ReadMultipleFilesToolUseDto;
     const name = toolUse.name;
@@ -24,16 +26,16 @@ export function ReadMultipleFilesRenderer(props: RendererProps) {
         <ToolWrapper message={props.message} groupClassName="pb-2.5">
             <ToolHeader name={name}>
                 <div className="text-text-primary/60 text-[0.8461rem] font-mono">
-                    {paths.length} files
+                    {t('filesystem.readMultipleFiles.fileCount', {count: paths.length})}
                 </div>
             </ToolHeader>
 
             <McpToolBody>
-                <McpToolRow label="IN">
+                <McpToolRow label={t('filesystem.common.in')}>
                     {JSON.stringify(input, null, 2)}
                 </McpToolRow>
                 {outputText && (
-                    <McpToolRow label="OUT">
+                    <McpToolRow label={t('filesystem.common.out')}>
                         {outputText}
                     </McpToolRow>
                 )}

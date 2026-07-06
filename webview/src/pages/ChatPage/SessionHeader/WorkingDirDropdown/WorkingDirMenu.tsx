@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Route, routeToPath } from '@/router/routes';
 import { ClassifiedWorkingDirs, WorkingDirEntry } from './classifyWorkingDirs';
 import { TreeGlyph, WorkingDirItem } from './WorkingDirItem';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   classified: ClassifiedWorkingDirs;
@@ -117,6 +118,7 @@ function buildDisplayNodes(
 
 export function WorkingDirMenu(props: Props) {
   const { classified, currentPath, isLoading, onNavigate, onAddWorkingDir } = props;
+  const { t } = useTranslation('chat');
   const nodes = buildDisplayNodes(classified, currentPath);
 
   const handleFooterClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -131,11 +133,11 @@ export function WorkingDirMenu(props: Props) {
     >
       {isLoading && nodes.length === 0 ? (
         <div className="px-2.5 py-3 text-xs text-text-tertiary text-center">
-          Loading…
+          {t('sessionHeader.workingDir.loading')}
         </div>
       ) : nodes.length === 0 ? (
         <div className="px-2.5 py-3 text-xs text-text-tertiary text-center">
-          No working directories found
+          {t('sessionHeader.workingDir.noWorkingDirectoriesFound')}
         </div>
       ) : (
         <div className="max-h-[60vh] overflow-y-auto py-1">
@@ -160,7 +162,7 @@ export function WorkingDirMenu(props: Props) {
           onClick={handleFooterClick}
           className="px-2.5 py-2 hover:text-text-primary hover:bg-[var(--surface-hover)] border-r border-border-default"
         >
-          <span className="block text-center scale-90">Browse all…</span>
+          <span className="block text-center scale-90">{t('sessionHeader.workingDir.browseAll')}</span>
         </Link>
 
         <button
@@ -168,7 +170,7 @@ export function WorkingDirMenu(props: Props) {
           onClick={onAddWorkingDir}
           className="px-2.5 py-2 hover:text-text-primary hover:bg-[var(--surface-hover)]"
         >
-          <span className="block text-center scale-90">+ Add new</span>
+          <span className="block text-center scale-90">{t('sessionHeader.workingDir.addNew')}</span>
         </button>
       </div>
     </div>

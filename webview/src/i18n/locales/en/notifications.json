@@ -1,0 +1,17 @@
+{
+  "sessionComplete": {
+    "body": "Response complete"
+  },
+  "streamError": {
+    "body": "Response failed"
+  },
+  "awaitingPermission": {
+    "body": "Permission requested"
+  },
+  "awaitingPlanApproval": {
+    "body": "Plan ready for review"
+  },
+  "awaitingUserInput": {
+    "body": "Waiting for your answer"
+  }
+}

@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { supportItems } from '../items';
+import { getSupportItems } from '../items';
 import { StaticItem } from '../../../types';
 import type { CommandPaletteServices } from '../../../types';
 import * as Adapters from '@/adapters';
+
+const supportItems = getSupportItems();
 
 const byId = (id: string): StaticItem =>
   supportItems.find(item => item.id === id) as StaticItem;

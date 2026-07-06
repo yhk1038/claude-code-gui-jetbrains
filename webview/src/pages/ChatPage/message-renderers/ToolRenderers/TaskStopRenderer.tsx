@@ -1,5 +1,6 @@
 import {ToolUseBlockDto} from "@/dto";
 import {Container, LabelValue, RendererProps, ToolHeader, ToolWrapper} from "./common";
+import {useTranslation} from "@/i18n";
 
 class TaskStopToolUseDto extends ToolUseBlockDto {
     declare input: {
@@ -8,6 +9,7 @@ class TaskStopToolUseDto extends ToolUseBlockDto {
 }
 
 export function TaskStopRenderer(props: RendererProps) {
+    const { t } = useTranslation('chatTools');
     const toolUse = props.toolUse as unknown as TaskStopToolUseDto;
     const taskId = toolUse.input?.task_id ?? '';
 
@@ -23,12 +25,12 @@ export function TaskStopRenderer(props: RendererProps) {
     return (
         <ToolWrapper message={props.message}>
             <ToolHeader name="TaskStop" inProgress={!props.toolResult} className="mb-2.5">
-                <div className="text-text-primary/60 truncate text-[0.9230rem]">task: "{taskId}"</div>
+                <div className="text-text-primary/60 truncate text-[0.9230rem]">{t('task.common.taskPrefix')} "{taskId}"</div>
             </ToolHeader>
 
             {props.toolResult && resultText && (
                 <Container>
-                    <LabelValue label="OUT" maxHeight="max-h-[105px]">
+                    <LabelValue label={t('task.common.out')} maxHeight="max-h-[105px]">
                         {resultText}
                     </LabelValue>
                 </Container>

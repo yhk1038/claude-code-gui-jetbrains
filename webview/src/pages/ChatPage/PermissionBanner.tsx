@@ -1,9 +1,11 @@
 import { useCallback, useMemo } from 'react';
+import type { TFunction } from 'i18next';
 import { ApprovalPanel } from './ApprovalPanel';
 import { OptionItem } from './ApprovalPanel/OptionButton';
 import { PendingPermission } from '../../hooks/usePendingPermissions';
 import { parseWorkflowName } from '@/utils/workflowName';
 import { humanizeMcpToolName, mcpToolSessionScopeLabel } from './message-renderers/ToolRenderers/Mcp/humanize';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   permission: PendingPermission;
@@ -12,84 +14,82 @@ interface Props {
   onDeny: (reason?: string) => void;
 }
 
-const WORKFLOW_NOTICE =
-  'Dynamic workflows run many subagents in parallel and can use a lot of your usage limit. Stop them any time from the tasks panel.';
-
 function basename(filePath: string): string {
   if (typeof filePath !== 'string') return '';
   return filePath.split('/').pop() || filePath;
 }
 
-function generateTitle(toolName: string, input: Record<string, unknown>): string {
+function generateTitle(t: TFunction, toolName: string, input: Record<string, unknown>): string {
   // MCP tools own their humanized title and must NOT go through the built-in
   // file-path logic below: their inputs are arbitrary per-tool schemas and some
   // reuse `path` for a non-string value (e.g. xdebug_get_value_by_path sends
   // `path: ["greeter","name"]`), which would crash basename() and take down the
   // whole chat. The file logic is only valid for the built-in tools.
-  if (toolName.startsWith('mcp__')) return `Allow ${humanizeMcpToolName(toolName)}?`;
+  if (toolName.startsWith('mcp__')) return t('permissionBanner.allowMcpTool', { tool: humanizeMcpToolName(toolName) });
 
   const filePath = (input.file_path as string) || (input.path as string) || '';
   const file = filePath ? basename(filePath) : '';
 
   switch (toolName) {
     case 'Edit':
-      return file ? `Make this edit to ${file}?` : 'Make this edit?';
+      return file ? t('permissionBanner.editWithFile', { file }) : t('permissionBanner.editNoFile');
     case 'Write':
-      return file ? `Write to ${file}?` : 'Write this file?';
+      return file ? t('permissionBanner.writeWithFile', { file }) : t('permissionBanner.writeNoFile');
     case 'Delete':
-      return file ? `Delete ${file}?` : 'Delete this file?';
+      return file ? t('permissionBanner.deleteWithFile', { file }) : t('permissionBanner.deleteNoFile');
     case 'Bash':
-      return 'Run this command?';
+      return t('permissionBanner.runCommand');
     case 'Read':
-      return file ? `Read ${file}?` : 'Read this file?';
+      return file ? t('permissionBanner.readWithFile', { file }) : t('permissionBanner.readNoFile');
     case 'NotebookEdit':
-      return file ? `Edit notebook ${file}?` : 'Edit this notebook?';
+      return file ? t('permissionBanner.editNotebookWithFile', { file }) : t('permissionBanner.editNotebookNoFile');
     case 'Workflow':
-      return `Allow Claude to run a workflow ${parseWorkflowName(input)}?`;
+      return t('permissionBanner.allowWorkflow', { name: parseWorkflowName(input) });
     default:
-      return `Allow ${toolName}?`;
+      return t('permissionBanner.allowTool', { tool: toolName });
   }
 }
 
-function getSessionLabel(toolName: string): string {
+function getSessionLabel(t: TFunction, toolName: string): string {
   switch (toolName) {
     case 'Edit':
-      return 'Yes, allow all edits this session';
+      return t('permissionBanner.sessionLabel.edit');
     case 'Write':
-      return 'Yes, allow all writes this session';
+      return t('permissionBanner.sessionLabel.write');
     case 'Bash':
-      return 'Yes, allow all commands this session';
+      return t('permissionBanner.sessionLabel.bash');
     case 'Delete':
-      return 'Yes, allow all deletions this session';
+      return t('permissionBanner.sessionLabel.delete');
     case 'Read':
-      return 'Yes, allow all reads this session';
+      return t('permissionBanner.sessionLabel.read');
     case 'Workflow':
-      return 'Yes, allow all workflows this session';
+      return t('permissionBanner.sessionLabel.workflow');
     default:
       if (toolName.startsWith('mcp__')) {
-        return `Yes, allow all ${mcpToolSessionScopeLabel(toolName)} this session`;
+        return t('permissionBanner.sessionLabel.mcp', { scope: mcpToolSessionScopeLabel(toolName) });
       }
-      return `Yes, allow all ${toolName} this session`;
+      return t('permissionBanner.sessionLabel.default', { tool: toolName });
   }
 }
 
 export function PermissionBanner(props: Props) {
   const { permission, onApprove, onApproveForSession, onDeny } = props;
+  const { t } = useTranslation('chat');
 
   const title = useMemo(
-    () => generateTitle(permission.toolName, permission.input),
-    [permission.toolName, permission.input],
+    () => generateTitle(t, permission.toolName, permission.input),
+    [t, permission.toolName, permission.input],
   );
 
   const isWorkflow = permission.toolName === 'Workflow';
   const subtitle = isWorkflow ? (permission.input.description as string | undefined) : undefined;
-  const notice = isWorkflow ? WORKFLOW_NOTICE : undefined;
+  const notice = isWorkflow ? t('permissionBanner.workflowNotice') : undefined;
 
   const options: OptionItem[] = useMemo(() => [
-    { key: '1', label: 'Yes' },
-    { key: '2', label: getSessionLabel(permission.toolName) },
-    { key: '3', label: 'No' },
-  ], [permission.toolName]);
+    { key: '1', label: t('permissionBanner.yes') },
+    { key: '2', label: getSessionLabel(t, permission.toolName) },
+    { key: '3', label: t('permissionBanner.no') },
+  ], [t, permission.toolName]);
 
   const handleOptionSelect = useCallback((index: number) => {
     if (index === 0) onApprove();
@@ -104,7 +104,7 @@ export function PermissionBanner(props: Props) {
       notice={notice}
       options={options}
       onOptionSelect={handleOptionSelect}
-      textareaPlaceholder="Tell Claude what to do instead"
+      textareaPlaceholder={t('permissionBanner.textareaPlaceholder')}
       onTextSubmit={(text) => onDeny(text)}
       onCancel={onDeny}
     />

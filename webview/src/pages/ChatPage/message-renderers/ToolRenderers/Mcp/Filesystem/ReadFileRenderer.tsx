@@ -1,6 +1,7 @@
 import {ToolUseBlockDto} from "@/dto";
 import {getAdapter} from "@/adapters";
 import {cn} from "@/utils/cn";
+import {useTranslation} from "@/i18n";
 import {RendererProps, ToolHeader, ToolWrapper} from "../../common";
 import {McpToolBody, McpToolRow} from "../_common";
 
@@ -13,6 +14,7 @@ class ReadFileToolUseDto extends ToolUseBlockDto {
 }
 
 export function ReadFileRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const {toolUse: rawToolUse, toolResult} = props;
     const toolUse = rawToolUse as unknown as ReadFileToolUseDto;
     const name = toolUse.name;
@@ -40,11 +42,11 @@ export function ReadFileRenderer(props: RendererProps) {
             </ToolHeader>
 
             <McpToolBody>
-                <McpToolRow label="IN">
+                <McpToolRow label={t('filesystem.common.in')}>
                     {JSON.stringify(input, null, 2)}
                 </McpToolRow>
                 {outputText && (
-                    <McpToolRow label="OUT">
+                    <McpToolRow label={t('filesystem.common.out')}>
                         {outputText}
                     </McpToolRow>
                 )}

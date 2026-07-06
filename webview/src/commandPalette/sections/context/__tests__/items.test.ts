@@ -1,7 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { contextItems } from '../items';
+import { getContextItems } from '../items';
 import { StaticItem } from '../../../types';
 import type { CommandPaletteServices } from '../../../types';
+
+const contextItems = getContextItems();
 
 const byId = (id: string): StaticItem =>
   contextItems.find((item) => item.id === id) as StaticItem;

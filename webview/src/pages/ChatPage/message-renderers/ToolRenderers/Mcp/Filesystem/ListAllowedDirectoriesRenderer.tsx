@@ -1,4 +1,5 @@
 import {ToolUseBlockDto} from "@/dto";
+import {useTranslation} from "@/i18n";
 import {RendererProps, ToolHeader, ToolWrapper} from "../../common";
 import {McpToolBody, McpToolRow} from "../_common";
 
@@ -7,6 +8,7 @@ class ListAllowedDirectoriesToolUseDto extends ToolUseBlockDto {
 }
 
 export function ListAllowedDirectoriesRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const {toolUse: rawToolUse, toolResult} = props;
     const toolUse = rawToolUse as unknown as ListAllowedDirectoriesToolUseDto;
     const name = toolUse.name;
@@ -22,11 +24,11 @@ export function ListAllowedDirectoriesRenderer(props: RendererProps) {
             <ToolHeader name={name} />
 
             <McpToolBody>
-                <McpToolRow label="IN">
+                <McpToolRow label={t('filesystem.common.in')}>
                     {JSON.stringify(input, null, 2)}
                 </McpToolRow>
                 {outputText && (
-                    <McpToolRow label="OUT">
+                    <McpToolRow label={t('filesystem.common.out')}>
                         {outputText}
                     </McpToolRow>
                 )}

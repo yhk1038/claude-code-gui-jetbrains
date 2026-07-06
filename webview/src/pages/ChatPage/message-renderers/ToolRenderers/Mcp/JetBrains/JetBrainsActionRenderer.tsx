@@ -1,4 +1,5 @@
 import {ReactNode} from "react";
+import {useTranslation} from "@/i18n";
 import {RendererProps, ToolWrapper, toolResultText, toolResultIsError} from "../../common";
 import {
     JetBrainsToolHeader, JetBrainsResultError, JetBrainsFileLink, FileList, Badge,
@@ -78,6 +79,7 @@ interface PatchViewProps {
 }
 
 function PatchView(props: PatchViewProps) {
+    const {t} = useTranslation('chatTools');
     const {patch, projectPath} = props;
     const files = parseApplyPatch(patch);
     if (!files.length) return null;
@@ -87,7 +89,9 @@ function PatchView(props: PatchViewProps) {
             {files.map((f, fi) => (
                 <div key={fi}>
                     <div className="flex items-center gap-1.5 mb-1 text-[0.8461rem]">
-                        <Badge tone={f.op === 'add' ? 'success' : f.op === 'delete' ? 'error' : 'default'}>{f.op}</Badge>
+                        <Badge tone={f.op === 'add' ? 'success' : f.op === 'delete' ? 'error' : 'default'}>
+                            {t(`jetbrains.action.patchOp.${f.op}`)}
+                        </Badge>
                         <JetBrainsFileLink
                             path={f.file}
                             label={f.moveTo ? `${f.file} → ${f.moveTo}` : undefined}
@@ -126,6 +130,7 @@ function PatchView(props: PatchViewProps) {
  * removed) stays visible.
  */
 export function JetBrainsActionRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const {toolUse, toolResult, message} = props;
     const input = (toolUse.input ?? {}) as Record<string, unknown>;
     const suffix = jetbrainsToolSuffix(toolUse.name);
@@ -155,11 +160,11 @@ export function JetBrainsActionRenderer(props: RendererProps) {
         ? `${input.symbolName ?? ''} → ${input.newName ?? ''}` : undefined;
     // control_session puts its action (RESUME/STOP/STEP_OVER/…) into the title.
     const action = suffix === 'xdebug_control_session' && typeof input.action === 'string'
-        ? `Debugger: ${input.action}` : undefined;
+        ? t('jetbrains.action.debuggerAction', {action: input.action}) : undefined;
 
     const extraParts: ReactNode[] = [];
     if (file && line != null) extraParts.push(<span key="line" className="text-text-primary/50 shrink-0">:{line}</span>);
-    if (!file && line != null) extraParts.push(<span key="line" className="text-text-primary/50 shrink-0">line {line}</span>);
+    if (!file && line != null) extraParts.push(<span key="line" className="text-text-primary/50 shrink-0">{t('jetbrains.action.line', {line})}</span>);
     if (rename) extraParts.push(<span key="rn" className="font-mono text-text-primary/70 truncate">{rename}</span>);
     if (segments) extraParts.push(
         <span key="seg" className="font-mono text-text-primary/70 truncate">

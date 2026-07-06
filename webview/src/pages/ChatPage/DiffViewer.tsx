@@ -1,5 +1,6 @@
 import { parseDiff, Diff, Hunk } from 'react-diff-view';
 import 'react-diff-view/style/index.css';
+import { useTranslation } from '@/i18n';
 
 interface DiffViewerProps {
   filePath: string;
@@ -7,6 +8,7 @@ interface DiffViewerProps {
 }
 
 export function DiffViewer({ diffText }: DiffViewerProps) {
+  const { t } = useTranslation('chat');
   try {
     const files = parseDiff(diffText);
     const file = files[0];
@@ -14,7 +16,7 @@ export function DiffViewer({ diffText }: DiffViewerProps) {
     if (!file) {
       return (
         <div className="text-text-tertiary text-sm py-4">
-          No diff available
+          {t('diffViewer.noDiff')}
         </div>
       );
     }
@@ -38,9 +40,10 @@ export function DiffViewer({ diffText }: DiffViewerProps) {
       </div>
     );
   } catch (error) {
+    const message = error instanceof Error ? error.message : t('diffViewer.unknownError');
     return (
       <div className="text-state-error-fg text-sm py-4">
-        Failed to parse diff: {error instanceof Error ? error.message : 'Unknown error'}
+        {t('diffViewer.parseError', { message })}
       </div>
     );
   }

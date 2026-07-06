@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ToolUse } from '../../types';
 import { ToolUseStatus } from '../../dto/common';
+import { useTranslation } from '@/i18n';
 
 interface ToolCardProps {
   toolUse: ToolUse;
@@ -9,6 +10,7 @@ interface ToolCardProps {
 }
 
 export function ToolCard({ toolUse, onApprove, onDeny }: ToolCardProps) {
+  const { t } = useTranslation('chat');
   const [isExpanded, setIsExpanded] = useState(false);
 
   const statusConfig = {
@@ -17,7 +19,7 @@ export function ToolCard({ toolUse, onApprove, onDeny }: ToolCardProps) {
       border: 'border-state-pending-border',
       text: 'text-state-pending-fg',
       icon: '⏳',
-      label: 'Pending Approval',
+      label: t('toolCard.status.pending'),
       pulse: true,
     },
     approved: {
@@ -25,7 +27,7 @@ export function ToolCard({ toolUse, onApprove, onDeny }: ToolCardProps) {
       border: 'border-state-info-border',
       text: 'text-text-link',
       icon: '✓',
-      label: 'Approved',
+      label: t('toolCard.status.approved'),
       pulse: false,
     },
     denied: {
@@ -33,7 +35,7 @@ export function ToolCard({ toolUse, onApprove, onDeny }: ToolCardProps) {
       border: 'border-state-error-border',
       text: 'text-state-error-fg',
       icon: '✗',
-      label: 'Denied',
+      label: t('toolCard.status.denied'),
       pulse: false,
     },
     executing: {
@@ -41,7 +43,7 @@ export function ToolCard({ toolUse, onApprove, onDeny }: ToolCardProps) {
       border: 'border-state-info-border',
       text: 'text-text-link',
       icon: '⚡',
-      label: 'Executing',
+      label: t('toolCard.status.executing'),
       pulse: true,
     },
     completed: {
@@ -49,7 +51,7 @@ export function ToolCard({ toolUse, onApprove, onDeny }: ToolCardProps) {
       border: 'border-state-success-border',
       text: 'text-state-success-fg',
       icon: '✓',
-      label: 'Completed',
+      label: t('toolCard.status.completed'),
       pulse: false,
     },
     failed: {
@@ -57,7 +59,7 @@ export function ToolCard({ toolUse, onApprove, onDeny }: ToolCardProps) {
       border: 'border-state-error-border',
       text: 'text-state-error-fg',
       icon: '!',
-      label: 'Failed',
+      label: t('toolCard.status.failed'),
       pulse: false,
     },
   };
@@ -85,7 +87,7 @@ export function ToolCard({ toolUse, onApprove, onDeny }: ToolCardProps) {
             </span>
           </div>
           <div className="text-xs text-text-tertiary font-mono">
-            Tool ID: {toolUse.id.slice(0, 8)}...
+            {t('toolCard.toolId', { id: toolUse.id.slice(0, 8) })}
           </div>
         </div>
 
@@ -111,7 +113,7 @@ export function ToolCard({ toolUse, onApprove, onDeny }: ToolCardProps) {
             {/* Input Details */}
             <div>
               <div className="text-xs font-mono text-text-tertiary uppercase tracking-wider mb-2">
-                Input Parameters
+                {t('toolCard.inputParameters')}
               </div>
               <div className="bg-surface-base/50 border border-border-divider rounded-lg p-3 font-mono text-xs text-text-secondary overflow-x-auto">
                 <pre className="whitespace-pre-wrap break-all">
@@ -124,7 +126,7 @@ export function ToolCard({ toolUse, onApprove, onDeny }: ToolCardProps) {
             {toolUse.result && (
               <div>
                 <div className="text-xs font-mono text-text-tertiary uppercase tracking-wider mb-2">
-                  Result
+                  {t('toolCard.result')}
                 </div>
                 <div className="bg-surface-base/50 border border-state-success-border rounded-lg p-3 font-mono text-xs text-state-success-fg/80 overflow-x-auto">
                   <pre className="whitespace-pre-wrap break-all">
@@ -138,7 +140,7 @@ export function ToolCard({ toolUse, onApprove, onDeny }: ToolCardProps) {
             {toolUse.error && (
               <div>
                 <div className="text-xs font-mono text-state-error-fg uppercase tracking-wider mb-2">
-                  Error
+                  {t('toolCard.error')}
                 </div>
                 <div className="bg-surface-base/50 border border-state-error-border rounded-lg p-3 font-mono text-xs text-state-error-fg/80 overflow-x-auto">
                   <pre className="whitespace-pre-wrap break-all">
@@ -156,13 +158,13 @@ export function ToolCard({ toolUse, onApprove, onDeny }: ToolCardProps) {
                 onClick={() => onApprove?.(toolUse.id)}
                 className="flex-1 px-4 py-2.5 bg-accent-primary-hover hover:bg-accent-primary text-text-primary font-medium rounded-lg transition-all duration-150 active:scale-95 shadow-md shadow-blue-900/30 text-sm tracking-tight"
               >
-                Approve
+                {t('toolCard.approve')}
               </button>
               <button
                 onClick={() => onDeny?.(toolUse.id)}
                 className="flex-1 px-4 py-2.5 bg-surface-overlay hover:bg-surface-tooltip text-text-secondary font-medium rounded-lg transition-all duration-150 active:scale-95 text-sm tracking-tight"
               >
-                Deny
+                {t('toolCard.deny')}
               </button>
             </div>
           )}

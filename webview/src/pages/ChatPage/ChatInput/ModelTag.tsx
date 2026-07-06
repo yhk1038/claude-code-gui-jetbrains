@@ -11,6 +11,7 @@ import { useVersionInfo } from '@/hooks/useVersionInfo';
 import { LoadedMessageType } from '@/types';
 import type { ModelInfo } from '@/types/slashCommand';
 import { MessageType } from '@/shared';
+import { useTranslation } from '@/i18n';
 
 /** Fired by the ⌘/Ctrl+Shift+. shortcut to rotate to the next model. */
 export const ROTATE_MODEL_EVENT = 'rotate-model';
@@ -37,6 +38,7 @@ function fallbackModelLabel(current: string): string {
  * (models not loaded yet), the tag renders nothing.
  */
 export function ModelTag() {
+  const { t } = useTranslation('chat');
   const { setSessionModel, appendMessage } = useChatStreamContext();
   const { controlResponse } = useCliConfig();
   const { currentSessionId } = useSessionContext();
@@ -68,7 +70,7 @@ export function ModelTag() {
         type: LoadedMessageType.Notification,
         uuid: crypto.randomUUID(),
         timestamp: new Date().toISOString(),
-        summary: `Set model to ${resolveModelLabel(next)}`,
+        summary: t('chatInput.modelTag.setModelNotification', { model: resolveModelLabel(next) }),
       });
       if (currentSessionId) void send(MessageType.SET_MODEL, { model: next.value });
     };
@@ -94,7 +96,7 @@ export function ModelTag() {
   const rotateHint = isMac ? '⌘⇧.' : 'Ctrl+Shift+.';
 
   return (
-    <Tag title={`Switch model (${rotateHint})`} onClick={handleClick}>
+    <Tag title={t('chatInput.modelTag.switchModel', { hint: rotateHint })} onClick={handleClick}>
       <span className="hidden xs:inline">{label}</span>
       <span className="inline xs:hidden">{label.split(' ')[0]}</span>
     </Tag>

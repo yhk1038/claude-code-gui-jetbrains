@@ -3,6 +3,7 @@ import { GroupedSessions } from '@/components/SessionList/utils';
 import { SearchInput } from '@/components/SessionList/SearchInput';
 import { SessionList } from '@/components/SessionList';
 import { isMobile } from '@/config/environment';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   searchQuery: string;
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export function DropdownMenu(props: Props) {
+  const { t } = useTranslation('chat');
   const {
     searchQuery,
     onSearchChange,
@@ -46,7 +48,9 @@ export function DropdownMenu(props: Props) {
         />
       ) : (
         <div className="px-2.5 py-3 text-xs text-text-tertiary text-center">
-          {searchQuery.trim() ? 'No matching sessions' : 'No sessions yet'}
+          {searchQuery.trim()
+            ? t('sessionHeader.sessionDropdown.noMatchingSessions')
+            : t('sessionHeader.sessionDropdown.noSessionsYet')}
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 import {ReactNode} from "react";
 import {cn} from "@/utils/cn";
+import {useTranslation} from "@/i18n";
 import {formatGmailDate} from "./helpers";
 
 /**
@@ -14,6 +15,7 @@ export const GmailMailRow = (props: {
     snippet?: string;
     unread?: boolean;
 }) => {
+    const {t} = useTranslation('chatTools');
     const {sender, subject, date, snippet, unread = false} = props;
 
     return (
@@ -27,7 +29,7 @@ export const GmailMailRow = (props: {
                     unread ? "font-semibold" : ""
                 )}
             >
-                {sender || '(unknown sender)'}
+                {sender || t('gmail.common.unknownSender')}
             </span>
             <span className="flex-1 min-w-0 flex items-baseline overflow-hidden text-[0.8461rem]">
                 {subject && (

@@ -1,5 +1,6 @@
 import { ToolUseBlockDto } from "@/dto";
 import { Container, LabelValue, RendererProps, ToolHeader, ToolWrapper } from "./common";
+import { useTranslation } from "@/i18n";
 
 class TaskListToolUseDto extends ToolUseBlockDto {
     caller: { type: 'direct' };
@@ -13,6 +14,7 @@ interface TaskListToolResultDto {
 }
 
 export function TaskListRenderer(props: RendererProps) {
+    const { t } = useTranslation('chatTools');
     const toolUse = props.toolUse as unknown as TaskListToolUseDto;
     const toolResult = props.toolResult as TaskListToolResultDto | undefined;
 
@@ -24,7 +26,7 @@ export function TaskListRenderer(props: RendererProps) {
             <ToolHeader name={name} inProgress={!toolResult} className="mb-2.5" />
 
             <Container>
-                <LabelValue label="OUT" maxHeight="max-h-[60px]">
+                <LabelValue label={t('task.common.out')} maxHeight="max-h-[60px]">
                     {output}
                 </LabelValue>
             </Container>

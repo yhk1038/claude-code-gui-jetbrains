@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { StaticItem } from '../../types';
+import { i18n } from '@/i18n';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 import { useChatStreamContext } from '@/contexts/ChatStreamContext';
 import { useCliConfig } from '@/contexts/CliConfigContext';
@@ -9,8 +10,13 @@ import { ToggleSwitch } from '@/components/ToggleSwitch';
 
 export const FAST_MODE_TOGGLE_EVENT = 'fast-mode-toggle';
 
-/** Reason shown as a hover tooltip when the row is disabled (model doesn't support fast mode). */
-export const FAST_MODE_UNSUPPORTED_REASON = 'Fast mode is only available on Opus models';
+/**
+ * Reason shown as a hover tooltip when the row is disabled (model doesn't
+ * support fast mode). A function so the lookup runs on the current locale at
+ * call time, not at module load.
+ */
+export const getFastModeUnsupportedReason = (): string =>
+  i18n.t('commandPalette:model.fastModeUnsupportedReason');
 
 function resolveActiveModel(
   models: ModelInfo[],
@@ -25,14 +31,15 @@ function resolveActiveModel(
 // mutated here. Mutating module-level state from a render function is a
 // React anti-pattern that caused stale/flickering disabled state (see
 // applyModelCapabilityFlags for the source of truth).
-export const toggleFastModeItem = new StaticItem('toggle-fast-mode', 'Toggle fast mode', {
-  disabled: false,
-  keepOpen: true,
-  valueComponent: () => <FastModeToggle />,
-  action: async () => {
-    window.dispatchEvent(new CustomEvent(FAST_MODE_TOGGLE_EVENT));
-  },
-});
+export const createToggleFastModeItem = (): StaticItem =>
+  new StaticItem('toggle-fast-mode', i18n.t('commandPalette:model.toggleFastMode'), {
+    disabled: false,
+    keepOpen: true,
+    valueComponent: () => <FastModeToggle />,
+    action: async () => {
+      window.dispatchEvent(new CustomEvent(FAST_MODE_TOGGLE_EVENT));
+    },
+  });
 
 const FastModeToggle = () => {
   const { settings, updateSetting } = useClaudeSettings();

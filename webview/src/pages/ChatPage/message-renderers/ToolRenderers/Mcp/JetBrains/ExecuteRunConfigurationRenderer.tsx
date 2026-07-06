@@ -1,4 +1,5 @@
 import {ToolUseBlockDto} from "@/dto";
+import {useTranslation} from "@/i18n";
 import {RendererProps, ToolWrapper, toolResultText, toolResultIsError, Container, LabelValue} from "../../common";
 import {JetBrainsToolHeader, JetBrainsResultError, Badge, safeParseJson, inputProjectPath} from "./_shared";
 
@@ -13,6 +14,7 @@ interface ExecResult {
 
 /** `execute_run_configuration`: launched target + exit-code badge + output. */
 export function ExecuteRunConfigurationRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const toolUse = props.toolUse as unknown as ExecuteRunConfigurationToolUseDto;
     const input = toolUse.input ?? {};
     const out = toolResultText(props.toolResult);
@@ -46,7 +48,7 @@ export function ExecuteRunConfigurationRenderer(props: RendererProps) {
                 <>
                     {typeof exitCode === 'number' && (
                         <div className="mt-1 mb-1">
-                            <Badge tone={exitCode === 0 ? 'success' : 'error'}>exit {exitCode}</Badge>
+                            <Badge tone={exitCode === 0 ? 'success' : 'error'}>{t('jetbrains.common.exitCode', {code: exitCode})}</Badge>
                         </div>
                     )}
                     {output && <Container><LabelValue maxHeight="max-h-[160px]">{output}</LabelValue></Container>}

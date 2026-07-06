@@ -6,6 +6,7 @@ import {ToolHeader, ToolWrapper, ToolStatusContext, ToolUseContext, toolStatus} 
 import {GenericMcpRenderer} from "./ToolRenderers/Mcp/Generic";
 import {isMcpToolName} from "./ToolRenderers/Mcp/Generic/cursorMcp";
 import {StreamSafeErrorBoundary} from "@/components/StreamSafeErrorBoundary";
+import { useTranslation } from '@/i18n';
 
 interface ToolRendererProps {
     toolUse: ToolUseBlockDto;
@@ -13,6 +14,7 @@ interface ToolRendererProps {
 }
 
 export const ToolRenderer: React.FC<ToolRendererProps> = ({toolUse, message}) => {
+    const { t } = useTranslation('chatTools');
     const toolResult = toolUse.tool_result as LoadedMessageDto | undefined;
     const renderKey = JSON.stringify(toolUse.input ?? {});
 
@@ -37,7 +39,7 @@ export const ToolRenderer: React.FC<ToolRendererProps> = ({toolUse, message}) =>
         // Truly non-MCP unknown — bare header; its console.log is the fast-report hook.
         body = (
             <ToolWrapper message={message} onClick={() => console.log(toolUse)}>
-                <ToolHeader name={toolUse.name} description={'unknown'} />
+                <ToolHeader name={toolUse.name} description={t('message.unknownTool')} />
             </ToolWrapper>
         );
     }

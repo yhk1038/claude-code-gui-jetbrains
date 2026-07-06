@@ -1,16 +1,11 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { OptionItem } from '../ApprovalPanel/OptionButton';
 import { ApprovalPanel } from '../ApprovalPanel';
 import { useChatStreamContext } from '../../../contexts/ChatStreamContext';
 import { useSessionContext } from '../../../contexts/SessionContext';
 import { InputModeValues } from '../../../types/chatInput';
 import type { PendingPlanApproval } from '../../../hooks/usePendingPlanApproval';
-
-const options: OptionItem[] = [
-  { key: '1', label: 'Yes, and auto-accept' },
-  { key: '2', label: 'Yes, and manually approve edits' },
-  { key: '3', label: 'No, keep planning' },
-];
+import { useTranslation } from '@/i18n';
 
 interface Props {
   pending: PendingPlanApproval;
@@ -22,6 +17,13 @@ export function AcceptPlanPanel(props: Props) {
   const { pending, onApprove, onDeny } = props;
   const { stop } = useChatStreamContext();
   const { setInputMode } = useSessionContext();
+  const { t } = useTranslation('chat');
+
+  const options: OptionItem[] = useMemo(() => [
+    { key: '1', label: t('acceptPlan.options.autoAccept') },
+    { key: '2', label: t('acceptPlan.options.manualApprove') },
+    { key: '3', label: t('acceptPlan.options.keepPlanning') },
+  ], [t]);
 
   const handleOptionSelect = useCallback((index: number) => {
     if (index === 0) {
@@ -47,11 +49,11 @@ export function AcceptPlanPanel(props: Props) {
 
   return (
     <ApprovalPanel
-      title="Accept this plan?"
-      subtitle="Select text in the preview to add comments"
+      title={t('acceptPlan.title')}
+      subtitle={t('acceptPlan.subtitle')}
       options={options}
       onOptionSelect={handleOptionSelect}
-      textareaPlaceholder="Tell Claude what to do instead"
+      textareaPlaceholder={t('acceptPlan.textareaPlaceholder')}
       onTextSubmit={handleTextSubmit}
       onCancel={handleCancel}
     />

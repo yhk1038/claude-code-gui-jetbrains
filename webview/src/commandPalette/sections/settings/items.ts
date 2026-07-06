@@ -1,4 +1,5 @@
 import { getAdapter } from '@/adapters';
+import { i18n } from '@/i18n';
 import { StaticItem } from '../../types';
 import { Route, routeToPath, withWorkingDir } from '@/router/routes';
 
@@ -8,7 +9,13 @@ const openSwitchAccount = async () => {
   window.dispatchEvent(new PopStateEvent('popstate'));
 };
 
-export const settingsItems = [
+/**
+ * Built on demand (not a module-eval constant) so the labels resolve against
+ * the current locale after i18n init. Called once when the registry registers
+ * the Settings section. Note: the "/login" alias label is a slash-command
+ * token, not a translatable phrase, so it stays a literal.
+ */
+export const getSettingsItems = (): StaticItem[] => [
   // Search-only alias: surfaces when the user types `/login`. Same destination
   // as "Switch account" — the account switch page. Listed before
   // "Switch account" so it appears first under the /login search.
@@ -17,13 +24,13 @@ export const settingsItems = [
     searchOnly: true,
     action: openSwitchAccount,
   }),
-  new StaticItem('switch-account', 'Switch account', {
+  new StaticItem('switch-account', i18n.t('commandPalette:settings.switchAccount'), {
     disabled: false,
     // Also surfaces under the `/login` search, alongside the /login alias.
     keywords: ['login'],
     action: openSwitchAccount,
   }),
-  new StaticItem('general-config', 'General config...', {
+  new StaticItem('general-config', i18n.t('commandPalette:settings.generalConfig'), {
     disabled: false,
     action: async () => {
       await getAdapter().openSettings();

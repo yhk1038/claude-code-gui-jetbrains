@@ -1,5 +1,6 @@
 import { ToolUseBlockDto } from "@/dto";
 import { Container, LabelValue, RendererProps, ToolHeader, ToolWrapper } from "./common";
+import { useTranslation } from "@/i18n";
 
 class TaskUpdateToolUseDto extends ToolUseBlockDto {
     caller: { type: 'direct' };
@@ -17,6 +18,7 @@ class TaskUpdateToolUseDto extends ToolUseBlockDto {
 }
 
 export function TaskUpdateRenderer(props: RendererProps) {
+    const { t } = useTranslation('chatTools');
     const toolUse = props.toolUse as unknown as TaskUpdateToolUseDto;
 
     const name = toolUse.name;
@@ -35,37 +37,37 @@ export function TaskUpdateRenderer(props: RendererProps) {
             {hasChanges && (
                 <Container>
                     {status && (
-                        <LabelValue label="STATUS" className="border-b border-border-subtle" maxHeight="max-h-[60px]">
+                        <LabelValue label={t('task.update.status')} className="border-b border-border-subtle" maxHeight="max-h-[60px]">
                             {status}
                         </LabelValue>
                     )}
                     {subject && (
-                        <LabelValue label="SUBJECT" className="border-b border-border-subtle" maxHeight="max-h-[60px]">
+                        <LabelValue label={t('task.update.subject')} className="border-b border-border-subtle" maxHeight="max-h-[60px]">
                             {subject}
                         </LabelValue>
                     )}
                     {description && (
-                        <LabelValue label="DESC" className="border-b border-border-subtle" maxHeight="max-h-[60px]">
+                        <LabelValue label={t('task.update.desc')} className="border-b border-border-subtle" maxHeight="max-h-[60px]">
                             {description}
                         </LabelValue>
                     )}
                     {activeForm && (
-                        <LabelValue label="FORM" className="border-b border-border-subtle" maxHeight="max-h-[60px]">
+                        <LabelValue label={t('task.common.form')} className="border-b border-border-subtle" maxHeight="max-h-[60px]">
                             {activeForm}
                         </LabelValue>
                     )}
                     {owner && (
-                        <LabelValue label="OWNER" className="border-b border-border-subtle" maxHeight="max-h-[60px]">
+                        <LabelValue label={t('task.update.owner')} className="border-b border-border-subtle" maxHeight="max-h-[60px]">
                             {owner}
                         </LabelValue>
                     )}
                     {addBlocks && addBlocks.length > 0 && (
-                        <LabelValue label="BLOCKS" className="border-b border-border-subtle" maxHeight="max-h-[60px]">
+                        <LabelValue label={t('task.update.blocks')} className="border-b border-border-subtle" maxHeight="max-h-[60px]">
                             {addBlocks.join(', ')}
                         </LabelValue>
                     )}
                     {addBlockedBy && addBlockedBy.length > 0 && (
-                        <LabelValue label="BLOCKED-BY" maxHeight="max-h-[60px]">
+                        <LabelValue label={t('task.update.blockedBy')} maxHeight="max-h-[60px]">
                             {addBlockedBy.join(', ')}
                         </LabelValue>
                     )}

@@ -1,4 +1,5 @@
 import { StaticItem } from '../../types';
+import { i18n } from '@/i18n';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 import { ToggleSwitch } from '@/components/ToggleSwitch';
 
@@ -17,11 +18,12 @@ const ThinkingToggle = () => {
   );
 };
 
-export const thinkingItem = new StaticItem('thinking', 'Thinking', {
-  disabled: false,
-  keepOpen: true,
-  valueComponent: () => <ThinkingToggle />,
-  action: async () => {
-    window.dispatchEvent(new CustomEvent(THINKING_TOGGLE_EVENT));
-  },
-});
+export const createThinkingItem = (): StaticItem =>
+  new StaticItem('thinking', i18n.t('commandPalette:model.thinking'), {
+    disabled: false,
+    keepOpen: true,
+    valueComponent: () => <ThinkingToggle />,
+    action: async () => {
+      window.dispatchEvent(new CustomEvent(THINKING_TOGGLE_EVENT));
+    },
+  });

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { MentionResult, MentionItemType } from './hooks/useMention';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   results: MentionResult[];
@@ -11,6 +12,7 @@ interface Props {
 
 export function MentionDropdown(props: Props) {
   const { results, selectedIndex, isLoading, onSelect, onClose } = props;
+  const { t } = useTranslation('chat');
 
   const listRef = useRef<HTMLUListElement>(null);
 
@@ -27,9 +29,9 @@ export function MentionDropdown(props: Props) {
   return (
     <div className="w-full bg-surface-overlay border border-border-default rounded-md shadow-lg overflow-hidden">
       {isLoading && results.length === 0 ? (
-        <div className="px-3 py-2 text-xs text-text-tertiary">Searching...</div>
+        <div className="px-3 py-2 text-xs text-text-tertiary">{t('chatInput.mentionDropdown.searching')}</div>
       ) : results.length === 0 ? (
-        <div className="px-3 py-2 text-xs text-text-tertiary">No matching files</div>
+        <div className="px-3 py-2 text-xs text-text-tertiary">{t('chatInput.mentionDropdown.noMatchingFiles')}</div>
       ) : (
         <ul
           ref={listRef}
@@ -70,14 +72,14 @@ export function MentionDropdown(props: Props) {
       )}
       {isLoading && results.length > 0 && (
         <div className="px-3 py-1 text-xs text-text-disabled border-t border-border-default/50">
-          Searching...
+          {t('chatInput.mentionDropdown.searching')}
         </div>
       )}
       <button
         type="button"
         className="sr-only"
         onClick={onClose}
-        aria-label="Close mention dropdown"
+        aria-label={t('chatInput.mentionDropdown.closeAriaLabel')}
       />
     </div>
   );

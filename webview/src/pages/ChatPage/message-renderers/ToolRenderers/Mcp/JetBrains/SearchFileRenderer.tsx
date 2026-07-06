@@ -1,4 +1,5 @@
 import {ToolUseBlockDto} from "@/dto";
+import {useTranslation} from "@/i18n";
 import {RendererProps, ToolWrapper, toolResultText, toolResultIsError, ResultCaption} from "../../common";
 import {CollapsibleBox} from "../_common";
 import {JetBrainsToolHeader, JetBrainsResultError, PathRow, RawJsonResult, ScopeText, safeParseJson, asObjects, asStrings, inputProjectPath, getToolSpec} from "./_shared";
@@ -20,6 +21,7 @@ interface SearchFileResult {
  * differ only in the result shape (`items:[{filePath}]` vs `files:[path]`).
  */
 export function SearchFileRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const toolUse = props.toolUse as unknown as SearchFileToolUseDto;
     const input = (toolUse.input ?? {}) as Record<string, unknown>;
     const spec = getToolSpec(toolUse.name);
@@ -42,7 +44,7 @@ export function SearchFileRenderer(props: RendererProps) {
                 input={input}
                 extra={
                     <span className="flex items-center gap-1.5 min-w-0 text-text-primary/50">
-                        {q && <><span className="shrink-0">{word}</span><span className="font-mono text-text-primary/70 truncate">{q}</span></>}
+                        {q && <><span className="shrink-0">{t(`jetbrains.search.word.${word}`, {defaultValue: word})}</span><span className="font-mono text-text-primary/70 truncate">{q}</span></>}
                         <ScopeText paths={toolUse.input?.paths} projectPath={projectPath} />
                     </span>
                 }
@@ -52,7 +54,7 @@ export function SearchFileRenderer(props: RendererProps) {
             ) : parsed ? (
                 <div className="mt-1.5">
                     <ResultCaption>
-                        {paths.length}{hasMore ? '+' : ''} {paths.length === 1 ? 'match' : 'matches'}
+                        {paths.length}{hasMore ? '+' : ''} {t('jetbrains.search.matchCount', {count: paths.length})}
                     </ResultCaption>
                     <CollapsibleBox collapsedMaxHeight={200} className="flex flex-col gap-0.5">
                         {paths.map((p, i) => <PathRow key={i} path={p} projectPath={projectPath} />)}

@@ -15,6 +15,7 @@ import { MessageBox } from './components/MessageBox';
 import { useCliConfig } from '@/contexts/CliConfigContext';
 import { modelChangeLabel } from '@/types/models';
 import type { ModelInfo } from '@/types/slashCommand';
+import { useTranslation } from '@/i18n';
 
 interface UserMessageRendererProps {
   message: LoadedMessageDto;
@@ -26,6 +27,7 @@ const INTERRUPTED_FOR_TOOL_USE_TEXT = '[Request interrupted by user for tool use
 export const UserMessageRenderer: React.FC<UserMessageRendererProps> = ({ message }) => {
   const { copied, copy } = useCopyToClipboard();
   const { controlResponse } = useCliConfig();
+  const { t } = useTranslation('chatTools');
   const parsedContent = parseUserContent(getTextContent(message));
 
   const imageBlocks = useMemo(() => {
@@ -50,7 +52,7 @@ export const UserMessageRenderer: React.FC<UserMessageRendererProps> = ({ messag
 
   // Route tool use interrupted messages with custom label
   if (parsedContent.text.trim() === INTERRUPTED_FOR_TOOL_USE_TEXT) {
-    return <InterruptedMessageRenderer message={message} label="Tool interrupted" />;
+    return <InterruptedMessageRenderer message={message} label={t('interrupted.toolInterrupted')} />;
   }
 
   // Skip rendering for local-command-caveat without text or command name

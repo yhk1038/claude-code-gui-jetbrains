@@ -1,4 +1,5 @@
 import {ReactNode} from "react";
+import {useTranslation} from "@/i18n";
 import {Container, LabelValue} from "../../../../common";
 import {prettyResult} from "../helpers";
 
@@ -14,7 +15,8 @@ interface InOutBlockProps {
  * (terminal command, debugger expression). IN holds the request, OUT the result.
  */
 export const InOutBlock = (props: InOutBlockProps) => {
-    const {inContent, outContent, inLabel = 'IN', outLabel = 'OUT'} = props;
+    const {t} = useTranslation('chatTools');
+    const {inContent, outContent, inLabel = t('jetbrains.common.in'), outLabel = t('jetbrains.common.out')} = props;
     return (
         <Container className="mt-1.5">
             <LabelValue label={inLabel} className="border-b border-border-subtle" maxHeight="max-h-[80px]">
@@ -39,22 +41,28 @@ interface OutBlockProps {
  *  - `OutBlock`: code/mono results — the framed OUT half of an InOutBlock.
  *  - `OutLabel`: inline results (status badges, short text) — a dim "OUT" caption.
  */
-export const OutBlock = (props: OutBlockProps) => (
-    <Container className="mt-1.5">
-        <LabelValue label="OUT" maxHeight={props.maxHeight ?? 'max-h-[140px]'}>{props.children}</LabelValue>
-    </Container>
-);
+export const OutBlock = (props: OutBlockProps) => {
+    const {t} = useTranslation('chatTools');
+    return (
+        <Container className="mt-1.5">
+            <LabelValue label={t('jetbrains.common.out')} maxHeight={props.maxHeight ?? 'max-h-[140px]'}>{props.children}</LabelValue>
+        </Container>
+    );
+};
 
 interface OutLabelProps {
     children?: ReactNode;
 }
 
-export const OutLabel = (props: OutLabelProps) => (
-    <div className="mt-1.5">
-        <div className="text-tool-label-fg text-[0.7692rem] uppercase tracking-wide">OUT</div>
-        {props.children}
-    </div>
-);
+export const OutLabel = (props: OutLabelProps) => {
+    const {t} = useTranslation('chatTools');
+    return (
+        <div className="mt-1.5">
+            <div className="text-tool-label-fg text-[0.7692rem] uppercase tracking-wide">{t('jetbrains.common.out')}</div>
+            {props.children}
+        </div>
+    );
+};
 
 interface RawJsonResultProps {
     out: string;

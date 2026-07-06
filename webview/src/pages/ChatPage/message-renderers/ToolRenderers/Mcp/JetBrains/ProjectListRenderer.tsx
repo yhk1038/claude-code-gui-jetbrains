@@ -1,3 +1,4 @@
+import {useTranslation} from "@/i18n";
 import {RendererProps, ToolWrapper, toolResultText, toolResultIsError, ResultCaption} from "../../common";
 import {CollapsibleBox} from "../_common";
 import {JetBrainsToolHeader, JetBrainsResultError, Badge, RawJsonResult, safeParseJson} from "./_shared";
@@ -22,6 +23,7 @@ function itemType(it: any): string | undefined {
 
 /** `get_project_modules` / `get_project_dependencies`: name (+ type badge) rows. */
 export function ProjectListRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const out = toolResultText(props.toolResult);
     const isError = toolResultIsError(props.toolResult);
     const list = pickList(safeParseJson(out));
@@ -38,7 +40,7 @@ export function ProjectListRenderer(props: RendererProps) {
             ) : !list ? (
                 <RawJsonResult out={out} />
             ) : list.length === 0 ? (
-                <ResultCaption className="mt-1">None</ResultCaption>
+                <ResultCaption className="mt-1">{t('jetbrains.projectList.none')}</ResultCaption>
             ) : (
                 <div className="mt-1.5">
                     <CollapsibleBox collapsedMaxHeight={200} className="flex flex-col gap-1">

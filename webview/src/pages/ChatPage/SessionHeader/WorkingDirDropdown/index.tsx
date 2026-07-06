@@ -9,8 +9,10 @@ import { classifyWorkingDirs, WorkingDirEntry } from './classifyWorkingDirs';
 import { WorkingDirToggle } from './WorkingDirToggle';
 import { WorkingDirMenu } from './WorkingDirMenu';
 import { MessageType } from '@/shared';
+import { useTranslation } from '@/i18n';
 
 export function WorkingDirDropdown() {
+  const { t } = useTranslation('chat');
   const { isConnected, send, subscribe } = useBridgeContext();
   const { workingDirectory, ideRoot } = useWorkingDir();
   const { sessionState } = useSessionContext();
@@ -95,8 +97,8 @@ export function WorkingDirDropdown() {
         showOffRootIndicator={showOffRootIndicator}
         title={
           isSessionActive
-            ? 'Cannot switch working directory while a session is active'
-            : 'Switch working directory'
+            ? t('sessionHeader.workingDir.switchDisabledTitle')
+            : t('sessionHeader.workingDir.switchTitle')
         }
         onClick={() => setIsOpen((prev) => !prev)}
       />

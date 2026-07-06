@@ -6,6 +6,7 @@ import './streaming.css';
 import {ToolWrapper} from "@/pages/ChatPage/message-renderers/ToolRenderers/common";
 import {useChatStreamContext} from '../../contexts/ChatStreamContext';
 import {formatThinkingTokens} from '../../utils/formatThinkingTokens';
+import {useTranslation} from '@/i18n';
 
 interface ThinkingStreamingMessageProps {
     thinking: string;
@@ -51,16 +52,17 @@ export const ThinkingStreamingMessage: React.FC<ThinkingStreamingMessageProps> =
     className = '',
     message,
 }) => {
+    const { t } = useTranslation('chat');
     const [shouldAnimate, setShouldAnimate] = useState(isStreaming);
     const { isThinkingExpanded, toggleThinkingExpanded } = useChatStreamContext();
 
     // The block is "still thinking" until its duration is stamped at content_block_stop.
     const isThinking = durationMillis === undefined && isStreaming;
     const label = durationMillis !== undefined
-        ? `Thought for ${Math.round(durationMillis / 1000)}s`
+        ? t('thinking.thoughtFor', { seconds: Math.round(durationMillis / 1000) })
         : isThinking
-            ? 'Thinking...'
-            : 'Thinking';
+            ? t('thinking.thinkingEllipsis')
+            : t('thinking.thinking');
     // Live token count is only meaningful while actively thinking.
     const tokenText = isThinking ? formatThinkingTokens(estimatedTokens) : null;
 

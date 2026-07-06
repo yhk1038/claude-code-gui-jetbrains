@@ -1,6 +1,6 @@
 import { PanelSection, PanelSectionId } from '@/types/commandPalette';
-import { EFFORT_UNSUPPORTED_REASON } from './sections/model/EffortItem';
-import { FAST_MODE_UNSUPPORTED_REASON } from './sections/model/ToggleFastModeItem';
+import { getEffortUnsupportedReason } from './sections/model/EffortItem';
+import { getFastModeUnsupportedReason } from './sections/model/ToggleFastModeItem';
 
 export interface ModelCapabilityFlags {
   supportsEffort: boolean;
@@ -27,14 +27,14 @@ export function applyModelCapabilityFlags(
         return {
           ...it,
           disabled: !flags.supportsEffort,
-          disabledReason: flags.supportsEffort ? undefined : EFFORT_UNSUPPORTED_REASON,
+          disabledReason: flags.supportsEffort ? undefined : getEffortUnsupportedReason(),
         };
       }
       if (it.id === 'toggle-fast-mode') {
         return {
           ...it,
           disabled: !flags.supportsFastMode,
-          disabledReason: flags.supportsFastMode ? undefined : FAST_MODE_UNSUPPORTED_REASON,
+          disabledReason: flags.supportsFastMode ? undefined : getFastModeUnsupportedReason(),
         };
       }
       return it;

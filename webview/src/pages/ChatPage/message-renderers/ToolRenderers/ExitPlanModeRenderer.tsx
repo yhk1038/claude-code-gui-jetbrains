@@ -1,6 +1,7 @@
 import {Streamdown} from 'streamdown';
 import {math} from '@/utils/mathPlugin';
 import {ToolUseBlockDto} from "@/dto";
+import {useTranslation} from "@/i18n";
 import {Container, LabelValue, RendererProps, ToolHeader, ToolWrapper} from "./common";
 
 class ExitPlanModeToolUseDto extends ToolUseBlockDto {
@@ -10,6 +11,7 @@ class ExitPlanModeToolUseDto extends ToolUseBlockDto {
 }
 
 export function ExitPlanModeRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const toolUse = props.toolUse as unknown as ExitPlanModeToolUseDto;
     const plan = toolUse.input?.plan ?? '';
     const toolResult = props.toolResult as { message?: { content: Array<{ content: string; is_error?: boolean }> } } | undefined;
@@ -17,10 +19,10 @@ export function ExitPlanModeRenderer(props: RendererProps) {
     const isError = resultBlock?.is_error ?? false;
     const feedbackContent = resultBlock?.content;
     const statusText = toolResult
-        ? (isError ? 'Stayed in plan mode' : 'User approved the plan')
+        ? (isError ? t('exitPlanMode.stayedInPlanMode') : t('exitPlanMode.approved'))
         : undefined;
 
-    const headerName = plan ? "Claude's Plan" : 'Plan Mode';
+    const headerName = plan ? t('exitPlanMode.title') : t('exitPlanMode.planModeTitle');
 
     return (
         <ToolWrapper message={props.message}>
@@ -46,7 +48,7 @@ export function ExitPlanModeRenderer(props: RendererProps) {
 
             {isError && feedbackContent && (
                 <Container className="mt-1">
-                    <LabelValue label="RE:" className="border-b border-border-subtle" maxHeight="max-h-[60px]">
+                    <LabelValue label={t('exitPlanMode.feedbackLabel')} className="border-b border-border-subtle" maxHeight="max-h-[60px]">
                         {feedbackContent}
                     </LabelValue>
                 </Container>

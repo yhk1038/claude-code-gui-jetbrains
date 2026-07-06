@@ -1,4 +1,5 @@
 import {ToolUseBlockDto} from "@/dto";
+import {useTranslation} from "@/i18n";
 import {RendererProps, ToolWrapper, toolResultIsError, Container, LabelValue, ResultCaption} from "../../common";
 import {JetBrainsToolHeader, JetBrainsResultError, Badge, inputProjectPath} from "./_shared";
 
@@ -15,6 +16,7 @@ class CreateNewFileToolUseDto extends ToolUseBlockDto {
  * error, which the shared result-error row handles instead).
  */
 export function CreateNewFileRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const toolUse = props.toolUse as unknown as CreateNewFileToolUseDto;
     const input = toolUse.input ?? ({} as CreateNewFileToolUseDto['input']);
     const text = typeof input.text === 'string' ? input.text : '';
@@ -28,7 +30,7 @@ export function CreateNewFileRenderer(props: RendererProps) {
                 path={input.pathInProject}
                 projectPath={inputProjectPath(input)}
                 gateOnCreate={!input.overwrite}
-                extra={input.overwrite ? <Badge tone="warning">overwrites existing file</Badge> : undefined}
+                extra={input.overwrite ? <Badge tone="warning">{t('jetbrains.createNewFile.overwritesExisting')}</Badge> : undefined}
                 input={input as Record<string, unknown>}
             />
             {isError ? (
@@ -36,7 +38,7 @@ export function CreateNewFileRenderer(props: RendererProps) {
             ) : (
                 text && (
                     <>
-                        <ResultCaption>{lineCount} {lineCount === 1 ? 'line' : 'lines'}</ResultCaption>
+                        <ResultCaption>{t('jetbrains.createNewFile.lineCount', {count: lineCount})}</ResultCaption>
                         <Container>
                             <LabelValue maxHeight="max-h-[160px]">{text}</LabelValue>
                         </Container>

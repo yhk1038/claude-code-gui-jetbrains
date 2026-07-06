@@ -1,5 +1,6 @@
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import type { ReactNode } from 'react';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   /** 좌측 안내 문구. */
@@ -16,6 +17,7 @@ interface Props {
  */
 export function InputBanner(props: Props) {
   const { message, actions, onClose } = props;
+  const { t } = useTranslation('chat');
   return (
     <div className="mb-2 flex items-center gap-2 rounded-lg border border-border-subtle bg-surface-raised px-3 py-2 text-[0.8461rem]">
       <div className="min-w-0 flex-1 text-text-primary">{message}</div>
@@ -24,7 +26,7 @@ export function InputBanner(props: Props) {
         <button
           type="button"
           onClick={onClose}
-          aria-label="닫기"
+          aria-label={t('inputBanner.close')}
           className="flex-shrink-0 rounded p-0.5 text-text-tertiary hover:bg-state-info-bg transition-colors"
         >
           <XMarkIcon className="h-4 w-4" />

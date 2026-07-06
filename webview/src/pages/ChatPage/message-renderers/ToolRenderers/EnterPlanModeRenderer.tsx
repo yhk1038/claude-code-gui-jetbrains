@@ -1,6 +1,8 @@
+import {useTranslation} from "@/i18n";
 import {Container, LabelValue, RendererProps, ToolHeader, ToolWrapper} from "./common";
 
 export function EnterPlanModeRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const toolResult = props.toolResult as { message?: { content: Array<{ content: string }> } } | undefined;
     const output = toolResult?.message?.content?.[0]?.content ?? '';
 
@@ -10,7 +12,7 @@ export function EnterPlanModeRenderer(props: RendererProps) {
 
             {props.toolResult && (
                 <Container>
-                    <LabelValue label="OUT" maxHeight="max-h-[60px]">
+                    <LabelValue label={t('tool.out')} maxHeight="max-h-[60px]">
                         {output}
                     </LabelValue>
                 </Container>

@@ -1,4 +1,5 @@
 import {ReactNode} from "react";
+import {useTranslation} from "@/i18n";
 import {RendererProps, ToolWrapper, toolResultText, toolResultIsError, Container, LabelValue} from "../../common";
 import {
     JetBrainsToolHeader, JetBrainsResultError, PathRow, Badge, OutLabel, OutBlock, DebuggerOutcomeRow,
@@ -20,6 +21,7 @@ import {
  * The result is marked OUT so it can't be mistaken for the input above it.
  */
 export function BreakpointRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const {toolUse, toolResult, message} = props;
     const input = (toolUse.input ?? {}) as Record<string, unknown>;
     const isRemove = jetbrainsToolSuffix(toolUse.name) === 'xdebug_remove_breakpoint';
@@ -37,17 +39,21 @@ export function BreakpointRenderer(props: RendererProps) {
 
     // Neutral behavior-flag badges (ordinary debugging params, not warnings).
     const flags: ReactNode[] = [];
-    if (logExpression) flags.push(<Badge key="lp">logpoint</Badge>);
-    if (typeof input.suspendPolicy === 'string') flags.push(<Badge key="sp">suspend: {input.suspendPolicy}</Badge>);
+    if (logExpression) flags.push(<Badge key="lp">{t('jetbrains.breakpoint.logpoint')}</Badge>);
+    if (typeof input.suspendPolicy === 'string') flags.push(<Badge key="sp">{t('jetbrains.breakpoint.suspend', {policy: input.suspendPolicy})}</Badge>);
     // breakpointsMuted toggles the IDE's global breakpoint mute — an explicit
     // action either way, so surface it whenever present (not only when true).
     if (typeof input.breakpointsMuted === 'boolean') {
-        flags.push(<Badge key="mu">breakpoints {input.breakpointsMuted ? 'muted' : 'unmuted'}</Badge>);
+        flags.push(
+            <Badge key="mu">
+                {input.breakpointsMuted ? t('jetbrains.breakpoint.breakpointsMuted') : t('jetbrains.breakpoint.breakpointsUnmuted')}
+            </Badge>,
+        );
     }
-    if (input.temporary === true) flags.push(<Badge key="tmp">temporary</Badge>);
-    if (input.enabled === false) flags.push(<Badge key="dis">disabled</Badge>);
-    if (input.isLogMessage === true) flags.push(<Badge key="lm">log msg</Badge>);
-    if (input.isLogStack === true) flags.push(<Badge key="ls">log stack</Badge>);
+    if (input.temporary === true) flags.push(<Badge key="tmp">{t('jetbrains.breakpoint.temporary')}</Badge>);
+    if (input.enabled === false) flags.push(<Badge key="dis">{t('jetbrains.breakpoint.disabled')}</Badge>);
+    if (input.isLogMessage === true) flags.push(<Badge key="lm">{t('jetbrains.breakpoint.logMessage')}</Badge>);
+    if (input.isLogStack === true) flags.push(<Badge key="ls">{t('jetbrains.breakpoint.logStack')}</Badge>);
 
     // remove-only: who owns the breakpoint being removed (e.g. `agent`).
     const owner = isRemove && typeof input.owner === 'string' && input.owner ? input.owner : undefined;
@@ -75,21 +81,21 @@ export function BreakpointRenderer(props: RendererProps) {
                         file ? (
                             <div className="mt-1"><PathRow path={file} line={line} projectPath={projectPath} /></div>
                         ) : breakpointId ? (
-                            <div className="mt-1 font-mono text-[0.8461rem] text-text-primary/80">id {breakpointId}</div>
+                            <div className="mt-1 font-mono text-[0.8461rem] text-text-primary/80">{t('jetbrains.breakpoint.id', {id: breakpointId})}</div>
                         ) : null
                     )}
-                    {owner && <div className="mt-1"><Badge>owner: {owner}</Badge></div>}
+                    {owner && <div className="mt-1"><Badge>{t('jetbrains.breakpoint.owner', {owner})}</Badge></div>}
                     {!isRemove && flags.length > 0 && (
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">{flags}</div>
                     )}
                     {!isRemove && (condition || logExpression) && (
                         <Container className="mt-1.5">
                             {condition && (
-                                <LabelValue label="if" className={logExpression ? "border-b border-border-subtle" : undefined}>
+                                <LabelValue label={t('jetbrains.breakpoint.conditionLabel')} className={logExpression ? "border-b border-border-subtle" : undefined}>
                                     {condition}
                                 </LabelValue>
                             )}
-                            {logExpression && <LabelValue label="log">{logExpression}</LabelValue>}
+                            {logExpression && <LabelValue label={t('jetbrains.breakpoint.logLabel')}>{logExpression}</LabelValue>}
                         </Container>
                     )}
                     {outcome ? (

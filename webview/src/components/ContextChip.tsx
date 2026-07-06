@@ -1,5 +1,6 @@
 import { AttachedContext } from '../hooks/useContext';
 import { ContextType } from '../types';
+import { useTranslation } from '@/i18n';
 
 interface ContextChipProps {
   context: AttachedContext;
@@ -7,6 +8,7 @@ interface ContextChipProps {
 }
 
 export function ContextChip({ context, onRemove }: ContextChipProps) {
+  const { t } = useTranslation('common');
   const getFileIcon = (path: string) => {
     const ext = path.split('.').pop()?.toLowerCase();
     const iconColor = getIconColor(ext || '');
@@ -89,7 +91,7 @@ export function ContextChip({ context, onRemove }: ContextChipProps) {
       <button
         onClick={() => onRemove(context.id)}
         className="ml-1 p-0.5 rounded hover:bg-surface-tooltip/50 transition-colors opacity-0 group-hover:opacity-100"
-        aria-label="Remove context"
+        aria-label={t('contextChip.removeContext')}
       >
         <svg className="w-3 h-3 text-text-secondary hover:text-text-primary" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <path d="M4 4l8 8M12 4l-8 8" />

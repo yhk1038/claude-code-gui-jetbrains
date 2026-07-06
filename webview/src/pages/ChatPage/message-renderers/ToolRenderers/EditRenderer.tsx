@@ -1,6 +1,7 @@
 import {useMemo, useRef, useState, useEffect} from "react";
 import {ToolUseBlockDto} from "@/types";
 import {getAdapter} from "@/adapters";
+import {useTranslation} from "@/i18n";
 import {RendererProps, ResultCaption, ToolHeader, ToolWrapper} from "./common";
 import {cn} from "@/utils/cn";
 // @ts-ignore
@@ -67,6 +68,7 @@ const prefixMap: Record<DiffLineType, string> = {
 };
 
 export function EditRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const toolUse = props.toolUse as unknown as EditToolUseDto;
     const name = toolUse.name;
     const path = toolUse.input?.file_path ?? '';
@@ -116,7 +118,7 @@ export function EditRenderer(props: RendererProps) {
                 <div className={cn("text-text-primary/80 text-[0.8461rem] font-mono", path && "cursor-pointer hover:underline")} onClick={path ? () => getAdapter().openFile(path) : undefined}>{fileName}</div>
             </ToolHeader>
             <div ref={containerRef}>
-                <ResultCaption>Modified</ResultCaption>
+                <ResultCaption>{t('edit.modified')}</ResultCaption>
 
                 {showDiff && (
                     <div className="rounded overflow-hidden border border-border-default mt-2.5">

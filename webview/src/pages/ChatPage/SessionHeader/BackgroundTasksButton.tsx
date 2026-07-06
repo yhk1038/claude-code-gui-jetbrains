@@ -1,11 +1,13 @@
 import { QueueListIcon } from '@heroicons/react/24/outline';
 import { useWorkflowState } from '@/contexts/WorkflowStateContext';
+import { useTranslation } from '@/i18n';
 
 /**
  * Toggles the Background tasks panel. Hidden until at least one workflow exists
  * this session; shows a running-count badge while workflows are in flight.
  */
 export function BackgroundTasksButton() {
+    const { t } = useTranslation('chat');
     const { tasks, runningTasks, panelOpen, openPanel, closePanel } = useWorkflowState();
     if (tasks.length === 0) return null;
 
@@ -15,7 +17,7 @@ export function BackgroundTasksButton() {
         <button
             onClick={() => (panelOpen ? closePanel() : openPanel())}
             className="relative p-1 rounded transition-colors hover:bg-surface-hover"
-            title="Background tasks"
+            title={t('sessionHeader.backgroundTasks.title')}
         >
             <QueueListIcon
                 className={`w-5 h-5 ${

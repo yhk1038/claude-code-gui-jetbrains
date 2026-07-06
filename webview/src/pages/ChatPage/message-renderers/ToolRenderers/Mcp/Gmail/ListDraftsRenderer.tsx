@@ -1,4 +1,5 @@
 import {ToolUseBlockDto} from "@/dto";
+import {useTranslation} from "@/i18n";
 import {RendererProps, ToolHeader, ToolWrapper, toolResultText} from "../../common";
 import {McpToolBody, McpToolRow, formatMcpToolName} from "../_common";
 import {GmailMailRow, isUnread, safeParseJson} from "./_shared";
@@ -30,6 +31,7 @@ interface ListDraftsResult {
 }
 
 export function ListDraftsRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const {toolUse: rawToolUse, toolResult} = props;
     const toolUse = rawToolUse as ListDraftsToolUseDto;
     const name = formatMcpToolName(toolUse.name);
@@ -42,7 +44,7 @@ export function ListDraftsRenderer(props: RendererProps) {
         <ToolWrapper message={props.message} groupClassName="pb-2.5">
             <ToolHeader
                 name={name}
-                description={drafts ? `${drafts.length} draft(s)` : ''}
+                description={drafts ? t('gmail.listDrafts.count', {count: drafts.length}) : ''}
             />
 
             {drafts ? (

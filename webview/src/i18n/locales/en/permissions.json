@@ -1,0 +1,6 @@
+{
+  "notifications": {
+    "label": "Desktop Notifications",
+    "description": "Get notified when responses complete"
+  }
+}

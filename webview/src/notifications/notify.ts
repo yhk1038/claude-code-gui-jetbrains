@@ -38,7 +38,7 @@ export function notify(
   let n: Notification;
   try {
     n = new Notification(template.title(ctx), {
-      body: template.body,
+      body: template.body(),
       icon: template.icon,
       // Always silence the browser's own sound channel — sound is played by
       // the backend (Phase 1.5) so we don't double up.

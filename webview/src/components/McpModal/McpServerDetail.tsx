@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronLeftIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/20/solid';
 import { McpServer, McpServerStatus, McpTransportType, canAuthenticate } from '@/shared';
 import { useMcpServerTools } from '@/hooks/useMcpServerTools';
+import { useTranslation } from '@/i18n';
 import { McpStatusBadge } from './McpStatusBadge';
 
 /** Scopes a server can live in that the CLI `add`/`remove` commands can manage. */
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function McpServerDetail(props: Props) {
+  const { t } = useTranslation('common');
   const { server, onBack, onEdit, onReconnect, onAuthenticate, onClearAuth, onToggleEnabled, onRemove } = props;
   const [toolsOpen, setToolsOpen] = useState(false);
   const [busyAction, setBusyAction] = useState<string | null>(null);
@@ -94,7 +96,7 @@ export function McpServerDetail(props: Props) {
           className="flex items-center gap-1 text-md text-text-secondary hover:text-text-primary transition-colors"
         >
           <ChevronLeftIcon className="w-6 h-6" />
-          <span>Back to list</span>
+          <span>{t('mcpModal.detail.backToList')}</span>
         </button>
       </div>
 
@@ -119,7 +121,7 @@ export function McpServerDetail(props: Props) {
                 disabled={busy}
                 className="inline-flex items-center gap-1 text-sm font-medium px-2.5 py-1.5 rounded-md flex-shrink-0 border border-border-default bg-surface-hover text-text-primary hover:bg-surface-raised transition-colors disabled:opacity-50"
               >
-                Edit
+                {t('mcpModal.detail.edit')}
               </button>
             )}
           </div>
@@ -128,7 +130,7 @@ export function McpServerDetail(props: Props) {
         {/* Config details */}
         {server.config && (
           <div className="text-sm text-text-tertiary space-y-0.5">
-            <div>Type: {server.config.type}</div>
+            <div>{t('mcpModal.detail.type', { value: server.config.type })}</div>
             {server.config.command && (
               <div className="font-mono truncate">
                 {server.config.command}
@@ -153,7 +155,7 @@ export function McpServerDetail(props: Props) {
           {/* Authenticate — CTA primary, 최상단 */}
           {canAuth && (needsAuth || isFailed) && (
             <ActionButton
-              label="Authenticate"
+              label={t('mcpModal.detail.authenticate')}
               anyBusy={busy}
               activeAction="authenticate"
               busyAction={busyAction}
@@ -165,8 +167,8 @@ export function McpServerDetail(props: Props) {
           {/* Reconnect */}
           {!isDisabled && (
             <ActionButton
-              label="Reconnect"
-              busyLabel="Reconnecting"
+              label={t('mcpModal.detail.reconnect')}
+              busyLabel={t('mcpModal.detail.reconnecting')}
               anyBusy={busy}
               activeAction="reconnect"
               busyAction={busyAction}
@@ -177,7 +179,7 @@ export function McpServerDetail(props: Props) {
           {/* Clear authentication */}
           {canAuth && !isClaudeAiProxy && isConnected && (
             <ActionButton
-              label="Clear authentication"
+              label={t('mcpModal.detail.clearAuth')}
               anyBusy={busy}
               activeAction="clear-auth"
               busyAction={busyAction}
@@ -187,7 +189,7 @@ export function McpServerDetail(props: Props) {
 
           {/* Enable / Disable */}
           <ActionButton
-            label={isDisabled ? 'Enable' : 'Disable'}
+            label={isDisabled ? t('mcpModal.detail.enable') : t('mcpModal.detail.disable')}
             anyBusy={busy}
             activeAction="toggle"
             busyAction={busyAction}
@@ -200,9 +202,9 @@ export function McpServerDetail(props: Props) {
         {isConnected && (
           <div>
             {toolsLoading && tools.length === 0 ? (
-              <span className="text-sm text-text-tertiary">Loading tools…</span>
+              <span className="text-sm text-text-tertiary">{t('mcpModal.detail.loadingTools')}</span>
             ) : toolsError ? (
-              <span className="text-sm text-state-error-fg">Couldn't load tools</span>
+              <span className="text-sm text-state-error-fg">{t('mcpModal.detail.loadToolsError')}</span>
             ) : tools.length > 0 ? (
               <>
                 <button
@@ -214,7 +216,7 @@ export function McpServerDetail(props: Props) {
                   ) : (
                     <ChevronDownIcon className="w-4 h-4" />
                   )}
-                  View tools ({tools.length})
+                  {t('mcpModal.detail.viewTools', { count: tools.length })}
                 </button>
                 {toolsOpen && (
                   <ul className="mt-2 space-y-3.5 pl-8">
@@ -223,10 +225,10 @@ export function McpServerDetail(props: Props) {
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-gray-400">{tool.name}</span>
                           {tool.annotations?.readOnly && (
-                            <span className="px-1 py-0.5 rounded bg-surface-hover text-text-tertiary">read-only</span>
+                            <span className="px-1 py-0.5 rounded bg-surface-hover text-text-tertiary">{t('mcpModal.detail.readOnly')}</span>
                           )}
                           {tool.annotations?.destructive && (
-                            <span className="px-1 py-0.5 rounded bg-state-error-bg text-state-error-fg">destructive</span>
+                            <span className="px-1 py-0.5 rounded bg-state-error-bg text-state-error-fg">{t('mcpModal.detail.destructive')}</span>
                           )}
                         </div>
                       </li>
@@ -242,20 +244,20 @@ export function McpServerDetail(props: Props) {
         <div className="pt-2">
           {confirmDelete ? (
             <div className="space-y-2">
-              <p className="text-xs text-text-secondary">Remove "{server.name}"?</p>
+              <p className="text-xs text-text-secondary">{t('mcpModal.detail.removeConfirm', { name: server.name })}</p>
               <div className="flex gap-2">
                 <button
                   className="flex-1 text-xs py-1.5 rounded bg-state-error-bg text-state-error-fg hover:opacity-80 transition-opacity"
                   onClick={handleRemove}
                   disabled={busy}
                 >
-                  Remove
+                  {t('mcpModal.detail.remove')}
                 </button>
                 <button
                   className="flex-1 text-xs py-1.5 rounded bg-surface-hover text-text-secondary hover:bg-surface-raised transition-colors"
                   onClick={() => setConfirmDelete(false)}
                 >
-                  Cancel
+                  {t('mcpModal.detail.cancel')}
                 </button>
               </div>
             </div>
@@ -264,7 +266,7 @@ export function McpServerDetail(props: Props) {
               className="text-xs text-state-error-fg hover:underline underline-offset-2"
               onClick={() => setConfirmDelete(true)}
             >
-              Remove server
+              {t('mcpModal.detail.removeServer')}
             </button>
           )}
         </div>

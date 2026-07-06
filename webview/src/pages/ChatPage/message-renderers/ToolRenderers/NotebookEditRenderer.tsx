@@ -1,5 +1,6 @@
 import {ToolUseBlockDto} from "@/dto";
 import {getAdapter} from "@/adapters";
+import {useTranslation} from "@/i18n";
 import {Container, LabelValue, RendererProps, ToolHeader, ToolWrapper} from "./common";
 import {cn} from "@/utils/cn";
 
@@ -23,13 +24,13 @@ interface NotebookEditToolUseResult {
     notebook_path?: string;
 }
 
-const STATUS_LABEL_BY_MODE: Record<string, string> = {
-    insert: 'Inserted',
-    replace: 'Replaced',
-    delete: 'Deleted',
-};
-
 export function NotebookEditRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
+    const STATUS_LABEL_BY_MODE: Record<string, string> = {
+        insert: t('notebookEdit.status.inserted'),
+        replace: t('notebookEdit.status.replaced'),
+        delete: t('notebookEdit.status.deleted'),
+    };
     const toolUse = props.toolUse as unknown as NotebookEditToolUseDto;
     const result = props.toolResult?.toolUseResult as NotebookEditToolUseResult | undefined;
 
@@ -47,14 +48,14 @@ export function NotebookEditRenderer(props: RendererProps) {
 
     let statusLabel = '';
     if (hasResult) {
-        statusLabel = isError ? error : (STATUS_LABEL_BY_MODE[editMode] ?? 'Success');
+        statusLabel = isError ? error : (STATUS_LABEL_BY_MODE[editMode] ?? t('notebookEdit.status.success'));
     }
 
-    const displaySource = source.length > 0 ? source : '[No content]';
+    const displaySource = source.length > 0 ? source : t('notebookEdit.noContent');
 
     return (
         <ToolWrapper message={props.message}>
-            <ToolHeader name="Edit Notebook Cell" className="mb-[4px]" inProgress={!hasResult}>
+            <ToolHeader name={t('notebookEdit.title')} className="mb-[4px]" inProgress={!hasResult}>
                 <div
                     className={cn(
                         "text-text-primary/80 text-[0.8461rem] font-mono",

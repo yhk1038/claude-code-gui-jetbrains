@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { XMarkIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import { Portal } from '@/components/Portal';
+import { useTranslation } from '@/i18n';
 import { LoginCodeInput } from '../LoginCodeInput';
 
 interface Props {
@@ -24,6 +25,7 @@ interface Props {
  */
 export function LoginUrlModal(props: Props) {
   const { onOpenUrl, onSubmitCode, onClose } = props;
+  const { t } = useTranslation('switchAccount');
   const [showCodeInput, setShowCodeInput] = useState(false);
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export function LoginUrlModal(props: Props) {
       >
         <div className="w-full max-w-sm bg-surface-raised border border-border-default rounded-xl shadow-2xl overflow-hidden">
           <div className="flex items-center justify-between px-4 pt-4">
-            <h2 className="text-md font-semibold text-text-primary">Sign in to Claude</h2>
+            <h2 className="text-md font-semibold text-text-primary">{t('urlModal.title')}</h2>
             <button
               onClick={onClose}
               className="w-6 h-6 flex items-center justify-center rounded text-text-tertiary hover:text-text-secondary hover:bg-surface-hover transition-colors"
@@ -58,14 +60,14 @@ export function LoginUrlModal(props: Props) {
 
           <div className="px-4 py-4 space-y-3">
             <p className="text-sm text-text-secondary leading-relaxed">
-              Claude is opening your browser to sign in. If it didn&apos;t open automatically, use the button below.
+              {t('urlModal.description')}
             </p>
 
             <button
               onClick={onOpenUrl}
               className="w-full py-2.5 rounded-lg bg-accent-claude hover:bg-accent-claude-hover text-text-primary font-semibold text-sm transition-colors flex items-center justify-center gap-1.5"
             >
-              Open sign-in page
+              {t('urlModal.openButton')}
               <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
             </button>
 
@@ -76,7 +78,7 @@ export function LoginUrlModal(props: Props) {
                 onClick={() => setShowCodeInput(true)}
                 className="w-full text-xs text-text-link hover:underline text-center py-1 bg-transparent border-none cursor-pointer"
               >
-                Received a code in your browser? Enter it
+                {t('urlModal.revealCode')}
               </button>
             )}
           </div>

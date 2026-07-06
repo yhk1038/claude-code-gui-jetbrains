@@ -17,6 +17,7 @@ import {
 } from '@/types/models';
 import type { ModelInfo } from '@/types/slashCommand';
 import { MessageType } from '@/shared';
+import { useTranslation } from '@/i18n';
 
 export const SWITCH_MODEL_EVENT = 'switch-model';
 
@@ -25,6 +26,7 @@ interface ModelSwitchOverlayProps {
 }
 
 export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
+  const { t } = useTranslation('chat');
   const { setSessionModel, appendMessage } = useChatStreamContext();
   const { send } = useBridge();
   const { currentSessionId } = useSessionContext();
@@ -70,7 +72,7 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
       type: LoadedMessageType.Notification,
       uuid: crypto.randomUUID(),
       timestamp: new Date().toISOString(),
-      summary: `Set model to ${info ? resolveModelLabel(info) : value}`,
+      summary: t('modelSwitch.setModelTo', { model: info ? resolveModelLabel(info) : value }),
     });
 
     if (currentSessionId) {
@@ -98,7 +100,7 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
     >
       {/* Header */}
       <div className="pt-1 pb-1.5 px-3 text-[0.9230rem] text-text-tertiary flex items-center justify-between">
-        <span>Select a model</span>
+        <span>{t('modelSwitch.selectModel')}</span>
         <kbd className="inline-flex items-center px-1.5 py-0.5 bg-surface-tooltip rounded text-text-secondary text-xs font-mono">
           {isMac ? '⌘⇧M' : 'Ctrl+Shift+M'}
         </kbd>
@@ -107,7 +109,7 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
       {/* Model list */}
       <div className="pb-1.5 px-1">
         {models.length === 0 ? (
-          <div className="px-2 py-1 text-[0.9230rem] text-text-tertiary">Loading models…</div>
+          <div className="px-2 py-1 text-[0.9230rem] text-text-tertiary">{t('modelSwitch.loadingModels')}</div>
         ) : models.map((m) => {
           const selected = m.value === currentInfo?.value;
           return (

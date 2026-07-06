@@ -42,6 +42,7 @@ import { useFableNotice } from '@/hooks/useFableNotice';
 import { useVersionInfo } from '@/hooks/useVersionInfo';
 import { getCaretOffset, setCaretOffset, getSelectionRange } from '@/utils/domSelection';
 import { MessageType } from '@/shared';
+import { useTranslation } from '@/i18n';
 
 interface NativeDropEntry {
   path: string;
@@ -49,6 +50,7 @@ interface NativeDropEntry {
 }
 
 export function ChatInput() {
+  const { t } = useTranslation('chat');
   const { textareaRef } = useChatInputFocus();
   const { currentSessionId, sessionState, workingDirectory, inputMode: mode, cycleInputMode: cycleMode, setInputMode, availableModes, syncInitialInputMode, modeResetTrigger, autoFallbackNotice, dismissAutoFallback } = useSessionContext();
   const chatStream = useChatStreamContext();
@@ -542,7 +544,7 @@ export function ChatInput() {
       {/* Auto mode 강등 안내: auto를 요청했으나 CLI가 이 환경에서 미지원이라 기본 모드로 적용한 경우 */}
       {autoFallbackNotice && (
         <InputBanner
-          message="Auto mode isn't available here — using the default permission mode instead."
+          message={t('chatInput.autoModeFallback')}
           onClose={dismissAutoFallback}
         />
       )}
@@ -599,9 +601,9 @@ export function ChatInput() {
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             onPaste={handleRichPaste}
-            placeholder={isStreaming ? "Queue another message..." : "⌘ Esc to focus or unfocus Claude"}
+            placeholder={isStreaming ? t('chatInput.placeholder.queueMessage') : t('chatInput.placeholder.focusHint')}
             disabled={disabled}
-            ariaLabel="Message Claude"
+            ariaLabel={t('chatInput.ariaLabel')}
             highlightTokens={pathTokens}
           />
         </div>

@@ -1,6 +1,8 @@
 import { Container, LabelValue, RendererProps, ToolHeader, ToolWrapper } from "../common";
+import { useTranslation } from "@/i18n";
 
 export function AskUserQuestionRenderer(props: RendererProps) {
+    const { t } = useTranslation('chatTools');
     const toolUse = props.toolUse;
     const input = toolUse.input as { questions?: Array<{ question: string }> } | undefined;
     const toolResult = props.toolResult as
@@ -27,13 +29,13 @@ export function AskUserQuestionRenderer(props: RendererProps) {
             {toolResult && (
                 <Container>
                     {hasValidQuestions && (
-                        <LabelValue label="ASK">
+                        <LabelValue label={t('askUserQuestion.ask')}>
                             {questions.map((q, idx) => (
                                 <div key={idx}>{q.question}</div>
                             ))}
                         </LabelValue>
                     )}
-                    <LabelValue label="OUT" maxHeight="max-h-[60px]">
+                    <LabelValue label={t('askUserQuestion.out')} maxHeight="max-h-[60px]">
                         {output}
                     </LabelValue>
                 </Container>

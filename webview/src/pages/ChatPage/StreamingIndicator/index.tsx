@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ICON_FRAMES, TEXT_CHANGE_DELAYS, VERBS } from './constants.ts';
+import { ICON_FRAMES, TEXT_CHANGE_DELAYS, getVerbs } from './constants.ts';
 import { useScramble } from './useScramble.ts';
 import { randomPick } from './utils.ts';
 
@@ -8,7 +8,7 @@ export const StreamingIndicator: React.FC = () => {
     const [frameIdx, setFrameIdx] = useState(0);
 
     // 현재 동사
-    const [verb, setVerb] = useState<string>(() => randomPick(VERBS));
+    const [verb, setVerb] = useState<string>(() => randomPick(getVerbs()));
 
     // 텍스트 변경 카운트 (딜레이 스케줄 추적)
     const changeCountRef = useRef<number>(0);
@@ -29,7 +29,7 @@ export const StreamingIndicator: React.FC = () => {
         }
         const delay = getNextDelay();
         textTimerRef.current = setTimeout(() => {
-            const next = randomPick(VERBS, currentVerb as typeof VERBS[number]);
+            const next = randomPick(getVerbs(), currentVerb);
             changeCountRef.current += 1;
             setVerb(next);
         }, delay);
