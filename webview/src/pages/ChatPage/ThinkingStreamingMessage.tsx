@@ -85,7 +85,7 @@ export const ThinkingStreamingMessage: React.FC<ThinkingStreamingMessageProps> =
     const showIncompleteIndicator = isStreaming && !isMarkdownComplete(thinking) && isInsideCodeBlock(thinking);
 
     return (
-        <ToolWrapper message={message} className="mt-0">
+        <ToolWrapper message={message} className="!mt-0">
             <div className={`text-text-primary/40 streaming-message ${className}`}>
                 <div>
                     <div className="mb-0.5 cursor-pointer" onClick={toggleThinkingExpanded}>
