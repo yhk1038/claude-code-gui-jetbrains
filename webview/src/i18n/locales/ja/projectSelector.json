@@ -1,0 +1,16 @@
+{
+  "loading": "プロジェクトを読み込み中…",
+  "select": {
+    "title": "プロジェクトを選択",
+    "subtitle": "作業するプロジェクトを選んでください"
+  },
+  "empty": "利用可能なプロジェクトがありません",
+  "addProject": "プロジェクトを追加",
+  "retry": "再試行",
+  "sessionCount": "{{count}} セッション",
+  "sessionCount_one": "{{count}} セッション",
+  "sessionCount_other": "{{count}} セッション",
+  "errors": {
+    "loadFailed": "プロジェクトの読み込みに失敗しました"
+  }
+}

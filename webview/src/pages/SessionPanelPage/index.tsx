@@ -6,6 +6,7 @@ import { SessionList } from '@/components/SessionList';
 import { SearchInput } from '@/components/SessionList/SearchInput';
 import { SessionListScaleProvider, SessionListScale } from '@/components/SessionList/scale';
 import { getAdapter } from '@/adapters';
+import { useTranslation } from '@/i18n';
 import { ScopeTabs, SessionScope } from './ScopeTabs';
 
 /**
@@ -17,6 +18,7 @@ import { ScopeTabs, SessionScope } from './ScopeTabs';
  * 드롭다운과 달리 면적이 넉넉하므로 채팅영역과 동일한 일반 스케일(Regular)을 쓴다.
  */
 export function SessionPanelPage() {
+  const { t } = useTranslation('sessionPanel');
   const { openNewTab, loadSessions } = useSessionContext();
   const {
     currentSessionId,
@@ -58,7 +60,7 @@ export function SessionPanelPage() {
             <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 5v14M5 12h14" />
             </svg>
-            New session
+            {t('newSession')}
           </button>
         </div>
 
@@ -83,12 +85,12 @@ export function SessionPanelPage() {
             />
           ) : (
             <div className="flex-1 px-3 py-3 text-sm text-text-tertiary text-center">
-              {searchQuery.trim() ? 'No matching sessions' : 'No sessions yet'}
+              {searchQuery.trim() ? t('empty.noMatches') : t('empty.noSessions')}
             </div>
           )
         ) : (
           <div className="flex-1 px-3 py-3 text-sm text-text-tertiary text-center">
-            No web sessions
+            {t('empty.noWebSessions')}
           </div>
         )}
 

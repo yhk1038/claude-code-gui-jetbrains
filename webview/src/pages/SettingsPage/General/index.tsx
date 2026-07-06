@@ -6,30 +6,40 @@ import { OpenSettingsRow } from './OpenSettingsRow';
 import { ChatPaginationRow } from './ChatPaginationRow';
 import { ClaudeConfigDirRow } from './ClaudeConfigDirRow';
 import { APP_NAME } from '@/config/app';
-import { ROUTE_META, Route } from '@/router/routes';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
+import { useTranslation } from '@/i18n';
 
 const NOT_SET_VALUE = '__NOT_SET__';
 
+// Interface-language options. Labels use the endonym (the language's own name)
+// only, matching how the Claude Code docs present them. `value` is the stored
+// setting mapped to a locale in languageMap.ts.
 const LANGUAGE_OPTIONS = [
   { value: 'english', label: 'English' },
-  { value: 'korean', label: 'Korean (한국어)' },
-  { value: 'japanese', label: 'Japanese (日本語)' },
-  { value: 'chinese', label: 'Chinese (中文)' },
-  { value: 'spanish', label: 'Spanish (Español)' },
-  { value: 'french', label: 'French (Français)' },
-  { value: 'german', label: 'German (Deutsch)' },
-  { value: 'portuguese', label: 'Portuguese (Português)' },
-  { value: 'russian', label: 'Russian (Русский)' },
+  { value: 'korean', label: '한국어' },
+  { value: 'japanese', label: '日本語' },
+  { value: 'chinese', label: '简体中文' },
+  { value: 'chinese-traditional', label: '繁體中文' },
+  { value: 'spanish', label: 'Español' },
+  { value: 'french', label: 'Français' },
+  { value: 'german', label: 'Deutsch' },
+  { value: 'portuguese', label: 'Português' },
+  { value: 'russian', label: 'Русский' },
 ] as const;
 
 export function GeneralSettings() {
-  const meta = ROUTE_META[Route.SETTINGS_GENERAL];
+  const { t } = useTranslation('settings');
   const { scopeSettings, updateSetting, scope, resetToGlobal } = useClaudeSettings();
 
-  const rawLanguage = scopeSettings.language as string | undefined;
-  const isNotSet = rawLanguage === undefined && scope === 'project';
-  const currentLanguage = isNotSet ? NOT_SET_VALUE : ((rawLanguage as string) ?? '');
+  // Claude's response language is a free-text field in Claude's settings.json.
+  // Show the value stored at the current scope (empty → English placeholder);
+  // clearing the input removes the key at this scope (never overwrites on upgrade).
+  const responseLanguage = (scopeSettings.language as string | undefined) ?? '';
+
+  const rawUiLanguage = scopeSettings.uiLanguage as string | undefined;
+  const isUiNotSet = rawUiLanguage === undefined && scope === 'project';
+  // Interface language defaults to English when unset (does not follow the response language).
+  const currentUiLanguage = isUiNotSet ? NOT_SET_VALUE : ((rawUiLanguage as string) ?? 'english');
 
   const useCtrlEnterToSend = (scopeSettings.useCtrlEnterToSend as boolean | undefined) ?? false;
   const focusInputOnEditorContext = (scopeSettings.focusInputOnEditorContext as boolean | undefined) ?? true;
@@ -37,67 +47,81 @@ export function GeneralSettings() {
 
   const languageOptions: SelectOption[] = [
     ...(scope === 'project'
-      ? [{ value: NOT_SET_VALUE, label: 'Not set (use global)', italic: true }]
+      ? [{ value: NOT_SET_VALUE, label: t('general.language.notSet'), italic: true }]
       : []),
     ...LANGUAGE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label })),
   ];
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-text-primary mb-6">{meta.label}</h2>
+      <h2 className="text-xl font-semibold text-text-primary mb-6">{t('nav.general')}</h2>
 
       <SettingSection title={APP_NAME}>
         <SettingRow
-          label="Language"
-          description="Claude's preferred response language"
+          label={t('general.language.label')}
+          description={t('general.language.description')}
+        >
+          <input
+            type="text"
+            value={responseLanguage}
+            onChange={(e) => updateSetting('language', e.target.value || null)}
+            placeholder={t('general.language.placeholder')}
+            aria-label={t('general.language.label')}
+            className="w-48 bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm text-text-primary placeholder-text-tertiary"
+          />
+        </SettingRow>
+
+        <SettingRow
+          label={t('general.uiLanguage.label')}
+          description={t('general.uiLanguage.description')}
         >
           <Select
-            value={currentLanguage}
+            value={currentUiLanguage}
             options={languageOptions}
-            ariaLabel="Language"
+            ariaLabel={t('general.uiLanguage.label')}
             className={`bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm ${
-              isNotSet ? 'text-text-tertiary' : 'text-text-primary'
+              isUiNotSet ? 'text-text-tertiary' : 'text-text-primary'
             }`}
             onChange={(value) => {
               if (value === NOT_SET_VALUE) {
-                resetToGlobal('language');
+                resetToGlobal('uiLanguage');
                 return;
               }
-              updateSetting('language', value);
+              updateSetting('uiLanguage', value);
             }}
           />
         </SettingRow>
 
         <SettingRow
-          label="Use Ctrl Enter To Send"
-          description="When enabled, use Ctrl/Cmd+Enter to send prompts instead of just Enter. This allows Enter to create new lines."
+          label={t('general.useCtrlEnterToSend.label')}
+          description={t('general.useCtrlEnterToSend.description')}
         >
           <ToggleSwitch
             checked={useCtrlEnterToSend}
             onChange={(checked) => updateSetting('useCtrlEnterToSend', checked)}
-            ariaLabel="Use Ctrl Enter To Send"
+            ariaLabel={t('general.useCtrlEnterToSend.label')}
           />
         </SettingRow>
 
         <SettingRow
-          label="Focus chat input after attaching file path"
-          description="When you press Alt+K in the editor, move focus to the chat input after inserting the file path."
+          label={t('general.focusInputOnEditorContext.label')}
+          description={t('general.focusInputOnEditorContext.description')}
         >
           <ToggleSwitch
             checked={focusInputOnEditorContext}
             onChange={(checked) => updateSetting('focusInputOnEditorContext', checked)}
-            ariaLabel="Focus chat input after attaching file path"
+            ariaLabel={t('general.focusInputOnEditorContext.label')}
           />
         </SettingRow>
 
         <SettingRow
-          label="Respect .gitignore for editor context"
-          description="When on, contents of .gitignore'd files are excluded from the editor context — only the file path is sent."
+          label={t('general.respectGitignoreForContext.label')}
+          description={t('general.respectGitignoreForContext.description')}
         >
           <ToggleSwitch
             checked={respectGitignoreForContext}
             onChange={(checked) => updateSetting('respectGitignoreForContext', checked)}
-            ariaLabel="Respect .gitignore for editor context"
+            ariaLabel={t('general.respectGitignoreForContext.label')}
           />
         </SettingRow>
 

@@ -6,9 +6,10 @@ export { SlashCommandsSection, ClearCommand, UsageCommand, CliPassthroughCommand
 export { SettingsSection } from './settings/SettingsSection';
 export { SupportSection } from './support/SupportSection';
 
-// Section items
-export { contextItems } from './context/items';
-export { modelItems } from './model';
-export { customizeItems } from './customize/items';
-export { settingsItems } from './settings/items';
-export { supportItems } from './support/items';
+// Section item factories (built on demand so labels resolve on the current
+// locale after i18n init, not captured at module load).
+export { getContextItems } from './context/items';
+export { getModelItems } from './model';
+export { getCustomizeItems } from './customize/items';
+export { getSettingsItems } from './settings/items';
+export { getSupportItems } from './support/items';

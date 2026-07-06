@@ -1,0 +1,335 @@
+{
+  "layout": {
+    "title": "设置",
+    "back": "返回",
+    "toggleMenu": "切换菜单",
+    "close": "关闭"
+  },
+  "nav": {
+    "general": "通用",
+    "appearance": "外观",
+    "permissions": "权限",
+    "privacy": "隐私",
+    "cli": "CLI",
+    "browser": "浏览器",
+    "account": "账户",
+    "usage": "用量",
+    "tunnel": "隧道",
+    "releases": "版本发布",
+    "about": "关于"
+  },
+  "scope": {
+    "global": "用户设置(全局)",
+    "globalShort": "用户(全局)",
+    "project": "项目设置(本地)",
+    "projectShort": "项目(本地)",
+    "projectDisabledTooltip": "打开一个项目以使用项目设置"
+  },
+  "general": {
+    "language": {
+      "label": "语言",
+      "description": "Claude 回复时使用的首选语言",
+      "notSet": "未设置(使用全局)",
+      "placeholder": "英语"
+    },
+    "uiLanguage": {
+      "label": "界面语言",
+      "description": "应用界面的语言，与 Claude 的回复语言相互独立。"
+    },
+    "useCtrlEnterToSend": {
+      "label": "使用 Ctrl+Enter 发送",
+      "description": "启用后,使用 Ctrl/Cmd+Enter 发送提示,而不是单独按 Enter。这样 Enter 键可用于换行。"
+    },
+    "focusInputOnEditorContext": {
+      "label": "插入文件路径后聚焦聊天输入框",
+      "description": "在编辑器中按 Alt+K 插入文件路径后,自动将焦点移动到聊天输入框。"
+    },
+    "respectGitignoreForContext": {
+      "label": "编辑器上下文遵循 .gitignore",
+      "description": "启用后,被 .gitignore 忽略的文件内容将不包含在编辑器上下文中——仅发送文件路径。"
+    },
+    "hostMode": {
+      "label": "首选位置",
+      "description": "Claude 默认打开的位置。",
+      "sidebar": "侧边栏",
+      "panel": "面板"
+    },
+    "openSettings": {
+      "label": "打开设置的方式",
+      "description": "以覆盖层或新标签页的形式显示设置。",
+      "overlay": "覆盖层",
+      "newTab": "新标签页"
+    },
+    "chatPagination": {
+      "label": "分页加载聊天记录",
+      "description": "滚动时加载更早的消息。关闭时会一次性加载整个对话。"
+    },
+    "configDir": {
+      "description": "Claude 配置的主目录。与 CLAUDE_CONFIG_DIR 环境变量相同。",
+      "placeholder": "默认(~/.claude)",
+      "active": "当前使用:{{value}}",
+      "projectUnavailable": "打开一个项目以设置项目级值。"
+    }
+  },
+  "appearance": {
+    "title": "外观",
+    "theme": {
+      "sectionTitle": "主题",
+      "colorTheme": {
+        "label": "配色主题",
+        "description": "选择界面的配色主题",
+        "notSet": "未设置(使用全局)",
+        "systemIde": "跟随系统(IDE)",
+        "systemOs": "跟随系统(操作系统)",
+        "light": "浅色",
+        "dark": "深色"
+      },
+      "fontSize": {
+        "label": "字体大小",
+        "description": "界面的基础字体大小",
+        "notSetPlaceholder": "未设置"
+      }
+    },
+    "scrolling": {
+      "sectionTitle": "滚动",
+      "autoScrollThreshold": {
+        "label": "自动滚动恢复距离",
+        "description": "向上滚动时会始终暂停自动滚动,以便自由阅读。当滚动回到距底部这个像素范围内时会恢复自动滚动。数值越小,需要滚动得越靠近底部才会重新启用。默认值 {{value}}。",
+        "notSetPlaceholder": "未设置"
+      }
+    }
+  },
+  "advanced": {
+    "title": "高级",
+    "debugging": {
+      "sectionTitle": "调试",
+      "debugMode": {
+        "label": "调试模式",
+        "description": "启用调试日志与诊断信息",
+        "notSet": "未设置(使用全局)"
+      },
+      "logLevel": {
+        "label": "日志级别",
+        "description": "显示的最低日志级别",
+        "notSet": "未设置(使用全局)",
+        "debug": "调试",
+        "info": "信息",
+        "warning": "警告",
+        "error": "错误"
+      }
+    }
+  },
+  "privacy": {
+    "title": "隐私",
+    "privacyPolicyLink": "隐私政策",
+    "telemetry": {
+      "sectionTitle": "遥测",
+      "sendUsageStatistics": {
+        "label": "发送使用统计信息",
+        "description": "发送不会直接识别您身份的使用统计信息,以帮助改进产品。绝不会发送源代码或个人数据。您可以随时关闭此选项。"
+      }
+    }
+  },
+  "account": {
+    "heading": "账户",
+    "addAccount": "添加账户",
+    "actionFailed": "操作失败",
+    "loading": "正在加载账户…",
+    "empty": "尚无已保存的账户。",
+    "plan": "套餐",
+    "authMethod": "认证方式",
+    "lastAccess": "上次访问",
+    "inUse": "使用中",
+    "switch": "切换",
+    "removeAccount": "移除账户",
+    "lastActive": {
+      "today": "今天",
+      "yesterday": "昨天",
+      "daysAgo": "{{value}} 天前",
+      "hoursAgo": "{{value}} 小时前",
+      "minutesAgo": "{{value}} 分钟前",
+      "justNow": "刚刚"
+    }
+  },
+  "permissions": {
+    "heading": "权限",
+    "notSet": "未设置(使用全局)",
+    "bypassMode": {
+      "sectionTitle": "绕过模式",
+      "label": "禁用绕过模式",
+      "description": "防止激活绕过权限模式"
+    },
+    "defaultMode": {
+      "sectionTitle": "默认输入模式",
+      "label": "默认输入模式",
+      "description": "打开新会话时的初始权限模式"
+    }
+  },
+  "about": {
+    "heading": "关于",
+    "versionInfo": {
+      "title": "版本信息",
+      "pluginVersion": "插件版本",
+      "cliVersion": "{{appName}} 版本",
+      "notDetected": "未检测到",
+      "refreshVersion": "刷新版本",
+      "refresh": "刷新"
+    },
+    "links": {
+      "title": "链接",
+      "documentation": "文档",
+      "viewOnGithub": "在 GitHub 上查看",
+      "reportIssue": "反馈问题",
+      "openIssue": "打开 Issue"
+    },
+    "cliUpdate": {
+      "upToDate": "已是最新版本",
+      "confirmTitle": "更新 Claude Code",
+      "confirmMessage": "更新将替换 Claude Code CLI,可能会中断正在运行的会话。是否继续?",
+      "update": "更新",
+      "updating": "正在更新…",
+      "channel": {
+        "stable": "稳定版",
+        "latest": "最新版"
+      },
+      "updateSuccess": "Claude Code v{{value}} 更新完成",
+      "updateFailed": "更新失败"
+    }
+  },
+  "browser": {
+    "notifications": {
+      "title": "通知",
+      "sound": {
+        "label": "提示音",
+        "ariaLabel": "通知提示音",
+        "off": "关闭",
+        "description": "桌面通知触发时播放的提示音。选择一个提示音会试听一次。",
+        "loadingDescription": "正在加载系统提示音...",
+        "emptyDescription": "未检测到系统提示音。选择“关闭”以静音通知。",
+        "errorDescription": "无法加载系统提示音:{{error}}"
+      }
+    },
+    "permissions": {
+      "title": "权限",
+      "revokeHint": "如需撤销,请在浏览器设置中更改。",
+      "deniedHint": "请在浏览器设置中启用",
+      "granted": "已授予",
+      "denied": "已拒绝",
+      "request": "请求"
+    }
+  },
+  "tunnel": {
+    "connection": {
+      "title": "连接",
+      "enable": {
+        "label": "远程隧道(非官方)",
+        "description": "通过 cloudflared 暴露本地服务器以实现远程访问。无需账户。如果尚未安装 cloudflared,系统会先提示您安装。"
+      },
+      "installingProgress": "正在安装 cloudflared…({{seconds}} 秒)",
+      "establishingProgress": "正在建立隧道连接…({{seconds}} 秒)",
+      "estimatedTime": "通常大约需要 1 分钟(如需安装,大约需要 3 分钟)。"
+    },
+    "sleepPrevention": {
+      "title": "防止休眠",
+      "label": "防止休眠",
+      "description": "隧道处于活动状态时保持设备唤醒,即使合上盖子也是如此。"
+    }
+  },
+  "cli": {
+    "terminal": {
+      "title": "终端",
+      "app": {
+        "label": "终端应用",
+        "description": "执行“在终端中打开 Claude”时使用的终端应用程序",
+        "jetbrainsDescription": "始终使用 JetBrains IDE 内置终端。",
+        "jetbrainsValue": "JetBrains 内置终端",
+        "detecting": "正在检测终端...",
+        "systemDefault": "系统默认",
+        "defaultSuffix": "{{label}}(默认)",
+        "custom": "自定义...",
+        "customPlaceholder": "例如:Kitty"
+      }
+    },
+    "model": {
+      "title": "模型",
+      "label": "默认模型",
+      "description": "新会话使用的默认模型",
+      "defaultRecommended": "默认(推荐)"
+    },
+    "path": {
+      "title": "Claude CLI",
+      "label": "CLI 路径",
+      "description": "Claude CLI 可执行文件的路径(留空以自动检测)",
+      "placeholder": "自动检测"
+    },
+    "nodePath": {
+      "title": "Node.js",
+      "label": "Node 路径",
+      "description": "运行后端所使用的 Node.js 可执行文件路径(留空以自动检测)。重启后生效。",
+      "placeholder": "自动检测"
+    }
+  },
+  "releases": {
+    "title": "版本发布",
+    "restartRequired": "需要重启 IDE",
+    "updateButton": "更新到 v{{version}}",
+    "current": "当前版本",
+    "noNotes": "暂无发布说明",
+    "empty": "未找到任何版本。",
+    "unknownDate": "日期未知",
+    "refresh": "刷新"
+  },
+  "usage": {
+    "title": "用量",
+    "learnMore": "了解更多关于用量限制的信息",
+    "lastUpdated": "上次更新:{{time}}",
+    "refresh": "刷新",
+    "relativeTime": {
+      "justNow": "刚刚",
+      "oneMinuteAgo": "1 分钟前",
+      "minutesAgo": "{{count}} 分钟前",
+      "oneHourAgo": "1 小时前",
+      "hoursAgo": "{{count}} 小时前"
+    },
+    "account": {
+      "active": "使用中",
+      "errorPrefix": "无法获取用量:{{error}}",
+      "currentSession": "当前会话(5 小时)",
+      "weeklyLimits": "每周限额",
+      "allModels": "所有模型",
+      "sonnetOnly": "仅 Sonnet",
+      "opusOnly": "仅 Opus"
+    },
+    "meter": {
+      "resetsSoon": "即将重置",
+      "resetsOnDay": "将于 {{day}} {{period}} {{time}} 重置",
+      "resetsInHours": "将于 {{hours}} 小时 {{minutes}} 分钟后重置",
+      "resetsInMinutes": "将于 {{minutes}} 分钟后重置",
+      "am": "上午",
+      "pm": "下午",
+      "days": {
+        "sun": "周日",
+        "mon": "周一",
+        "tue": "周二",
+        "wed": "周三",
+        "thu": "周四",
+        "fri": "周五",
+        "sat": "周六"
+      }
+    },
+    "notInstalled": {
+      "title": "所需依赖项",
+      "description": "由于应用市场政策限制,此功能无法内置。它作为一个独立的库发布,需要您自行安装。",
+      "installVia": "通过 npm 全局安装:",
+      "copy": "复制",
+      "copied": "已复制",
+      "copyFailed": "复制失败",
+      "retryHint": "安装完成后,点击下方的“重试”——无需重启 IDE。",
+      "checking": "正在检查...",
+      "retry": "重试"
+    },
+    "errors": {
+      "unknown": "未知错误"
+    }
+  }
+}

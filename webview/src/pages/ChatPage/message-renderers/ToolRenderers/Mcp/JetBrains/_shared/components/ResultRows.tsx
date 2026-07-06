@@ -1,6 +1,7 @@
 import {ReactNode} from "react";
 import type {LoadedMessageDto} from "@/types";
 import {parseUserDeclined} from "@/shared";
+import {useTranslation} from "@/i18n";
 import {toolResultIsError, toolResultText} from "../../../../common";
 import {type DebuggerOutcome} from "../helpers";
 import {sensitiveFields, surprisingFields} from "../tool-params";
@@ -17,11 +18,14 @@ interface DebuggerOutcomeRowProps {
  * is warning-toned.
  */
 export const DebuggerOutcomeRow = (props: DebuggerOutcomeRowProps) => {
+    const {t} = useTranslation('chatTools');
     const {outcome} = props;
     return (
         <div className="flex flex-wrap items-center gap-1.5 text-[0.8461rem]">
             {outcome.status && (
-                <Badge tone={outcome.status === 'timeout' ? 'warning' : 'default'}>{outcome.status}</Badge>
+                <Badge tone={outcome.status === 'timeout' ? 'warning' : 'default'}>
+                    {t(`jetbrains.common.debuggerStatus.${outcome.status}`, {defaultValue: outcome.status})}
+                </Badge>
             )}
             {(outcome.oldValue !== undefined || outcome.newValue !== undefined) && (
                 <span className="font-mono text-text-primary/80">
@@ -31,7 +35,9 @@ export const DebuggerOutcomeRow = (props: DebuggerOutcomeRowProps) => {
                 </span>
             )}
             {outcome.applied !== undefined && (
-                <Badge tone={outcome.applied ? 'success' : 'error'}>{outcome.applied ? 'applied' : 'not applied'}</Badge>
+                <Badge tone={outcome.applied ? 'success' : 'error'}>
+                    {outcome.applied ? t('jetbrains.common.applied') : t('jetbrains.common.notApplied')}
+                </Badge>
             )}
             {outcome.message && <span className="text-text-primary/70">{outcome.message}</span>}
         </div>
@@ -60,6 +66,7 @@ interface UnrecognizedInputNoticeProps {
  * smuggled past the user's approval. Distinct from the intentional IN/OUT block.
  */
 export const UnrecognizedInputNotice = (props: UnrecognizedInputNoticeProps) => {
+    const {t} = useTranslation('chatTools');
     const fields = surprisingFields(props.toolName, props.input);
     if (!fields.length) return null;
 
@@ -67,13 +74,13 @@ export const UnrecognizedInputNotice = (props: UnrecognizedInputNoticeProps) => 
         <div className="mt-1.5 rounded border border-state-warning-fg/40 bg-state-warning-bg/40 p-2 text-[0.8461rem]">
             <div className="flex items-center gap-1.5 mb-1 text-state-warning-fg font-medium">
                 <span aria-hidden>⚠</span>
-                <span>Unrecognized input — review before allowing</span>
+                <span>{t('jetbrains.common.unrecognizedInputTitle')}</span>
             </div>
             <div className="flex flex-col gap-0.5 font-mono text-text-primary/80">
                 {fields.map((f) => (
                     <div key={f.key} className="whitespace-pre-wrap break-all">
                         <span className="text-text-primary">{f.key}</span>
-                        {f.reason === 'type' && <span className="text-state-warning-fg"> (unexpected type)</span>}
+                        {f.reason === 'type' && <span className="text-state-warning-fg"> {t('jetbrains.common.unexpectedType')}</span>}
                         <span className="text-text-primary/50">: </span>
                         {formatFieldValue(f.value)}
                     </div>
@@ -129,14 +136,17 @@ interface JetBrainsDeclinedNoteProps {
  * be mistaken for a tool failure or an "MCP server disabled" error. Shows the
  * instruction the user gave Claude (if any).
  */
-export const JetBrainsDeclinedNote = (props: JetBrainsDeclinedNoteProps) => (
-    <div className="mt-1 flex items-start gap-1.5 text-[0.8461rem]">
-        <Badge>declined</Badge>
-        {props.instruction
-            ? <span className="text-text-primary/70 italic whitespace-pre-wrap">“{props.instruction}”</span>
-            : <span className="text-text-tertiary">You declined this tool.</span>}
-    </div>
-);
+export const JetBrainsDeclinedNote = (props: JetBrainsDeclinedNoteProps) => {
+    const {t} = useTranslation('chatTools');
+    return (
+        <div className="mt-1 flex items-start gap-1.5 text-[0.8461rem]">
+            <Badge>{t('jetbrains.common.declined')}</Badge>
+            {props.instruction
+                ? <span className="text-text-primary/70 italic whitespace-pre-wrap">“{props.instruction}”</span>
+                : <span className="text-text-tertiary">{t('jetbrains.common.declinedNote')}</span>}
+        </div>
+    );
+};
 
 interface JetBrainsResultErrorProps {
     toolResult?: LoadedMessageDto;

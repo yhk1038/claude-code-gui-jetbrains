@@ -29,8 +29,10 @@ import { clampAutoScrollThreshold, nextAutoFollow, shouldShowScrollToBottom, AUT
 import { useApi } from '../../contexts/ApiContext';
 import { mergeToolResults } from './mergeToolResults';
 import { isOlderPagePrepend, findNewestUserUuid } from './paging';
+import { useTranslation } from '@/i18n';
 
 export function ChatPage() {
+  const { t } = useTranslation('chat');
   // Redirect logged-out users to the login screen before they hit a failing chat.
   useLoginGate();
 
@@ -325,7 +327,7 @@ export function ChatPage() {
                   className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20 flex items-center gap-1.5 px-3 py-1.5 bg-surface-raised border border-border-default rounded-full shadow-md text-xs text-text-primary hover:bg-surface-hover transition-colors"
               >
                 <ChevronDownIcon className="w-3.5 h-3.5" />
-                Scroll to bottom
+                {t('chatPage.scrollToBottom')}
               </button>
           )}
           {pendingUserAnswer ? (

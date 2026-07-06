@@ -4,6 +4,7 @@ import { Portal } from '@/components/Portal';
 import { useWorkflowState } from '@/contexts/WorkflowStateContext';
 import type { WorkflowTask } from '@/shared';
 import { agentDotClass, formatDuration, formatTokens, WORKFLOW_STATUS_COLOR } from '@/utils/workflowFormat';
+import { useTranslation } from '@/i18n';
 
 /** Re-render every second while `active` so running timers tick. */
 function useNow(active: boolean): number {
@@ -28,6 +29,7 @@ function WorkflowTaskRow({
     onDismiss: (toolUseId: string) => void;
 }) {
     const ref = useRef<HTMLDivElement>(null);
+    const { t } = useTranslation('chat');
     useEffect(() => {
         if (focused) ref.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }, [focused]);
@@ -58,24 +60,24 @@ function WorkflowTaskRow({
                 <button
                     onClick={() => onDismiss(task.toolUseId)}
                     className="shrink-0 p-0.5 rounded hover:bg-surface-hover transition-colors"
-                    title={isRunning ? 'Dismiss (clears a stuck workflow)' : 'Dismiss'}
+                    title={isRunning ? t('backgroundTasks.dismissRunning') : t('backgroundTasks.dismiss')}
                 >
                     <XMarkIcon className="w-3.5 h-3.5 text-text-tertiary hover:text-text-secondary" />
                 </button>
             </div>
 
             <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.8461rem] text-text-primary/60">
-                <span>Workflow</span>
+                <span>{t('backgroundTasks.workflowLabel')}</span>
                 {agentCount !== undefined && (
                     <>
                         <span className="text-text-tertiary">·</span>
-                        <span>{agentCount} agents</span>
+                        <span>{t('backgroundTasks.agentsCount', { count: agentCount })}</span>
                     </>
                 )}
                 {tokens && (
                     <>
                         <span className="text-text-tertiary">·</span>
-                        <span>{tokens} tokens</span>
+                        <span>{t('backgroundTasks.tokensLabel', { tokens })}</span>
                     </>
                 )}
                 {duration && (
@@ -92,7 +94,7 @@ function WorkflowTaskRow({
 
             {task.phases.length > 0 && (
                 <div className="mt-2">
-                    <div className="text-[0.7692rem] uppercase tracking-wide text-text-tertiary mb-1">Phases</div>
+                    <div className="text-[0.7692rem] uppercase tracking-wide text-text-tertiary mb-1">{t('backgroundTasks.phasesLabel')}</div>
                     <div className="space-y-0.5">
                         {task.phases.map((p, i) => (
                             <div key={i} className="flex items-center gap-2 text-[0.8461rem] text-text-primary/70">
@@ -109,10 +111,10 @@ function WorkflowTaskRow({
                     <table className="w-full text-[0.8461rem] font-mono">
                         <thead>
                             <tr className="text-text-tertiary text-left">
-                                <th className="font-normal pb-1 pr-2">Agent</th>
-                                <th className="font-normal pb-1 px-2 text-right">Tokens</th>
-                                <th className="font-normal pb-1 px-2 text-right">Tools</th>
-                                <th className="font-normal pb-1 pl-2 text-right">Time</th>
+                                <th className="font-normal pb-1 pr-2">{t('backgroundTasks.tableHeader.agent')}</th>
+                                <th className="font-normal pb-1 px-2 text-right">{t('backgroundTasks.tableHeader.tokens')}</th>
+                                <th className="font-normal pb-1 px-2 text-right">{t('backgroundTasks.tableHeader.tools')}</th>
+                                <th className="font-normal pb-1 pl-2 text-right">{t('backgroundTasks.tableHeader.time')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -139,6 +141,7 @@ function WorkflowTaskRow({
 }
 
 export function BackgroundTasksPanel() {
+    const { t } = useTranslation('chat');
     const { panelOpen, closePanel, runningTasks, finishedTasks, clearFinished, dismissTask, focusedToolUseId } =
         useWorkflowState();
     const [showFinished, setShowFinished] = useState(true);
@@ -171,11 +174,11 @@ export function BackgroundTasksPanel() {
                 className="fixed right-0 top-0 bottom-0 w-[24rem] max-w-[92vw] z-40 flex flex-col bg-surface-raised border-l border-border-default shadow-2xl outline-none"
             >
                 <div className="flex items-center justify-between px-4 h-[44px] border-b border-border-subtle shrink-0">
-                    <div className="text-text-primary text-[1rem] font-semibold">Background tasks</div>
+                    <div className="text-text-primary text-[1rem] font-semibold">{t('backgroundTasks.title')}</div>
                     <button
                         onClick={closePanel}
                         className="p-1 rounded hover:bg-surface-hover transition-colors"
-                        title="Close"
+                        title={t('backgroundTasks.close')}
                     >
                         <XMarkIcon className="w-5 h-5 text-text-secondary" />
                     </button>
@@ -184,19 +187,19 @@ export function BackgroundTasksPanel() {
                 <div className="flex-1 overflow-y-auto p-3 space-y-4">
                     {runningTasks.length === 0 && finishedTasks.length === 0 && (
                         <div className="text-text-primary/50 text-[0.9230rem] text-center mt-8">
-                            No background workflows yet.
+                            {t('backgroundTasks.empty')}
                         </div>
                     )}
 
                     {runningTasks.length > 0 && (
                         <section className="space-y-2">
-                            <div className="text-[0.7692rem] uppercase tracking-wide text-text-tertiary">Running</div>
-                            {runningTasks.map((t) => (
+                            <div className="text-[0.7692rem] uppercase tracking-wide text-text-tertiary">{t('backgroundTasks.running')}</div>
+                            {runningTasks.map((task) => (
                                 <WorkflowTaskRow
-                                    key={t.toolUseId}
-                                    task={t}
+                                    key={task.toolUseId}
+                                    task={task}
                                     now={now}
-                                    focused={t.toolUseId === focusedToolUseId}
+                                    focused={task.toolUseId === focusedToolUseId}
                                     onDismiss={dismissTask}
                                 />
                             ))}
@@ -210,22 +213,22 @@ export function BackgroundTasksPanel() {
                                     onClick={() => setShowFinished((v) => !v)}
                                     className="text-[0.7692rem] uppercase tracking-wide text-text-tertiary hover:text-text-secondary transition-colors"
                                 >
-                                    Finished {finishedTasks.length} {showFinished ? '▾' : '▸'}
+                                    {t('backgroundTasks.finishedCount', { count: finishedTasks.length })} {showFinished ? '▾' : '▸'}
                                 </button>
                                 <button
                                     onClick={clearFinished}
                                     className="text-[0.8461rem] text-text-secondary hover:text-text-primary transition-colors"
                                 >
-                                    Clear
+                                    {t('backgroundTasks.clear')}
                                 </button>
                             </div>
                             {showFinished &&
-                                finishedTasks.map((t) => (
+                                finishedTasks.map((task) => (
                                     <WorkflowTaskRow
-                                        key={t.toolUseId}
-                                        task={t}
+                                        key={task.toolUseId}
+                                        task={task}
                                         now={now}
-                                        focused={t.toolUseId === focusedToolUseId}
+                                        focused={task.toolUseId === focusedToolUseId}
                                         onDismiss={dismissTask}
                                     />
                                 ))}

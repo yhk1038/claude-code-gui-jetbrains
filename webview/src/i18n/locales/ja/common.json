@@ -1,0 +1,185 @@
+{
+  "confirmDialog": {
+    "confirm": "確認",
+    "cancel": "キャンセル"
+  },
+  "contextChip": {
+    "removeContext": "コンテキストを削除"
+  },
+  "errorBoundary": {
+    "somethingWentWrong": "問題が発生しました。",
+    "retry": "再試行"
+  },
+  "effortSlider": {
+    "tooltip": "クリックまたはドラッグしてエフォートレベルを設定",
+    "tooltipUltracode": "クリックまたはドラッグしてエフォートレベルを設定(最上段 = ultracode)"
+  },
+  "accountUsage": {
+    "title": "アカウントと使用状況",
+    "accountSection": "アカウント",
+    "authMethod": "認証方法",
+    "email": "メール",
+    "plan": "プラン"
+  },
+  "usageSection": {
+    "title": "使用状況",
+    "updated": "{{time}} に更新",
+    "refresh": "更新",
+    "session5hr": "セッション(5時間)",
+    "weekly7day": "週間(7日間)",
+    "weeklySonnet": "週間Sonnet",
+    "weeklyOpus": "週間Opus"
+  },
+  "usageReport": {
+    "title": "使用状況の内訳",
+    "refresh": "更新",
+    "empty": "使用状況の内訳はありません。",
+    "requests": "{{value}} リクエスト",
+    "sessions": "{{value}} セッション",
+    "percentOfUsage": "使用量の割合(%)"
+  },
+  "mcpModal": {
+    "title": "MCPサーバー",
+    "refreshServers": "MCPサーバーを更新",
+    "browseRegistry": "MCPレジストリを閲覧",
+    "addServer": "MCPサーバーを追加",
+    "checkingHealth": "MCPサーバーの状態を確認中…",
+    "serverNotFound": "サーバーが見つかりません。",
+    "learnMore": "MCPについて詳しく見る",
+    "editReplaceSingle": "編集すると1つのサーバーが置き換わります — サーバー設定を1つだけ貼り付けてください。",
+    "saved": "{{name}} を保存しました",
+    "added": "{{name}} を追加しました",
+    "addFailed": "{{failed}}/{{total}} 件のサーバーの追加に失敗しました:",
+    "form": {
+      "editTitle": "MCPサーバーを編集",
+      "addTitle": "MCPサーバーを追加",
+      "back": "戻る",
+      "nameLabel": "名前",
+      "nameHint": "任意 — JSONに「mcpServers」ラッパーがない場合のみ使用されます",
+      "namePlaceholder": "my-server",
+      "scopeLabel": "スコープ",
+      "scopeUser": "ユーザー(全プロジェクト)",
+      "scopeProject": "プロジェクト(.mcp.json)",
+      "scopeLocal": "ローカル(このプロジェクトのみ)",
+      "configLabel": "設定(JSON)",
+      "configHint": "mcpServers設定または単一のサーバー設定を貼り付けてください",
+      "cancel": "キャンセル",
+      "saving": "保存中",
+      "adding": "追加中",
+      "save": "保存",
+      "addButton": "サーバーを追加"
+    },
+    "marketplace": {
+      "back": "戻る",
+      "searchPlaceholder": "MCPレジストリを検索…",
+      "searchPrompt": "公式MCPレジストリを検索して、サーバーを見つけてインストールします。",
+      "searching": "検索中…",
+      "noServers": "サーバーが見つかりませんでした。",
+      "openRepo": "{{url}} を開く",
+      "needsInputs": "{{count}} 件の入力が必要です: {{inputs}}",
+      "needsInputs_one": "{{count}} 件の入力が必要です: {{inputs}}",
+      "needsInputs_other": "{{count}} 件の入力が必要です: {{inputs}}",
+      "configureAdd": "設定して追加",
+      "noInstallInfo": "インストール情報がありません",
+      "add": "追加"
+    },
+    "list": {
+      "noServersConfigured": "MCPサーバーが設定されていません。",
+      "addOne": "追加する",
+      "scope": {
+        "project": "プロジェクト",
+        "local": "ローカル",
+        "user": "ユーザー",
+        "claudeai": "claude.ai",
+        "managed": "管理対象",
+        "enterprise": "エンタープライズ"
+      }
+    },
+    "detail": {
+      "backToList": "一覧に戻る",
+      "edit": "編集",
+      "type": "タイプ: {{value}}",
+      "authenticate": "認証",
+      "reconnect": "再接続",
+      "reconnecting": "再接続中",
+      "clearAuth": "認証をクリア",
+      "enable": "有効化",
+      "disable": "無効化",
+      "loadingTools": "ツールを読み込み中…",
+      "loadToolsError": "ツールを読み込めませんでした",
+      "viewTools": "ツールを表示 ({{count}})",
+      "readOnly": "読み取り専用",
+      "destructive": "破壊的",
+      "removeConfirm": "「{{name}}」を削除しますか?",
+      "remove": "削除",
+      "cancel": "キャンセル",
+      "removeServer": "サーバーを削除"
+    },
+    "status": {
+      "connected": "接続済み",
+      "failed": "失敗",
+      "needsAuth": "認証が必要",
+      "connecting": "接続中…",
+      "disabled": "無効"
+    }
+  },
+  "tunnelModal": {
+    "title": "リモートトンネル",
+    "remoteTunnelUnofficial": "リモートトンネル(非公式)",
+    "exposeVia": "cloudflared経由で公開",
+    "installingCloudflared": "cloudflaredをインストール中…",
+    "connecting": "接続中…",
+    "typicalTime": "通常は約1分(インストールが必要な場合は約3分)",
+    "preventSleep": "スリープを防止",
+    "keepAwake": "トンネルが有効な間はスリープさせない"
+  },
+  "tunnelStatusNotice": {
+    "tryAgain": "再試行",
+    "installGuide": "インストールガイド",
+    "copyCommand": "コマンドをコピー",
+    "installConsent": "cloudflaredがインストールされていません。今すぐインストールしてトンネルを有効にしますか?初回はcloudflaredのダウンロードに約3分かかります。",
+    "installAndEnable": "インストールして有効化",
+    "cancel": "キャンセル",
+    "notInstalledWarning": "cloudflaredはまだインストールされていません。トンネルをオンにするとダウンロードを求められます(初回は約3分かかります)。",
+    "errors": {
+      "cloudflaredMissing": {
+        "title": "cloudflared をインストールできませんでした",
+        "detail": "トンネルには cloudflared が必要ですが、自動でインストールできませんでした。手動でインストールしてから再試行してください。"
+      },
+      "timeout": {
+        "title": "トンネル接続がタイムアウトしました",
+        "detail": "制限時間内に Cloudflare トンネルサーバーに接続できませんでした。ネットワークやファイアウォールを確認してください。一部の地域では Cloudflare へのアクセスが制限されています。"
+      },
+      "exited": {
+        "title": "cloudflared が予期せず停止しました",
+        "detail": "トンネルプロセスが準備完了前に終了しました。もう一度お試しください。"
+      },
+      "unknown": {
+        "title": "トンネルを開始できませんでした",
+        "detail": "予期しないエラーが発生しました。もう一度お試しください。"
+      }
+    }
+  },
+  "sessionList": {
+    "searchPlaceholder": "セッションを検索...",
+    "loadingSessions": "セッションを読み込み中...",
+    "refreshSessions": "セッションを更新",
+    "renameSession": "セッション名を変更",
+    "deleteSession": "セッションを削除",
+    "groups": {
+      "today": "今日",
+      "yesterday": "昨日",
+      "pastWeek": "過去1週間",
+      "pastMonth": "過去1ヶ月",
+      "pastYear": "過去1年"
+    },
+    "relativeTime": {
+      "now": "たった今",
+      "years": "{{n}}年前",
+      "months": "{{n}}ヶ月前",
+      "days": "{{n}}日前",
+      "hours": "{{n}}時間前",
+      "minutes": "{{n}}分前"
+    }
+  }
+}

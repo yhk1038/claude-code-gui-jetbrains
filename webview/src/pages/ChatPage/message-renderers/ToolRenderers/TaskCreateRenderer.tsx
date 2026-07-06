@@ -1,5 +1,6 @@
 import { ToolUseBlockDto } from "@/dto";
 import { Container, LabelValue, RendererProps, ToolHeader, ToolWrapper } from "./common";
+import { useTranslation } from "@/i18n";
 
 class TaskCreateToolUseDto extends ToolUseBlockDto {
     caller: { type: 'direct' };
@@ -12,6 +13,7 @@ class TaskCreateToolUseDto extends ToolUseBlockDto {
 }
 
 export function TaskCreateRenderer(props: RendererProps) {
+    const { t } = useTranslation('chatTools');
     const toolUse = props.toolUse as unknown as TaskCreateToolUseDto;
 
     const name = toolUse.name;
@@ -27,14 +29,14 @@ export function TaskCreateRenderer(props: RendererProps) {
 
             <Container>
                 <LabelValue
-                    label="WHAT"
+                    label={t('task.create.what')}
                     className={activeForm ? 'border-b border-border-subtle' : ''}
                     maxHeight="max-h-[60px]"
                 >
                     {description}
                 </LabelValue>
                 {activeForm && (
-                    <LabelValue label="FORM" maxHeight="max-h-[60px]">
+                    <LabelValue label={t('task.common.form')} maxHeight="max-h-[60px]">
                         {activeForm}
                     </LabelValue>
                 )}

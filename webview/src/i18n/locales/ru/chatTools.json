@@ -1,0 +1,288 @@
+{
+  "tool": {
+    "in": "ВХОД",
+    "out": "ВЫХОД",
+    "declined": "Вы отклонили этот инструмент.",
+    "declinedWithInstruction": "Вы отклонили этот инструмент. Вместо этого попросили Claude: «{{instruction}}»"
+  },
+  "message": {
+    "copyMessage": "Скопировать сообщение",
+    "retry": "Повторить",
+    "unknownTool": "неизвестно"
+  },
+  "interrupted": {
+    "default": "прервано",
+    "toolInterrupted": "Инструмент прерван"
+  },
+  "attachments": {
+    "imageAlt": "Изображение {{index}}",
+    "fullSizeAlt": "Полный размер"
+  },
+  "edit": {
+    "modified": "Изменено"
+  },
+  "write": {
+    "lineCount": "{{count}} строк"
+  },
+  "glob": {
+    "pattern": "шаблон: \"{{pattern}}\"",
+    "foundFiles": "Найдено файлов: {{count}}",
+    "foundFiles_one": "Найден {{count}} файл",
+    "foundFiles_few": "Найдено {{count}} файла",
+    "foundFiles_many": "Найдено {{count}} файлов",
+    "foundFiles_other": "Найдено {{count}} файла"
+  },
+  "grep": {
+    "inPath": "(в {{path}})",
+    "globPattern": "(glob: {{glob}})"
+  },
+  "webFetch": {
+    "fetchedFrom": "Загружено из"
+  },
+  "todoWrite": {
+    "title": "Обновить задачи"
+  },
+  "notebookEdit": {
+    "title": "Изменить ячейку ноутбука",
+    "noContent": "[Нет содержимого]",
+    "status": {
+      "inserted": "Вставлено",
+      "replaced": "Заменено",
+      "deleted": "Удалено",
+      "success": "Успешно"
+    }
+  },
+  "skill": {
+    "fallback": "Навык",
+    "expandLabel": "навык"
+  },
+  "askUserQuestion": {
+    "ask": "ВОПРОС",
+    "out": "ВЫХОД"
+  },
+  "exitPlanMode": {
+    "title": "План Claude",
+    "planModeTitle": "Режим планирования",
+    "approved": "Пользователь одобрил план",
+    "stayedInPlanMode": "Остался в режиме планирования",
+    "feedbackLabel": "ОТВЕТ:"
+  },
+  "task": {
+    "common": {
+      "in": "ВХОД",
+      "out": "ВЫХОД",
+      "form": "ФОРМА",
+      "taskPrefix": "задача:"
+    },
+    "create": {
+      "what": "ЧТО"
+    },
+    "update": {
+      "status": "СТАТУС",
+      "subject": "ТЕМА",
+      "desc": "ОПИСАНИЕ",
+      "owner": "ВЛАДЕЛЕЦ",
+      "blocks": "БЛОКИРУЕТ",
+      "blockedBy": "ЗАБЛОКИРОВАНО"
+    },
+    "output": {
+      "type": "тип",
+      "status": "статус",
+      "retrieval": "получение",
+      "copied": "Скопировано",
+      "retrievalCompleted": "завершено",
+      "retrievalTimedOut": "истекло время ожидания",
+      "retrievalError": "ошибка"
+    }
+  },
+  "workflow": {
+    "agentsMeta": "{{count}} агентов",
+    "tokensMeta": "{{value}} токенов",
+    "phaseSuffix": " ({{count}} этапов)",
+    "phaseSuffix_one": " ({{count}} этап)",
+    "phaseSuffix_few": " ({{count}} этапа)",
+    "phaseSuffix_many": " ({{count}} этапов)",
+    "phaseSuffix_other": " ({{count}} этапа)",
+    "taskIdDetail": "ID задачи: {{taskId}}",
+    "runningInBackground": "Выполняется в фоне…",
+    "agentsUsageLabel": "агенты {{count}}",
+    "tokensUsageLabel": "токены {{value}}",
+    "toolsUsageLabel": "инструменты {{count}}"
+  },
+  "mcp": {
+    "common": {
+      "out": "ВЫХОД"
+    }
+  },
+  "filesystem": {
+    "common": {
+      "in": "ВХОД",
+      "out": "ВЫХОД"
+    },
+    "editFile": {
+      "dryRun": "(пробный запуск)"
+    },
+    "readMultipleFiles": {
+      "fileCount": "{{count}} файлов"
+    }
+  },
+  "gmail": {
+    "common": {
+      "unknownSender": "(неизвестный отправитель)"
+    },
+    "action": {
+      "addLabelsToThread": "Добавить {{count}} ярлык(ов) к переписке",
+      "removeLabelsFromThread": "Удалить {{count}} ярлык(ов) из переписки",
+      "addLabelsToMessage": "Добавить {{count}} ярлык(ов) к сообщению",
+      "removeLabelsFromMessage": "Удалить {{count}} ярлык(ов) из сообщения",
+      "createLabel": "Создать ярлык",
+      "createLabelNamed": "Создать ярлык: {{name}}",
+      "updateLabel": "Обновить ярлык",
+      "updateLabelNamed": "Обновить ярлык: {{name}}",
+      "deleteLabel": "Удалить ярлык",
+      "moveToTrash": "Переместить {{target}} в корзину",
+      "markAsSpam": "Пометить {{target}} как спам",
+      "applySensitiveLabel": "Применить ярлык конфиденциальности к {{target}}",
+      "targetMessage": "сообщение",
+      "targetThread": "переписку"
+    },
+    "createDraft": {
+      "description": "Черновик создан",
+      "to": "Кому",
+      "cc": "Копия",
+      "bcc": "Скрытая копия"
+    },
+    "listDrafts": {
+      "count": "{{count}} черновик(ов)"
+    },
+    "listLabels": {
+      "count": "{{count}} ярлык(ов)",
+      "unnamed": "(без имени)"
+    },
+    "searchThreads": {
+      "resultsFound": "найдено: {{count}}"
+    }
+  },
+  "jetbrains": {
+    "common": {
+      "in": "ВХОД",
+      "out": "ВЫХОД",
+      "exitCode": "код выхода {{code}}",
+      "projectRoot": "корень проекта",
+      "scopeIn": "в",
+      "currentProject": "текущий проект",
+      "differentProject": "другой проект",
+      "applied": "применено",
+      "notApplied": "не применено",
+      "declined": "отклонено",
+      "declinedNote": "Вы отклонили этот инструмент.",
+      "unrecognizedInputTitle": "Нераспознанные входные данные — проверьте перед разрешением",
+      "unexpectedType": "(неожиданный тип)",
+      "debuggerStatus": {
+        "paused": "приостановлено",
+        "running": "выполняется",
+        "stopped": "остановлено",
+        "timeout": "тайм-аут"
+      }
+    },
+    "action": {
+      "debuggerAction": "Отладчик: {{action}}",
+      "line": "строка {{line}}",
+      "patchOp": {
+        "add": "добавить",
+        "delete": "удалить",
+        "update": "обновить"
+      }
+    },
+    "breakpoint": {
+      "logpoint": "точка логирования",
+      "suspend": "приостановка: {{policy}}",
+      "breakpointsMuted": "точки останова отключены",
+      "breakpointsUnmuted": "точки останова включены",
+      "temporary": "временная",
+      "disabled": "отключена",
+      "logMessage": "сообщение лога",
+      "logStack": "стек лога",
+      "id": "id {{id}}",
+      "owner": "владелец: {{owner}}",
+      "conditionLabel": "если",
+      "logLabel": "лог"
+    },
+    "createNewFile": {
+      "overwritesExisting": "перезаписывает существующий файл",
+      "lineCount": "{{count}} строк",
+      "lineCount_one": "{{count}} строка",
+      "lineCount_few": "{{count}} строки",
+      "lineCount_many": "{{count}} строк",
+      "lineCount_other": "{{count}} строки"
+    },
+    "executeTerminalCommand": {
+      "executionModeTooltip": "Запуск в стандартной оболочке пользователя или как отдельный процесс",
+      "shell": "оболочка",
+      "direct": "напрямую"
+    },
+    "getRunConfigurations": {
+      "none": "Нет конфигураций запуска"
+    },
+    "gitStatus": {
+      "includeIgnored": "вкл. игнорируемые",
+      "includeUntracked": "вкл. неотслеживаемые",
+      "changeCount": "{{count}} изменений",
+      "changeCount_one": "{{count}} изменение",
+      "changeCount_few": "{{count}} изменения",
+      "changeCount_many": "{{count}} изменений",
+      "changeCount_other": "{{count}} изменения",
+      "clean": "Рабочее дерево чистое",
+      "status": {
+        "untracked": "неотслеживаемый",
+        "modified": "изменён",
+        "added": "добавлен",
+        "deleted": "удалён",
+        "renamed": "переименован",
+        "copied": "скопирован",
+        "conflict": "конфликт",
+        "changed": "изменён"
+      }
+    },
+    "openFiles": {
+      "none": "Нет открытых файлов",
+      "active": "активный"
+    },
+    "problems": {
+      "errorsOnly": "только ошибки",
+      "buildSucceeded": "Сборка успешна",
+      "none": "Нет проблем",
+      "count": "{{count}} проблем",
+      "count_one": "{{count}} проблема",
+      "count_few": "{{count}} проблемы",
+      "count_many": "{{count}} проблем",
+      "count_other": "{{count}} проблемы",
+      "infoSeverity": "информация"
+    },
+    "projectList": {
+      "none": "Нет"
+    },
+    "replaceText": {
+      "all": "все",
+      "caseSensitive": "с учётом регистра",
+      "old": "старое",
+      "new": "новое"
+    },
+    "search": {
+      "matchCount": "совпадений",
+      "matchCount_one": "совпадение",
+      "matchCount_few": "совпадения",
+      "matchCount_many": "совпадений",
+      "matchCount_other": "совпадения",
+      "word": {
+        "pattern": "шаблон",
+        "text": "текст",
+        "regex": "регулярное выражение",
+        "glob": "glob",
+        "name": "имя",
+        "symbol": "символ",
+        "query": "запрос"
+      }
+    }
+  }
+}

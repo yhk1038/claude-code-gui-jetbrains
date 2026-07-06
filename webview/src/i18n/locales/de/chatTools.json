@@ -1,0 +1,276 @@
+{
+  "tool": {
+    "in": "IN",
+    "out": "OUT",
+    "declined": "Du hast dieses Tool abgelehnt.",
+    "declinedWithInstruction": "Du hast dieses Tool abgelehnt. Claude stattdessen gefragt: „{{instruction}}“"
+  },
+  "message": {
+    "copyMessage": "Nachricht kopieren",
+    "retry": "Wiederholen",
+    "unknownTool": "unbekannt"
+  },
+  "interrupted": {
+    "default": "unterbrochen",
+    "toolInterrupted": "Tool unterbrochen"
+  },
+  "attachments": {
+    "imageAlt": "Bild {{index}}",
+    "fullSizeAlt": "Vollbild"
+  },
+  "edit": {
+    "modified": "Geändert"
+  },
+  "write": {
+    "lineCount": "{{count}} Zeilen"
+  },
+  "glob": {
+    "pattern": "Muster: „{{pattern}}“",
+    "foundFiles": "{{count}} Dateien gefunden",
+    "foundFiles_one": "{{count}} Datei gefunden",
+    "foundFiles_other": "{{count}} Dateien gefunden"
+  },
+  "grep": {
+    "inPath": "(in {{path}})",
+    "globPattern": "(Glob: {{glob}})"
+  },
+  "webFetch": {
+    "fetchedFrom": "Abgerufen von"
+  },
+  "todoWrite": {
+    "title": "Todos aktualisieren"
+  },
+  "notebookEdit": {
+    "title": "Notebook-Zelle bearbeiten",
+    "noContent": "[Kein Inhalt]",
+    "status": {
+      "inserted": "Eingefügt",
+      "replaced": "Ersetzt",
+      "deleted": "Gelöscht",
+      "success": "Erfolgreich"
+    }
+  },
+  "skill": {
+    "fallback": "Skill",
+    "expandLabel": "Skill"
+  },
+  "askUserQuestion": {
+    "ask": "FRAGE",
+    "out": "OUT"
+  },
+  "exitPlanMode": {
+    "title": "Claudes Plan",
+    "planModeTitle": "Plan-Modus",
+    "approved": "Nutzer hat den Plan genehmigt",
+    "stayedInPlanMode": "Im Plan-Modus geblieben",
+    "feedbackLabel": "RE:"
+  },
+  "task": {
+    "common": {
+      "in": "IN",
+      "out": "OUT",
+      "form": "FORM",
+      "taskPrefix": "task:"
+    },
+    "create": {
+      "what": "WAS"
+    },
+    "update": {
+      "status": "STATUS",
+      "subject": "BETREFF",
+      "desc": "BESCHR",
+      "owner": "OWNER",
+      "blocks": "BLOCKIERT",
+      "blockedBy": "BLOCKIERT-VON"
+    },
+    "output": {
+      "type": "Typ",
+      "status": "Status",
+      "retrieval": "Abruf",
+      "copied": "Kopiert",
+      "retrievalCompleted": "abgeschlossen",
+      "retrievalTimedOut": "Zeitüberschreitung",
+      "retrievalError": "Fehler"
+    }
+  },
+  "workflow": {
+    "agentsMeta": "{{count}} Agenten",
+    "tokensMeta": "{{value}} Tokens",
+    "phaseSuffix": " ({{count}} Phasen)",
+    "phaseSuffix_one": " ({{count}} Phase)",
+    "phaseSuffix_other": " ({{count}} Phasen)",
+    "taskIdDetail": "Task-ID: {{taskId}}",
+    "runningInBackground": "Läuft im Hintergrund…",
+    "agentsUsageLabel": "Agenten {{count}}",
+    "tokensUsageLabel": "Tokens {{value}}",
+    "toolsUsageLabel": "Tools {{count}}"
+  },
+  "mcp": {
+    "common": {
+      "out": "OUT"
+    }
+  },
+  "filesystem": {
+    "common": {
+      "in": "IN",
+      "out": "OUT"
+    },
+    "editFile": {
+      "dryRun": "(Testlauf)"
+    },
+    "readMultipleFiles": {
+      "fileCount": "{{count}} Dateien"
+    }
+  },
+  "gmail": {
+    "common": {
+      "unknownSender": "(unbekannter Absender)"
+    },
+    "action": {
+      "addLabelsToThread": "{{count}} Label(s) zum Thread hinzufügen",
+      "removeLabelsFromThread": "{{count}} Label(s) aus dem Thread entfernen",
+      "addLabelsToMessage": "{{count}} Label(s) zur Nachricht hinzufügen",
+      "removeLabelsFromMessage": "{{count}} Label(s) aus der Nachricht entfernen",
+      "createLabel": "Label erstellen",
+      "createLabelNamed": "Label erstellen: {{name}}",
+      "updateLabel": "Label aktualisieren",
+      "updateLabelNamed": "Label aktualisieren: {{name}}",
+      "deleteLabel": "Label löschen",
+      "moveToTrash": "{{target}} in den Papierkorb verschieben",
+      "markAsSpam": "{{target}} als Spam markieren",
+      "applySensitiveLabel": "Sensibles Label auf {{target}} anwenden",
+      "targetMessage": "Nachricht",
+      "targetThread": "Thread"
+    },
+    "createDraft": {
+      "description": "Entwurf erstellt",
+      "to": "An",
+      "cc": "Cc",
+      "bcc": "Bcc"
+    },
+    "listDrafts": {
+      "count": "{{count}} Entwurf/Entwürfe"
+    },
+    "listLabels": {
+      "count": "{{count}} Label(s)",
+      "unnamed": "(unbenannt)"
+    },
+    "searchThreads": {
+      "resultsFound": "{{count}} gefunden"
+    }
+  },
+  "jetbrains": {
+    "common": {
+      "in": "IN",
+      "out": "OUT",
+      "exitCode": "Exit {{code}}",
+      "projectRoot": "Projektstamm",
+      "scopeIn": "in",
+      "currentProject": "aktuelles Projekt",
+      "differentProject": "anderes Projekt",
+      "applied": "angewendet",
+      "notApplied": "nicht angewendet",
+      "declined": "abgelehnt",
+      "declinedNote": "Du hast dieses Tool abgelehnt.",
+      "unrecognizedInputTitle": "Nicht erkannte Eingabe — vor dem Zulassen prüfen",
+      "unexpectedType": "(unerwarteter Typ)",
+      "debuggerStatus": {
+        "paused": "pausiert",
+        "running": "läuft",
+        "stopped": "gestoppt",
+        "timeout": "Zeitüberschreitung"
+      }
+    },
+    "action": {
+      "debuggerAction": "Debugger: {{action}}",
+      "line": "Zeile {{line}}",
+      "patchOp": {
+        "add": "hinzufügen",
+        "delete": "löschen",
+        "update": "aktualisieren"
+      }
+    },
+    "breakpoint": {
+      "logpoint": "Logpoint",
+      "suspend": "Suspend: {{policy}}",
+      "breakpointsMuted": "Breakpoints stummgeschaltet",
+      "breakpointsUnmuted": "Breakpoints nicht stummgeschaltet",
+      "temporary": "temporär",
+      "disabled": "deaktiviert",
+      "logMessage": "Log-Nachricht",
+      "logStack": "Log-Stack",
+      "id": "ID {{id}}",
+      "owner": "Owner: {{owner}}",
+      "conditionLabel": "wenn",
+      "logLabel": "log"
+    },
+    "createNewFile": {
+      "overwritesExisting": "überschreibt vorhandene Datei",
+      "lineCount": "{{count}} Zeilen",
+      "lineCount_one": "{{count}} Zeile",
+      "lineCount_other": "{{count}} Zeilen"
+    },
+    "executeTerminalCommand": {
+      "executionModeTooltip": "In der Standard-Shell des Nutzers ausführen statt als direkter Prozess",
+      "shell": "Shell",
+      "direct": "Direkt"
+    },
+    "getRunConfigurations": {
+      "none": "Keine Run-Konfigurationen"
+    },
+    "gitStatus": {
+      "includeIgnored": "inkl. ignoriert",
+      "includeUntracked": "inkl. unversioniert",
+      "changeCount": "{{count}} Änderungen",
+      "changeCount_one": "{{count}} Änderung",
+      "changeCount_other": "{{count}} Änderungen",
+      "clean": "Arbeitsverzeichnis sauber",
+      "status": {
+        "untracked": "unversioniert",
+        "modified": "geändert",
+        "added": "hinzugefügt",
+        "deleted": "gelöscht",
+        "renamed": "umbenannt",
+        "copied": "kopiert",
+        "conflict": "Konflikt",
+        "changed": "geändert"
+      }
+    },
+    "openFiles": {
+      "none": "Keine geöffneten Dateien",
+      "active": "aktiv"
+    },
+    "problems": {
+      "errorsOnly": "nur Fehler",
+      "buildSucceeded": "Build erfolgreich",
+      "none": "Keine Probleme",
+      "count": "{{count}} Probleme",
+      "count_one": "{{count}} Problem",
+      "count_other": "{{count}} Probleme",
+      "infoSeverity": "Info"
+    },
+    "projectList": {
+      "none": "Keine"
+    },
+    "replaceText": {
+      "all": "alle",
+      "caseSensitive": "Groß-/Kleinschreibung beachten",
+      "old": "alt",
+      "new": "neu"
+    },
+    "search": {
+      "matchCount": "Treffer",
+      "matchCount_one": "Treffer",
+      "matchCount_other": "Treffer",
+      "word": {
+        "pattern": "Muster",
+        "text": "Text",
+        "regex": "Regex",
+        "glob": "Glob",
+        "name": "Name",
+        "symbol": "Symbol",
+        "query": "Abfrage"
+      }
+    }
+  }
+}

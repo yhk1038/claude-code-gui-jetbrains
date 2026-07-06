@@ -1,0 +1,36 @@
+{
+  "welcomeArtAlt": "Willkommensgrafik",
+  "intro": "Claude Code kann mit deinem Claude-Abo genutzt werden oder über dein Console-Konto nach API-Nutzung abgerechnet werden.",
+  "loginPrompt": "Wie möchtest du dich anmelden?",
+  "errors": {
+    "loginFailed": "Anmeldung fehlgeschlagen. Bitte versuche es erneut."
+  },
+  "claudeAi": {
+    "label": "Claude.ai-Abo",
+    "description": "Nutze dein Claude Pro-, Team- oder Enterprise-Abo"
+  },
+  "console": {
+    "label": "Anthropic Console",
+    "description": "Bezahle über dein Console-Konto nach API-Nutzung"
+  },
+  "providers": {
+    "label": "Bedrock, Foundry oder Vertex",
+    "description": "Anleitung zur Nutzung von API-Schlüsseln oder Drittanbietern."
+  },
+  "terminal": {
+    "prompt": "Bevorzugst du die Terminal-Erfahrung?",
+    "action": "claude im Terminal ausführen"
+  },
+  "codeInput": {
+    "title": "Füge den Code aus deinem Browser ein",
+    "description": "Nach der Anmeldung zeigt dein Browser einen Code an. Füge ihn hier ein, um die Anmeldung abzuschließen.",
+    "placeholder": "Code hier einfügen",
+    "submit": "Code senden"
+  },
+  "urlModal": {
+    "title": "Bei Claude anmelden",
+    "description": "Claude öffnet deinen Browser zur Anmeldung. Falls er nicht automatisch geöffnet wurde, nutze die Schaltfläche unten.",
+    "openButton": "Anmeldeseite öffnen",
+    "revealCode": "Einen Code im Browser erhalten? Eingeben"
+  }
+}

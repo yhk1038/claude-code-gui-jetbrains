@@ -5,16 +5,18 @@ import { useRouter } from '@/router/useRouter';
 import { Route } from '@/router/routes';
 import { useAccounts } from '@/hooks/queries/useAccounts';
 import { AccountAvatar } from './AccountAvatar';
+import { useTranslation } from '@/i18n';
+import type { TFunction } from 'i18next';
 
-function relativeTime(ms: number): string {
+function relativeTime(ms: number, t: TFunction): string {
   const diff = Date.now() - ms;
   const minutes = Math.floor(diff / 60_000);
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
-  if (days > 0) return `${days}d ago`;
-  if (hours > 0) return `${hours}h ago`;
-  if (minutes > 0) return `${minutes}m ago`;
-  return 'just now';
+  if (days > 0) return t('sessionHeader.accountSwitcher.relativeTime.daysAgo', { count: days });
+  if (hours > 0) return t('sessionHeader.accountSwitcher.relativeTime.hoursAgo', { count: hours });
+  if (minutes > 0) return t('sessionHeader.accountSwitcher.relativeTime.minutesAgo', { count: minutes });
+  return t('sessionHeader.accountSwitcher.relativeTime.justNow');
 }
 
 interface Props {
@@ -31,6 +33,7 @@ interface Props {
  */
 export function AccountSwitcherMenu(props: Props) {
   const { onClose } = props;
+  const { t } = useTranslation('chat');
   const { navigate } = useRouter();
   const { accounts, switchTo } = useAccounts();
   const [switchingId, setSwitchingId] = useState<string | null>(null);
@@ -46,10 +49,10 @@ export function AccountSwitcherMenu(props: Props) {
       onClose();
       const label = account?.displayName
         ? `${account.displayName}(${account.emailAddress})`
-        : (account?.emailAddress ?? 'account');
-      toast.success(`Switched to ${label}`);
+        : (account?.emailAddress ?? t('sessionHeader.accountSwitcher.fallbackAccountLabel'));
+      toast.success(t('sessionHeader.accountSwitcher.switchedTo', { account: label }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Switch failed');
+      setError(err instanceof Error ? err.message : t('sessionHeader.accountSwitcher.switchFailed'));
       setSwitchingId(null);
     }
   };
@@ -67,7 +70,9 @@ export function AccountSwitcherMenu(props: Props) {
 
       <div className="max-h-[18rem] overflow-y-auto py-1">
         {accounts.length === 0 ? (
-          <p className="text-[0.8461rem] text-text-tertiary px-3 py-2">No saved accounts.</p>
+          <p className="text-[0.8461rem] text-text-tertiary px-3 py-2">
+            {t('sessionHeader.accountSwitcher.noSavedAccounts')}
+          </p>
         ) : (
           accounts.map((account) => {
             const busy = switchingId === account.id;
@@ -96,7 +101,7 @@ export function AccountSwitcherMenu(props: Props) {
                     <span className="w-4 h-4 border-2 border-border-strong border-t-text-primary rounded-full animate-spin block" />
                   ) : (
                     <span className="text-[0.7077rem] text-text-tertiary whitespace-nowrap">
-                      {relativeTime(account.updatedAt)}
+                      {relativeTime(account.updatedAt, t)}
                     </span>
                   )}
                 </span>
@@ -112,14 +117,14 @@ export function AccountSwitcherMenu(props: Props) {
           className="w-full flex items-center gap-2 px-3 py-2 text-[0.8461rem] text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors"
         >
           <PlusIcon className="w-4 h-4" />
-          Add account
+          {t('sessionHeader.accountSwitcher.addAccount')}
         </button>
         <button
           onClick={() => go(Route.SETTINGS_ACCOUNT)}
           className="w-full flex items-center gap-2 px-3 py-2 text-[0.8461rem] text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors"
         >
           <Cog6ToothIcon className="w-4 h-4" />
-          Manage accounts
+          {t('sessionHeader.accountSwitcher.manageAccounts')}
         </button>
       </div>
     </div>

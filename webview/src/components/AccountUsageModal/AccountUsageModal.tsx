@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { useTranslation } from '@/i18n';
 import { Portal } from '@/components/Portal';
 import { useAccountData } from './useAccountData';
 import { SectionLabel } from './SectionLabel';
@@ -12,6 +13,7 @@ interface AccountUsageModalProps {
 }
 
 export function AccountUsageModal({ onClose }: AccountUsageModalProps) {
+  const { t } = useTranslation('common');
   const { data: accountData, isLoading: accountLoading } = useAccountData();
 
   useEffect(() => {
@@ -36,7 +38,7 @@ export function AccountUsageModal({ onClose }: AccountUsageModalProps) {
       <div className="w-full max-w-sm bg-surface-raised border border-border-default rounded-xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-4 pt-4">
-          <h2 className="text-md font-semibold text-text-primary">Account &amp; Usage</h2>
+          <h2 className="text-md font-semibold text-text-primary">{t('accountUsage.title')}</h2>
           <button
             onClick={onClose}
             className="w-6 h-6 flex items-center justify-center rounded text-text-tertiary hover:text-text-secondary hover:bg-surface-hover transition-colors"
@@ -49,7 +51,7 @@ export function AccountUsageModal({ onClose }: AccountUsageModalProps) {
         <div className="px-4 py-4 space-y-5 max-h-[70vh] overflow-y-auto">
           {/* ACCOUNT section */}
           <div>
-            <SectionLabel>Account</SectionLabel>
+            <SectionLabel>{t('accountUsage.accountSection')}</SectionLabel>
             {accountLoading && !accountData ? (
               <>
                 <InfoRowSkeleton />
@@ -58,9 +60,9 @@ export function AccountUsageModal({ onClose }: AccountUsageModalProps) {
               </>
             ) : (
               <>
-                <InfoRow label="Auth method" value={accountData?.authMethod ?? null} />
-                <InfoRow label="Email" value={accountData?.email ?? null} />
-                <InfoRow label="Plan" value={accountData?.plan ?? null} />
+                <InfoRow label={t('accountUsage.authMethod')} value={accountData?.authMethod ?? null} />
+                <InfoRow label={t('accountUsage.email')} value={accountData?.email ?? null} />
+                <InfoRow label={t('accountUsage.plan')} value={accountData?.plan ?? null} />
               </>
             )}
           </div>

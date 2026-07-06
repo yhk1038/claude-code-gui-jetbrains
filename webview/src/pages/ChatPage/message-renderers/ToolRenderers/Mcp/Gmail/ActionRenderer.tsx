@@ -1,4 +1,5 @@
 import {ToolUseBlockDto} from "@/dto";
+import {i18n} from "@/i18n";
 import {RendererProps, ToolHeader, ToolWrapper, toolResultText} from "../../common";
 import {McpToolBody, McpToolRow, formatMcpToolName} from "../_common";
 
@@ -6,6 +7,8 @@ import {McpToolBody, McpToolRow, formatMcpToolName} from "../_common";
  * Builds the header description for a Gmail action tool from its input.
  * Each entry maps a tool name to a function that turns the (untyped) input into
  * a concise, human-readable summary. Original field names are read as-is.
+ * These functions run outside any React hook context, so they use the global
+ * i18n instance directly rather than the useTranslation hook.
  */
 export type ActionDescriptionFn = (input: Record<string, unknown>) => string;
 
@@ -23,29 +26,32 @@ function asString(value: unknown): string {
  * concrete label is carried in labelOption ('TRASH' | 'SPAM'); any other value
  * falls back to a neutral phrasing so the card never shows an empty header.
  */
-function sensitiveAction(target: string): ActionDescriptionFn {
+function sensitiveAction(target: 'message' | 'thread'): ActionDescriptionFn {
     return (input) => {
         const option = asString(input.labelOption);
-        if (option === 'TRASH') return `Move ${target} to Trash`;
-        if (option === 'SPAM') return `Mark ${target} as Spam`;
-        return `Apply sensitive label to ${target}`;
+        const targetLabel = target === 'message'
+            ? i18n.t('chatTools:gmail.action.targetMessage')
+            : i18n.t('chatTools:gmail.action.targetThread');
+        if (option === 'TRASH') return i18n.t('chatTools:gmail.action.moveToTrash', {target: targetLabel});
+        if (option === 'SPAM') return i18n.t('chatTools:gmail.action.markAsSpam', {target: targetLabel});
+        return i18n.t('chatTools:gmail.action.applySensitiveLabel', {target: targetLabel});
     };
 }
 
 export const GmailActionDescriptions: Record<string, ActionDescriptionFn> = {
-    label_thread: (input) => `Add ${labelCount(input)} label(s) to thread`,
-    unlabel_thread: (input) => `Remove ${labelCount(input)} label(s) from thread`,
-    label_message: (input) => `Add ${labelCount(input)} label(s) to message`,
-    unlabel_message: (input) => `Remove ${labelCount(input)} label(s) from message`,
+    label_thread: (input) => i18n.t('chatTools:gmail.action.addLabelsToThread', {count: labelCount(input)}),
+    unlabel_thread: (input) => i18n.t('chatTools:gmail.action.removeLabelsFromThread', {count: labelCount(input)}),
+    label_message: (input) => i18n.t('chatTools:gmail.action.addLabelsToMessage', {count: labelCount(input)}),
+    unlabel_message: (input) => i18n.t('chatTools:gmail.action.removeLabelsFromMessage', {count: labelCount(input)}),
     create_label: (input) => {
         const name = asString(input.name);
-        return name ? `Create label: ${name}` : 'Create label';
+        return name ? i18n.t('chatTools:gmail.action.createLabelNamed', {name}) : i18n.t('chatTools:gmail.action.createLabel');
     },
     update_label: (input) => {
         const name = asString(input.name);
-        return name ? `Update label: ${name}` : 'Update label';
+        return name ? i18n.t('chatTools:gmail.action.updateLabelNamed', {name}) : i18n.t('chatTools:gmail.action.updateLabel');
     },
-    delete_label: () => 'Delete label',
+    delete_label: () => i18n.t('chatTools:gmail.action.deleteLabel'),
     apply_sensitive_message_label: sensitiveAction('message'),
     apply_sensitive_thread_label: sensitiveAction('thread'),
 };

@@ -4,13 +4,13 @@ import { ToggleSwitch } from '@/components/ToggleSwitch';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 import { type InputMode, INPUT_MODES, getAvailableModes, CLI_FLAG_TO_INPUT_MODE, INPUT_MODE_TO_CLI_FLAG } from '@/types/chatInput';
 import type { PermissionsConfig } from '@/types/claude-settings';
-import { ROUTE_META, Route } from '@/router/routes';
+import { useTranslation } from '@/i18n';
 
 const NOT_SET_VALUE = '__NOT_SET__';
 
 export function PermissionsSettings() {
+  const { t } = useTranslation('settings');
   const { settings, scopeSettings, updateSetting, scope } = useClaudeSettings();
-  const meta = ROUTE_META[Route.SETTINGS_PERMISSIONS];
 
   const permissions = (scopeSettings.permissions ?? {}) as PermissionsConfig;
   const mergedPermissions = (settings.permissions ?? {}) as PermissionsConfig;
@@ -41,7 +41,7 @@ export function PermissionsSettings() {
 
   const defaultModeOptions: SelectOption[] = [
     ...(scope === 'project'
-      ? [{ value: NOT_SET_VALUE, label: 'Not set (use global)', italic: true }]
+      ? [{ value: NOT_SET_VALUE, label: t('permissions.notSet'), italic: true }]
       : []),
     ...getAvailableModes(mergedBypassDisabled).map((modeId) => ({
       value: modeId,
@@ -51,20 +51,20 @@ export function PermissionsSettings() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-text-primary mb-6">{meta.label}</h2>
+      <h2 className="text-xl font-semibold text-text-primary mb-6">{t('permissions.heading')}</h2>
 
-      <SettingSection title="Bypass Mode">
+      <SettingSection title={t('permissions.bypassMode.sectionTitle')}>
         <SettingRow
-          label="Disable Bypass Mode"
-          description="Prevent bypass permissions mode from being activated"
+          label={t('permissions.bypassMode.label')}
+          description={t('permissions.bypassMode.description')}
         >
           {isBypassNotSet ? (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-text-tertiary italic">Not set (use global)</span>
+              <span className="text-xs text-text-tertiary italic">{t('permissions.notSet')}</span>
               <ToggleSwitch
                 checked={false}
                 onChange={() => savePermissionsKey('disableBypassPermissionsMode', 'disable')}
-                ariaLabel="Disable Bypass Mode"
+                ariaLabel={t('permissions.bypassMode.label')}
               />
             </div>
           ) : (
@@ -76,21 +76,21 @@ export function PermissionsSettings() {
                 }
                 return deletePermissionsKey('disableBypassPermissionsMode');
               }}
-              ariaLabel="Disable Bypass Mode"
+              ariaLabel={t('permissions.bypassMode.label')}
             />
           )}
         </SettingRow>
       </SettingSection>
 
-      <SettingSection title="Default Input Mode">
+      <SettingSection title={t('permissions.defaultMode.sectionTitle')}>
         <SettingRow
-          label="Default Input Mode"
-          description="Initial permission mode when opening a new session"
+          label={t('permissions.defaultMode.label')}
+          description={t('permissions.defaultMode.description')}
         >
           <Select
             value={isDefaultModeNotSet ? NOT_SET_VALUE : defaultModeValue}
             options={defaultModeOptions}
-            ariaLabel="Default Input Mode"
+            ariaLabel={t('permissions.defaultMode.label')}
             onChange={(value) => {
               if (value === NOT_SET_VALUE) {
                 deletePermissionsKey('defaultMode');

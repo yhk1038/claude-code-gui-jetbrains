@@ -1,0 +1,185 @@
+{
+  "confirmDialog": {
+    "confirm": "Confirmar",
+    "cancel": "Cancelar"
+  },
+  "contextChip": {
+    "removeContext": "Quitar contexto"
+  },
+  "errorBoundary": {
+    "somethingWentWrong": "Algo salió mal.",
+    "retry": "Reintentar"
+  },
+  "effortSlider": {
+    "tooltip": "Haz clic o arrastra para definir el nivel de esfuerzo",
+    "tooltipUltracode": "Haz clic o arrastra para definir el nivel de esfuerzo (nivel máximo = ultracode)"
+  },
+  "accountUsage": {
+    "title": "Cuenta y uso",
+    "accountSection": "Cuenta",
+    "authMethod": "Método de autenticación",
+    "email": "Correo electrónico",
+    "plan": "Plan"
+  },
+  "usageSection": {
+    "title": "Uso",
+    "updated": "Actualizado {{time}}",
+    "refresh": "Actualizar",
+    "session5hr": "Sesión (5h)",
+    "weekly7day": "Semanal (7 días)",
+    "weeklySonnet": "Sonnet semanal",
+    "weeklyOpus": "Opus semanal"
+  },
+  "usageReport": {
+    "title": "Contribución al uso",
+    "refresh": "Actualizar",
+    "empty": "No hay desglose de uso disponible.",
+    "requests": "{{value}} solicitudes",
+    "sessions": "{{value}} sesiones",
+    "percentOfUsage": "% del uso"
+  },
+  "mcpModal": {
+    "title": "Servidores MCP",
+    "refreshServers": "Actualizar servidores MCP",
+    "browseRegistry": "Explorar el registro de MCP",
+    "addServer": "Agregar servidor MCP",
+    "checkingHealth": "Comprobando el estado de los servidores MCP…",
+    "serverNotFound": "Servidor no encontrado.",
+    "learnMore": "Más información sobre MCP",
+    "editReplaceSingle": "Editar reemplaza un solo servidor — pega la configuración de exactamente un servidor.",
+    "saved": "{{name}} guardado",
+    "added": "{{name}} agregado",
+    "addFailed": "{{failed}}/{{total}} servidor(es) no se pudieron agregar:",
+    "form": {
+      "editTitle": "Editar servidor MCP",
+      "addTitle": "Agregar servidor MCP",
+      "back": "Atrás",
+      "nameLabel": "Nombre",
+      "nameHint": "Opcional — solo se usa cuando tu JSON no tiene un contenedor “mcpServers”",
+      "namePlaceholder": "mi-servidor",
+      "scopeLabel": "Alcance",
+      "scopeUser": "Usuario (todos los proyectos)",
+      "scopeProject": "Proyecto (.mcp.json)",
+      "scopeLocal": "Local (solo este proyecto)",
+      "configLabel": "Configuración (JSON)",
+      "configHint": "Pega una configuración de mcpServers o de un solo servidor",
+      "cancel": "Cancelar",
+      "saving": "Guardando",
+      "adding": "Agregando",
+      "save": "Guardar",
+      "addButton": "Agregar servidor"
+    },
+    "marketplace": {
+      "back": "Atrás",
+      "searchPlaceholder": "Buscar en el registro de MCP…",
+      "searchPrompt": "Busca en el registro oficial de MCP para encontrar e instalar servidores.",
+      "searching": "Buscando…",
+      "noServers": "No se encontraron servidores.",
+      "openRepo": "Abrir {{url}}",
+      "needsInputs": "Necesita {{count}} entradas: {{inputs}}",
+      "needsInputs_one": "Necesita {{count}} entrada: {{inputs}}",
+      "needsInputs_other": "Necesita {{count}} entradas: {{inputs}}",
+      "configureAdd": "Configurar y agregar",
+      "noInstallInfo": "No hay información de instalación disponible",
+      "add": "Agregar"
+    },
+    "list": {
+      "noServersConfigured": "No hay servidores MCP configurados.",
+      "addOne": "Agregar uno",
+      "scope": {
+        "project": "Proyecto",
+        "local": "Local",
+        "user": "Usuario",
+        "claudeai": "claude.ai",
+        "managed": "Administrado",
+        "enterprise": "Enterprise"
+      }
+    },
+    "detail": {
+      "backToList": "Volver a la lista",
+      "edit": "Editar",
+      "type": "Tipo: {{value}}",
+      "authenticate": "Autenticar",
+      "reconnect": "Reconectar",
+      "reconnecting": "Reconectando",
+      "clearAuth": "Borrar autenticación",
+      "enable": "Habilitar",
+      "disable": "Deshabilitar",
+      "loadingTools": "Cargando herramientas…",
+      "loadToolsError": "No se pudieron cargar las herramientas",
+      "viewTools": "Ver herramientas ({{count}})",
+      "readOnly": "solo lectura",
+      "destructive": "destructivo",
+      "removeConfirm": "¿Eliminar \"{{name}}\"?",
+      "remove": "Eliminar",
+      "cancel": "Cancelar",
+      "removeServer": "Eliminar servidor"
+    },
+    "status": {
+      "connected": "Conectado",
+      "failed": "Fallido",
+      "needsAuth": "Requiere autenticación",
+      "connecting": "Conectando…",
+      "disabled": "Deshabilitado"
+    }
+  },
+  "tunnelModal": {
+    "title": "Túnel remoto",
+    "remoteTunnelUnofficial": "Túnel remoto (no oficial)",
+    "exposeVia": "Exponer mediante cloudflared",
+    "installingCloudflared": "Instalando cloudflared…",
+    "connecting": "Conectando…",
+    "typicalTime": "Normalmente ~1 min (instalación: ~3 min)",
+    "preventSleep": "Evitar suspensión",
+    "keepAwake": "Mantener activo mientras el túnel esté en uso"
+  },
+  "tunnelStatusNotice": {
+    "tryAgain": "Reintentar",
+    "installGuide": "Guía de instalación",
+    "copyCommand": "Copiar comando",
+    "installConsent": "cloudflared no está instalado. ¿Instalarlo ahora y habilitar el túnel? Esto descarga cloudflared (unos 3 minutos la primera vez).",
+    "installAndEnable": "Instalar y habilitar",
+    "cancel": "Cancelar",
+    "notInstalledWarning": "cloudflared aún no está instalado. Activar el túnel pedirá descargarlo (unos 3 minutos la primera vez).",
+    "errors": {
+      "cloudflaredMissing": {
+        "title": "No se pudo instalar cloudflared",
+        "detail": "El túnel necesita cloudflared y no se pudo instalar automáticamente. Instálalo manualmente y vuelve a intentarlo."
+      },
+      "timeout": {
+        "title": "Se agotó el tiempo de conexión del túnel",
+        "detail": "No se pudo conectar a tiempo con el servidor de túnel de Cloudflare. Revisa tu red o firewall: algunas regiones restringen el acceso a Cloudflare."
+      },
+      "exited": {
+        "title": "cloudflared se detuvo inesperadamente",
+        "detail": "El proceso del túnel se cerró antes de estar listo. Vuelve a intentarlo."
+      },
+      "unknown": {
+        "title": "No se pudo iniciar el túnel",
+        "detail": "Se produjo un error inesperado. Vuelve a intentarlo."
+      }
+    }
+  },
+  "sessionList": {
+    "searchPlaceholder": "Buscar sesiones...",
+    "loadingSessions": "Cargando sesiones...",
+    "refreshSessions": "Actualizar sesiones",
+    "renameSession": "Renombrar sesión",
+    "deleteSession": "Eliminar sesión",
+    "groups": {
+      "today": "Hoy",
+      "yesterday": "Ayer",
+      "pastWeek": "Semana pasada",
+      "pastMonth": "Mes pasado",
+      "pastYear": "Año pasado"
+    },
+    "relativeTime": {
+      "now": "ahora",
+      "years": "{{n}}a",
+      "months": "{{n}}m",
+      "days": "{{n}}d",
+      "hours": "{{n}}h",
+      "minutes": "{{n}}min"
+    }
+  }
+}

@@ -1,0 +1,276 @@
+{
+  "tool": {
+    "in": "IN",
+    "out": "OUT",
+    "declined": "このツールを拒否しました。",
+    "declinedWithInstruction": "このツールを拒否しました。代わりにClaudeへ指示: 「{{instruction}}」"
+  },
+  "message": {
+    "copyMessage": "メッセージをコピー",
+    "retry": "再試行",
+    "unknownTool": "unknown"
+  },
+  "interrupted": {
+    "default": "中断されました",
+    "toolInterrupted": "ツールが中断されました"
+  },
+  "attachments": {
+    "imageAlt": "画像 {{index}}",
+    "fullSizeAlt": "原寸大"
+  },
+  "edit": {
+    "modified": "変更済み"
+  },
+  "write": {
+    "lineCount": "{{count}} 行"
+  },
+  "glob": {
+    "pattern": "パターン: \"{{pattern}}\"",
+    "foundFiles": "{{count}} 件のファイルが見つかりました",
+    "foundFiles_one": "{{count}} 件のファイルが見つかりました",
+    "foundFiles_other": "{{count}} 件のファイルが見つかりました"
+  },
+  "grep": {
+    "inPath": "({{path}} 内)",
+    "globPattern": "(glob: {{glob}})"
+  },
+  "webFetch": {
+    "fetchedFrom": "取得元"
+  },
+  "todoWrite": {
+    "title": "Todoを更新"
+  },
+  "notebookEdit": {
+    "title": "ノートブックセルを編集",
+    "noContent": "[コンテンツなし]",
+    "status": {
+      "inserted": "挿入済み",
+      "replaced": "置換済み",
+      "deleted": "削除済み",
+      "success": "成功"
+    }
+  },
+  "skill": {
+    "fallback": "スキル",
+    "expandLabel": "スキル"
+  },
+  "askUserQuestion": {
+    "ask": "ASK",
+    "out": "OUT"
+  },
+  "exitPlanMode": {
+    "title": "Claudeのプラン",
+    "planModeTitle": "プランモード",
+    "approved": "ユーザーがプランを承認しました",
+    "stayedInPlanMode": "プランモードのまま",
+    "feedbackLabel": "RE:"
+  },
+  "task": {
+    "common": {
+      "in": "IN",
+      "out": "OUT",
+      "form": "FORM",
+      "taskPrefix": "task:"
+    },
+    "create": {
+      "what": "WHAT"
+    },
+    "update": {
+      "status": "STATUS",
+      "subject": "SUBJECT",
+      "desc": "DESC",
+      "owner": "OWNER",
+      "blocks": "BLOCKS",
+      "blockedBy": "BLOCKED-BY"
+    },
+    "output": {
+      "type": "type",
+      "status": "status",
+      "retrieval": "retrieval",
+      "copied": "コピーしました",
+      "retrievalCompleted": "完了",
+      "retrievalTimedOut": "タイムアウト",
+      "retrievalError": "エラー"
+    }
+  },
+  "workflow": {
+    "agentsMeta": "{{count}} エージェント",
+    "tokensMeta": "{{value}} トークン",
+    "phaseSuffix": " ({{count}} フェーズ)",
+    "phaseSuffix_one": " ({{count}} フェーズ)",
+    "phaseSuffix_other": " ({{count}} フェーズ)",
+    "taskIdDetail": "タスクID: {{taskId}}",
+    "runningInBackground": "バックグラウンドで実行中…",
+    "agentsUsageLabel": "エージェント {{count}}",
+    "tokensUsageLabel": "トークン {{value}}",
+    "toolsUsageLabel": "ツール {{count}}"
+  },
+  "mcp": {
+    "common": {
+      "out": "OUT"
+    }
+  },
+  "filesystem": {
+    "common": {
+      "in": "IN",
+      "out": "OUT"
+    },
+    "editFile": {
+      "dryRun": "(ドライラン)"
+    },
+    "readMultipleFiles": {
+      "fileCount": "{{count}} ファイル"
+    }
+  },
+  "gmail": {
+    "common": {
+      "unknownSender": "(送信者不明)"
+    },
+    "action": {
+      "addLabelsToThread": "スレッドに{{count}}件のラベルを追加",
+      "removeLabelsFromThread": "スレッドから{{count}}件のラベルを削除",
+      "addLabelsToMessage": "メッセージに{{count}}件のラベルを追加",
+      "removeLabelsFromMessage": "メッセージから{{count}}件のラベルを削除",
+      "createLabel": "ラベルを作成",
+      "createLabelNamed": "ラベルを作成: {{name}}",
+      "updateLabel": "ラベルを更新",
+      "updateLabelNamed": "ラベルを更新: {{name}}",
+      "deleteLabel": "ラベルを削除",
+      "moveToTrash": "{{target}}をゴミ箱へ移動",
+      "markAsSpam": "{{target}}を迷惑メールにする",
+      "applySensitiveLabel": "{{target}}に機密ラベルを適用",
+      "targetMessage": "メッセージ",
+      "targetThread": "スレッド"
+    },
+    "createDraft": {
+      "description": "下書きを作成しました",
+      "to": "宛先",
+      "cc": "Cc",
+      "bcc": "Bcc"
+    },
+    "listDrafts": {
+      "count": "{{count}} 件の下書き"
+    },
+    "listLabels": {
+      "count": "{{count}} 件のラベル",
+      "unnamed": "(名前なし)"
+    },
+    "searchThreads": {
+      "resultsFound": "{{count}} 件見つかりました"
+    }
+  },
+  "jetbrains": {
+    "common": {
+      "in": "IN",
+      "out": "OUT",
+      "exitCode": "終了コード {{code}}",
+      "projectRoot": "プロジェクトルート",
+      "scopeIn": "対象",
+      "currentProject": "現在のプロジェクト",
+      "differentProject": "別のプロジェクト",
+      "applied": "適用済み",
+      "notApplied": "未適用",
+      "declined": "拒否",
+      "declinedNote": "このツールを拒否しました。",
+      "unrecognizedInputTitle": "認識できない入力 — 許可する前に確認してください",
+      "unexpectedType": "(予期しない型)",
+      "debuggerStatus": {
+        "paused": "一時停止中",
+        "running": "実行中",
+        "stopped": "停止",
+        "timeout": "タイムアウト"
+      }
+    },
+    "action": {
+      "debuggerAction": "デバッガー: {{action}}",
+      "line": "{{line}} 行目",
+      "patchOp": {
+        "add": "追加",
+        "delete": "削除",
+        "update": "更新"
+      }
+    },
+    "breakpoint": {
+      "logpoint": "ログポイント",
+      "suspend": "サスペンド: {{policy}}",
+      "breakpointsMuted": "ブレークポイントをミュート中",
+      "breakpointsUnmuted": "ブレークポイントのミュート解除",
+      "temporary": "一時的",
+      "disabled": "無効",
+      "logMessage": "ログメッセージ",
+      "logStack": "ログスタック",
+      "id": "id {{id}}",
+      "owner": "所有者: {{owner}}",
+      "conditionLabel": "条件",
+      "logLabel": "ログ"
+    },
+    "createNewFile": {
+      "overwritesExisting": "既存のファイルを上書きします",
+      "lineCount": "{{count}} 行",
+      "lineCount_one": "{{count}} 行",
+      "lineCount_other": "{{count}} 行"
+    },
+    "executeTerminalCommand": {
+      "executionModeTooltip": "ユーザーのデフォルトシェルで実行するか、直接プロセスとして実行するか",
+      "shell": "シェル",
+      "direct": "直接実行"
+    },
+    "getRunConfigurations": {
+      "none": "実行構成がありません"
+    },
+    "gitStatus": {
+      "includeIgnored": "無視されたファイルを含む",
+      "includeUntracked": "未追跡ファイルを含む",
+      "changeCount": "{{count}} 件の変更",
+      "changeCount_one": "{{count}} 件の変更",
+      "changeCount_other": "{{count}} 件の変更",
+      "clean": "作業ツリーはクリーンです",
+      "status": {
+        "untracked": "未追跡",
+        "modified": "変更済み",
+        "added": "追加済み",
+        "deleted": "削除済み",
+        "renamed": "名前変更済み",
+        "copied": "コピー済み",
+        "conflict": "競合",
+        "changed": "変更あり"
+      }
+    },
+    "openFiles": {
+      "none": "開いているファイルがありません",
+      "active": "アクティブ"
+    },
+    "problems": {
+      "errorsOnly": "エラーのみ",
+      "buildSucceeded": "ビルド成功",
+      "none": "問題はありません",
+      "count": "{{count}} 件の問題",
+      "count_one": "{{count}} 件の問題",
+      "count_other": "{{count}} 件の問題",
+      "infoSeverity": "情報"
+    },
+    "projectList": {
+      "none": "なし"
+    },
+    "replaceText": {
+      "all": "すべて",
+      "caseSensitive": "大文字小文字を区別",
+      "old": "変更前",
+      "new": "変更後"
+    },
+    "search": {
+      "matchCount": "件一致",
+      "matchCount_one": "件一致",
+      "matchCount_other": "件一致",
+      "word": {
+        "pattern": "パターン",
+        "text": "テキスト",
+        "regex": "正規表現",
+        "glob": "glob",
+        "name": "名前",
+        "symbol": "シンボル",
+        "query": "クエリ"
+      }
+    }
+  }
+}

@@ -3,6 +3,7 @@ import {ContextPills} from "@/pages/ChatPage/message-renderers";
 import type {LoadedMessageDto} from "@/types";
 import {Tooltip} from "@/components";
 import {cn} from "@/utils/cn.ts";
+import {useTranslation} from "@/i18n";
 import {ToolUseBlockDto} from "@/dto/message/ContentBlockDto";
 import {useToolStatus, type ToolStatus} from "./toolStatus";
 
@@ -26,13 +27,16 @@ export * from './toolStatus';
  * fallback and any renderer that wants the plain form (the JetBrains cards use
  * their own badge-styled variant). Shows the instruction the user gave, if any.
  */
-export const DeclinedNote = (props: {instruction?: string}) => (
-    <div className="mt-1 text-[0.8461rem] text-text-tertiary italic whitespace-pre-wrap">
-        {props.instruction
-            ? `You declined this tool. Asked Claude instead: “${props.instruction}”`
-            : 'You declined this tool.'}
-    </div>
-);
+export const DeclinedNote = (props: {instruction?: string}) => {
+    const {t} = useTranslation('chatTools');
+    return (
+        <div className="mt-1 text-[0.8461rem] text-text-tertiary italic whitespace-pre-wrap">
+            {props.instruction
+                ? t('tool.declinedWithInstruction', {instruction: props.instruction})
+                : t('tool.declined')}
+        </div>
+    );
+};
 
 export const ToolWrapper = (props: {
     message?: LoadedMessageDto;

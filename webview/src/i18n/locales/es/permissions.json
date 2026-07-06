@@ -1,0 +1,6 @@
+{
+  "notifications": {
+    "label": "Notificaciones de escritorio",
+    "description": "Recibe una notificación cuando las respuestas se completen"
+  }
+}

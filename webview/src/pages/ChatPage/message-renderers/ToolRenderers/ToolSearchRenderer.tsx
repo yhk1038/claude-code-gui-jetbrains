@@ -1,4 +1,5 @@
 import {ToolUseBlockDto} from "@/dto";
+import {useTranslation} from "@/i18n";
 import {Container, LabelValue, RendererProps, ToolHeader, ToolWrapper} from "./common";
 
 class ToolSearchToolUseDto extends ToolUseBlockDto {
@@ -17,6 +18,7 @@ interface ToolSearchResultDto {
 }
 
 export function ToolSearchRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const toolUse = props.toolUse as unknown as ToolSearchToolUseDto;
     const query = toolUse.input?.query ?? '';
     const toolResult = props.toolResult as ToolSearchResultDto | undefined;
@@ -31,7 +33,7 @@ export function ToolSearchRenderer(props: RendererProps) {
 
             {props.toolResult && matches.length > 0 && (
                 <Container>
-                    <LabelValue label="OUT" maxHeight="max-h-[60px]">
+                    <LabelValue label={t('tool.out')} maxHeight="max-h-[60px]">
                         {matches.join(', ')}
                     </LabelValue>
                 </Container>

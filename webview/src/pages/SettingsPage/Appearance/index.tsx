@@ -2,8 +2,8 @@ import { SettingSection, SettingRow } from '../common';
 import { Select, type SelectOption } from '@/components/Select';
 import { useSettings } from '@/contexts/SettingsContext';
 import { SettingKey, ThemeMode } from '@/types/settings';
-import { ROUTE_META, Route } from '@/router/routes';
 import { isJetBrains } from '@/config/environment';
+import { useTranslation } from '@/i18n';
 import {
   AUTO_SCROLL_THRESHOLD_DEFAULT,
   AUTO_SCROLL_THRESHOLD_MIN,
@@ -14,8 +14,8 @@ import {
 const NOT_SET_VALUE = '__NOT_SET__';
 
 export function AppearanceSettings() {
+  const { t } = useTranslation('settings');
   const { scopeSettings, updateSetting, scope, resetToGlobal } = useSettings();
-  const meta = ROUTE_META[Route.SETTINGS_APPEARANCE];
 
   const rawTheme = scopeSettings[SettingKey.THEME] as ThemeMode | undefined;
   const isThemeNotSet = rawTheme === undefined && scope === 'project';
@@ -29,28 +29,33 @@ export function AppearanceSettings() {
 
   const themeOptions: SelectOption[] = [
     ...(scope === 'project'
-      ? [{ value: NOT_SET_VALUE, label: 'Not set (use global)', italic: true }]
+      ? [{ value: NOT_SET_VALUE, label: t('appearance.theme.colorTheme.notSet'), italic: true }]
       : []),
-    { value: ThemeMode.SYSTEM, label: isJetBrains() ? 'System (IDE)' : 'System (OS)' },
-    { value: ThemeMode.LIGHT, label: 'Light' },
-    { value: ThemeMode.DARK, label: 'Dark' },
+    {
+      value: ThemeMode.SYSTEM,
+      label: isJetBrains()
+        ? t('appearance.theme.colorTheme.systemIde')
+        : t('appearance.theme.colorTheme.systemOs'),
+    },
+    { value: ThemeMode.LIGHT, label: t('appearance.theme.colorTheme.light') },
+    { value: ThemeMode.DARK, label: t('appearance.theme.colorTheme.dark') },
   ];
 
   return (
     <div>
       <h2 className="text-xl font-semibold text-text-primary mb-6">
-        {meta.label}
+        {t('appearance.title')}
       </h2>
 
-      <SettingSection title="Theme">
+      <SettingSection title={t('appearance.theme.sectionTitle')}>
         <SettingRow
-          label="Color Theme"
-          description="Choose the color theme for the interface"
+          label={t('appearance.theme.colorTheme.label')}
+          description={t('appearance.theme.colorTheme.description')}
         >
           <Select
             value={themeValue}
             options={themeOptions}
-            ariaLabel="Color Theme"
+            ariaLabel={t('appearance.theme.colorTheme.label')}
             onChange={(value) => {
               if (value === NOT_SET_VALUE) {
                 resetToGlobal(SettingKey.THEME);
@@ -65,15 +70,15 @@ export function AppearanceSettings() {
         </SettingRow>
 
         <SettingRow
-          label="Font Size"
-          description="Base font size for the interface"
+          label={t('appearance.theme.fontSize.label')}
+          description={t('appearance.theme.fontSize.description')}
         >
           <input
             type="number"
             min="8"
             max="32"
             value={isFontSizeNotSet ? '' : (rawFontSize ?? 13)}
-            placeholder={isFontSizeNotSet ? 'Not set' : undefined}
+            placeholder={isFontSizeNotSet ? t('appearance.theme.fontSize.notSetPlaceholder') : undefined}
             onChange={(e) => {
               const value = e.target.value;
               if (value === '') {
@@ -91,10 +96,10 @@ export function AppearanceSettings() {
         </SettingRow>
       </SettingSection>
 
-      <SettingSection title="Scrolling">
+      <SettingSection title={t('appearance.scrolling.sectionTitle')}>
         <SettingRow
-          label="Auto-scroll resume distance"
-          description={`Scrolling up always pauses auto-scroll so you can read freely. It resumes once you scroll back within this many pixels of the bottom. Smaller means you must return closer to re-engage. Default ${AUTO_SCROLL_THRESHOLD_DEFAULT}.`}
+          label={t('appearance.scrolling.autoScrollThreshold.label')}
+          description={t('appearance.scrolling.autoScrollThreshold.description', { value: AUTO_SCROLL_THRESHOLD_DEFAULT })}
         >
           <input
             type="number"
@@ -102,7 +107,7 @@ export function AppearanceSettings() {
             max={AUTO_SCROLL_THRESHOLD_MAX}
             step="1"
             value={isAutoScrollThresholdNotSet ? '' : (rawAutoScrollThreshold ?? AUTO_SCROLL_THRESHOLD_DEFAULT)}
-            placeholder={isAutoScrollThresholdNotSet ? 'Not set' : undefined}
+            placeholder={isAutoScrollThresholdNotSet ? t('appearance.scrolling.autoScrollThreshold.notSetPlaceholder') : undefined}
             onChange={(e) => {
               const value = e.target.value;
               if (value === '') {

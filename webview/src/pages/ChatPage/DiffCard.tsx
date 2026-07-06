@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { PendingDiff, DiffStatus } from '../../types';
 import { DiffViewer } from './DiffViewer';
+import { useTranslation } from '@/i18n';
 
 interface DiffCardProps {
   diff: PendingDiff;
@@ -10,6 +11,7 @@ interface DiffCardProps {
 }
 
 export function DiffCard({ diff, onApply, onReject, onOpenInIDE }: DiffCardProps) {
+  const { t } = useTranslation('chat');
   const [isExpanded, setIsExpanded] = useState(true);
   const [isApplying, setIsApplying] = useState(false);
   const [isOpeningDiff, setIsOpeningDiff] = useState(false);
@@ -37,11 +39,11 @@ export function DiffCard({ diff, onApply, onReject, onOpenInIDE }: DiffCardProps
   const getOperationLabel = () => {
     switch (diff.summary.operation) {
       case 'create':
-        return 'Create';
+        return t('diffCard.operation.create');
       case 'modify':
-        return 'Modify';
+        return t('diffCard.operation.modify');
       case 'delete':
-        return 'Delete';
+        return t('diffCard.operation.delete');
     }
   };
 
@@ -61,19 +63,19 @@ export function DiffCard({ diff, onApply, onReject, onOpenInIDE }: DiffCardProps
       case DiffStatus.Pending:
         return (
           <span className="px-2 py-0.5 text-xs rounded bg-state-warning-bg text-state-warning-fg">
-            Pending
+            {t('diffCard.status.pending')}
           </span>
         );
       case DiffStatus.Applied:
         return (
           <span className="px-2 py-0.5 text-xs rounded bg-state-success-bg text-state-success-fg">
-            Applied
+            {t('diffCard.status.applied')}
           </span>
         );
       case DiffStatus.Rejected:
         return (
           <span className="px-2 py-0.5 text-xs rounded bg-state-error-bg text-state-error-fg">
-            Rejected
+            {t('diffCard.status.rejected')}
           </span>
         );
     }
@@ -87,7 +89,7 @@ export function DiffCard({ diff, onApply, onReject, onOpenInIDE }: DiffCardProps
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="text-text-secondary hover:text-text-primary transition-colors flex-shrink-0"
-            aria-label={isExpanded ? 'Collapse' : 'Expand'}
+            aria-label={isExpanded ? t('diffCard.collapse') : t('diffCard.expand')}
           >
             <svg
               className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
@@ -126,9 +128,9 @@ export function DiffCard({ diff, onApply, onReject, onOpenInIDE }: DiffCardProps
                   onClick={handleOpenInIDE}
                   disabled={isApplying || isOpeningDiff}
                   className="px-3 py-1 text-sm rounded bg-accent-primary-hover hover:bg-accent-primary-pressed text-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Open in IDE diff viewer"
+                  title={t('diffCard.openInIdeTitle')}
                 >
-                  {isOpeningDiff ? 'Opening...' : 'Open in IDE'}
+                  {isOpeningDiff ? t('diffCard.opening') : t('diffCard.openInIde')}
                 </button>
               )}
               <button
@@ -136,14 +138,14 @@ export function DiffCard({ diff, onApply, onReject, onOpenInIDE }: DiffCardProps
                 disabled={isApplying || isOpeningDiff}
                 className="px-3 py-1 text-sm rounded bg-state-success-fg hover:bg-state-success-fg text-text-inverse transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isApplying ? 'Applying...' : 'Apply'}
+                {isApplying ? t('diffCard.applying') : t('diffCard.apply')}
               </button>
               <button
                 onClick={() => onReject(diff.id)}
                 disabled={isApplying || isOpeningDiff}
                 className="px-3 py-1 text-sm rounded bg-surface-tooltip hover:bg-surface-pressed text-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Reject
+                {t('diffCard.reject')}
               </button>
             </>
           )}

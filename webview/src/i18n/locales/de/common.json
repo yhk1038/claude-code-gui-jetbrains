@@ -1,0 +1,185 @@
+{
+  "confirmDialog": {
+    "confirm": "Bestätigen",
+    "cancel": "Abbrechen"
+  },
+  "contextChip": {
+    "removeContext": "Kontext entfernen"
+  },
+  "errorBoundary": {
+    "somethingWentWrong": "Es ist ein Fehler aufgetreten.",
+    "retry": "Erneut versuchen"
+  },
+  "effortSlider": {
+    "tooltip": "Klicken oder ziehen, um die Aufwandsstufe festzulegen",
+    "tooltipUltracode": "Klicken oder ziehen, um die Aufwandsstufe festzulegen (oberste Stufe = Ultracode)"
+  },
+  "accountUsage": {
+    "title": "Konto & Nutzung",
+    "accountSection": "Konto",
+    "authMethod": "Anmeldemethode",
+    "email": "E-Mail",
+    "plan": "Tarif"
+  },
+  "usageSection": {
+    "title": "Nutzung",
+    "updated": "Aktualisiert {{time}}",
+    "refresh": "Aktualisieren",
+    "session5hr": "Sitzung (5 Std.)",
+    "weekly7day": "Wöchentlich (7 Tage)",
+    "weeklySonnet": "Wöchentlich Sonnet",
+    "weeklyOpus": "Wöchentlich Opus"
+  },
+  "usageReport": {
+    "title": "Beitrag zur Nutzung",
+    "refresh": "Aktualisieren",
+    "empty": "Keine Nutzungsaufschlüsselung verfügbar.",
+    "requests": "{{value}} Anfragen",
+    "sessions": "{{value}} Sitzungen",
+    "percentOfUsage": "% der Nutzung"
+  },
+  "mcpModal": {
+    "title": "MCP-Server",
+    "refreshServers": "MCP-Server aktualisieren",
+    "browseRegistry": "MCP-Registry durchsuchen",
+    "addServer": "MCP-Server hinzufügen",
+    "checkingHealth": "MCP-Serverstatus wird geprüft…",
+    "serverNotFound": "Server nicht gefunden.",
+    "learnMore": "Mehr über MCP erfahren",
+    "editReplaceSingle": "Bearbeiten ersetzt einen einzelnen Server — füge genau eine Serverkonfiguration ein.",
+    "saved": "{{name}} gespeichert",
+    "added": "{{name}} hinzugefügt",
+    "addFailed": "{{failed}}/{{total}} Server konnten nicht hinzugefügt werden:",
+    "form": {
+      "editTitle": "MCP-Server bearbeiten",
+      "addTitle": "MCP-Server hinzufügen",
+      "back": "Zurück",
+      "nameLabel": "Name",
+      "nameHint": "Optional — wird nur verwendet, wenn dein JSON keinen „mcpServers“-Wrapper hat",
+      "namePlaceholder": "mein-server",
+      "scopeLabel": "Bereich",
+      "scopeUser": "Benutzer (alle Projekte)",
+      "scopeProject": "Projekt (.mcp.json)",
+      "scopeLocal": "Lokal (nur dieses Projekt)",
+      "configLabel": "Konfiguration (JSON)",
+      "configHint": "Füge eine mcpServers-Konfiguration oder eine einzelne Serverkonfiguration ein",
+      "cancel": "Abbrechen",
+      "saving": "Wird gespeichert",
+      "adding": "Wird hinzugefügt",
+      "save": "Speichern",
+      "addButton": "Server hinzufügen"
+    },
+    "marketplace": {
+      "back": "Zurück",
+      "searchPlaceholder": "MCP-Registry durchsuchen…",
+      "searchPrompt": "Durchsuche die offizielle MCP-Registry, um Server zu finden und zu installieren.",
+      "searching": "Wird gesucht…",
+      "noServers": "Keine Server gefunden.",
+      "openRepo": "{{url}} öffnen",
+      "needsInputs": "Benötigt {{count}} Eingaben: {{inputs}}",
+      "needsInputs_one": "Benötigt {{count}} Eingabe: {{inputs}}",
+      "needsInputs_other": "Benötigt {{count}} Eingaben: {{inputs}}",
+      "configureAdd": "Konfigurieren & hinzufügen",
+      "noInstallInfo": "Keine Installationsinformationen verfügbar",
+      "add": "Hinzufügen"
+    },
+    "list": {
+      "noServersConfigured": "Keine MCP-Server konfiguriert.",
+      "addOne": "Einen hinzufügen",
+      "scope": {
+        "project": "Projekt",
+        "local": "Lokal",
+        "user": "Benutzer",
+        "claudeai": "claude.ai",
+        "managed": "Verwaltet",
+        "enterprise": "Enterprise"
+      }
+    },
+    "detail": {
+      "backToList": "Zurück zur Liste",
+      "edit": "Bearbeiten",
+      "type": "Typ: {{value}}",
+      "authenticate": "Authentifizieren",
+      "reconnect": "Erneut verbinden",
+      "reconnecting": "Wird erneut verbunden",
+      "clearAuth": "Authentifizierung löschen",
+      "enable": "Aktivieren",
+      "disable": "Deaktivieren",
+      "loadingTools": "Tools werden geladen…",
+      "loadToolsError": "Tools konnten nicht geladen werden",
+      "viewTools": "Tools ansehen ({{count}})",
+      "readOnly": "nur lesen",
+      "destructive": "destruktiv",
+      "removeConfirm": "„{{name}}“ entfernen?",
+      "remove": "Entfernen",
+      "cancel": "Abbrechen",
+      "removeServer": "Server entfernen"
+    },
+    "status": {
+      "connected": "Verbunden",
+      "failed": "Fehlgeschlagen",
+      "needsAuth": "Authentifizierung erforderlich",
+      "connecting": "Wird verbunden…",
+      "disabled": "Deaktiviert"
+    }
+  },
+  "tunnelModal": {
+    "title": "Remote-Tunnel",
+    "remoteTunnelUnofficial": "Remote-Tunnel (Inoffiziell)",
+    "exposeVia": "Über cloudflared freigeben",
+    "installingCloudflared": "cloudflared wird installiert…",
+    "connecting": "Wird verbunden…",
+    "typicalTime": "Typischerweise ~1 Min. (Installation: ~3 Min.)",
+    "preventSleep": "Ruhezustand verhindern",
+    "keepAwake": "Wachbleiben, solange der Tunnel aktiv ist"
+  },
+  "tunnelStatusNotice": {
+    "tryAgain": "Erneut versuchen",
+    "installGuide": "Installationsanleitung",
+    "copyCommand": "Befehl kopieren",
+    "installConsent": "cloudflared ist nicht installiert. Jetzt installieren und den Tunnel aktivieren? Dies lädt cloudflared herunter (beim ersten Mal etwa 3 Minuten).",
+    "installAndEnable": "Installieren & aktivieren",
+    "cancel": "Abbrechen",
+    "notInstalledWarning": "cloudflared ist noch nicht installiert. Das Aktivieren des Tunnels fragt nach dem Herunterladen (beim ersten Mal etwa 3 Minuten).",
+    "errors": {
+      "cloudflaredMissing": {
+        "title": "cloudflared konnte nicht installiert werden",
+        "detail": "Der Tunnel benötigt cloudflared, das nicht automatisch installiert werden konnte. Installieren Sie es manuell und versuchen Sie es erneut."
+      },
+      "timeout": {
+        "title": "Zeitüberschreitung bei der Tunnelverbindung",
+        "detail": "Der Cloudflare-Tunnelserver konnte nicht rechtzeitig erreicht werden. Prüfen Sie Ihr Netzwerk oder Ihre Firewall — in einigen Regionen ist der Zugriff auf Cloudflare eingeschränkt."
+      },
+      "exited": {
+        "title": "cloudflared wurde unerwartet beendet",
+        "detail": "Der Tunnelprozess wurde beendet, bevor er bereit war. Bitte versuchen Sie es erneut."
+      },
+      "unknown": {
+        "title": "Der Tunnel konnte nicht gestartet werden",
+        "detail": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
+      }
+    }
+  },
+  "sessionList": {
+    "searchPlaceholder": "Sitzungen durchsuchen...",
+    "loadingSessions": "Sitzungen werden geladen...",
+    "refreshSessions": "Sitzungen aktualisieren",
+    "renameSession": "Sitzung umbenennen",
+    "deleteSession": "Sitzung löschen",
+    "groups": {
+      "today": "Heute",
+      "yesterday": "Gestern",
+      "pastWeek": "Letzte Woche",
+      "pastMonth": "Letzter Monat",
+      "pastYear": "Letztes Jahr"
+    },
+    "relativeTime": {
+      "now": "jetzt",
+      "years": "{{n}}J",
+      "months": "{{n}}Mo",
+      "days": "{{n}}T",
+      "hours": "{{n}}Std",
+      "minutes": "{{n}}Min"
+    }
+  }
+}

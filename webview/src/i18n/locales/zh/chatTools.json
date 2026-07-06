@@ -1,0 +1,276 @@
+{
+  "tool": {
+    "in": "输入",
+    "out": "输出",
+    "declined": "您拒绝了此工具。",
+    "declinedWithInstruction": "您拒绝了此工具,转而告诉 Claude:“{{instruction}}”"
+  },
+  "message": {
+    "copyMessage": "复制消息",
+    "retry": "重试",
+    "unknownTool": "未知"
+  },
+  "interrupted": {
+    "default": "已中断",
+    "toolInterrupted": "工具已中断"
+  },
+  "attachments": {
+    "imageAlt": "图片 {{index}}",
+    "fullSizeAlt": "原始大小"
+  },
+  "edit": {
+    "modified": "已修改"
+  },
+  "write": {
+    "lineCount": "{{count}} 行"
+  },
+  "glob": {
+    "pattern": "模式:“{{pattern}}”",
+    "foundFiles": "找到 {{count}} 个文件",
+    "foundFiles_one": "找到 {{count}} 个文件",
+    "foundFiles_other": "找到 {{count}} 个文件"
+  },
+  "grep": {
+    "inPath": "(位于 {{path}})",
+    "globPattern": "(glob:{{glob}})"
+  },
+  "webFetch": {
+    "fetchedFrom": "获取自"
+  },
+  "todoWrite": {
+    "title": "更新待办事项"
+  },
+  "notebookEdit": {
+    "title": "编辑笔记本单元格",
+    "noContent": "[无内容]",
+    "status": {
+      "inserted": "已插入",
+      "replaced": "已替换",
+      "deleted": "已删除",
+      "success": "成功"
+    }
+  },
+  "skill": {
+    "fallback": "技能",
+    "expandLabel": "技能"
+  },
+  "askUserQuestion": {
+    "ask": "提问",
+    "out": "输出"
+  },
+  "exitPlanMode": {
+    "title": "Claude 的计划",
+    "planModeTitle": "计划模式",
+    "approved": "用户已批准该计划",
+    "stayedInPlanMode": "保持在计划模式",
+    "feedbackLabel": "回复:"
+  },
+  "task": {
+    "common": {
+      "in": "输入",
+      "out": "输出",
+      "form": "表单",
+      "taskPrefix": "任务:"
+    },
+    "create": {
+      "what": "内容"
+    },
+    "update": {
+      "status": "状态",
+      "subject": "主题",
+      "desc": "描述",
+      "owner": "负责人",
+      "blocks": "阻塞",
+      "blockedBy": "被阻塞于"
+    },
+    "output": {
+      "type": "类型",
+      "status": "状态",
+      "retrieval": "检索",
+      "copied": "已复制",
+      "retrievalCompleted": "已完成",
+      "retrievalTimedOut": "已超时",
+      "retrievalError": "错误"
+    }
+  },
+  "workflow": {
+    "agentsMeta": "{{count}} 个智能体",
+    "tokensMeta": "{{value}} 个 token",
+    "phaseSuffix": "({{count}} 个阶段)",
+    "phaseSuffix_one": "({{count}} 个阶段)",
+    "phaseSuffix_other": "({{count}} 个阶段)",
+    "taskIdDetail": "任务 ID:{{taskId}}",
+    "runningInBackground": "正在后台运行…",
+    "agentsUsageLabel": "智能体 {{count}}",
+    "tokensUsageLabel": "token {{value}}",
+    "toolsUsageLabel": "工具 {{count}}"
+  },
+  "mcp": {
+    "common": {
+      "out": "输出"
+    }
+  },
+  "filesystem": {
+    "common": {
+      "in": "输入",
+      "out": "输出"
+    },
+    "editFile": {
+      "dryRun": "(演练)"
+    },
+    "readMultipleFiles": {
+      "fileCount": "{{count}} 个文件"
+    }
+  },
+  "gmail": {
+    "common": {
+      "unknownSender": "(未知发件人)"
+    },
+    "action": {
+      "addLabelsToThread": "为该会话添加 {{count}} 个标签",
+      "removeLabelsFromThread": "从该会话移除 {{count}} 个标签",
+      "addLabelsToMessage": "为该邮件添加 {{count}} 个标签",
+      "removeLabelsFromMessage": "从该邮件移除 {{count}} 个标签",
+      "createLabel": "创建标签",
+      "createLabelNamed": "创建标签:{{name}}",
+      "updateLabel": "更新标签",
+      "updateLabelNamed": "更新标签:{{name}}",
+      "deleteLabel": "删除标签",
+      "moveToTrash": "将{{target}}移到垃圾箱",
+      "markAsSpam": "将{{target}}标记为垃圾邮件",
+      "applySensitiveLabel": "为{{target}}应用敏感标签",
+      "targetMessage": "邮件",
+      "targetThread": "会话"
+    },
+    "createDraft": {
+      "description": "草稿已创建",
+      "to": "收件人",
+      "cc": "抄送",
+      "bcc": "密送"
+    },
+    "listDrafts": {
+      "count": "{{count}} 个草稿"
+    },
+    "listLabels": {
+      "count": "{{count}} 个标签",
+      "unnamed": "(未命名)"
+    },
+    "searchThreads": {
+      "resultsFound": "找到 {{count}} 条"
+    }
+  },
+  "jetbrains": {
+    "common": {
+      "in": "输入",
+      "out": "输出",
+      "exitCode": "退出码 {{code}}",
+      "projectRoot": "项目根目录",
+      "scopeIn": "位于",
+      "currentProject": "当前项目",
+      "differentProject": "不同项目",
+      "applied": "已应用",
+      "notApplied": "未应用",
+      "declined": "已拒绝",
+      "declinedNote": "您拒绝了此工具。",
+      "unrecognizedInputTitle": "无法识别的输入 — 允许前请先检查",
+      "unexpectedType": "(意外的类型)",
+      "debuggerStatus": {
+        "paused": "已暂停",
+        "running": "运行中",
+        "stopped": "已停止",
+        "timeout": "超时"
+      }
+    },
+    "action": {
+      "debuggerAction": "调试器:{{action}}",
+      "line": "第 {{line}} 行",
+      "patchOp": {
+        "add": "添加",
+        "delete": "删除",
+        "update": "更新"
+      }
+    },
+    "breakpoint": {
+      "logpoint": "日志断点",
+      "suspend": "挂起:{{policy}}",
+      "breakpointsMuted": "断点已静音",
+      "breakpointsUnmuted": "断点已取消静音",
+      "temporary": "临时",
+      "disabled": "已禁用",
+      "logMessage": "日志消息",
+      "logStack": "记录堆栈",
+      "id": "id {{id}}",
+      "owner": "负责人:{{owner}}",
+      "conditionLabel": "条件",
+      "logLabel": "日志"
+    },
+    "createNewFile": {
+      "overwritesExisting": "覆盖现有文件",
+      "lineCount": "{{count}} 行",
+      "lineCount_one": "{{count}} 行",
+      "lineCount_other": "{{count}} 行"
+    },
+    "executeTerminalCommand": {
+      "executionModeTooltip": "在用户默认 shell 中运行,还是作为直接进程运行",
+      "shell": "shell",
+      "direct": "直接"
+    },
+    "getRunConfigurations": {
+      "none": "没有运行配置"
+    },
+    "gitStatus": {
+      "includeIgnored": "含已忽略",
+      "includeUntracked": "含未跟踪",
+      "changeCount": "{{count}} 处更改",
+      "changeCount_one": "{{count}} 处更改",
+      "changeCount_other": "{{count}} 处更改",
+      "clean": "工作区干净",
+      "status": {
+        "untracked": "未跟踪",
+        "modified": "已修改",
+        "added": "已添加",
+        "deleted": "已删除",
+        "renamed": "已重命名",
+        "copied": "已复制",
+        "conflict": "冲突",
+        "changed": "已更改"
+      }
+    },
+    "openFiles": {
+      "none": "没有打开的文件",
+      "active": "活动"
+    },
+    "problems": {
+      "errorsOnly": "仅错误",
+      "buildSucceeded": "构建成功",
+      "none": "没有问题",
+      "count": "{{count}} 个问题",
+      "count_one": "{{count}} 个问题",
+      "count_other": "{{count}} 个问题",
+      "infoSeverity": "信息"
+    },
+    "projectList": {
+      "none": "无"
+    },
+    "replaceText": {
+      "all": "全部",
+      "caseSensitive": "区分大小写",
+      "old": "旧",
+      "new": "新"
+    },
+    "search": {
+      "matchCount": "个匹配项",
+      "matchCount_one": "个匹配项",
+      "matchCount_other": "个匹配项",
+      "word": {
+        "pattern": "模式",
+        "text": "文本",
+        "regex": "正则表达式",
+        "glob": "glob",
+        "name": "名称",
+        "symbol": "符号",
+        "query": "查询"
+      }
+    }
+  }
+}

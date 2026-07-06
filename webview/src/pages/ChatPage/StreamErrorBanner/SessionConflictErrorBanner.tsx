@@ -2,6 +2,7 @@ import {useState} from "react";
 import {useApi, useSessionContext, useSettings} from "@/contexts";
 import { SessionState } from "@/types";
 import { SettingKey, NO_PAGINATION_LIMIT } from "@/types/settings";
+import { useTranslation } from '@/i18n';
 
 export function isSessionConflict(error: Error): boolean {
     return error.message.includes('already in use');
@@ -13,6 +14,7 @@ export const SessionConflictErrorBanner = () => {
     const api = useApi();
     const { settings } = useSettings();
     const [isReclaiming, setIsReclaiming] = useState(false);
+    const { t } = useTranslation('chat');
 
     const handleReclaim = async () => {
         if (!currentSessionId || !workingDirectory || isReclaiming) return;
@@ -34,7 +36,7 @@ export const SessionConflictErrorBanner = () => {
 
     return (
         <div className="mx-4 my-2 px-3 py-2 rounded-md bg-state-error-bg border border-state-error-border text-state-error-fg text-xs flex items-center justify-between gap-2">
-            <span>Error: This session is already in use.</span>
+            <span>{t('streamError.sessionConflict.message')}</span>
             <button
                 onClick={handleReclaim}
                 disabled={isReclaiming}
@@ -46,10 +48,10 @@ export const SessionConflictErrorBanner = () => {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              Reclaiming...
+              {t('streamError.sessionConflict.reclaiming')}
             </span>
                 ) : (
-                    'Reclaim Session'
+                    t('streamError.sessionConflict.reclaim')
                 )}
             </button>
         </div>

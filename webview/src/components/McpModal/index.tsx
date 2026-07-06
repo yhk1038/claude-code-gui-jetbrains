@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { XMarkIcon, PlusIcon, ArrowPathIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { useTranslation } from '@/i18n';
 import { Portal } from '@/components/Portal';
 import { McpServer, McpRegistryServer } from '@/shared';
 import { ParsedMcpServer } from '@/utils/parseMcpJson';
@@ -24,6 +25,7 @@ type View =
 
 export function McpModal(props: Props) {
   const { onClose } = props;
+  const { t } = useTranslation('common');
   const { servers, configPath, loading, refreshing, error, fetch, reconnect, setEnabled, addServer, removeServer, authenticate, clearAuth } = useMcpServers();
 
   const [view, setView] = useState<View>({ kind: 'list' });
@@ -117,7 +119,7 @@ export function McpModal(props: Props) {
     newScope: string,
   ): Promise<void> {
     if (serversFromForm.length !== 1) {
-      throw new Error('Editing replaces a single server — paste exactly one server config.');
+      throw new Error(t('mcpModal.editReplaceSingle'));
     }
     const next = serversFromForm[0];
     const oldName = original.name;
@@ -140,7 +142,7 @@ export function McpModal(props: Props) {
       throw err instanceof Error ? err : new Error(String(err));
     }
     await fetch();
-    toast.success(`Saved ${next.name}`);
+    toast.success(t('mcpModal.saved', { name: next.name }));
     setView({ kind: 'list' });
   }
 
@@ -158,10 +160,10 @@ export function McpModal(props: Props) {
       // Some (or all) failed — keep the form open so the user can fix and retry.
       // Servers that succeeded are already reflected by the refetch above.
       throw new Error(
-        `${failures.length}/${serversToAdd.length} server(s) failed to add:\n${failures.join('\n')}`,
+        `${t('mcpModal.addFailed', { failed: failures.length, total: serversToAdd.length })}\n${failures.join('\n')}`,
       );
     }
-    serversToAdd.forEach((s) => toast.success(`Added ${s.name}`));
+    serversToAdd.forEach((s) => toast.success(t('mcpModal.added', { name: s.name })));
     setView({ kind: 'list' });
   }
 
@@ -191,7 +193,7 @@ export function McpModal(props: Props) {
           {/* Header */}
           {!ownHeaderView && (
             <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
-              <h2 className="text-lg font-semibold text-text-primary">MCP servers</h2>
+              <h2 className="text-lg font-semibold text-text-primary">{t('mcpModal.title')}</h2>
 
               <div className="flex items-center gap-1">
                 {view.kind === 'list' && (
@@ -199,7 +201,7 @@ export function McpModal(props: Props) {
                     onClick={() => void fetch()}
                     disabled={refreshing}
                     className="w-8 h-8 flex items-center justify-center rounded text-gray-400 hover:bg-gray-500/50 transition-colors disabled:hover:bg-transparent"
-                    title="Refresh MCP servers"
+                    title={t('mcpModal.refreshServers')}
                   >
                     <ArrowPathIcon className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
                   </button>
@@ -208,7 +210,7 @@ export function McpModal(props: Props) {
                   <button
                     onClick={() => setView({ kind: 'marketplace' })}
                     className="w-8 h-8 flex items-center justify-center rounded text-gray-400 hover:bg-gray-500/50 transition-colors"
-                    title="Browse MCP registry"
+                    title={t('mcpModal.browseRegistry')}
                   >
                     <MagnifyingGlassIcon className="w-5 h-5" />
                   </button>
@@ -217,7 +219,7 @@ export function McpModal(props: Props) {
                   <button
                     onClick={() => setView({ kind: 'add' })}
                     className="w-8 h-8 flex items-center justify-center rounded text-gray-400 hover:bg-gray-500/50 transition-colors"
-                    title="Add MCP server"
+                    title={t('mcpModal.addServer')}
                   >
                     <PlusIcon className="w-5 h-5" />
                   </button>
@@ -238,7 +240,7 @@ export function McpModal(props: Props) {
                 marketplace or add form, which manage their own state. */}
             {!ownHeaderView && loading && (
               <div className="flex-1 flex items-center justify-center text-md text-text-tertiary">
-                Checking MCP server health…
+                {t('mcpModal.checkingHealth')}
               </div>
             )}
             {!ownHeaderView && !loading && error && (
@@ -263,7 +265,7 @@ export function McpModal(props: Props) {
             )}
             {!loading && !error && view.kind === 'detail' && !selectedServer && (
               <div className="flex-1 flex items-center justify-center text-md text-text-tertiary">
-                Server not found.
+                {t('mcpModal.serverNotFound')}
               </div>
             )}
             {view.kind === 'marketplace' && (
@@ -293,7 +295,7 @@ export function McpModal(props: Props) {
             )}
             {view.kind === 'edit' && !editServer && (
               <div className="flex-1 flex items-center justify-center text-md text-text-tertiary">
-                Server not found.
+                {t('mcpModal.serverNotFound')}
               </div>
             )}
           </div>
@@ -306,7 +308,7 @@ export function McpModal(props: Props) {
               rel="noopener noreferrer"
               className="text-sm font-semibold text-text-tertiary hover:text-text-secondary underline underline-offset-2"
             >
-              Learn more about MCP
+              {t('mcpModal.learnMore')}
             </a>
           </div>
         </div>

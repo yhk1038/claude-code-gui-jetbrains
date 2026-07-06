@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   onRetry: () => void;
@@ -11,6 +12,7 @@ const INSTALL_CMD = 'npm install -g claude-code-battery';
 
 export function CcbNotInstalledNotice(props: Props) {
   const { onRetry, isLoading } = props;
+  const { t } = useTranslation('settings');
   const [copyState, setCopyState] = useState<CopyState>('idle');
 
   const copy = async () => {
@@ -26,19 +28,18 @@ export function CcbNotInstalledNotice(props: Props) {
     setTimeout(() => setCopyState('idle'), 2000);
   };
 
-  const copyLabel = copyState === 'copied' ? 'Copied' : copyState === 'failed' ? 'Copy failed' : 'Copy';
+  const copyLabel = copyState === 'copied' ? t('usage.notInstalled.copied') : copyState === 'failed' ? t('usage.notInstalled.copyFailed') : t('usage.notInstalled.copy');
 
   return (
     <div className="mb-6 p-4 bg-surface-raised border border-border-default rounded-lg">
       <h3 className="text-sm font-semibold text-text-primary mb-2">
-        A required dependency
+        {t('usage.notInstalled.title')}
       </h3>
       <p className="text-sm text-text-secondary mb-3">
-        Due to marketplace policy, this feature cannot be bundled in. It is published as a
-        separate library that you need to install yourself.
+        {t('usage.notInstalled.description')}
       </p>
       <p className="text-sm text-text-secondary mb-3">
-        Install it globally via npm:
+        {t('usage.notInstalled.installVia')}
       </p>
       <div className="flex items-center gap-2 mb-3 p-2 bg-surface-base border border-border-default rounded font-mono text-xs text-text-secondary">
         <code className="flex-1">{INSTALL_CMD}</code>
@@ -50,14 +51,14 @@ export function CcbNotInstalledNotice(props: Props) {
         </button>
       </div>
       <p className="text-xs text-text-tertiary mb-3">
-        After installing, click Retry below — no IDE restart needed.
+        {t('usage.notInstalled.retryHint')}
       </p>
       <button
         onClick={onRetry}
         disabled={isLoading}
         className="px-3 py-1.5 text-xs rounded bg-accent-primary-hover hover:bg-accent-primary text-text-primary transition-colors disabled:opacity-50"
       >
-        {isLoading ? 'Checking...' : 'Retry'}
+        {isLoading ? t('usage.notInstalled.checking') : t('usage.notInstalled.retry')}
       </button>
     </div>
   );

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from '@/i18n';
 import { Portal } from '../Portal';
 
 interface Props {
@@ -12,11 +13,12 @@ interface Props {
 }
 
 export function ConfirmDialog(props: Props) {
+  const { t } = useTranslation('common');
   const {
     title,
     message,
-    confirmLabel = 'Confirm',
-    cancelLabel = 'Cancel',
+    confirmLabel = t('confirmDialog.confirm'),
+    cancelLabel = t('confirmDialog.cancel'),
     variant = 'default',
     onConfirm,
     onCancel,

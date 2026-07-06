@@ -1,0 +1,36 @@
+{
+  "welcomeArtAlt": "ようこそのイラスト",
+  "intro": "Claude Codeは、Claudeのサブスクリプションで利用するか、Consoleアカウントを通じてAPI使用量に応じて課金される形で利用できます。",
+  "loginPrompt": "どの方法でログインしますか?",
+  "errors": {
+    "loginFailed": "ログインに失敗しました。もう一度お試しください。"
+  },
+  "claudeAi": {
+    "label": "Claude.aiサブスクリプション",
+    "description": "Claude Pro、Team、またはEnterpriseサブスクリプションを使用します"
+  },
+  "console": {
+    "label": "Anthropic Console",
+    "description": "Consoleアカウントを通じてAPI使用量を支払います"
+  },
+  "providers": {
+    "label": "Bedrock、Foundry、またはVertex",
+    "description": "APIキーやサードパーティプロバイダーの使い方についての説明。"
+  },
+  "terminal": {
+    "prompt": "ターミナルでの操作がお好みですか?",
+    "action": "ターミナルでclaudeを実行"
+  },
+  "codeInput": {
+    "title": "ブラウザに表示されたコードを貼り付け",
+    "description": "サインイン後、ブラウザにコードが表示されます。ここに貼り付けてログインを完了してください。",
+    "placeholder": "コードをここに貼り付け",
+    "submit": "コードを送信"
+  },
+  "urlModal": {
+    "title": "Claudeにサインイン",
+    "description": "Claudeがサインイン用にブラウザを開いています。自動で開かない場合は、下のボタンを使用してください。",
+    "openButton": "サインインページを開く",
+    "revealCode": "ブラウザにコードが表示されましたか?入力する"
+  }
+}

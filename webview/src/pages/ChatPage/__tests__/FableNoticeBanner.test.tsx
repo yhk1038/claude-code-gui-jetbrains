@@ -28,7 +28,7 @@ describe('FableNoticeBanner', () => {
   it('calls onClose when the close button is clicked', () => {
     const onClose = vi.fn();
     render(<FableNoticeBanner variant="available" onClose={onClose} />);
-    fireEvent.click(screen.getByRole('button', { name: '닫기' }));
+    fireEvent.click(screen.getByRole('button', { name: /close/i }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

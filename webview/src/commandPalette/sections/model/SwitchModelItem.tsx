@@ -1,4 +1,5 @@
 import { StaticItem } from '../../types';
+import { i18n } from '@/i18n';
 import { SWITCH_MODEL_EVENT } from '@/pages/ChatPage/ModelSwitchOverlay';
 import { useCliConfig } from '@/contexts/CliConfigContext';
 import { useCurrentModel } from '@/hooks/useCurrentModel';
@@ -19,10 +20,11 @@ const SwitchModelValue = () => {
   );
 };
 
-export const switchModelItem = new StaticItem('switch-model', 'Switch model...', {
-  disabled: false,
-  valueComponent: () => <SwitchModelValue />,
-  action: async () => {
-    window.dispatchEvent(new CustomEvent(SWITCH_MODEL_EVENT));
-  },
-});
+export const createSwitchModelItem = (): StaticItem =>
+  new StaticItem('switch-model', i18n.t('commandPalette:model.switchModel'), {
+    disabled: false,
+    valueComponent: () => <SwitchModelValue />,
+    action: async () => {
+      window.dispatchEvent(new CustomEvent(SWITCH_MODEL_EVENT));
+    },
+  });

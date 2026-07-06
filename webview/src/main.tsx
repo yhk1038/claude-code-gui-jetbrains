@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import './i18n/config'; // initialize i18next before the first render
 import { initLogForwarder } from './api/logging';
 import { installGlobalErrorHooks } from './api/errorReporting';
 import { StrictMode } from 'react';

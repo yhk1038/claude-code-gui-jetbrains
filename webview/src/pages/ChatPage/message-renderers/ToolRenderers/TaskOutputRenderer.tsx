@@ -5,6 +5,7 @@ import { useWorkingDir } from '@/contexts/WorkingDirContext';
 import { useBridgeContext } from '@/contexts/BridgeContext';
 import { MessageType } from '@/shared';
 import { parseXmlTag } from '@/utils/parseXmlTag';
+import { useTranslation, i18n } from '@/i18n';
 
 class TaskOutputToolUseDto extends ToolUseBlockDto {
     declare input: {
@@ -29,9 +30,9 @@ enum TaskStatus {
 
 function retrievalStatusLabel(status: string): string {
     switch (status) {
-        case RetrievalStatus.Success: return 'completed';
-        case RetrievalStatus.Timeout: return 'timed out';
-        case RetrievalStatus.Error: return 'error';
+        case RetrievalStatus.Success: return i18n.t('chatTools:task.output.retrievalCompleted');
+        case RetrievalStatus.Timeout: return i18n.t('chatTools:task.output.retrievalTimedOut');
+        case RetrievalStatus.Error: return i18n.t('chatTools:task.output.retrievalError');
         default: return status;
     }
 }
@@ -47,6 +48,7 @@ function taskStatusColor(status: string): string {
 }
 
 export function TaskOutputRenderer(props: RendererProps) {
+    const { t } = useTranslation('chatTools');
     const toolUse = props.toolUse as unknown as TaskOutputToolUseDto;
     const taskId = toolUse.input?.task_id ?? '';
 
@@ -115,10 +117,10 @@ export function TaskOutputRenderer(props: RendererProps) {
                         className="text-text-primary/60 truncate text-[0.9230rem] cursor-pointer hover:text-text-primary/90 transition-colors"
                         onClick={handleCopy}
                     >
-                        task: "{description}"
+                        {t('task.common.taskPrefix')} "{description}"
                     </div>
                     {copied && (
-                        <span className="text-state-success-fg text-[0.8461rem] shrink-0">Copied</span>
+                        <span className="text-state-success-fg text-[0.8461rem] shrink-0">{t('task.output.copied')}</span>
                     )}
                 </div>
             </ToolHeader>
@@ -129,19 +131,19 @@ export function TaskOutputRenderer(props: RendererProps) {
                         <div className="flex items-start p-2 gap-4 text-[0.8461rem] font-mono">
                             {taskType && (
                                 <div>
-                                    <span className="text-text-primary/40">type </span>
+                                    <span className="text-text-primary/40">{t('task.output.type')} </span>
                                     <span className="text-text-primary/80">{taskType}</span>
                                 </div>
                             )}
                             {taskStatus && (
                                 <div>
-                                    <span className="text-text-primary/40">status </span>
+                                    <span className="text-text-primary/40">{t('task.output.status')} </span>
                                     <span className={taskStatusColor(taskStatus)}>{taskStatus}</span>
                                 </div>
                             )}
                             {retrievalStatus && (
                                 <div>
-                                    <span className="text-text-primary/40">retrieval </span>
+                                    <span className="text-text-primary/40">{t('task.output.retrieval')} </span>
                                     <span className="text-text-primary/80">{retrievalStatusLabel(retrievalStatus)}</span>
                                 </div>
                             )}
@@ -149,7 +151,7 @@ export function TaskOutputRenderer(props: RendererProps) {
                     )}
 
                     <LabelValue
-                        label="OUT"
+                        label={t('task.common.out')}
                         className={hasMeta ? "border-t border-border-subtle" : undefined}
                         maxHeight="max-h-[105px]"
                     >

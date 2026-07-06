@@ -1,0 +1,16 @@
+{
+  "loading": "Carregando projetos...",
+  "select": {
+    "title": "Selecionar Projeto",
+    "subtitle": "Escolha um projeto para trabalhar"
+  },
+  "empty": "Nenhum projeto disponível",
+  "addProject": "Adicionar Projeto",
+  "retry": "Tentar novamente",
+  "sessionCount": "{{count}} sessões",
+  "sessionCount_one": "{{count}} sessão",
+  "sessionCount_other": "{{count}} sessões",
+  "errors": {
+    "loadFailed": "Falha ao carregar projetos"
+  }
+}

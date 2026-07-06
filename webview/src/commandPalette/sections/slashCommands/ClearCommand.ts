@@ -1,9 +1,13 @@
 import { SlashCommand } from '../../types';
+import { i18n } from '@/i18n';
 
 export class ClearCommand extends SlashCommand {
   readonly id = 'cmd-clear';
   readonly label = '/clear';
-  readonly description = 'Clear conversation';
+
+  get description(): string {
+    return i18n.t('commandPalette:slashCommands.clearDescription');
+  }
 
   async execute(): Promise<void> {
     const services = this.getServices();

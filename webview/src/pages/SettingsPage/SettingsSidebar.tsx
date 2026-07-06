@@ -2,6 +2,7 @@ import { ROUTE_META, ICON_COMPONENTS, SETTINGS_SUB_ROUTES, Route } from '@/route
 import { useRouter } from '@/router';
 import { useUpdateAvailable } from '@/hooks/useUpdateAvailable';
 import { isBrowser } from '@/config/environment';
+import { useTranslation } from '@/i18n';
 
 interface SettingsSidebarProps {
   /** On mobile the sidebar renders as a slide-in drawer instead of an inline column. */
@@ -16,6 +17,7 @@ export function SettingsSidebar({ isDrawer = false, open = false, onNavigate }: 
   const { route, navigate } = useRouter();
   const { hasUpdate } = useUpdateAvailable();
   const browser = isBrowser();
+  const { t } = useTranslation('settings');
 
   return (
     <nav
@@ -34,6 +36,10 @@ export function SettingsSidebar({ isDrawer = false, open = false, onNavigate }: 
           }
           const meta = ROUTE_META[subRoute];
           const Icon = meta.icon ? ICON_COMPONENTS[meta.icon] : null;
+          // Section labels live in ROUTE_META (also consumed outside React), so we
+          // translate at the render site: the route key's last segment maps to a
+          // `nav.*` key in the settings namespace (e.g. 'settings/general' → nav.general).
+          const navLabel = t(`nav.${subRoute.replace('settings/', '')}`);
           const isActive = route === subRoute;
           const showBadge = subRoute === Route.SETTINGS_RELEASES && hasUpdate;
 
@@ -49,7 +55,7 @@ export function SettingsSidebar({ isDrawer = false, open = false, onNavigate }: 
                 `}
               >
                 {Icon && <Icon className="w-4 h-4" />}
-                <span>{meta.label}</span>
+                <span>{navLabel}</span>
                 {showBadge && (
                   <span className="ml-auto w-2 h-2 rounded-full bg-accent-primary" />
                 )}

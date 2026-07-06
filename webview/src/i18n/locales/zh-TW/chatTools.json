@@ -1,0 +1,276 @@
+{
+  "tool": {
+    "in": "輸入",
+    "out": "輸出",
+    "declined": "您拒絕了此工具。",
+    "declinedWithInstruction": "您拒絕了此工具，改為告訴 Claude：「{{instruction}}」"
+  },
+  "message": {
+    "copyMessage": "複製訊息",
+    "retry": "重試",
+    "unknownTool": "未知"
+  },
+  "interrupted": {
+    "default": "已中斷",
+    "toolInterrupted": "工具已中斷"
+  },
+  "attachments": {
+    "imageAlt": "圖片 {{index}}",
+    "fullSizeAlt": "原始大小"
+  },
+  "edit": {
+    "modified": "已修改"
+  },
+  "write": {
+    "lineCount": "{{count}} 行"
+  },
+  "glob": {
+    "pattern": "模式：「{{pattern}}」",
+    "foundFiles": "找到 {{count}} 個檔案",
+    "foundFiles_one": "找到 {{count}} 個檔案",
+    "foundFiles_other": "找到 {{count}} 個檔案"
+  },
+  "grep": {
+    "inPath": "（位於 {{path}}）",
+    "globPattern": "（glob：{{glob}}）"
+  },
+  "webFetch": {
+    "fetchedFrom": "擷取自"
+  },
+  "todoWrite": {
+    "title": "更新待辦事項"
+  },
+  "notebookEdit": {
+    "title": "編輯筆記本儲存格",
+    "noContent": "[無內容]",
+    "status": {
+      "inserted": "已插入",
+      "replaced": "已取代",
+      "deleted": "已刪除",
+      "success": "成功"
+    }
+  },
+  "skill": {
+    "fallback": "技能",
+    "expandLabel": "技能"
+  },
+  "askUserQuestion": {
+    "ask": "提問",
+    "out": "輸出"
+  },
+  "exitPlanMode": {
+    "title": "Claude 的計畫",
+    "planModeTitle": "計畫模式",
+    "approved": "使用者已核准該計畫",
+    "stayedInPlanMode": "保持在計畫模式",
+    "feedbackLabel": "回覆："
+  },
+  "task": {
+    "common": {
+      "in": "輸入",
+      "out": "輸出",
+      "form": "表單",
+      "taskPrefix": "任務："
+    },
+    "create": {
+      "what": "內容"
+    },
+    "update": {
+      "status": "狀態",
+      "subject": "主旨",
+      "desc": "描述",
+      "owner": "負責人",
+      "blocks": "阻擋",
+      "blockedBy": "被阻擋於"
+    },
+    "output": {
+      "type": "類型",
+      "status": "狀態",
+      "retrieval": "擷取",
+      "copied": "已複製",
+      "retrievalCompleted": "已完成",
+      "retrievalTimedOut": "已逾時",
+      "retrievalError": "錯誤"
+    }
+  },
+  "workflow": {
+    "agentsMeta": "{{count}} 個代理程式",
+    "tokensMeta": "{{value}} 個 token",
+    "phaseSuffix": "（{{count}} 個階段）",
+    "phaseSuffix_one": "（{{count}} 個階段）",
+    "phaseSuffix_other": "（{{count}} 個階段）",
+    "taskIdDetail": "任務 ID：{{taskId}}",
+    "runningInBackground": "正在背景執行…",
+    "agentsUsageLabel": "代理程式 {{count}}",
+    "tokensUsageLabel": "token {{value}}",
+    "toolsUsageLabel": "工具 {{count}}"
+  },
+  "mcp": {
+    "common": {
+      "out": "輸出"
+    }
+  },
+  "filesystem": {
+    "common": {
+      "in": "輸入",
+      "out": "輸出"
+    },
+    "editFile": {
+      "dryRun": "（演練）"
+    },
+    "readMultipleFiles": {
+      "fileCount": "{{count}} 個檔案"
+    }
+  },
+  "gmail": {
+    "common": {
+      "unknownSender": "（未知寄件者）"
+    },
+    "action": {
+      "addLabelsToThread": "為此對話串新增 {{count}} 個標籤",
+      "removeLabelsFromThread": "從此對話串移除 {{count}} 個標籤",
+      "addLabelsToMessage": "為此郵件新增 {{count}} 個標籤",
+      "removeLabelsFromMessage": "從此郵件移除 {{count}} 個標籤",
+      "createLabel": "建立標籤",
+      "createLabelNamed": "建立標籤：{{name}}",
+      "updateLabel": "更新標籤",
+      "updateLabelNamed": "更新標籤：{{name}}",
+      "deleteLabel": "刪除標籤",
+      "moveToTrash": "將{{target}}移到垃圾桶",
+      "markAsSpam": "將{{target}}標記為垃圾郵件",
+      "applySensitiveLabel": "為{{target}}套用機密標籤",
+      "targetMessage": "郵件",
+      "targetThread": "對話串"
+    },
+    "createDraft": {
+      "description": "草稿已建立",
+      "to": "收件者",
+      "cc": "副本",
+      "bcc": "密件副本"
+    },
+    "listDrafts": {
+      "count": "{{count}} 份草稿"
+    },
+    "listLabels": {
+      "count": "{{count}} 個標籤",
+      "unnamed": "（未命名）"
+    },
+    "searchThreads": {
+      "resultsFound": "找到 {{count}} 筆"
+    }
+  },
+  "jetbrains": {
+    "common": {
+      "in": "輸入",
+      "out": "輸出",
+      "exitCode": "結束代碼 {{code}}",
+      "projectRoot": "專案根目錄",
+      "scopeIn": "於",
+      "currentProject": "目前專案",
+      "differentProject": "不同的專案",
+      "applied": "已套用",
+      "notApplied": "未套用",
+      "declined": "已拒絕",
+      "declinedNote": "您拒絕了此工具。",
+      "unrecognizedInputTitle": "無法識別的輸入 — 允許前請先檢查",
+      "unexpectedType": "（意外的類型）",
+      "debuggerStatus": {
+        "paused": "已暫停",
+        "running": "執行中",
+        "stopped": "已停止",
+        "timeout": "逾時"
+      }
+    },
+    "action": {
+      "debuggerAction": "偵錯器：{{action}}",
+      "line": "第 {{line}} 行",
+      "patchOp": {
+        "add": "新增",
+        "delete": "刪除",
+        "update": "更新"
+      }
+    },
+    "breakpoint": {
+      "logpoint": "記錄點",
+      "suspend": "暫停：{{policy}}",
+      "breakpointsMuted": "中斷點已靜音",
+      "breakpointsUnmuted": "中斷點已取消靜音",
+      "temporary": "暫時",
+      "disabled": "已停用",
+      "logMessage": "記錄訊息",
+      "logStack": "記錄堆疊",
+      "id": "id {{id}}",
+      "owner": "負責人：{{owner}}",
+      "conditionLabel": "條件",
+      "logLabel": "記錄"
+    },
+    "createNewFile": {
+      "overwritesExisting": "覆寫現有檔案",
+      "lineCount": "{{count}} 行",
+      "lineCount_one": "{{count}} 行",
+      "lineCount_other": "{{count}} 行"
+    },
+    "executeTerminalCommand": {
+      "executionModeTooltip": "在使用者的預設殼層中執行，還是作為直接處理程序執行",
+      "shell": "殼層",
+      "direct": "直接"
+    },
+    "getRunConfigurations": {
+      "none": "沒有執行組態"
+    },
+    "gitStatus": {
+      "includeIgnored": "含已忽略",
+      "includeUntracked": "含未追蹤",
+      "changeCount": "{{count}} 項變更",
+      "changeCount_one": "{{count}} 項變更",
+      "changeCount_other": "{{count}} 項變更",
+      "clean": "工作目錄乾淨",
+      "status": {
+        "untracked": "未追蹤",
+        "modified": "已修改",
+        "added": "已新增",
+        "deleted": "已刪除",
+        "renamed": "已重新命名",
+        "copied": "已複製",
+        "conflict": "衝突",
+        "changed": "已變更"
+      }
+    },
+    "openFiles": {
+      "none": "沒有開啟的檔案",
+      "active": "使用中"
+    },
+    "problems": {
+      "errorsOnly": "僅錯誤",
+      "buildSucceeded": "建置成功",
+      "none": "沒有問題",
+      "count": "{{count}} 個問題",
+      "count_one": "{{count}} 個問題",
+      "count_other": "{{count}} 個問題",
+      "infoSeverity": "資訊"
+    },
+    "projectList": {
+      "none": "無"
+    },
+    "replaceText": {
+      "all": "全部",
+      "caseSensitive": "區分大小寫",
+      "old": "舊",
+      "new": "新"
+    },
+    "search": {
+      "matchCount": "個相符項目",
+      "matchCount_one": "個相符項目",
+      "matchCount_other": "個相符項目",
+      "word": {
+        "pattern": "模式",
+        "text": "文字",
+        "regex": "正規表示式",
+        "glob": "glob",
+        "name": "名稱",
+        "symbol": "符號",
+        "query": "查詢"
+      }
+    }
+  }
+}

@@ -5,16 +5,22 @@ export * from './ThinkingItem';
 export * from './AccountUsageItem';
 export * from './ToggleFastModeItem';
 
-import { switchModelItem } from './SwitchModelItem';
-import { effortItem } from './EffortItem';
-import { thinkingItem } from './ThinkingItem';
-import { accountUsageItem } from './AccountUsageItem';
-import { toggleFastModeItem } from './ToggleFastModeItem';
+import { StaticItem } from '../../types';
+import { createSwitchModelItem } from './SwitchModelItem';
+import { createEffortItem } from './EffortItem';
+import { createThinkingItem } from './ThinkingItem';
+import { createAccountUsageItem } from './AccountUsageItem';
+import { createToggleFastModeItem } from './ToggleFastModeItem';
 
-export const modelItems = [
-  switchModelItem,
-  effortItem,
-  thinkingItem,
-  accountUsageItem,
-  toggleFastModeItem,
+/**
+ * Built on demand (not a module-eval constant) so the item labels resolve
+ * against the current locale after i18n init. Called once when the registry
+ * registers the Model section.
+ */
+export const getModelItems = (): StaticItem[] => [
+  createSwitchModelItem(),
+  createEffortItem(),
+  createThinkingItem(),
+  createAccountUsageItem(),
+  createToggleFastModeItem(),
 ];

@@ -1,6 +1,7 @@
 import { SparklesIcon } from '@heroicons/react/24/outline';
 import { InputBanner } from './InputBanner';
 import type { FableNoticeVariant } from '@/hooks/useFableNotice';
+import { useTranslation } from '@/i18n';
 
 /**
  * "Learn more" target. claude.ai's web bundle actually references this news
@@ -35,20 +36,12 @@ interface Props {
  */
 export function FableNoticeBanner(props: Props) {
   const { variant, onClose } = props;
+  const { t } = useTranslation('chat');
 
-  const title = variant === 'available' ? 'Fable is now available' : 'Update to use Fable 5';
+  const title =
+    variant === 'available' ? t('fableNotice.availableTitle') : t('fableNotice.updateRequiredTitle');
   const body =
-    variant === 'available' ? (
-      <>
-        You can use up to 50% of your plan limits on Fable 5 through July 7. After
-        that, switch to usage credits to continue using it.
-      </>
-    ) : (
-      <>
-        Fable 5 requires Claude Code CLI v2.1.170 or newer. Update your CLI in
-        Settings → About to select it.
-      </>
-    );
+    variant === 'available' ? t('fableNotice.availableBody') : t('fableNotice.updateRequiredBody');
 
   return (
     <InputBanner
@@ -66,7 +59,7 @@ export function FableNoticeBanner(props: Props) {
               rel="noreferrer"
               className="text-text-link hover:underline"
             >
-              Learn more
+              {t('fableNotice.learnMore')}
             </a>
           </span>
         </div>

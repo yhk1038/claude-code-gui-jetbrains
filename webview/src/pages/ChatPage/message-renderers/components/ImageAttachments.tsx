@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Portal } from '@/components/Portal';
 import type { ImageBlockDto } from '../../../../dto/message/ContentBlockDto';
+import { useTranslation } from '@/i18n';
 
 interface ImageAttachmentsProps {
   images: ImageBlockDto[];
@@ -8,6 +9,7 @@ interface ImageAttachmentsProps {
 
 export const ImageAttachments: React.FC<ImageAttachmentsProps> = ({ images }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const { t } = useTranslation('chatTools');
 
   const getImageSrc = (image: ImageBlockDto): string => {
     if (image.source.type === 'base64') {
@@ -28,7 +30,7 @@ export const ImageAttachments: React.FC<ImageAttachmentsProps> = ({ images }) =>
             <div className="overflow-hidden rounded-md border border-border-default bg-surface-hover hover:bg-surface-hover/80 transition-colors">
               <img
                 src={getImageSrc(image)}
-                alt={`Image ${index + 1}`}
+                alt={t('attachments.imageAlt', { index: index + 1 })}
                 className="w-[110px] h-[60px] object-cover"
               />
             </div>
@@ -46,7 +48,7 @@ export const ImageAttachments: React.FC<ImageAttachmentsProps> = ({ images }) =>
           <div className="relative max-w-[90vw] max-h-[90vh]">
             <img
               src={selectedImage}
-              alt="Full size"
+              alt={t('attachments.fullSizeAlt')}
               className="max-w-full max-h-[90vh] object-contain rounded-lg"
               onClick={(e) => e.stopPropagation()}
             />

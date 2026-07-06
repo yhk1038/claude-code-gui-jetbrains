@@ -1,3 +1,5 @@
+import { i18n } from '@/i18n';
+
 /**
  * Declarative permission specs.
  *
@@ -18,8 +20,14 @@ export interface PermissionSpec {
 export const PERMISSION_SPECS: PermissionSpec[] = [
   {
     id: 'notifications',
-    label: 'Desktop Notifications',
-    description: 'Get notified when responses complete',
+    // Getters so the translation lookup runs on access (current locale, after
+    // i18n init), not when this constant array is first evaluated at load.
+    get label() {
+      return i18n.t('permissions:notifications.label');
+    },
+    get description() {
+      return i18n.t('permissions:notifications.description');
+    },
     available: () => typeof window !== 'undefined' && 'Notification' in window,
     getState: () => {
       if (typeof window === 'undefined' || !('Notification' in window)) {

@@ -1,4 +1,5 @@
 import {ReactNode} from "react";
+import {useTranslation} from "@/i18n";
 import {parseUserDeclined} from "@/shared";
 import {RendererProps, ToolHeader, ToolWrapper, DeclinedNote, toolResultText} from "../../common";
 import {McpToolBody, McpToolRow} from "../_common";
@@ -31,10 +32,11 @@ export const McpToolHeader = (props: {name: string; input?: Record<string, unkno
  */
 export const McpToolOutput = (props: {children?: ReactNode}) => {
     const {children} = props;
+    const {t} = useTranslation('chatTools');
     if (!children) return null;
     return (
         <McpToolBody>
-            <McpToolRow label="OUT">{children}</McpToolRow>
+            <McpToolRow label={t('mcp.common.out')}>{children}</McpToolRow>
         </McpToolBody>
     );
 };

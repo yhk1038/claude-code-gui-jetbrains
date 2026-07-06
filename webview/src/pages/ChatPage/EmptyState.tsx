@@ -3,32 +3,49 @@ import type { ReactNode } from 'react';
 import clawdSvg from '../../assets/clawd.svg';
 import claudeCodeLogo from '../../assets/claude-code-logo.svg';
 import { APP_NAME } from '@/config/app';
+import { useTranslation } from '@/i18n';
 
 export const EmptyState = () => {
+  const { t } = useTranslation('chat');
   const isMac = navigator.platform.toUpperCase().includes('MAC');
 
   const kbdClass = "inline-flex items-center px-1.5 py-0.5 bg-surface-tooltip rounded text-text-secondary text-xs font-mono";
 
   const hints: ReactNode[] = useMemo(
     () => [
-      '// TODO: Everything. Let\'s start.',
-      <>Ready to code?<br />Let&apos;s write something worth deploying.</>,
-      'Type /model to pick the right tool for the job.',
-      'Make a CLAUDE.md file for instructions Claude will read every single time.',
-      "Tired of repeating yourself? Tell Claude to remember what you've told it using CLAUDE.md.",
-      <>Press <kbd className={kbdClass}>Shift</kbd> <kbd className={kbdClass}>Tab</kbd> to automatically approve code edits</>,
-      <>Highlight any text and press <kbd className={kbdClass}>{isMac ? 'Option' : 'Alt'}</kbd> <kbd className={kbdClass}>K</kbd> to chat about it</>,
-      <>Type <kbd className={kbdClass}>/mcp</kbd> to add, remove, and manage MCP servers right here.</>,
-      <>Use planning mode to talk through big changes before a commit. Press <kbd className={kbdClass}>Shift</kbd> <kbd className={kbdClass}>Tab</kbd> to cycle between modes.</>,
-      'Type /model to pick the right tool for the job.',
-      "You've come to the absolutely right place!",
+      t('emptyState.hints.todoStart'),
+      <>
+        {t('emptyState.hints.readyToCodeLine1')}
+        <br />
+        {t('emptyState.hints.readyToCodeLine2')}
+      </>,
+      t('emptyState.hints.pickModel'),
+      t('emptyState.hints.claudeMdInstructions'),
+      t('emptyState.hints.claudeMdRemember'),
+      <>
+        {t('emptyState.hints.approveEditsPrefix')} <kbd className={kbdClass}>Shift</kbd>{' '}
+        <kbd className={kbdClass}>Tab</kbd> {t('emptyState.hints.approveEditsSuffix')}
+      </>,
+      <>
+        {t('emptyState.hints.highlightChatPrefix')}{' '}
+        <kbd className={kbdClass}>{isMac ? 'Option' : 'Alt'}</kbd> <kbd className={kbdClass}>K</kbd>{' '}
+        {t('emptyState.hints.highlightChatSuffix')}
+      </>,
+      <>
+        {t('emptyState.hints.mcpManagePrefix')} <kbd className={kbdClass}>/mcp</kbd>{' '}
+        {t('emptyState.hints.mcpManageSuffix')}
+      </>,
+      <>
+        {t('emptyState.hints.planningModePrefix')} <kbd className={kbdClass}>Shift</kbd>{' '}
+        <kbd className={kbdClass}>Tab</kbd> {t('emptyState.hints.planningModeSuffix')}
+      </>,
+      t('emptyState.hints.pickModel'),
+      t('emptyState.hints.rightPlace'),
     ],
-    [isMac],
+    [isMac, t, kbdClass],
   );
 
-  const [hint, setHint] = useState<ReactNode>(
-    'What to do first? Ask about this codebase or we can start writing code.',
-  );
+  const [hint, setHint] = useState<ReactNode>(t('emptyState.initialHint'));
 
   useEffect(() => {
     const index = Math.floor(Math.random() * hints.length);

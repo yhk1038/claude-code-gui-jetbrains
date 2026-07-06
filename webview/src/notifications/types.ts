@@ -18,7 +18,9 @@ export interface NotificationContext {
 
 export interface NotificationTemplate {
   title: (ctx: NotificationContext) => string;
-  body: string;
+  // Resolved lazily so the translation lookup happens at notify() time (after
+  // i18n init / on the current locale), not when this module is first loaded.
+  body: () => string;
   icon: string;
 }
 

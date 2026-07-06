@@ -1,0 +1,401 @@
+{
+  "inputBanner": {
+    "close": "閉じる"
+  },
+  "connectionLost": {
+    "offline": "インターネット接続がありません。ネットワークを待機中{{dots}}",
+    "reconnecting": "バックエンドが切断されました。再接続中{{dots}}"
+  },
+  "updateBanner": {
+    "released": "v{{version}} がリリースされました!",
+    "restartRequired": "IDEの再起動が必要です",
+    "update": "更新",
+    "skip": "スキップ"
+  },
+  "fableNotice": {
+    "availableTitle": "Fableが利用可能になりました",
+    "updateRequiredTitle": "Fable 5を使用するには更新が必要です",
+    "availableBody": "7月7日まで、Fable 5でプラン上限の最大50%を使用できます。それ以降は使用量クレジットに切り替えてご利用ください。",
+    "updateRequiredBody": "Fable 5にはClaude Code CLI v2.1.170以降が必要です。設定 → 情報 からCLIを更新して選択してください。",
+    "learnMore": "詳しく見る"
+  },
+  "telemetry": {
+    "title": "製品改善のため、使用統計の収集を許可しますか?",
+    "subtitle": "ソースコードや個人データが送信されることはありません。この設定は設定画面からいつでもオフにできます。",
+    "accept": "許可",
+    "deny": "拒否",
+    "privacyPolicy": "プライバシーポリシー"
+  },
+  "browserPermission": {
+    "enableFromSettings": "ブラウザの設定から有効にする",
+    "allow": "許可",
+    "dismiss": "閉じる"
+  },
+  "streamError": {
+    "authDiagnosis": {
+      "title": "~/.claude/settings.json のenvにAPIキーが設定されています:",
+      "hint": "これらのキーは期限切れまたは無効な可能性があります。確認のうえ、削除または更新してください。"
+    },
+    "sessionConflict": {
+      "message": "エラー: このセッションはすでに使用中です。",
+      "reclaiming": "再取得中...",
+      "reclaim": "セッションを再取得"
+    }
+  },
+  "chatInput": {
+    "actionButtons": {
+      "attachFile": "ファイルを添付",
+      "slashCommands": "スラッシュコマンド",
+      "stopGenerating": "生成を停止",
+      "sendMessage": "メッセージを送信"
+    },
+    "attachMenu": {
+      "image": "画像",
+      "file": "ファイル",
+      "folder": "フォルダ"
+    },
+    "attachmentPreview": {
+      "fullSize": "原寸大"
+    },
+    "attachments": {
+      "errors": {
+        "unsupportedType": "サポートされていないファイル形式です: {{type}}",
+        "tooLarge": "ファイルが大きすぎます: {{size}}MB (最大 {{max}}MB)"
+      }
+    },
+    "contextWindow": {
+      "remaining": "自動圧縮まで残り {{percent}}% のコンテキストがあります。",
+      "tokensUsed": "{{tokens}} トークンを使用",
+      "clickToCompact": "クリックして今すぐ圧縮します。",
+      "used": "{{percent}}% 使用済み"
+    },
+    "dragOverlay": {
+      "dropHere": "ここにファイルまたはフォルダをドロップ"
+    },
+    "ideSelectionTag": {
+      "including": "次のメッセージに {{path}} を含めます — クリックで除外",
+      "excluding": "{{path}} を除外中 — クリックで含める"
+    },
+    "mentionDropdown": {
+      "searching": "検索中...",
+      "noMatchingFiles": "一致するファイルがありません",
+      "closeAriaLabel": "メンションドロップダウンを閉じる"
+    },
+    "modeSelectPanel": {
+      "modes": "モード",
+      "toSwitch": "で切り替え",
+      "effort": "エフォート"
+    },
+    "modelTag": {
+      "switchModel": "モデルを切り替え ({{hint}})",
+      "setModelNotification": "モデルを {{model}} に設定しました"
+    },
+    "placeholder": {
+      "queueMessage": "次のメッセージをキューに追加...",
+      "focusHint": "⌘ Esc でClaudeにフォーカス/フォーカス解除"
+    },
+    "ariaLabel": "Claudeにメッセージを送信",
+    "autoModeFallback": "ここでは自動モードは使用できません — 代わりにデフォルトの権限モードを使用します。"
+  },
+  "sessionHeader": {
+    "newTab": {
+      "title": "新しいタブを開く"
+    },
+    "backgroundTasks": {
+      "title": "バックグラウンドタスク"
+    },
+    "tokenBattery": {
+      "setupTitle": "クリックして使用状況トラッキングを設定",
+      "setupLabel": "設定"
+    },
+    "tunnel": {
+      "title": "リモートトンネル(非公式)"
+    },
+    "accountSwitcher": {
+      "title": "アカウント",
+      "noSavedAccounts": "保存されたアカウントはありません。",
+      "addAccount": "アカウントを追加",
+      "manageAccounts": "アカウントを管理",
+      "switchedTo": "{{account}} に切り替えました",
+      "switchFailed": "切り替えに失敗しました",
+      "fallbackAccountLabel": "アカウント",
+      "relativeTime": {
+        "daysAgo": "{{count}}日前",
+        "hoursAgo": "{{count}}時間前",
+        "minutesAgo": "{{count}}分前",
+        "justNow": "たった今"
+      }
+    },
+    "sessionDropdown": {
+      "pastConversations": "過去の会話",
+      "newChat": "新しいチャット",
+      "noMatchingSessions": "一致するセッションがありません",
+      "noSessionsYet": "セッションはまだありません"
+    },
+    "workingDir": {
+      "switchDisabledTitle": "セッションがアクティブな間は作業ディレクトリを切り替えられません",
+      "switchTitle": "作業ディレクトリを切り替え",
+      "draftBadge": "下書き",
+      "draftBadgeTitle": "「新規追加」で選択されました — ここでセッションを開始すると恒久的な作業ディレクトリになります。",
+      "ideRootTitle": "IDEプロジェクトルート",
+      "loading": "読み込み中…",
+      "noWorkingDirectoriesFound": "作業ディレクトリが見つかりません",
+      "browseAll": "すべて表示…",
+      "addNew": "+ 新規追加"
+    }
+  },
+  "acceptPlan": {
+    "title": "このプランを承認しますか?",
+    "subtitle": "プレビュー内のテキストを選択してコメントを追加",
+    "textareaPlaceholder": "代わりにClaudeにしてほしいことを伝える",
+    "options": {
+      "autoAccept": "はい、自動承認する",
+      "manualApprove": "はい、編集を手動で承認する",
+      "keepPlanning": "いいえ、プランを続ける"
+    }
+  },
+  "approvalPanel": {
+    "defaultTextareaPlaceholder": "代わりにClaudeにしてほしいことを伝える",
+    "escToCancel": "Escでキャンセル"
+  },
+  "askUserQuestion": {
+    "escToCancel": "Escでキャンセル",
+    "submit": "回答を送信",
+    "next": "次へ",
+    "other": "その他",
+    "otherPlaceholder": "回答を入力..."
+  },
+  "backgroundTasks": {
+    "title": "バックグラウンドタスク",
+    "close": "閉じる",
+    "empty": "バックグラウンドワークフローはまだありません。",
+    "running": "実行中",
+    "finishedCount": "{{count}} 件完了",
+    "clear": "クリア",
+    "dismiss": "閉じる",
+    "dismissRunning": "閉じる(停止したワークフローをクリアします)",
+    "workflowLabel": "ワークフロー",
+    "agentsCount": "{{count}} エージェント",
+    "agentsCount_one": "{{count}} エージェント",
+    "agentsCount_other": "{{count}} エージェント",
+    "tokensLabel": "{{tokens}} トークン",
+    "phasesLabel": "フェーズ",
+    "tableHeader": {
+      "agent": "エージェント",
+      "tokens": "トークン",
+      "tools": "ツール",
+      "time": "時間"
+    }
+  },
+  "modelSwitch": {
+    "selectModel": "モデルを選択",
+    "loadingModels": "モデルを読み込み中…",
+    "setModelTo": "モデルを {{model}} に設定"
+  },
+  "permissionBanner": {
+    "textareaPlaceholder": "代わりにClaudeにしてほしいことを伝える",
+    "workflowNotice": "動的ワークフローは多数のサブエージェントを並列実行し、使用量上限を大きく消費する場合があります。タスクパネルからいつでも停止できます。",
+    "yes": "はい",
+    "no": "いいえ",
+    "allowMcpTool": "{{tool}} を許可しますか?",
+    "editWithFile": "{{file}} にこの編集を行いますか?",
+    "editNoFile": "この編集を行いますか?",
+    "writeWithFile": "{{file}} に書き込みますか?",
+    "writeNoFile": "このファイルに書き込みますか?",
+    "deleteWithFile": "{{file}} を削除しますか?",
+    "deleteNoFile": "このファイルを削除しますか?",
+    "runCommand": "このコマンドを実行しますか?",
+    "readWithFile": "{{file}} を読み込みますか?",
+    "readNoFile": "このファイルを読み込みますか?",
+    "editNotebookWithFile": "ノートブック {{file}} を編集しますか?",
+    "editNotebookNoFile": "このノートブックを編集しますか?",
+    "allowWorkflow": "Claudeにワークフロー {{name}} の実行を許可しますか?",
+    "allowTool": "{{tool}} を許可しますか?",
+    "sessionLabel": {
+      "edit": "はい、このセッション中はすべての編集を許可する",
+      "write": "はい、このセッション中はすべての書き込みを許可する",
+      "bash": "はい、このセッション中はすべてのコマンドを許可する",
+      "delete": "はい、このセッション中はすべての削除を許可する",
+      "read": "はい、このセッション中はすべての読み込みを許可する",
+      "workflow": "はい、このセッション中はすべてのワークフローを許可する",
+      "mcp": "はい、このセッション中はすべての{{scope}}を許可する",
+      "default": "はい、このセッション中はすべての{{tool}}を許可する"
+    }
+  },
+  "loginCta": {
+    "signed": "サインイン済み",
+    "reSign": "再サインイン"
+  },
+  "diffCard": {
+    "operation": {
+      "create": "作成",
+      "modify": "変更",
+      "delete": "削除"
+    },
+    "status": {
+      "pending": "保留中",
+      "applied": "適用済み",
+      "rejected": "却下"
+    },
+    "collapse": "折りたたむ",
+    "expand": "展開",
+    "openInIdeTitle": "IDEのdiffビューアーで開く",
+    "opening": "開いています...",
+    "openInIde": "IDEで開く",
+    "applying": "適用中...",
+    "apply": "適用",
+    "reject": "却下"
+  },
+  "diffList": {
+    "noChanges": "ファイルの変更はありません",
+    "noChangesHint": "変更があるとここに表示されます",
+    "pendingCount": "件の保留中の変更",
+    "pendingCount_one": "件の保留中の変更",
+    "pendingCount_other": "件の保留中の変更",
+    "applyingAll": "すべて適用中...",
+    "applyAll": "すべて適用",
+    "rejectAll": "すべて却下"
+  },
+  "diffViewer": {
+    "noDiff": "差分がありません",
+    "unknownError": "不明なエラー",
+    "parseError": "差分の解析に失敗しました: {{message}}"
+  },
+  "toolCard": {
+    "status": {
+      "pending": "承認待ち",
+      "approved": "承認済み",
+      "denied": "拒否",
+      "executing": "実行中",
+      "completed": "完了",
+      "failed": "失敗"
+    },
+    "toolId": "ツールID: {{id}}...",
+    "inputParameters": "入力パラメータ",
+    "result": "結果",
+    "error": "エラー",
+    "approve": "承認",
+    "deny": "拒否"
+  },
+  "emptyState": {
+    "initialHint": "まず何をしますか?このコードベースについて質問するか、コードを書き始めることができます。",
+    "hints": {
+      "todoStart": "// TODO: すべて。さあ始めよう。",
+      "readyToCodeLine1": "コードを書く準備はいいですか?",
+      "readyToCodeLine2": "デプロイする価値のあるものを書きましょう。",
+      "pickModel": "/model と入力して、作業に適したツールを選びましょう。",
+      "claudeMdInstructions": "CLAUDE.mdファイルを作成すると、Claudeが毎回それを読み込んで指示に従います。",
+      "claudeMdRemember": "同じことを繰り返し伝えるのに疲れましたか?CLAUDE.mdを使ってClaudeに覚えさせましょう。",
+      "approveEditsPrefix": "",
+      "approveEditsSuffix": "を押すとコード編集を自動承認します",
+      "highlightChatPrefix": "任意のテキストを選択し、",
+      "highlightChatSuffix": "を押すとそれについてチャットできます",
+      "mcpManagePrefix": "",
+      "mcpManageSuffix": "と入力すると、ここでMCPサーバーの追加・削除・管理ができます。",
+      "planningModePrefix": "大きな変更をコミットする前に、プランニングモードで話し合いましょう。",
+      "planningModeSuffix": "を押すとモードを切り替えます。",
+      "rightPlace": "まさに正しい場所に来ましたね!"
+    }
+  },
+  "streamingIndicator": {
+    "verbs": [
+      "達成中",
+      "実行中",
+      "具現化中",
+      "焼成中",
+      "ポチポチ中",
+      "醸造中",
+      "計算中",
+      "思考中",
+      "チャネリング中",
+      "撹拌中",
+      "クロード中",
+      "統合中",
+      "熟考中",
+      "演算中",
+      "組み立て中",
+      "調合中",
+      "検討中",
+      "沈思中",
+      "調理中",
+      "制作中",
+      "作成中",
+      "処理中",
+      "解読中",
+      "審議中",
+      "決定中",
+      "混乱中",
+      "実行中",
+      "実現中",
+      "解明中",
+      "魅了中",
+      "構想中",
+      "画策中",
+      "そわそわ中",
+      "鍛造中",
+      "形成中",
+      "はしゃぎ中",
+      "生成中",
+      "発芽中",
+      "孵化中",
+      "誘導中",
+      "クラクション中",
+      "発想中",
+      "想像中",
+      "温め中",
+      "推論中",
+      "顕現中",
+      "漬け込み中",
+      "迷走中",
+      "のんびり中",
+      "思案中",
+      "かき集め中",
+      "物思い中",
+      "いじくり中",
+      "抽出中",
+      "熟読中",
+      "哲学中",
+      "講釈中",
+      "考え中",
+      "処理中",
+      "のろのろ中",
+      "頭を悩ませ中",
+      "スプライン計算中",
+      "反芻中",
+      "策略中",
+      "えっちらおっちら中",
+      "くねくね中",
+      "煮込み中",
+      "こねこね中",
+      "洞窟探検中",
+      "回転中",
+      "煮詰め中",
+      "見極め中",
+      "合成中",
+      "思考中",
+      "いじり中",
+      "変換中",
+      "展開中",
+      "解きほぐし中",
+      "ノリノリ中",
+      "さまよい中",
+      "ブンブン中",
+      "ふらふら中",
+      "作業中",
+      "手なずけ中"
+    ]
+  },
+  "thinking": {
+    "thoughtFor": "{{seconds}}秒思考しました",
+    "thinkingEllipsis": "思考中...",
+    "thinking": "思考中"
+  },
+  "chatMessageArea": {
+    "loadingWorkingDirectory": "作業ディレクトリを読み込み中...",
+    "loadingEarlierMessages": "以前のメッセージを読み込み中…",
+    "loadOlderMessages": "以前のメッセージを読み込む"
+  },
+  "chatPage": {
+    "scrollToBottom": "一番下までスクロール"
+  }
+}

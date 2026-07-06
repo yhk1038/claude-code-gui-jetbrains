@@ -8,6 +8,7 @@ import { useSessionContext } from '@/contexts/SessionContext';
 import { useAuthContext } from '@/contexts';
 import { LoginUrlModal } from './LoginUrlModal';
 import { MessageType } from '@/shared';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   className?: string;
@@ -18,6 +19,7 @@ type LoginMethod = 'claude-ai' | 'console';
 export function SwitchAccountPage(props: Props) {
   const { className } = props;
   const { navigate } = useRouter();
+  const { t } = useTranslation('switchAccount');
   const meta = ROUTE_META[Route.SWITCH_ACCOUNT];
 
   const { workingDirectory } = useSessionContext();
@@ -66,10 +68,10 @@ export function SwitchAccountPage(props: Props) {
         await refetch();
         navigate(Route.NEW_SESSION);
       } else {
-        setError(result?.error ?? 'Login failed. Please try again.');
+        setError(result?.error ?? t('errors.loginFailed'));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
+      setError(err instanceof Error ? err.message : t('errors.loginFailed'));
     } finally {
       unsubscribeUrl();
       setLoginUrl(null);
@@ -127,17 +129,17 @@ export function SwitchAccountPage(props: Props) {
         <div className="max-w-md w-full px-8">
           <img
             src="/welcome-art-dark.svg"
-            alt="Welcome art"
+            alt={t('welcomeArtAlt')}
             className="w-full mb-6"
             draggable={false}
           />
 
           <p className="text-sm text-text-secondary leading-relaxed">
-            Claude Code can be used with your Claude subscription or billed based on API usage through your Console account.
+            {t('intro')}
           </p>
 
           <p className="text-sm text-text-secondary mt-4">
-            How do you want to log in?
+            {t('loginPrompt')}
           </p>
 
           {error !== null && (
@@ -154,10 +156,10 @@ export function SwitchAccountPage(props: Props) {
             {loadingMethod === 'claude-ai' && (
               <span className="w-4 h-4 border-2 border-border-strong border-t-text-primary rounded-full animate-spin" />
             )}
-            Claude.ai Subscription
+            {t('claudeAi.label')}
           </button>
           <p className="text-xs text-text-tertiary mt-1.5">
-            Use your Claude Pro, Team, or Enterprise subscription
+            {t('claudeAi.description')}
           </p>
 
           <button
@@ -168,10 +170,10 @@ export function SwitchAccountPage(props: Props) {
             {loadingMethod === 'console' && (
               <span className="w-4 h-4 border-2 border-border-strong border-t-text-primary rounded-full animate-spin" />
             )}
-            Anthropic Console
+            {t('console.label')}
           </button>
           <p className="text-xs text-text-tertiary mt-1.5">
-            Pay for API usage through your Console account
+            {t('console.description')}
           </p>
 
           <button
@@ -179,20 +181,20 @@ export function SwitchAccountPage(props: Props) {
             disabled={loadingMethod !== null}
             className="w-full mt-5 py-3 rounded-lg bg-surface-overlay border border-border-default hover:bg-surface-tooltip disabled:opacity-60 disabled:cursor-not-allowed text-text-primary font-semibold text-sm transition-colors flex items-center justify-center gap-1.5"
           >
-            Bedrock, Foundry, or Vertex
+            {t('providers.label')}
             <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
           </button>
           <p className="text-xs text-text-tertiary mt-1.5">
-            Instructions on how to use API keys or third-party providers.
+            {t('providers.description')}
           </p>
 
           <p className="text-xs text-text-tertiary mt-10 text-center">
-            Prefer the terminal experience?{' '}
+            {t('terminal.prompt')}{' '}
             <button
               onClick={() => { void handleOpenTerminal(); }}
               className="text-text-link hover:underline cursor-pointer bg-transparent border-none p-0 font-inherit text-xs"
             >
-              Run claude in terminal
+              {t('terminal.action')}
             </button>
           </p>
         </div>

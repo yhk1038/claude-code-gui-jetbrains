@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { PanelItem, PanelItemBase, ToggleItem, CommandItem, PanelItemType, IconType } from '@/types/commandPalette';
 import { ToggleSwitch } from '@/components/ToggleSwitch';
 import { TerminalIcon, LinkIcon } from './icons/PaletteIcons';
@@ -13,6 +14,7 @@ interface Props {
 
 export const PanelItemComponent = React.forwardRef<HTMLDivElement, Props>((props, ref) => {
   const { item, isSelected, onClick, onExecute } = props;
+  const { t } = useTranslation('commandPalette');
 
   const handleClick = () => {
     if (item.disabled) {
@@ -34,7 +36,7 @@ export const PanelItemComponent = React.forwardRef<HTMLDivElement, Props>((props
   const isClickable = item.type !== PanelItemType.Info && !item.disabled;
   const hasRightTerminalIcon = item.icon === IconType.Terminal && item.type === PanelItemType.Action;
   const title = item.disabled
-    ? ((item as PanelItemBase).disabledReason ?? 'Coming soon')
+    ? ((item as PanelItemBase).disabledReason ?? t('panel.comingSoon'))
     : item.type === PanelItemType.Command
       ? (item as CommandItem).description
       : undefined;

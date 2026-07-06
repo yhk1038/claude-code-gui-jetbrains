@@ -1,3 +1,4 @@
+import {useTranslation} from "@/i18n";
 import {Container, LabelValue, RendererProps, ToolHeader, ToolWrapper, toolResultText} from "./common";
 
 interface BashToolUseDto {
@@ -9,6 +10,7 @@ interface BashToolUseDto {
 }
 
 export function BashRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const toolUse = props.toolUse as unknown as BashToolUseDto;
 
     const name = toolUse.name;
@@ -27,13 +29,13 @@ export function BashRenderer(props: RendererProps) {
 
             <Container>
                 <LabelValue
-                    label="IN"
+                    label={t('tool.in')}
                     className="border-b border-border-subtle"
                     maxHeight="max-h-[60px]"
                 >
                     {input}
                 </LabelValue>
-                <LabelValue label="OUT" maxHeight="max-h-[60px]">
+                <LabelValue label={t('tool.out')} maxHeight="max-h-[60px]">
                     {output}
                 </LabelValue>
             </Container>

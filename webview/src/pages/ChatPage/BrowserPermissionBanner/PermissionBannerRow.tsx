@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { PermissionSpec } from '@/permissions';
 import { persistDismissed } from './dismissed';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   spec: PermissionSpec;
@@ -10,6 +11,7 @@ type RowState = 'prompt' | 'denied' | 'hidden';
 
 export const PermissionBannerRow = (props: Props) => {
   const { spec } = props;
+  const { t } = useTranslation('chat');
 
   const initialState: RowState = useMemo(() => {
     const current = spec.getState();
@@ -43,7 +45,7 @@ export const PermissionBannerRow = (props: Props) => {
   };
 
   const message =
-    state === 'denied' ? 'Enable from browser settings' : spec.description;
+    state === 'denied' ? t('browserPermission.enableFromSettings') : spec.description;
 
   return (
     <div className="w-full z-20 border-t border-b border-state-info-border bg-state-info-bg px-4 py-1.5 flex items-center">
@@ -54,14 +56,14 @@ export const PermissionBannerRow = (props: Props) => {
             onClick={handleAllow}
             className="px-3 py-1 rounded text-[0.7692rem] font-medium bg-surface-base text-text-link hover:bg-state-info-bg transition-colors"
           >
-            Allow
+            {t('browserPermission.allow')}
           </button>
         )}
         <button
           onClick={handleDismiss}
           className="px-3 py-1 rounded text-[0.7692rem] font-medium text-text-link hover:text-text-primary hover:bg-accent-primary transition-colors"
         >
-          Dismiss
+          {t('browserPermission.dismiss')}
         </button>
       </div>
     </div>

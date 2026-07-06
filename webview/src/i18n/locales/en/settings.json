@@ -1,0 +1,335 @@
+{
+  "layout": {
+    "title": "Settings",
+    "back": "Back",
+    "toggleMenu": "Toggle menu",
+    "close": "Close"
+  },
+  "nav": {
+    "general": "General",
+    "appearance": "Appearance",
+    "permissions": "Permissions",
+    "privacy": "Privacy",
+    "cli": "CLI",
+    "browser": "Browser",
+    "account": "Account",
+    "usage": "Usage",
+    "tunnel": "Tunnel",
+    "releases": "Releases",
+    "about": "About"
+  },
+  "scope": {
+    "global": "User Settings (Global)",
+    "globalShort": "User (Global)",
+    "project": "Project Settings (Local)",
+    "projectShort": "Project (Local)",
+    "projectDisabledTooltip": "Open a project to use project settings"
+  },
+  "general": {
+    "language": {
+      "label": "Language",
+      "description": "Claude's preferred response language",
+      "notSet": "Not set (use global)",
+      "placeholder": "English"
+    },
+    "uiLanguage": {
+      "label": "Interface Language",
+      "description": "Language for the app interface, independent of Claude's response language."
+    },
+    "useCtrlEnterToSend": {
+      "label": "Use Ctrl Enter To Send",
+      "description": "When enabled, use Ctrl/Cmd+Enter to send prompts instead of just Enter. This allows Enter to create new lines."
+    },
+    "focusInputOnEditorContext": {
+      "label": "Focus chat input after attaching file path",
+      "description": "When you press Alt+K in the editor, move focus to the chat input after inserting the file path."
+    },
+    "respectGitignoreForContext": {
+      "label": "Respect .gitignore for editor context",
+      "description": "When on, contents of .gitignore'd files are excluded from the editor context — only the file path is sent."
+    },
+    "hostMode": {
+      "label": "Preferred Location",
+      "description": "Where Claude opens by default.",
+      "sidebar": "Sidebar",
+      "panel": "Panel"
+    },
+    "openSettings": {
+      "label": "Open Settings as",
+      "description": "Show Settings as an overlay or in a new tab.",
+      "overlay": "Overlay",
+      "newTab": "New tab"
+    },
+    "chatPagination": {
+      "label": "Paginate chat history",
+      "description": "Load older messages as you scroll. Off loads the whole conversation at once."
+    },
+    "configDir": {
+      "description": "Home directory for Claude's config. Same as the CLAUDE_CONFIG_DIR environment variable.",
+      "placeholder": "Default (~/.claude)",
+      "active": "Active: {{value}}",
+      "projectUnavailable": "Open a project to set a project value."
+    }
+  },
+  "appearance": {
+    "title": "Appearance",
+    "theme": {
+      "sectionTitle": "Theme",
+      "colorTheme": {
+        "label": "Color Theme",
+        "description": "Choose the color theme for the interface",
+        "notSet": "Not set (use global)",
+        "systemIde": "System (IDE)",
+        "systemOs": "System (OS)",
+        "light": "Light",
+        "dark": "Dark"
+      },
+      "fontSize": {
+        "label": "Font Size",
+        "description": "Base font size for the interface",
+        "notSetPlaceholder": "Not set"
+      }
+    },
+    "scrolling": {
+      "sectionTitle": "Scrolling",
+      "autoScrollThreshold": {
+        "label": "Auto-scroll resume distance",
+        "description": "Scrolling up always pauses auto-scroll so you can read freely. It resumes once you scroll back within this many pixels of the bottom. Smaller means you must return closer to re-engage. Default {{value}}.",
+        "notSetPlaceholder": "Not set"
+      }
+    }
+  },
+  "advanced": {
+    "title": "Advanced",
+    "debugging": {
+      "sectionTitle": "Debugging",
+      "debugMode": {
+        "label": "Debug Mode",
+        "description": "Enable debug logging and diagnostics",
+        "notSet": "Not set (use global)"
+      },
+      "logLevel": {
+        "label": "Log Level",
+        "description": "Minimum log level to display",
+        "notSet": "Not set (use global)",
+        "debug": "Debug",
+        "info": "Info",
+        "warning": "Warning",
+        "error": "Error"
+      }
+    }
+  },
+  "privacy": {
+    "title": "Privacy",
+    "privacyPolicyLink": "Privacy Policy",
+    "telemetry": {
+      "sectionTitle": "Telemetry",
+      "sendUsageStatistics": {
+        "label": "Send usage statistics",
+        "description": "Sends usage statistics that do not directly identify you, to help improve the product. Source code and personal data are never sent. You can turn this off anytime."
+      }
+    }
+  },
+  "account": {
+    "heading": "Account",
+    "addAccount": "Add account",
+    "actionFailed": "Action failed",
+    "loading": "Loading accounts…",
+    "empty": "No saved accounts yet.",
+    "plan": "Plan",
+    "authMethod": "Auth method",
+    "lastAccess": "Last access",
+    "inUse": "In use",
+    "switch": "Switch",
+    "removeAccount": "Remove account",
+    "lastActive": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "daysAgo": "{{value}}d ago",
+      "hoursAgo": "{{value}}h ago",
+      "minutesAgo": "{{value}}m ago",
+      "justNow": "just now"
+    }
+  },
+  "permissions": {
+    "heading": "Permissions",
+    "notSet": "Not set (use global)",
+    "bypassMode": {
+      "sectionTitle": "Bypass Mode",
+      "label": "Disable Bypass Mode",
+      "description": "Prevent bypass permissions mode from being activated"
+    },
+    "defaultMode": {
+      "sectionTitle": "Default Input Mode",
+      "label": "Default Input Mode",
+      "description": "Initial permission mode when opening a new session"
+    }
+  },
+  "about": {
+    "heading": "About",
+    "versionInfo": {
+      "title": "Version Information",
+      "pluginVersion": "Plugin Version",
+      "cliVersion": "{{appName}} Version",
+      "notDetected": "not detected",
+      "refreshVersion": "Refresh version",
+      "refresh": "Refresh"
+    },
+    "links": {
+      "title": "Links",
+      "documentation": "Documentation",
+      "viewOnGithub": "View on GitHub",
+      "reportIssue": "Report Issue",
+      "openIssue": "Open Issue"
+    },
+    "cliUpdate": {
+      "upToDate": "Up to date",
+      "confirmTitle": "Update Claude Code",
+      "confirmMessage": "Updating replaces the Claude Code CLI and may interrupt running sessions. Continue?",
+      "update": "Update",
+      "updating": "Updating…",
+      "channel": {
+        "stable": "Stable",
+        "latest": "Latest"
+      },
+      "updateSuccess": "Claude Code v{{value}} Updated",
+      "updateFailed": "Update failed"
+    }
+  },
+  "browser": {
+    "notifications": {
+      "title": "Notifications",
+      "sound": {
+        "label": "Sound",
+        "ariaLabel": "Notification Sound",
+        "off": "Off",
+        "description": "Sound played when a desktop notification fires. Selecting a sound previews it once.",
+        "loadingDescription": "Loading system sounds...",
+        "emptyDescription": "No system sounds detected. Select Off to silence notifications.",
+        "errorDescription": "Couldn't load system sounds: {{error}}"
+      }
+    },
+    "permissions": {
+      "title": "Permissions",
+      "revokeHint": "To revoke, change in your browser settings.",
+      "deniedHint": "Enable from browser settings",
+      "granted": "Granted",
+      "denied": "Denied",
+      "request": "Request"
+    }
+  },
+  "tunnel": {
+    "connection": {
+      "title": "Connection",
+      "enable": {
+        "label": "Remote Tunnel (Unofficial)",
+        "description": "Expose your local server via cloudflared for remote access. No account required. If cloudflared isn’t installed, you’ll be asked to install it first."
+      },
+      "installingProgress": "Installing cloudflared… ({{seconds}}s)",
+      "establishingProgress": "Establishing tunnel connection… ({{seconds}}s)",
+      "estimatedTime": "This typically takes ~1 min (If installation is required, it takes about 3 mins.)"
+    },
+    "sleepPrevention": {
+      "title": "Sleep Prevention",
+      "label": "Prevent Sleep",
+      "description": "Keep your machine awake while the tunnel is active, even with the lid closed."
+    }
+  },
+  "cli": {
+    "terminal": {
+      "title": "Terminal",
+      "app": {
+        "label": "Terminal App",
+        "description": "Terminal application used when running 'Open Claude in Terminal'",
+        "jetbrainsDescription": "JetBrains IDE built-in terminal is always used.",
+        "jetbrainsValue": "JetBrains built-in terminal",
+        "detecting": "Detecting terminals...",
+        "systemDefault": "System Default",
+        "defaultSuffix": "{{label}} (Default)",
+        "custom": "Custom...",
+        "customPlaceholder": "e.g., Kitty"
+      }
+    },
+    "model": {
+      "title": "Model",
+      "label": "Default Model",
+      "description": "Default model for new sessions",
+      "defaultRecommended": "Default (recommended)"
+    },
+    "path": {
+      "title": "Claude CLI",
+      "label": "CLI Path",
+      "description": "Path to Claude CLI executable (leave empty for auto-detect)",
+      "placeholder": "Auto-detect"
+    },
+    "nodePath": {
+      "title": "Node.js",
+      "label": "Node Path",
+      "description": "Path to Node.js executable that runs the backend (leave empty for auto-detect). Takes effect after restart.",
+      "placeholder": "Auto-detect"
+    }
+  },
+  "releases": {
+    "title": "Releases",
+    "restartRequired": "IDE restart required",
+    "updateButton": "Update to v{{version}}",
+    "current": "Current",
+    "noNotes": "No release notes",
+    "empty": "No releases found.",
+    "unknownDate": "Unknown date",
+    "refresh": "Refresh"
+  },
+  "usage": {
+    "title": "Usage",
+    "learnMore": "Learn more about usage limits",
+    "lastUpdated": "Last updated: {{time}}",
+    "refresh": "Refresh",
+    "relativeTime": {
+      "justNow": "Just now",
+      "oneMinuteAgo": "1m ago",
+      "minutesAgo": "{{count}}m ago",
+      "oneHourAgo": "1h ago",
+      "hoursAgo": "{{count}}h ago"
+    },
+    "account": {
+      "active": "Active",
+      "errorPrefix": "Usage unavailable: {{error}}",
+      "currentSession": "Current Session (5h)",
+      "weeklyLimits": "Weekly Limits",
+      "allModels": "All Models",
+      "sonnetOnly": "Sonnet only",
+      "opusOnly": "Opus only"
+    },
+    "meter": {
+      "resetsSoon": "Resets soon",
+      "resetsOnDay": "Resets {{day}} {{period}} {{time}}",
+      "resetsInHours": "Resets in {{hours}}h {{minutes}}m",
+      "resetsInMinutes": "Resets in {{minutes}}m",
+      "am": "AM",
+      "pm": "PM",
+      "days": {
+        "sun": "Sun",
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat"
+      }
+    },
+    "notInstalled": {
+      "title": "A required dependency",
+      "description": "Due to marketplace policy, this feature cannot be bundled in. It is published as a separate library that you need to install yourself.",
+      "installVia": "Install it globally via npm:",
+      "copy": "Copy",
+      "copied": "Copied",
+      "copyFailed": "Copy failed",
+      "retryHint": "After installing, click Retry below — no IDE restart needed.",
+      "checking": "Checking...",
+      "retry": "Retry"
+    },
+    "errors": {
+      "unknown": "Unknown error"
+    }
+  }
+}

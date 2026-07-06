@@ -27,11 +27,11 @@ import {
   ClearCommand,
   UsageCommand,
   CliPassthroughCommand,
-  contextItems,
-  modelItems,
-  customizeItems,
-  settingsItems,
-  supportItems,
+  getContextItems,
+  getModelItems,
+  getCustomizeItems,
+  getSettingsItems,
+  getSupportItems,
 } from './sections';
 
 interface CommandPaletteRegistryContextValue {
@@ -151,14 +151,14 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
     const keyboardReg = new KeyboardRegistry();
 
     // Register sections with their commands/items
-    reg.registerSection(new ContextSection(), contextItems);
-    reg.registerSection(new ModelSection(), modelItems);
-    reg.registerSection(new CustomizeSection(), customizeItems);
+    reg.registerSection(new ContextSection(), getContextItems());
+    reg.registerSection(new ModelSection(), getModelItems());
+    reg.registerSection(new CustomizeSection(), getCustomizeItems());
     reg.registerSection(new SlashCommandsSection(), [
       new ClearCommand(),
     ]);
-    reg.registerSection(new SettingsSection(), settingsItems);
-    reg.registerSection(new SupportSection(), supportItems);
+    reg.registerSection(new SettingsSection(), getSettingsItems());
+    reg.registerSection(new SupportSection(), getSupportItems());
 
     // Auto-register keyboard bindings from commands
     const bindings = reg.getKeyboardBindings();

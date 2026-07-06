@@ -6,6 +6,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { tunnelErrorGuidance, type TunnelErrorCode } from '@/hooks';
 import { getAdapter } from '@/adapters';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   cloudflaredAvailable: boolean | null;
@@ -38,6 +39,7 @@ export function TunnelStatusNotice(props: Props) {
     onConfirmInstall,
     onCancelInstall,
   } = props;
+  const { t } = useTranslation('common');
   const [copied, setCopied] = useState(false);
 
   if (error) {
@@ -61,7 +63,7 @@ export function TunnelStatusNotice(props: Props) {
             <code className="flex-1 font-mono text-xs bg-surface-raised px-2 py-1 rounded truncate">
               {guidance.manualInstallCommand}
             </code>
-            <button onClick={handleCopy} className="flex-shrink-0" title="Copy command">
+            <button onClick={handleCopy} className="flex-shrink-0" title={t('tunnelStatusNotice.copyCommand')}>
               {copied
                 ? <ClipboardDocumentCheckIcon className="w-4 h-4 text-state-success-fg" />
                 : <ClipboardDocumentIcon className="w-4 h-4 cursor-pointer" />
@@ -72,14 +74,14 @@ export function TunnelStatusNotice(props: Props) {
 
         <div className="flex items-center gap-3 pt-1">
           <button onClick={onRetry} className="text-xs font-medium underline cursor-pointer">
-            Try again
+            {t('tunnelStatusNotice.tryAgain')}
           </button>
           {guidance.helpUrl && (
             <button
               onClick={() => getAdapter().openUrl(guidance.helpUrl as string)}
               className="text-xs underline opacity-90 cursor-pointer"
             >
-              Install guide
+              {t('tunnelStatusNotice.installGuide')}
             </button>
           )}
         </div>
@@ -92,17 +94,14 @@ export function TunnelStatusNotice(props: Props) {
       <div className="py-2 px-3 text-xs text-state-warning-fg bg-state-warning-bg rounded space-y-2">
         <div className="flex items-start gap-2">
           <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
-          <span>
-            cloudflared isn’t installed. Install it now and enable the tunnel? This downloads
-            cloudflared (about 3 minutes the first time).
-          </span>
+          <span>{t('tunnelStatusNotice.installConsent')}</span>
         </div>
         <div className="flex items-center gap-3 pt-1 pl-6">
           <button onClick={onConfirmInstall} className="text-xs font-medium underline cursor-pointer">
-            Install &amp; enable
+            {t('tunnelStatusNotice.installAndEnable')}
           </button>
           <button onClick={onCancelInstall} className="text-xs underline opacity-80 cursor-pointer">
-            Cancel
+            {t('tunnelStatusNotice.cancel')}
           </button>
         </div>
       </div>
@@ -113,10 +112,7 @@ export function TunnelStatusNotice(props: Props) {
     return (
       <div className="py-2 px-3 text-xs text-state-warning-fg bg-state-warning-bg rounded flex items-start gap-2">
         <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
-        <span>
-          cloudflared isn’t installed yet. Turning the tunnel on will ask to download it
-          (about 3 minutes the first time).
-        </span>
+        <span>{t('tunnelStatusNotice.notInstalledWarning')}</span>
       </div>
     );
   }

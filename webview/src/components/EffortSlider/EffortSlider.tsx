@@ -1,6 +1,7 @@
 import { useRef, type PointerEvent } from 'react';
 import { useEffort } from '@/hooks/useEffort';
 import { buildEffortLevels } from '@/types/effort';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   className?: string;
@@ -25,6 +26,7 @@ const SPAN = '(100% - var(--thumb-size) - 2 * var(--thumb-inset))';
  */
 export function EffortSlider(props: Props) {
   const { className } = props;
+  const { t } = useTranslation('common');
   const {
     supportsEffort,
     levels: supported,
@@ -102,7 +104,7 @@ export function EffortSlider(props: Props) {
     <button
       type="button"
       className={rootClass}
-      title={ultracodeAvailable ? 'Click or drag to set effort level (top step = ultracode)' : 'Click or drag to set effort level'}
+      title={ultracodeAvailable ? t('effortSlider.tooltipUltracode') : t('effortSlider.tooltip')}
       onMouseDown={(e) => e.preventDefault()}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}

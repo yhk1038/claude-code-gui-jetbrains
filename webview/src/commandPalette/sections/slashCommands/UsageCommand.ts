@@ -1,4 +1,5 @@
 import { SlashCommand } from '../../types';
+import { i18n } from '@/i18n';
 import { OPEN_ACCOUNT_USAGE_EVENT } from '../model/AccountUsageItem';
 
 /**
@@ -27,7 +28,10 @@ export function matchesUsageCommand(trimmed: string): boolean {
 export class UsageCommand extends SlashCommand {
   readonly id = 'cmd-usage';
   readonly label = '/usage';
-  readonly description = 'Account & usage';
+
+  get description(): string {
+    return i18n.t('commandPalette:slashCommands.usageDescription');
+  }
 
   async execute(): Promise<void> {
     window.dispatchEvent(new CustomEvent(OPEN_ACCOUNT_USAGE_EVENT));

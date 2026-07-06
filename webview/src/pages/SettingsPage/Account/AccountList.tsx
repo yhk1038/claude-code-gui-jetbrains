@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAccounts } from '@/hooks/queries/useAccounts';
 import type { AccountListItem } from '@/shared';
+import { useTranslation } from '@/i18n';
 import { AccountRow } from './AccountRow';
 
 /**
@@ -8,6 +9,7 @@ import { AccountRow } from './AccountRow';
  * is not yet in the registry (covers accounts logged in outside the plugin).
  */
 export function AccountList() {
+  const { t } = useTranslation('settings');
   const { accounts, activeEmail, isLoading, error, save, switchTo, remove } = useAccounts();
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -23,7 +25,7 @@ export function AccountList() {
     try {
       await action();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Action failed');
+      setActionError(err instanceof Error ? err.message : t('account.actionFailed'));
     } finally {
       setBusy(false);
     }
@@ -57,7 +59,7 @@ export function AccountList() {
 
       {accounts.length === 0 ? (
         <p className="text-[0.8461rem] text-text-tertiary py-2">
-          {isLoading ? 'Loading accounts…' : 'No saved accounts yet.'}
+          {isLoading ? t('account.loading') : t('account.empty')}
         </p>
       ) : (
         <div>

@@ -1,4 +1,5 @@
 import { IconType } from '@/types/commandPalette';
+import { i18n } from '@/i18n';
 import { StaticItem } from '../../types';
 
 /**
@@ -7,22 +8,27 @@ import { StaticItem } from '../../types';
  */
 export const OPEN_SESSION_DROPDOWN_EVENT = 'command-palette:open-session-dropdown';
 
-export const contextItems = [
-  new StaticItem('attach-file', 'Attach file...', {
+/**
+ * Built on demand (not a module-eval constant) so the labels resolve against
+ * the current locale after i18n init. Called once when the registry registers
+ * the Context section.
+ */
+export const getContextItems = (): StaticItem[] => [
+  new StaticItem('attach-file', i18n.t('commandPalette:context.attachFile'), {
     icon: IconType.File,
     disabled: false,
     action: async () => {
       window.dispatchEvent(new CustomEvent('command-palette:attach-files'));
     },
   }),
-  new StaticItem('mention-file', 'Mention file from this project...', {
+  new StaticItem('mention-file', i18n.t('commandPalette:context.mentionFile'), {
     icon: IconType.File,
     disabled: false,
     action: async () => {
       window.dispatchEvent(new CustomEvent('command-palette:mention-file'));
     },
   }),
-  new StaticItem('clear-conversation', 'Clear conversation', {
+  new StaticItem('clear-conversation', i18n.t('commandPalette:context.clearConversation'), {
     disabled: false,
     serviceAction: async (services) => {
       if (services.chatStream.isStreaming) services.chatStream.stop();
@@ -32,7 +38,7 @@ export const contextItems = [
   }),
   // Search-only: surfaces when the user types `/resume`. Opens the session
   // dropdown so past conversations can be browsed and resumed (issue #28).
-  new StaticItem('resume-conversation', 'Resume conversation', {
+  new StaticItem('resume-conversation', i18n.t('commandPalette:context.resumeConversation'), {
     disabled: false,
     searchOnly: true,
     action: async () => {
@@ -42,7 +48,7 @@ export const contextItems = [
   // Search-only: surfaces when the user types `/workflows` (mirrors the CLI's
   // /workflows). Opens the Background tasks panel — a local action, no message
   // is sent to Claude.
-  new StaticItem('open-workflows', 'Workflow: Show background tasks', {
+  new StaticItem('open-workflows', i18n.t('commandPalette:context.showBackgroundTasks'), {
     disabled: false,
     searchOnly: true,
     keywords: ['workflows', 'workflow'],

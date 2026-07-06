@@ -3,11 +3,7 @@ import { Select, type SelectOption } from '@/components/Select';
 import { useSettings } from '@/contexts/SettingsContext';
 import { SettingKey, HostMode } from '@/types/settings';
 import { isJetBrains } from '@/config/environment';
-
-const HOST_MODE_OPTIONS: SelectOption[] = [
-  { value: HostMode.TOOL_WINDOW, label: 'Sidebar' },
-  { value: HostMode.EDITOR_TAB, label: 'Panel' },
-];
+import { useTranslation } from '@/i18n';
 
 /**
  * Lets the user choose where new chats open — a dedicated editor tab or the
@@ -21,20 +17,26 @@ const HOST_MODE_OPTIONS: SelectOption[] = [
  */
 export function HostModeRow() {
   const { settings, updateSettingWithScope } = useSettings();
+  const { t } = useTranslation('settings');
 
   if (!isJetBrains()) return null;
 
   const hostMode = settings[SettingKey.HOST_MODE] ?? HostMode.EDITOR_TAB;
 
+  const hostModeOptions: SelectOption[] = [
+    { value: HostMode.TOOL_WINDOW, label: t('general.hostMode.sidebar') },
+    { value: HostMode.EDITOR_TAB, label: t('general.hostMode.panel') },
+  ];
+
   return (
     <SettingRow
-      label="Preferred Location"
-      description="Where Claude opens by default."
+      label={t('general.hostMode.label')}
+      description={t('general.hostMode.description')}
     >
       <Select
         value={hostMode}
-        options={HOST_MODE_OPTIONS}
-        ariaLabel="Preferred Location"
+        options={hostModeOptions}
+        ariaLabel={t('general.hostMode.label')}
         className="bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm text-text-primary"
         onChange={(value) => updateSettingWithScope(SettingKey.HOST_MODE, value as HostMode, 'global')}
       />

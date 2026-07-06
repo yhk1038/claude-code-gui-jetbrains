@@ -1,8 +1,10 @@
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import {useSessionContext} from "@/contexts";
+import { useTranslation } from '@/i18n';
 
 export function SessionRefresher() {
     const { isLoading, loadSessions } = useSessionContext();
+    const { t } = useTranslation('common');
 
     return (
         <button
@@ -14,7 +16,7 @@ export function SessionRefresher() {
             }`}
             onClick={isLoading ? undefined : loadSessions}
             disabled={isLoading}
-            aria-label={isLoading ? 'Loading sessions...' : 'Refresh sessions'}
+            aria-label={isLoading ? t('sessionList.loadingSessions') : t('sessionList.refreshSessions')}
             tabIndex={-1}
         >
             <ArrowPathIcon className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />

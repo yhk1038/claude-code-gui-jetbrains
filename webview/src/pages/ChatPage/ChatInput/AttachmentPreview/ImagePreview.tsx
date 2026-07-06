@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Portal } from '@/components/Portal';
 import type { ImageAttachment } from '../../../../types';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   attachment: ImageAttachment;
@@ -10,6 +11,7 @@ interface Props {
 export function ImagePreview(props: Props) {
   const { attachment, onRemove } = props;
   const [showLightbox, setShowLightbox] = useState(false);
+  const { t } = useTranslation('chat');
 
   return (
     <>
@@ -43,7 +45,7 @@ export function ImagePreview(props: Props) {
           <div className="relative max-w-[90vw] max-h-[90vh]">
             <img
               src={attachment.dataUrl}
-              alt="Full size"
+              alt={t('chatInput.attachmentPreview.fullSize')}
               className="max-w-full max-h-[90vh] object-contain rounded-lg"
               onClick={(e) => e.stopPropagation()}
             />

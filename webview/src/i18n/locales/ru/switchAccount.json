@@ -1,0 +1,36 @@
+{
+  "welcomeArtAlt": "Приветственная иллюстрация",
+  "intro": "Claude Code можно использовать с вашей подпиской Claude или с оплатой по факту использования API через аккаунт Console.",
+  "loginPrompt": "Как вы хотите войти?",
+  "errors": {
+    "loginFailed": "Не удалось войти. Попробуйте снова."
+  },
+  "claudeAi": {
+    "label": "Подписка Claude.ai",
+    "description": "Используйте подписку Claude Pro, Team или Enterprise"
+  },
+  "console": {
+    "label": "Anthropic Console",
+    "description": "Оплата за использование API через аккаунт Console"
+  },
+  "providers": {
+    "label": "Bedrock, Foundry или Vertex",
+    "description": "Инструкции по использованию ключей API или сторонних провайдеров."
+  },
+  "terminal": {
+    "prompt": "Предпочитаете работу в терминале?",
+    "action": "Запустить claude в терминале"
+  },
+  "codeInput": {
+    "title": "Вставьте код из браузера",
+    "description": "После входа браузер покажет код. Вставьте его сюда, чтобы завершить вход.",
+    "placeholder": "Вставьте код сюда",
+    "submit": "Отправить код"
+  },
+  "urlModal": {
+    "title": "Войти в Claude",
+    "description": "Claude открывает браузер для входа. Если он не открылся автоматически, используйте кнопку ниже.",
+    "openButton": "Открыть страницу входа",
+    "revealCode": "Получили код в браузере? Введите его"
+  }
+}

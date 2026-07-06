@@ -1,0 +1,12 @@
+{
+  "newSession": "새 세션",
+  "scope": {
+    "local": "로컬",
+    "web": "웹"
+  },
+  "empty": {
+    "noMatches": "일치하는 세션이 없습니다",
+    "noSessions": "아직 세션이 없습니다",
+    "noWebSessions": "웹 세션이 없습니다"
+  }
+}

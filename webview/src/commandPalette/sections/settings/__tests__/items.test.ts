@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { settingsItems } from '../items';
+import { getSettingsItems } from '../items';
 import { StaticItem } from '../../../types';
+
+const settingsItems = getSettingsItems();
 
 const byId = (id: string): StaticItem =>
   settingsItems.find(item => item.id === id) as StaticItem;

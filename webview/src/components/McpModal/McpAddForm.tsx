@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ArrowPathIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { useTranslation } from '@/i18n';
 import { parseMcpJson, ParsedMcpServer } from '@/utils/parseMcpJson';
 
 interface Props {
@@ -31,6 +32,7 @@ const PLACEHOLDER = `{
 }`;
 
 export function McpAddForm(props: Props) {
+  const { t } = useTranslation('common');
   const { onAdd, onCancel, initialName, initialJson, initialScope, mode = 'add', onBusyChange } = props;
   const isEdit = mode === 'edit';
   const [name, setName] = useState(initialName ?? '');
@@ -68,11 +70,11 @@ export function McpAddForm(props: Props) {
             onClick={onCancel}
             disabled={busy}
             className="w-8 h-8 flex items-center justify-center rounded text-gray-400 hover:bg-gray-500/50 transition-colors flex-shrink-0 disabled:opacity-50"
-            title="Back"
+            title={t('mcpModal.form.back')}
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
-          <h3 className="text-lg font-semibold text-text-primary">{isEdit ? 'Edit MCP Server' : 'Add MCP Server'}</h3>
+          <h3 className="text-lg font-semibold text-text-primary">{isEdit ? t('mcpModal.form.editTitle') : t('mcpModal.form.addTitle')}</h3>
         </div>
 
         {error && (
@@ -80,32 +82,32 @@ export function McpAddForm(props: Props) {
         )}
 
         {/* Name (optional — used only when the pasted JSON has no mcpServers wrapper) */}
-        <Field label="Name" hint="Optional — only used when your JSON has no “mcpServers” wrapper">
+        <Field label={t('mcpModal.form.nameLabel')} hint={t('mcpModal.form.nameHint')}>
           <input
             className="w-full text-md bg-surface-hover border border-border-default rounded px-2 py-1.5 text-text-primary focus:outline-none focus:border-accent-primary disabled:opacity-50"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="my-server"
+            placeholder={t('mcpModal.form.namePlaceholder')}
             disabled={busy}
           />
         </Field>
 
         {/* Scope */}
-        <Field label="Scope">
+        <Field label={t('mcpModal.form.scopeLabel')}>
           <select
             className="w-full text-md bg-surface-hover border border-border-default rounded px-2 py-1.5 text-text-primary focus:outline-none focus:border-accent-primary disabled:opacity-50"
             value={scope}
             onChange={(e) => setScope(e.target.value)}
             disabled={busy}
           >
-            <option value="user">User (all projects)</option>
-            <option value="project">Project (.mcp.json)</option>
-            <option value="local">Local (this project only)</option>
+            <option value="user">{t('mcpModal.form.scopeUser')}</option>
+            <option value="project">{t('mcpModal.form.scopeProject')}</option>
+            <option value="local">{t('mcpModal.form.scopeLocal')}</option>
           </select>
         </Field>
 
         {/* JSON config */}
-        <Field label="Configuration (JSON)" hint="Paste an mcpServers config or a single server config">
+        <Field label={t('mcpModal.form.configLabel')} hint={t('mcpModal.form.configHint')}>
           <textarea
             className="w-full h-44 text-md bg-surface-hover border border-border-default rounded px-2 py-1.5 text-text-primary font-mono resize-y focus:outline-none focus:border-accent-primary disabled:opacity-50"
             value={json}
@@ -126,7 +128,7 @@ export function McpAddForm(props: Props) {
             onClick={onCancel}
             className="flex-1 text-md py-2 rounded bg-surface-hover text-text-secondary hover:bg-surface-raised transition-colors"
           >
-            Cancel
+            {t('mcpModal.form.cancel')}
           </button>
         )}
         <button
@@ -135,8 +137,8 @@ export function McpAddForm(props: Props) {
           className={`text-md py-2 rounded bg-accent-primary text-white hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center ${busy ? 'w-full' : 'flex-1'}`}
         >
           {busy ? (
-            <ArrowPathIcon className="w-5 h-5 animate-spin" aria-label={isEdit ? 'Saving' : 'Adding'} />
-          ) : isEdit ? 'Save' : 'Add server'}
+            <ArrowPathIcon className="w-5 h-5 animate-spin" aria-label={isEdit ? t('mcpModal.form.saving') : t('mcpModal.form.adding')} />
+          ) : isEdit ? t('mcpModal.form.save') : t('mcpModal.form.addButton')}
         </button>
       </div>
     </form>

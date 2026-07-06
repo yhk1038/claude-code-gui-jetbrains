@@ -1,6 +1,7 @@
-import { GroupedSessions, GROUP_ORDER, GROUP_LABELS } from './utils';
+import { GroupedSessions, GROUP_ORDER } from './utils';
 import { SessionItem } from './SessionItem';
 import { useSessionListScale } from './scale';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   groupedSessions: GroupedSessions;
@@ -17,6 +18,7 @@ interface Props {
 export function SessionList(props: Props) {
   const { groupedSessions, currentSessionId, highlightedSessionId = null, onSelectSession, onDeleteSession, onRenameSession, className = 'max-h-80' } = props;
   const scale = useSessionListScale();
+  const { t } = useTranslation('common');
 
   return (
     <div className={`${className} overflow-y-auto ${scale.listPad} flex flex-col gap-0.5`}>
@@ -27,7 +29,7 @@ export function SessionList(props: Props) {
         return (
           <div key={groupKey}>
             <div className={`${scale.groupHeader} text-text-tertiary`}>
-              {GROUP_LABELS[groupKey]}
+              {t(`sessionList.groups.${groupKey}`)}
             </div>
             {sessionsInGroup.map((session) => (
               <SessionItem

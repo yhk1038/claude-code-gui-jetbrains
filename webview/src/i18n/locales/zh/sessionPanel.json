@@ -1,0 +1,12 @@
+{
+  "newSession": "新建会话",
+  "scope": {
+    "local": "本地",
+    "web": "网页"
+  },
+  "empty": {
+    "noMatches": "没有匹配的会话",
+    "noSessions": "暂无会话",
+    "noWebSessions": "暂无网页会话"
+  }
+}

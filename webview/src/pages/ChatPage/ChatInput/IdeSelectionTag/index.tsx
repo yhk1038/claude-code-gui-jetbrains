@@ -2,6 +2,7 @@ import { useIdeSelectionContext } from '@/contexts/IdeSelectionContext';
 import { Tag } from '../Tag';
 import { basename } from '../basename';
 import type { IdeSelectionPayload } from '@/hooks/useIdeSelection';
+import { useTranslation } from '@/i18n';
 
 /** File icon — selection is included in the next send (matches Cursor). */
 function FileIcon() {
@@ -45,13 +46,14 @@ function selectionLabel(selection: IdeSelectionPayload): string {
  */
 export function IdeSelectionTag() {
   const { currentSelection, includeSelection, toggleIncludeSelection } = useIdeSelectionContext();
+  const { t } = useTranslation('chat');
 
   if (!currentSelection) return null;
 
   const label = selectionLabel(currentSelection);
   const title = includeSelection
-    ? `Including ${currentSelection.relativePath} in the next message — click to exclude`
-    : `Excluding ${currentSelection.relativePath} — click to include`;
+    ? t('chatInput.ideSelectionTag.including', { path: currentSelection.relativePath })
+    : t('chatInput.ideSelectionTag.excluding', { path: currentSelection.relativePath });
 
   return (
     <Tag

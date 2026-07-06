@@ -7,8 +7,10 @@ import { useSessionListKeyboard } from '@/components/SessionList/useSessionListK
 import { useChatInputFocus } from '@/contexts/ChatInputFocusContext';
 import { OPEN_SESSION_DROPDOWN_EVENT } from '@/commandPalette/sections/context/items';
 import { isMobile } from '@/config/environment';
+import { useTranslation } from '@/i18n';
 
 export function SessionDropdown() {
+  const { t } = useTranslation('chat');
   const { currentSession, switchSession, loadSessions } = useSessionContext();
   const { focus: focusComposer } = useChatInputFocus();
   const {
@@ -24,7 +26,7 @@ export function SessionDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const sessionTitle = currentSession?.title || 'Past Conversations';
+  const sessionTitle = currentSession?.title || t('sessionHeader.sessionDropdown.pastConversations');
 
   const closeDropdown = () => {
     setIsOpen(false);

@@ -1,0 +1,335 @@
+{
+  "layout": {
+    "title": "設定",
+    "back": "戻る",
+    "toggleMenu": "メニューの切り替え",
+    "close": "閉じる"
+  },
+  "nav": {
+    "general": "一般",
+    "appearance": "外観",
+    "permissions": "権限",
+    "privacy": "プライバシー",
+    "cli": "CLI",
+    "browser": "ブラウザ",
+    "account": "アカウント",
+    "usage": "使用状況",
+    "tunnel": "トンネル",
+    "releases": "リリース",
+    "about": "情報"
+  },
+  "scope": {
+    "global": "ユーザー設定(グローバル)",
+    "globalShort": "ユーザー(グローバル)",
+    "project": "プロジェクト設定(ローカル)",
+    "projectShort": "プロジェクト(ローカル)",
+    "projectDisabledTooltip": "プロジェクト設定を使用するにはプロジェクトを開いてください"
+  },
+  "general": {
+    "language": {
+      "label": "言語",
+      "description": "Claudeが応答に使用する言語",
+      "notSet": "未設定(グローバルを使用)",
+      "placeholder": "英語"
+    },
+    "uiLanguage": {
+      "label": "インターフェース言語",
+      "description": "アプリのインターフェース言語です。Claude の応答言語とは別に設定できます。"
+    },
+    "useCtrlEnterToSend": {
+      "label": "送信にCtrl+Enterを使用",
+      "description": "有効にすると、Enterだけでなく Ctrl/Cmd+Enter でプロンプトを送信します。Enterキーは改行に使用できるようになります。"
+    },
+    "focusInputOnEditorContext": {
+      "label": "ファイルパス添付後にチャット入力欄へフォーカス",
+      "description": "エディタで Alt+K を押すと、ファイルパスの挿入後にフォーカスをチャット入力欄へ移動します。"
+    },
+    "respectGitignoreForContext": {
+      "label": "エディタコンテキストで.gitignoreを尊重",
+      "description": "有効にすると、.gitignoreの対象ファイルの内容はエディタコンテキストから除外され、ファイルパスのみが送信されます。"
+    },
+    "hostMode": {
+      "label": "優先表示場所",
+      "description": "Claudeがデフォルトで開く場所。",
+      "sidebar": "サイドバー",
+      "panel": "パネル"
+    },
+    "openSettings": {
+      "label": "設定の開き方",
+      "description": "設定をオーバーレイまたは新しいタブとして表示します。",
+      "overlay": "オーバーレイ",
+      "newTab": "新しいタブ"
+    },
+    "chatPagination": {
+      "label": "チャット履歴をページ分割",
+      "description": "スクロールに合わせて過去のメッセージを読み込みます。オフにすると会話全体を一度に読み込みます。"
+    },
+    "configDir": {
+      "description": "Claudeの設定用ホームディレクトリ。CLAUDE_CONFIG_DIR 環境変数と同じです。",
+      "placeholder": "デフォルト(~/.claude)",
+      "active": "有効: {{value}}",
+      "projectUnavailable": "プロジェクト値を設定するにはプロジェクトを開いてください。"
+    }
+  },
+  "appearance": {
+    "title": "外観",
+    "theme": {
+      "sectionTitle": "テーマ",
+      "colorTheme": {
+        "label": "カラーテーマ",
+        "description": "インターフェースのカラーテーマを選択します",
+        "notSet": "未設定(グローバルを使用)",
+        "systemIde": "システム(IDE)",
+        "systemOs": "システム(OS)",
+        "light": "ライト",
+        "dark": "ダーク"
+      },
+      "fontSize": {
+        "label": "フォントサイズ",
+        "description": "インターフェースの基本フォントサイズ",
+        "notSetPlaceholder": "未設定"
+      }
+    },
+    "scrolling": {
+      "sectionTitle": "スクロール",
+      "autoScrollThreshold": {
+        "label": "自動スクロール再開距離",
+        "description": "上にスクロールすると常に自動スクロールが一時停止し、自由に読めるようになります。最下部からこのピクセル数以内に戻ると再開します。値を小さくするほど、再開するには最下部に近づく必要があります。デフォルト {{value}}。",
+        "notSetPlaceholder": "未設定"
+      }
+    }
+  },
+  "advanced": {
+    "title": "詳細設定",
+    "debugging": {
+      "sectionTitle": "デバッグ",
+      "debugMode": {
+        "label": "デバッグモード",
+        "description": "デバッグログと診断を有効にします",
+        "notSet": "未設定(グローバルを使用)"
+      },
+      "logLevel": {
+        "label": "ログレベル",
+        "description": "表示する最小ログレベル",
+        "notSet": "未設定(グローバルを使用)",
+        "debug": "デバッグ",
+        "info": "情報",
+        "warning": "警告",
+        "error": "エラー"
+      }
+    }
+  },
+  "privacy": {
+    "title": "プライバシー",
+    "privacyPolicyLink": "プライバシーポリシー",
+    "telemetry": {
+      "sectionTitle": "テレメトリ",
+      "sendUsageStatistics": {
+        "label": "使用統計を送信",
+        "description": "個人を直接特定しない使用統計を送信し、製品の改善に役立てます。ソースコードや個人データが送信されることはありません。この設定はいつでもオフにできます。"
+      }
+    }
+  },
+  "account": {
+    "heading": "アカウント",
+    "addAccount": "アカウントを追加",
+    "actionFailed": "操作に失敗しました",
+    "loading": "アカウントを読み込み中…",
+    "empty": "保存されたアカウントはまだありません。",
+    "plan": "プラン",
+    "authMethod": "認証方法",
+    "lastAccess": "最終アクセス",
+    "inUse": "使用中",
+    "switch": "切り替え",
+    "removeAccount": "アカウントを削除",
+    "lastActive": {
+      "today": "今日",
+      "yesterday": "昨日",
+      "daysAgo": "{{value}}日前",
+      "hoursAgo": "{{value}}時間前",
+      "minutesAgo": "{{value}}分前",
+      "justNow": "たった今"
+    }
+  },
+  "permissions": {
+    "heading": "権限",
+    "notSet": "未設定(グローバルを使用)",
+    "bypassMode": {
+      "sectionTitle": "バイパスモード",
+      "label": "バイパスモードを無効化",
+      "description": "バイパス権限モードが有効化されないようにします"
+    },
+    "defaultMode": {
+      "sectionTitle": "デフォルト入力モード",
+      "label": "デフォルト入力モード",
+      "description": "新しいセッションを開いたときの初期権限モード"
+    }
+  },
+  "about": {
+    "heading": "情報",
+    "versionInfo": {
+      "title": "バージョン情報",
+      "pluginVersion": "プラグインバージョン",
+      "cliVersion": "{{appName}} バージョン",
+      "notDetected": "検出されませんでした",
+      "refreshVersion": "バージョンを更新",
+      "refresh": "更新"
+    },
+    "links": {
+      "title": "リンク",
+      "documentation": "ドキュメント",
+      "viewOnGithub": "GitHubで見る",
+      "reportIssue": "問題を報告",
+      "openIssue": "問題を開く"
+    },
+    "cliUpdate": {
+      "upToDate": "最新版です",
+      "confirmTitle": "Claude Codeを更新",
+      "confirmMessage": "更新するとClaude Code CLIが置き換えられ、実行中のセッションが中断される場合があります。続行しますか?",
+      "update": "更新",
+      "updating": "更新中…",
+      "channel": {
+        "stable": "安定版",
+        "latest": "最新版"
+      },
+      "updateSuccess": "Claude Code v{{value}} に更新しました",
+      "updateFailed": "更新に失敗しました"
+    }
+  },
+  "browser": {
+    "notifications": {
+      "title": "通知",
+      "sound": {
+        "label": "サウンド",
+        "ariaLabel": "通知サウンド",
+        "off": "オフ",
+        "description": "デスクトップ通知が表示されたときに再生される音です。サウンドを選択するとプレビューが一度再生されます。",
+        "loadingDescription": "システムサウンドを読み込み中...",
+        "emptyDescription": "システムサウンドが見つかりませんでした。通知を無音にするには「オフ」を選択してください。",
+        "errorDescription": "システムサウンドを読み込めませんでした: {{error}}"
+      }
+    },
+    "permissions": {
+      "title": "権限",
+      "revokeHint": "取り消すには、ブラウザの設定を変更してください。",
+      "deniedHint": "ブラウザの設定から有効にしてください",
+      "granted": "許可済み",
+      "denied": "拒否済み",
+      "request": "リクエスト"
+    }
+  },
+  "tunnel": {
+    "connection": {
+      "title": "接続",
+      "enable": {
+        "label": "リモートトンネル(非公式)",
+        "description": "cloudflaredを使ってローカルサーバーをリモートアクセス用に公開します。アカウントは不要です。cloudflaredがインストールされていない場合は、先にインストールを求められます。"
+      },
+      "installingProgress": "cloudflaredをインストール中…({{seconds}}秒)",
+      "establishingProgress": "トンネル接続を確立中…({{seconds}}秒)",
+      "estimatedTime": "通常は約1分で完了します(インストールが必要な場合は約3分かかります)。"
+    },
+    "sleepPrevention": {
+      "title": "スリープ防止",
+      "label": "スリープを防止",
+      "description": "トンネルがアクティブな間、蓋を閉じていてもマシンをスリープさせないようにします。"
+    }
+  },
+  "cli": {
+    "terminal": {
+      "title": "ターミナル",
+      "app": {
+        "label": "ターミナルアプリ",
+        "description": "「Open Claude in Terminal」実行時に使用するターミナルアプリケーション",
+        "jetbrainsDescription": "JetBrains IDE内蔵のターミナルが常に使用されます。",
+        "jetbrainsValue": "JetBrains内蔵ターミナル",
+        "detecting": "ターミナルを検出中...",
+        "systemDefault": "システムのデフォルト",
+        "defaultSuffix": "{{label}}(デフォルト)",
+        "custom": "カスタム...",
+        "customPlaceholder": "例: Kitty"
+      }
+    },
+    "model": {
+      "title": "モデル",
+      "label": "デフォルトモデル",
+      "description": "新しいセッションのデフォルトモデル",
+      "defaultRecommended": "デフォルト(推奨)"
+    },
+    "path": {
+      "title": "Claude CLI",
+      "label": "CLIパス",
+      "description": "Claude CLI実行ファイルへのパス(自動検出する場合は空欄のまま)",
+      "placeholder": "自動検出"
+    },
+    "nodePath": {
+      "title": "Node.js",
+      "label": "Nodeパス",
+      "description": "バックエンドを実行するNode.js実行ファイルへのパス(自動検出する場合は空欄のまま)。再起動後に反映されます。",
+      "placeholder": "自動検出"
+    }
+  },
+  "releases": {
+    "title": "リリース",
+    "restartRequired": "IDEの再起動が必要です",
+    "updateButton": "v{{version}} に更新",
+    "current": "現在のバージョン",
+    "noNotes": "リリースノートはありません",
+    "empty": "リリースが見つかりません。",
+    "unknownDate": "日付不明",
+    "refresh": "更新"
+  },
+  "usage": {
+    "title": "使用状況",
+    "learnMore": "使用制限について詳しく見る",
+    "lastUpdated": "最終更新: {{time}}",
+    "refresh": "更新",
+    "relativeTime": {
+      "justNow": "たった今",
+      "oneMinuteAgo": "1分前",
+      "minutesAgo": "{{count}}分前",
+      "oneHourAgo": "1時間前",
+      "hoursAgo": "{{count}}時間前"
+    },
+    "account": {
+      "active": "有効",
+      "errorPrefix": "使用状況を取得できません: {{error}}",
+      "currentSession": "現在のセッション(5時間)",
+      "weeklyLimits": "週間制限",
+      "allModels": "すべてのモデル",
+      "sonnetOnly": "Sonnetのみ",
+      "opusOnly": "Opusのみ"
+    },
+    "meter": {
+      "resetsSoon": "まもなくリセット",
+      "resetsOnDay": "{{day}} {{period}} {{time}} にリセット",
+      "resetsInHours": "{{hours}}時間{{minutes}}分後にリセット",
+      "resetsInMinutes": "{{minutes}}分後にリセット",
+      "am": "午前",
+      "pm": "午後",
+      "days": {
+        "sun": "日",
+        "mon": "月",
+        "tue": "火",
+        "wed": "水",
+        "thu": "木",
+        "fri": "金",
+        "sat": "土"
+      }
+    },
+    "notInstalled": {
+      "title": "必要な依存関係",
+      "description": "マーケットプレイスのポリシー上、この機能は同梱できません。別途インストールが必要な独立したライブラリとして提供されています。",
+      "installVia": "npmでグローバルにインストールしてください:",
+      "copy": "コピー",
+      "copied": "コピーしました",
+      "copyFailed": "コピーに失敗しました",
+      "retryHint": "インストール後、下の「再試行」をクリックしてください。IDEの再起動は不要です。",
+      "checking": "確認中...",
+      "retry": "再試行"
+    },
+    "errors": {
+      "unknown": "不明なエラー"
+    }
+  }
+}

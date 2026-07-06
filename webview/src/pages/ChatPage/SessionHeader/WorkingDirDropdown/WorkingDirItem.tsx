@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Route, routeToPath, withWorkingDir } from '@/router/routes';
 import { WorkingDirEntry } from './classifyWorkingDirs';
+import { useTranslation } from '@/i18n';
+import type { TFunction } from 'i18next';
 
 export type TreeGlyph = 'mid' | 'last' | null;
 
@@ -52,14 +54,14 @@ function TreeBranch({ glyph }: { glyph: TreeGlyph }) {
   );
 }
 
-function CountSlot({ entry, isDraft }: { entry: WorkingDirEntry; isDraft: boolean }) {
+function CountSlot({ entry, isDraft, t }: { entry: WorkingDirEntry; isDraft: boolean; t: TFunction }) {
   if (isDraft) {
     return (
       <span
         className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-surface-overlay text-text-tertiary"
-        title="Picked via Add new — becomes a permanent working directory once you start a session here."
+        title={t('sessionHeader.workingDir.draftBadgeTitle')}
       >
-        Draft
+        {t('sessionHeader.workingDir.draftBadge')}
       </span>
     );
   }
@@ -68,6 +70,7 @@ function CountSlot({ entry, isDraft }: { entry: WorkingDirEntry; isDraft: boolea
 
 export function WorkingDirItem(props: Props) {
   const { entry, depth, glyph, isCurrent, isIdeRoot, isDraft, onNavigate } = props;
+  const { t } = useTranslation('chat');
   const href = withWorkingDir(routeToPath(Route.NEW_SESSION), entry.path);
   const padding = depthClass(depth);
 
@@ -91,12 +94,12 @@ export function WorkingDirItem(props: Props) {
       >
         <TreeBranch glyph={glyph} />
         {isIdeRoot && (
-          <span className="text-accent-default" title="IDE project root" aria-hidden="true">
+          <span className="text-accent-default" title={t('sessionHeader.workingDir.ideRootTitle')} aria-hidden="true">
             ★
           </span>
         )}
         <span className="flex-1 truncate">{entry.name}</span>
-        <CountSlot entry={entry} isDraft={isDraft} />
+        <CountSlot entry={entry} isDraft={isDraft} t={t} />
       </div>
     );
   }
@@ -113,12 +116,12 @@ export function WorkingDirItem(props: Props) {
     >
       <TreeBranch glyph={glyph} />
       {isIdeRoot && (
-        <span className="text-accent-default" title="IDE project root" aria-hidden="true">
+        <span className="text-accent-default" title={t('sessionHeader.workingDir.ideRootTitle')} aria-hidden="true">
           ★
         </span>
       )}
       <span className="flex-1 truncate">{entry.name}</span>
-      <CountSlot entry={entry} isDraft={isDraft} />
+      <CountSlot entry={entry} isDraft={isDraft} t={t} />
     </Link>
   );
 }

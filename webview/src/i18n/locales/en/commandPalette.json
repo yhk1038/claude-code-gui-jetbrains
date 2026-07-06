@@ -1,0 +1,60 @@
+{
+  "sections": {
+    "context": "Context",
+    "model": "Model",
+    "customize": "Customize",
+    "slashCommands": "Slash Commands",
+    "settings": "Settings",
+    "support": "Support"
+  },
+  "context": {
+    "attachFile": "Attach file...",
+    "mentionFile": "Mention file from this project...",
+    "clearConversation": "Clear conversation",
+    "resumeConversation": "Resume conversation",
+    "showBackgroundTasks": "Workflow: Show background tasks"
+  },
+  "model": {
+    "switchModel": "Switch model...",
+    "effort": "Effort",
+    "thinking": "Thinking",
+    "accountUsage": "Account & usage...",
+    "toggleFastMode": "Toggle fast mode",
+    "effortUnsupportedReason": "This model doesn't support effort levels",
+    "fastModeUnsupportedReason": "Fast mode is only available on Opus models"
+  },
+  "customize": {
+    "outputStyles": "Output styles",
+    "agents": "Agents",
+    "hooks": "Hooks",
+    "memory": "Memory",
+    "permissions": "Permissions",
+    "mcpServers": "MCP Servers",
+    "managePlugins": "Manage plugins",
+    "openInTerminal": "Open Claude in Terminal"
+  },
+  "settings": {
+    "switchAccount": "Switch account",
+    "generalConfig": "General config..."
+  },
+  "support": {
+    "viewHelpDocs": "View help docs",
+    "restartPlugin": "Restart plugin",
+    "restartConfirm": {
+      "title": "Restart plugin?",
+      "message": "In-progress work will be interrupted.",
+      "confirmLabel": "Restart"
+    }
+  },
+  "slashCommands": {
+    "clearDescription": "Clear conversation",
+    "usageDescription": "Account & usage"
+  },
+  "panel": {
+    "reportProblem": "Report a problem",
+    "reloading": "Reloading…",
+    "reloadCommands": "Reload commands",
+    "refreshVersion": "Refresh version",
+    "comingSoon": "Coming soon"
+  }
+}

@@ -9,6 +9,7 @@ import {StreamingIndicator} from "./StreamingIndicator/index.tsx";
 import { EmptyState } from './EmptyState';
 import { isJetBrains } from '@/config/environment';
 import { LoadedMessageDto } from '../../types';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   isStreaming: boolean;
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function ChatMessageArea(props: Props) {
+  const { t } = useTranslation('chat');
   const { isStreaming, mergedMessages, hasMore, isLoadingMore, onLoadMore } = props;
   const { workingDirectory } = useSessionContext();
   const { retry: onRetry } = useChatStreamContext();
@@ -35,7 +37,7 @@ export function ChatMessageArea(props: Props) {
     if (isJetBrains()) {
       return (
         <div className="h-full flex items-center justify-center">
-          <p className="text-text-tertiary text-sm">Loading working directory...</p>
+          <p className="text-text-tertiary text-sm">{t('chatMessageArea.loadingWorkingDirectory')}</p>
         </div>
       );
     }
@@ -55,14 +57,14 @@ export function ChatMessageArea(props: Props) {
           {isLoadingMore ? (
             <span className="inline-flex items-center gap-2 text-xs text-text-tertiary">
               <span className="w-3.5 h-3.5 border-2 border-border-default border-t-text-secondary rounded-full animate-spin" />
-              Loading earlier messages…
+              {t('chatMessageArea.loadingEarlierMessages')}
             </span>
           ) : (
             <button
               onClick={onLoadMore}
               className="px-4 py-1.5 bg-surface-raised border border-border-default rounded-full text-xs font-medium text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors duration-200 shadow-sm"
             >
-              Load older messages
+              {t('chatMessageArea.loadOlderMessages')}
             </button>
           )}
         </div>

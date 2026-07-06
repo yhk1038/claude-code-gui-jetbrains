@@ -1,4 +1,5 @@
 import {ToolUseBlockDto} from "@/dto";
+import {useTranslation} from "@/i18n";
 import {RendererProps, ResultCaption, ToolHeader, ToolWrapper, toolResultText} from "../../common";
 import {CollapsibleBox, McpToolBody, McpToolRow, formatMcpToolName} from "../_common";
 import {GmailMailRow, isUnread, safeParseJson} from "./_shared";
@@ -33,6 +34,7 @@ interface SearchThreadsResult {
 }
 
 export function SearchThreadsRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const {toolUse: rawToolUse, toolResult} = props;
     const toolUse = rawToolUse as SearchThreadsToolUseDto;
     const name = formatMcpToolName(toolUse.name);
@@ -53,7 +55,7 @@ export function SearchThreadsRenderer(props: RendererProps) {
                 )}
             </ToolHeader>
 
-            {count && <ResultCaption>{count} found</ResultCaption>}
+            {count && <ResultCaption>{t('gmail.searchThreads.resultsFound', {count})}</ResultCaption>}
 
             {threads ? (
                 <McpToolBody>

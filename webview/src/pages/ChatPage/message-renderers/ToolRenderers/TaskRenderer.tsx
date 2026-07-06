@@ -2,6 +2,7 @@ import { ToolUseBlockDto, ToolResultBlockDto } from "@/types";
 import { Container, LabelValue, RendererProps, ToolHeader, ToolWrapper } from "./common";
 import { ToolRenderer } from "../ToolRenderer";
 import { MessageRole, LoadedMessageType, ContentBlockType } from "@/dto";
+import { useTranslation } from "@/i18n";
 
 class TaskToolUseDto extends ToolUseBlockDto {
     caller: { type: 'direct' };
@@ -13,6 +14,7 @@ class TaskToolUseDto extends ToolUseBlockDto {
 }
 
 export function TaskRenderer(props: RendererProps) {
+    const { t } = useTranslation('chatTools');
     const toolUse = props.toolUse as unknown as TaskToolUseDto;
 
     const name = toolUse.name;
@@ -69,7 +71,7 @@ export function TaskRenderer(props: RendererProps) {
                 {/* Prompt input (always visible, collapsed) */}
                 <Container>
                     <LabelValue
-                        label="IN"
+                        label={t('task.common.in')}
                         className="border-b border-border-subtle"
                         maxHeight="max-h-[60px]"
                     >

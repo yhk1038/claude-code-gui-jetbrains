@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { McpServer, McpServerScope, McpServerStatus } from '@/shared';
+import { useTranslation } from '@/i18n';
 import { McpStatusBadge } from './McpStatusBadge';
 
 interface Props {
@@ -8,15 +9,6 @@ interface Props {
   configPath?: string;
   onSelect: (name: string) => void;
 }
-
-const SCOPE_LABEL: Record<string, string> = {
-  [McpServerScope.PROJECT]: 'Project',
-  [McpServerScope.LOCAL]: 'Local',
-  [McpServerScope.USER]: 'User',
-  [McpServerScope.CLAUDEAI]: 'claude.ai',
-  [McpServerScope.MANAGED]: 'Managed',
-  [McpServerScope.ENTERPRISE]: 'Enterprise',
-};
 
 const SCOPE_ORDER: string[] = ['project', 'local', 'user', 'claudeai', 'managed', 'enterprise'];
 
@@ -51,6 +43,7 @@ function scopeSource(scope: string, configPath: string): { short: string; full: 
 }
 
 export function McpServerList(props: Props) {
+  const { t } = useTranslation('common');
   const { servers, configPath = '~/.claude.json', onSelect } = props;
 
   const groups = useMemo(() => {
@@ -63,18 +56,18 @@ export function McpServerList(props: Props) {
     return SCOPE_ORDER
       .filter((k) => map.has(k))
       .concat([...map.keys()].filter((k) => !SCOPE_ORDER.includes(k)))
-      .map((k) => ({ scope: k, label: SCOPE_LABEL[k] ?? k, servers: map.get(k)! }));
+      .map((k) => ({ scope: k, servers: map.get(k)! }));
   }, [servers]);
 
   if (servers.length === 0) {
     return (
       <div className="px-4 py-8 text-center text-sm text-text-tertiary">
-        No MCP servers configured.{' '}
+        {t('mcpModal.list.noServersConfigured')}{' '}
         <button
           className="text-accent-primary underline underline-offset-2 hover:no-underline"
           onClick={() => onSelect('__add__')}
         >
-          Add one
+          {t('mcpModal.list.addOne')}
         </button>
       </div>
     );
@@ -82,13 +75,13 @@ export function McpServerList(props: Props) {
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-2">
-      {groups.map(({ scope, label, servers: group }) => {
+      {groups.map(({ scope, servers: group }) => {
         const src = scopeSource(scope, configPath);
         return (
         <div key={scope} className="mb-3">
           <div className="flex items-baseline justify-between gap-2 py-1.5">
             <span className="text-sm font-semibold text-gray-400 flex-shrink-0">
-              {label} ({group.length})
+              {t(`mcpModal.list.scope.${scope}`, { defaultValue: scope })} ({group.length})
             </span>
             {src && (
               <span

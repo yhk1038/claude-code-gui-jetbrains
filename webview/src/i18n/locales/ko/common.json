@@ -1,0 +1,185 @@
+{
+  "confirmDialog": {
+    "confirm": "확인",
+    "cancel": "취소"
+  },
+  "contextChip": {
+    "removeContext": "컨텍스트 제거"
+  },
+  "errorBoundary": {
+    "somethingWentWrong": "문제가 발생했습니다.",
+    "retry": "재시도"
+  },
+  "effortSlider": {
+    "tooltip": "클릭하거나 드래그해서 Effort 레벨 설정",
+    "tooltipUltracode": "클릭하거나 드래그해서 Effort 레벨 설정 (최고 단계 = ultracode)"
+  },
+  "accountUsage": {
+    "title": "계정 및 사용량",
+    "accountSection": "계정",
+    "authMethod": "인증 방식",
+    "email": "이메일",
+    "plan": "플랜"
+  },
+  "usageSection": {
+    "title": "사용량",
+    "updated": "{{time}} 업데이트됨",
+    "refresh": "새로고침",
+    "session5hr": "세션 (5시간)",
+    "weekly7day": "주간 (7일)",
+    "weeklySonnet": "주간 Sonnet",
+    "weeklyOpus": "주간 Opus"
+  },
+  "usageReport": {
+    "title": "사용량 기여도",
+    "refresh": "새로고침",
+    "empty": "표시할 사용량 분석 데이터가 없습니다.",
+    "requests": "요청 {{value}}건",
+    "sessions": "세션 {{value}}개",
+    "percentOfUsage": "% 사용량"
+  },
+  "mcpModal": {
+    "title": "MCP 서버",
+    "refreshServers": "MCP 서버 새로고침",
+    "browseRegistry": "MCP 레지스트리 둘러보기",
+    "addServer": "MCP 서버 추가",
+    "checkingHealth": "MCP 서버 상태 확인 중…",
+    "serverNotFound": "서버를 찾을 수 없습니다.",
+    "learnMore": "MCP에 대해 자세히 알아보기",
+    "editReplaceSingle": "편집하면 서버 하나가 교체됩니다 — 서버 설정 하나만 붙여넣으세요.",
+    "saved": "{{name}} 저장됨",
+    "added": "{{name}} 추가됨",
+    "addFailed": "서버 {{failed}}/{{total}}개를 추가하지 못했습니다:",
+    "form": {
+      "editTitle": "MCP 서버 편집",
+      "addTitle": "MCP 서버 추가",
+      "back": "뒤로",
+      "nameLabel": "이름",
+      "nameHint": "선택 사항 — JSON에 “mcpServers” 래퍼가 없을 때만 사용됩니다",
+      "namePlaceholder": "my-server",
+      "scopeLabel": "범위",
+      "scopeUser": "사용자 (모든 프로젝트)",
+      "scopeProject": "프로젝트 (.mcp.json)",
+      "scopeLocal": "로컬 (이 프로젝트만)",
+      "configLabel": "설정 (JSON)",
+      "configHint": "mcpServers 설정 또는 단일 서버 설정을 붙여넣으세요",
+      "cancel": "취소",
+      "saving": "저장 중",
+      "adding": "추가 중",
+      "save": "저장",
+      "addButton": "서버 추가"
+    },
+    "marketplace": {
+      "back": "뒤로",
+      "searchPlaceholder": "MCP 레지스트리 검색…",
+      "searchPrompt": "공식 MCP 레지스트리를 검색해 서버를 찾아 설치하세요.",
+      "searching": "검색 중…",
+      "noServers": "서버를 찾을 수 없습니다.",
+      "openRepo": "{{url}} 열기",
+      "needsInputs": "입력값 {{count}}개 필요: {{inputs}}",
+      "needsInputs_one": "입력값 {{count}}개 필요: {{inputs}}",
+      "needsInputs_other": "입력값 {{count}}개 필요: {{inputs}}",
+      "configureAdd": "설정 후 추가",
+      "noInstallInfo": "설치 정보가 없습니다",
+      "add": "추가"
+    },
+    "list": {
+      "noServersConfigured": "설정된 MCP 서버가 없습니다.",
+      "addOne": "하나 추가하기",
+      "scope": {
+        "project": "프로젝트",
+        "local": "로컬",
+        "user": "사용자",
+        "claudeai": "claude.ai",
+        "managed": "관리형",
+        "enterprise": "엔터프라이즈"
+      }
+    },
+    "detail": {
+      "backToList": "목록으로 돌아가기",
+      "edit": "편집",
+      "type": "유형: {{value}}",
+      "authenticate": "인증",
+      "reconnect": "다시 연결",
+      "reconnecting": "다시 연결하는 중",
+      "clearAuth": "인증 정보 지우기",
+      "enable": "사용",
+      "disable": "사용 안 함",
+      "loadingTools": "도구 불러오는 중…",
+      "loadToolsError": "도구를 불러오지 못했습니다",
+      "viewTools": "도구 보기 ({{count}}개)",
+      "readOnly": "읽기 전용",
+      "destructive": "파괴적",
+      "removeConfirm": "\"{{name}}\"을(를) 제거하시겠습니까?",
+      "remove": "제거",
+      "cancel": "취소",
+      "removeServer": "서버 제거"
+    },
+    "status": {
+      "connected": "연결됨",
+      "failed": "실패",
+      "needsAuth": "인증 필요",
+      "connecting": "연결 중…",
+      "disabled": "비활성화됨"
+    }
+  },
+  "tunnelModal": {
+    "title": "원격 터널",
+    "remoteTunnelUnofficial": "원격 터널 (비공식)",
+    "exposeVia": "cloudflared로 노출",
+    "installingCloudflared": "cloudflared 설치 중…",
+    "connecting": "연결 중…",
+    "typicalTime": "보통 약 1분 (설치 시: 약 3분)",
+    "preventSleep": "절전 방지",
+    "keepAwake": "터널이 활성화된 동안 절전 방지"
+  },
+  "tunnelStatusNotice": {
+    "tryAgain": "다시 시도",
+    "installGuide": "설치 안내",
+    "copyCommand": "명령어 복사",
+    "installConsent": "cloudflared가 설치되어 있지 않습니다. 지금 설치하고 터널을 활성화하시겠습니까? cloudflared를 다운로드합니다 (처음 설치 시 약 3분 소요).",
+    "installAndEnable": "설치 및 활성화",
+    "cancel": "취소",
+    "notInstalledWarning": "cloudflared가 아직 설치되어 있지 않습니다. 터널을 켜면 다운로드를 요청합니다 (처음 설치 시 약 3분 소요).",
+    "errors": {
+      "cloudflaredMissing": {
+        "title": "cloudflared를 설치하지 못했습니다",
+        "detail": "터널에는 cloudflared가 필요하지만 자동으로 설치하지 못했습니다. 수동으로 설치한 뒤 다시 시도하세요."
+      },
+      "timeout": {
+        "title": "터널 연결 시간이 초과되었습니다",
+        "detail": "제한 시간 내에 Cloudflare 터널 서버에 연결하지 못했습니다. 네트워크나 방화벽을 확인하세요 — 일부 지역에서는 Cloudflare 접근이 제한됩니다."
+      },
+      "exited": {
+        "title": "cloudflared가 예기치 않게 중단되었습니다",
+        "detail": "터널 프로세스가 준비되기 전에 종료되었습니다. 다시 시도하세요."
+      },
+      "unknown": {
+        "title": "터널을 시작하지 못했습니다",
+        "detail": "예기치 않은 오류가 발생했습니다. 다시 시도하세요."
+      }
+    }
+  },
+  "sessionList": {
+    "searchPlaceholder": "세션 검색...",
+    "loadingSessions": "세션 불러오는 중...",
+    "refreshSessions": "세션 새로고침",
+    "renameSession": "세션 이름 바꾸기",
+    "deleteSession": "세션 삭제",
+    "groups": {
+      "today": "오늘",
+      "yesterday": "어제",
+      "pastWeek": "지난주",
+      "pastMonth": "지난달",
+      "pastYear": "작년"
+    },
+    "relativeTime": {
+      "now": "방금",
+      "years": "{{n}}년",
+      "months": "{{n}}개월",
+      "days": "{{n}}일",
+      "hours": "{{n}}시간",
+      "minutes": "{{n}}분"
+    }
+  }
+}

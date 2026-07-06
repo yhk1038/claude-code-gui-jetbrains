@@ -3,8 +3,10 @@ import { ComputerDesktopIcon } from '@heroicons/react/24/outline';
 import { useTunnelStatus } from '@/hooks';
 import { TunnelModal } from '@/components/TunnelModal';
 import { getAdapter } from '@/adapters';
+import { useTranslation } from '@/i18n';
 
 export function TunnelButton() {
+  const { t } = useTranslation('chat');
   const { tunnelEnabled } = useTunnelStatus();
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -19,7 +21,7 @@ export function TunnelButton() {
             }
         }}
         className="p-1 rounded transition-colors hover:bg-surface-hover"
-        title="Remote Tunnel (Unofficial)"
+        title={t('sessionHeader.tunnel.title')}
       >
         <ComputerDesktopIcon
           className={`w-5 h-5 ${tunnelEnabled ? 'text-state-success-fg' : 'text-text-secondary hover:text-text-primary'}`}

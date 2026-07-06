@@ -3,6 +3,7 @@ import {MarqueeText} from './MarqueeText';
 import {useBridgeContext} from '../../contexts/BridgeContext';
 import {useWorkingDir} from "@/contexts";
 import { MessageType } from '@/shared';
+import { useTranslation } from '@/i18n';
 
 interface Project {
   name: string;
@@ -17,6 +18,7 @@ export function ProjectSelectorPage() {
   const [error, setError] = useState<string | null>(null);
   const { send, isConnected, subscribe } = useBridgeContext();
   const { setWorkingDirectory } = useWorkingDir();
+  const { t } = useTranslation('projectSelector');
 
   const handleOpenFolderDialog = () => {
     const unsubscribe = subscribe(MessageType.FOLDER_SELECTED, (message) => {
@@ -50,7 +52,7 @@ export function ProjectSelectorPage() {
         // Request projects list
         await send(MessageType.GET_PROJECTS, {});
       } catch (err) {
-        setError('Failed to load projects');
+        setError(t('errors.loadFailed'));
         setIsLoading(false);
       }
     };
@@ -63,7 +65,7 @@ export function ProjectSelectorPage() {
       <div className="fixed inset-0 z-40 flex items-center justify-center bg-surface-base">
         <div className="text-center">
           <div className="animate-spin w-6 h-6 border-2 border-border-strong border-t-text-secondary rounded-full mx-auto mb-3" />
-          <p className="text-text-tertiary text-sm">Loading projects...</p>
+          <p className="text-text-tertiary text-sm">{t('loading')}</p>
         </div>
       </div>
     );
@@ -78,7 +80,7 @@ export function ProjectSelectorPage() {
             onClick={() => window.location.reload()}
             className="text-text-secondary text-xs hover:text-text-primary underline"
           >
-            Retry
+            {t('retry')}
           </button>
         </div>
       </div>
@@ -94,12 +96,12 @@ export function ProjectSelectorPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
           </div>
-          <p className="text-text-secondary text-sm mb-4">No projects available</p>
+          <p className="text-text-secondary text-sm mb-4">{t('empty')}</p>
           <button
             onClick={handleOpenFolderDialog}
             className="w-full border border-dashed border-border-default hover:border-border-strong rounded-lg py-2.5 text-text-tertiary hover:text-text-secondary text-sm transition-colors"
           >
-            + Add Project
+            + {t('addProject')}
           </button>
         </div>
       </div>
@@ -116,8 +118,8 @@ export function ProjectSelectorPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
           </div>
-          <h2 className="text-text-primary text-lg font-medium mb-1">Select Project</h2>
-          <p className="text-text-tertiary text-sm">Choose a project to work on</p>
+          <h2 className="text-text-primary text-lg font-medium mb-1">{t('select.title')}</h2>
+          <p className="text-text-tertiary text-sm">{t('select.subtitle')}</p>
         </div>
 
         {/* Project List */}
@@ -134,7 +136,7 @@ export function ProjectSelectorPage() {
                 </span>
                 {project.sessionCount > 0 && (
                   <span className="text-text-tertiary text-xs flex-shrink-0">
-                    {project.sessionCount} sessions
+                    {t('sessionCount', { count: project.sessionCount })}
                   </span>
                 )}
               </div>
@@ -153,7 +155,7 @@ export function ProjectSelectorPage() {
           onClick={handleOpenFolderDialog}
           className="w-full mt-3 border border-dashed border-border-default hover:border-border-strong rounded-lg py-2.5 text-text-disabled hover:text-text-secondary text-sm transition-colors"
         >
-          + Add Project
+          + {t('addProject')}
         </button>
       </div>
     </div>

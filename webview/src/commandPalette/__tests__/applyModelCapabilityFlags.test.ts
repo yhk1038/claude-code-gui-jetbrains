@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { applyModelCapabilityFlags } from '../applyModelCapabilityFlags';
-import { EFFORT_UNSUPPORTED_REASON } from '../sections/model/EffortItem';
-import { FAST_MODE_UNSUPPORTED_REASON } from '../sections/model/ToggleFastModeItem';
+import { getEffortUnsupportedReason } from '../sections/model/EffortItem';
+import { getFastModeUnsupportedReason } from '../sections/model/ToggleFastModeItem';
 import { PanelSection, PanelSectionId, PanelItem, PanelItemType } from '@/types/commandPalette';
 
 function makeItem(id: string, overrides: Partial<PanelItem> = {}): PanelItem {
@@ -31,7 +31,7 @@ describe('applyModelCapabilityFlags', () => {
     const result = applyModelCapabilityFlags(section, { supportsEffort: false, supportsFastMode: true });
     const effort = result.items.find((it) => it.id === 'effort')!;
     expect(effort.disabled).toBe(true);
-    expect(effort.disabledReason).toBe(EFFORT_UNSUPPORTED_REASON);
+    expect(effort.disabledReason).toBe(getEffortUnsupportedReason());
   });
 
   it('enables the effort item with no disabledReason when supportsEffort is true', () => {
@@ -47,7 +47,7 @@ describe('applyModelCapabilityFlags', () => {
     const result = applyModelCapabilityFlags(section, { supportsEffort: true, supportsFastMode: false });
     const fastMode = result.items.find((it) => it.id === 'toggle-fast-mode')!;
     expect(fastMode.disabled).toBe(true);
-    expect(fastMode.disabledReason).toBe(FAST_MODE_UNSUPPORTED_REASON);
+    expect(fastMode.disabledReason).toBe(getFastModeUnsupportedReason());
   });
 
   it('enables the toggle-fast-mode item with no disabledReason when supportsFastMode is true', () => {

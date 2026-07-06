@@ -1,23 +1,10 @@
-// 83개 동사 배열
-export const VERBS = [
-    "Accomplishing", "Actioning", "Actualizing", "Baking", "Booping", "Brewing",
-    "Calculating", "Cerebrating", "Channelling", "Churning", "Clauding",
-    "Coalescing", "Cogitating", "Computing", "Combobulating", "Concocting",
-    "Considering", "Contemplating", "Cooking", "Crafting", "Creating",
-    "Crunching", "Deciphering", "Deliberating", "Determining", "Discombobulating",
-    "Doing", "Effecting", "Elucidating", "Enchanting", "Envisioning",
-    "Finagling", "Flibbertigibbeting", "Forging", "Forming", "Frolicking",
-    "Generating", "Germinating", "Hatching", "Herding", "Honking",
-    "Ideating", "Imagining", "Incubating", "Inferring", "Manifesting",
-    "Marinating", "Meandering", "Moseying", "Mulling", "Mustering",
-    "Musing", "Noodling", "Percolating", "Perusing", "Philosophising",
-    "Pontificating", "Pondering", "Processing", "Puttering", "Puzzling",
-    "Reticulating", "Ruminating", "Scheming", "Schlepping", "Shimmying",
-    "Simmering", "Smooshing", "Spelunking", "Spinning", "Stewing",
-    "Sussing", "Synthesizing", "Thinking", "Tinkering", "Transmuting",
-    "Unfurling", "Unravelling", "Vibing", "Wandering", "Whirring",
-    "Wibbling", "Working", "Wrangling",
-] as const;
+import { i18n } from '@/i18n';
+
+// 83개 동사 목록 (i18n) — 렌더 시점마다 조회해 언어 전환에도 즉시 반응하도록
+// 모듈 스코프 상수 대신 getter 함수로 제공한다.
+export function getVerbs(): readonly string[] {
+    return i18n.t('chat:streamingIndicator.verbs', { returnObjects: true }) as string[];
+}
 
 // 아이콘 프레임 (ping-pong)
 export const BASE_FRAMES = ["·", "✢", "*", "✶", "✻", "✽"] as const;

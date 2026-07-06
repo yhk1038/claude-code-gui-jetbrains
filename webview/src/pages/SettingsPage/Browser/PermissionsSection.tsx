@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { SettingSection, SettingRow } from '../common';
 import { PERMISSION_SPECS, type PermissionSpec } from '@/permissions';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   className?: string;
@@ -8,6 +9,7 @@ interface Props {
 
 export const PermissionsSection = (props: Props) => {
   const { className = '' } = props;
+  const { t } = useTranslation('settings');
   const availableSpecs = useMemo(
     () => PERMISSION_SPECS.filter((s) => s.available()),
     [],
@@ -19,7 +21,7 @@ export const PermissionsSection = (props: Props) => {
 
   return (
     <div className={className}>
-      <SettingSection title="Permissions">
+      <SettingSection title={t('browser.permissions.title')}>
         {availableSpecs.map((spec) => (
           <PermissionRow key={spec.id} spec={spec} />
         ))}
@@ -34,6 +36,7 @@ interface PermissionRowProps {
 
 function PermissionRow(props: PermissionRowProps) {
   const { spec } = props;
+  const { t } = useTranslation('settings');
   const [state, setState] = useState<NotificationPermission>(spec.getState());
 
   const handleRequest = () => {
@@ -48,17 +51,17 @@ function PermissionRow(props: PermissionRowProps) {
       label={spec.label}
       description={
         state === 'granted'
-          ? 'To revoke, change in your browser settings.'
+          ? t('browser.permissions.revokeHint')
           : state === 'denied'
-            ? 'Enable from browser settings'
+            ? t('browser.permissions.deniedHint')
             : spec.description
       }
     >
       {state === 'granted' && (
-        <span className="text-sm text-state-success-fg font-medium">Granted</span>
+        <span className="text-sm text-state-success-fg font-medium">{t('browser.permissions.granted')}</span>
       )}
       {state === 'denied' && (
-        <span className="text-sm text-text-tertiary font-medium">Denied</span>
+        <span className="text-sm text-text-tertiary font-medium">{t('browser.permissions.denied')}</span>
       )}
       {state === 'default' && (
         <button
@@ -66,7 +69,7 @@ function PermissionRow(props: PermissionRowProps) {
           onClick={handleRequest}
           className="px-3 py-1 rounded text-sm font-medium bg-accent-primary text-text-inverse hover:opacity-90 transition-opacity"
         >
-          Request
+          {t('browser.permissions.request')}
         </button>
       )}
     </SettingRow>

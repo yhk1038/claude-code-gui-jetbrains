@@ -23,6 +23,7 @@ export interface PermissionsConfig {
 export interface ClaudeSettingsState {
   model: string | null; // full model ID like 'claude-opus-4-6' or null for default
   language: string | null; // Claude's preferred response language (e.g., "korean", "japanese")
+  uiLanguage: string | null; // GUI-only: language for the app interface, independent of `language` (Claude's response language)
   effortLevel: string | null; // CLI effort level — values sourced from ModelInfo.supportedEffortLevels; null = auto
   ultracode?: boolean | null; // xhigh effort + standing workflow orchestration; the slider's top step (null = off/cleared)
   disableWorkflows?: boolean; // CLI-owned: when true, the Workflows feature (and ultracode) is unavailable
@@ -38,6 +39,7 @@ export interface ClaudeSettingsState {
 export const DEFAULT_CLAUDE_SETTINGS: ClaudeSettingsState = {
   model: null,
   language: null,
+  uiLanguage: null,
   effortLevel: null,
   alwaysThinkingEnabled: true,
   preferFastMode: false,

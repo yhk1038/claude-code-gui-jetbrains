@@ -3,6 +3,7 @@ import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import { ToolUseBlockDto } from '@/dto';
 import type { WorkflowNotification } from '@/dto/message/ContentBlockDto';
 import { useWorkflowState } from '@/contexts/WorkflowStateContext';
+import { useTranslation } from '@/i18n';
 import type { WorkflowTask } from '@/shared';
 import { agentDotClass, formatDuration, formatTokens, WORKFLOW_STATUS_COLOR } from '@/utils/workflowFormat';
 import { parseWorkflowName } from '@/utils/workflowName';
@@ -32,6 +33,7 @@ function useNow(active: boolean): number {
 const MAX_INLINE_DOTS = 24;
 
 export function WorkflowRenderer(props: RendererProps) {
+    const { t } = useTranslation('chatTools');
     const toolUse = props.toolUse as unknown as WorkflowToolUseDto;
     const { getByToolUseId, openPanel } = useWorkflowState();
     const live: WorkflowTask | undefined = getByToolUseId(toolUse.id);
@@ -76,9 +78,9 @@ export function WorkflowRenderer(props: RendererProps) {
     // 'Workflow' now lives in the ToolHeader (consistent with other tools), so
     // the meta line carries only the runtime stats.
     const metaParts = [
-        agentCount !== undefined ? `${agentCount} agents` : undefined,
+        agentCount !== undefined ? t('workflow.agentsMeta', { count: agentCount }) : undefined,
         duration,
-        tokens ? `${tokens} tokens` : undefined,
+        tokens ? t('workflow.tokensMeta', { value: tokens }) : undefined,
     ].filter(Boolean) as string[];
 
     const showDots = agentCount !== undefined && agentCount <= MAX_INLINE_DOTS && agents.length > 0;
@@ -86,8 +88,8 @@ export function WorkflowRenderer(props: RendererProps) {
     // Header detail next to the "Workflow" title — only once we have a task id,
     // so a not-yet-started run never renders "Task ID: undefined".
     const phaseSuffix =
-        phases.length > 0 ? ` (${phases.length} phase${phases.length === 1 ? '' : 's'})` : '';
-    const headerDetail = live?.taskId ? `Task ID: ${live.taskId}${phaseSuffix}` : '';
+        phases.length > 0 ? t('workflow.phaseSuffix', { count: phases.length }) : '';
+    const headerDetail = live?.taskId ? `${t('workflow.taskIdDetail', { taskId: live.taskId })}${phaseSuffix}` : '';
 
     return (
         <ToolWrapper message={props.message}>
@@ -137,7 +139,7 @@ export function WorkflowRenderer(props: RendererProps) {
                     {/* Body: running hint, or final summary/result */}
                     {isRunning && !summary && (
                         <div className="px-3 pb-2.5 text-[0.8461rem] text-text-primary/50">
-                            Running in background…
+                            {t('workflow.runningInBackground')}
                         </div>
                     )}
 
@@ -148,9 +150,9 @@ export function WorkflowRenderer(props: RendererProps) {
                             )}
                             {usage && (
                                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-[0.8461rem] text-text-primary/50 font-mono">
-                                    {usage.agentCount !== undefined && <span>agents {usage.agentCount}</span>}
-                                    {tokens && <span>tokens {tokens}</span>}
-                                    {usage.toolUses !== undefined && <span>tools {usage.toolUses}</span>}
+                                    {usage.agentCount !== undefined && <span>{t('workflow.agentsUsageLabel', { count: usage.agentCount })}</span>}
+                                    {tokens && <span>{t('workflow.tokensUsageLabel', { value: tokens })}</span>}
+                                    {usage.toolUses !== undefined && <span>{t('workflow.toolsUsageLabel', { count: usage.toolUses })}</span>}
                                     {duration && <span>{duration}</span>}
                                 </div>
                             )}

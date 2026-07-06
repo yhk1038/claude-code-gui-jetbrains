@@ -1,4 +1,5 @@
 import {ToolUseBlockDto} from "@/dto";
+import {useTranslation} from "@/i18n";
 import {Container, RendererProps, ToolHeader, ToolWrapper} from "./common";
 
 class WebFetchToolUseDto extends ToolUseBlockDto {
@@ -9,6 +10,7 @@ class WebFetchToolUseDto extends ToolUseBlockDto {
 }
 
 export function WebFetchRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const toolUse = props.toolUse as unknown as WebFetchToolUseDto;
     const url = toolUse.input?.url ?? '';
 
@@ -21,7 +23,7 @@ export function WebFetchRenderer(props: RendererProps) {
             {props.toolResult && (
                 <Container>
                     <div className="p-2 text-text-primary/80">
-                        Fetched from <a href={url} target="_blank" rel="noopener noreferrer" className="hover:underline">{url}</a>
+                        {t('webFetch.fetchedFrom')} <a href={url} target="_blank" rel="noopener noreferrer" className="hover:underline">{url}</a>
                     </div>
                 </Container>
             )}

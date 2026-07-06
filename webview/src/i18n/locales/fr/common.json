@@ -1,0 +1,185 @@
+{
+  "confirmDialog": {
+    "confirm": "Confirmer",
+    "cancel": "Annuler"
+  },
+  "contextChip": {
+    "removeContext": "Supprimer le contexte"
+  },
+  "errorBoundary": {
+    "somethingWentWrong": "Une erreur s'est produite.",
+    "retry": "Réessayer"
+  },
+  "effortSlider": {
+    "tooltip": "Cliquez ou faites glisser pour définir le niveau d'effort",
+    "tooltipUltracode": "Cliquez ou faites glisser pour définir le niveau d'effort (dernier niveau = ultracode)"
+  },
+  "accountUsage": {
+    "title": "Compte et utilisation",
+    "accountSection": "Compte",
+    "authMethod": "Méthode d'authentification",
+    "email": "E-mail",
+    "plan": "Forfait"
+  },
+  "usageSection": {
+    "title": "Utilisation",
+    "updated": "Mis à jour {{time}}",
+    "refresh": "Actualiser",
+    "session5hr": "Session (5 h)",
+    "weekly7day": "Hebdomadaire (7 jours)",
+    "weeklySonnet": "Sonnet hebdomadaire",
+    "weeklyOpus": "Opus hebdomadaire"
+  },
+  "usageReport": {
+    "title": "Contribution à l'utilisation",
+    "refresh": "Actualiser",
+    "empty": "Aucune répartition d'utilisation disponible.",
+    "requests": "{{value}} requêtes",
+    "sessions": "{{value}} sessions",
+    "percentOfUsage": "% de l'utilisation"
+  },
+  "mcpModal": {
+    "title": "Serveurs MCP",
+    "refreshServers": "Actualiser les serveurs MCP",
+    "browseRegistry": "Parcourir le registre MCP",
+    "addServer": "Ajouter un serveur MCP",
+    "checkingHealth": "Vérification de l'état des serveurs MCP…",
+    "serverNotFound": "Serveur introuvable.",
+    "learnMore": "En savoir plus sur MCP",
+    "editReplaceSingle": "La modification remplace un seul serveur — collez la configuration d'un seul serveur.",
+    "saved": "{{name}} enregistré",
+    "added": "{{name}} ajouté",
+    "addFailed": "{{failed}}/{{total}} serveur(s) n'ont pas pu être ajoutés :",
+    "form": {
+      "editTitle": "Modifier le serveur MCP",
+      "addTitle": "Ajouter un serveur MCP",
+      "back": "Retour",
+      "nameLabel": "Nom",
+      "nameHint": "Facultatif — utilisé uniquement si votre JSON n'a pas de wrapper « mcpServers »",
+      "namePlaceholder": "mon-serveur",
+      "scopeLabel": "Portée",
+      "scopeUser": "Utilisateur (tous les projets)",
+      "scopeProject": "Projet (.mcp.json)",
+      "scopeLocal": "Local (ce projet uniquement)",
+      "configLabel": "Configuration (JSON)",
+      "configHint": "Collez une configuration mcpServers ou la configuration d'un seul serveur",
+      "cancel": "Annuler",
+      "saving": "Enregistrement",
+      "adding": "Ajout",
+      "save": "Enregistrer",
+      "addButton": "Ajouter le serveur"
+    },
+    "marketplace": {
+      "back": "Retour",
+      "searchPlaceholder": "Rechercher dans le registre MCP…",
+      "searchPrompt": "Recherchez dans le registre MCP officiel pour trouver et installer des serveurs.",
+      "searching": "Recherche…",
+      "noServers": "Aucun serveur trouvé.",
+      "openRepo": "Ouvrir {{url}}",
+      "needsInputs": "Nécessite {{count}} entrées : {{inputs}}",
+      "needsInputs_one": "Nécessite {{count}} entrée : {{inputs}}",
+      "needsInputs_other": "Nécessite {{count}} entrées : {{inputs}}",
+      "configureAdd": "Configurer et ajouter",
+      "noInstallInfo": "Aucune information d'installation disponible",
+      "add": "Ajouter"
+    },
+    "list": {
+      "noServersConfigured": "Aucun serveur MCP configuré.",
+      "addOne": "En ajouter un",
+      "scope": {
+        "project": "Projet",
+        "local": "Local",
+        "user": "Utilisateur",
+        "claudeai": "claude.ai",
+        "managed": "Géré",
+        "enterprise": "Entreprise"
+      }
+    },
+    "detail": {
+      "backToList": "Retour à la liste",
+      "edit": "Modifier",
+      "type": "Type : {{value}}",
+      "authenticate": "Authentifier",
+      "reconnect": "Reconnecter",
+      "reconnecting": "Reconnexion",
+      "clearAuth": "Effacer l'authentification",
+      "enable": "Activer",
+      "disable": "Désactiver",
+      "loadingTools": "Chargement des outils…",
+      "loadToolsError": "Impossible de charger les outils",
+      "viewTools": "Voir les outils ({{count}})",
+      "readOnly": "lecture seule",
+      "destructive": "destructif",
+      "removeConfirm": "Supprimer « {{name}} » ?",
+      "remove": "Supprimer",
+      "cancel": "Annuler",
+      "removeServer": "Supprimer le serveur"
+    },
+    "status": {
+      "connected": "Connecté",
+      "failed": "Échec",
+      "needsAuth": "Authentification requise",
+      "connecting": "Connexion…",
+      "disabled": "Désactivé"
+    }
+  },
+  "tunnelModal": {
+    "title": "Tunnel distant",
+    "remoteTunnelUnofficial": "Tunnel distant (non officiel)",
+    "exposeVia": "Exposer via cloudflared",
+    "installingCloudflared": "Installation de cloudflared…",
+    "connecting": "Connexion…",
+    "typicalTime": "Généralement ~1 min (installation : ~3 min)",
+    "preventSleep": "Empêcher la mise en veille",
+    "keepAwake": "Rester éveillé tant que le tunnel est actif"
+  },
+  "tunnelStatusNotice": {
+    "tryAgain": "Réessayer",
+    "installGuide": "Guide d'installation",
+    "copyCommand": "Copier la commande",
+    "installConsent": "cloudflared n'est pas installé. L'installer maintenant et activer le tunnel ? Cela télécharge cloudflared (environ 3 minutes la première fois).",
+    "installAndEnable": "Installer et activer",
+    "cancel": "Annuler",
+    "notInstalledWarning": "cloudflared n'est pas encore installé. Activer le tunnel demandera de le télécharger (environ 3 minutes la première fois).",
+    "errors": {
+      "cloudflaredMissing": {
+        "title": "Impossible d’installer cloudflared",
+        "detail": "Le tunnel nécessite cloudflared, qui n’a pas pu être installé automatiquement. Installez-le manuellement, puis réessayez."
+      },
+      "timeout": {
+        "title": "Délai de connexion du tunnel dépassé",
+        "detail": "Impossible de joindre le serveur de tunnel Cloudflare à temps. Vérifiez votre réseau ou votre pare-feu — certaines régions restreignent l’accès à Cloudflare."
+      },
+      "exited": {
+        "title": "cloudflared s’est arrêté de manière inattendue",
+        "detail": "Le processus du tunnel s’est arrêté avant d’être prêt. Veuillez réessayer."
+      },
+      "unknown": {
+        "title": "Impossible de démarrer le tunnel",
+        "detail": "Une erreur inattendue s’est produite. Veuillez réessayer."
+      }
+    }
+  },
+  "sessionList": {
+    "searchPlaceholder": "Rechercher des sessions...",
+    "loadingSessions": "Chargement des sessions...",
+    "refreshSessions": "Actualiser les sessions",
+    "renameSession": "Renommer la session",
+    "deleteSession": "Supprimer la session",
+    "groups": {
+      "today": "Aujourd'hui",
+      "yesterday": "Hier",
+      "pastWeek": "Semaine dernière",
+      "pastMonth": "Mois dernier",
+      "pastYear": "Année dernière"
+    },
+    "relativeTime": {
+      "now": "maintenant",
+      "years": "{{n}} an",
+      "months": "{{n}} mois",
+      "days": "{{n}} j",
+      "hours": "{{n}} h",
+      "minutes": "{{n}} min"
+    }
+  }
+}

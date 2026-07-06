@@ -1,0 +1,36 @@
+{
+  "welcomeArtAlt": "Illustration de bienvenue",
+  "intro": "Claude Code peut être utilisé avec votre abonnement Claude ou facturé selon l'utilisation de l'API via votre compte Console.",
+  "loginPrompt": "Comment voulez-vous vous connecter ?",
+  "errors": {
+    "loginFailed": "Échec de la connexion. Veuillez réessayer."
+  },
+  "claudeAi": {
+    "label": "Abonnement Claude.ai",
+    "description": "Utilisez votre abonnement Claude Pro, Team ou Enterprise"
+  },
+  "console": {
+    "label": "Anthropic Console",
+    "description": "Payez selon l'utilisation de l'API via votre compte Console"
+  },
+  "providers": {
+    "label": "Bedrock, Foundry ou Vertex",
+    "description": "Instructions pour utiliser des clés API ou des fournisseurs tiers."
+  },
+  "terminal": {
+    "prompt": "Vous préférez l'expérience du terminal ?",
+    "action": "Exécuter claude dans le terminal"
+  },
+  "codeInput": {
+    "title": "Collez le code depuis votre navigateur",
+    "description": "Après vous être connecté, votre navigateur affiche un code. Collez-le ici pour terminer la connexion.",
+    "placeholder": "Collez le code ici",
+    "submit": "Envoyer le code"
+  },
+  "urlModal": {
+    "title": "Se connecter à Claude",
+    "description": "Claude ouvre votre navigateur pour vous connecter. S'il ne s'est pas ouvert automatiquement, utilisez le bouton ci-dessous.",
+    "openButton": "Ouvrir la page de connexion",
+    "revealCode": "Vous avez reçu un code dans votre navigateur ? Saisissez-le"
+  }
+}

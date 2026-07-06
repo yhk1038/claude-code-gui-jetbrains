@@ -1,5 +1,6 @@
 import { ComputerDesktopIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
 import type { ComponentType, SVGProps } from 'react';
+import { useTranslation } from '@/i18n';
 
 /**
  * 세션 범위 탭. Cursor 좌측 패널의 Local/Web 토글에 대응한다.
@@ -15,13 +16,14 @@ interface Props {
   onScopeChange: (scope: SessionScope) => void;
 }
 
-const TABS: { scope: SessionScope; label: string; Icon: ComponentType<SVGProps<SVGSVGElement>> }[] = [
-  { scope: SessionScope.Local, label: 'Local', Icon: ComputerDesktopIcon },
-  { scope: SessionScope.Web, label: 'Web', Icon: GlobeAltIcon },
+const TABS: { scope: SessionScope; labelKey: string; Icon: ComponentType<SVGProps<SVGSVGElement>> }[] = [
+  { scope: SessionScope.Local, labelKey: 'scope.local', Icon: ComputerDesktopIcon },
+  { scope: SessionScope.Web, labelKey: 'scope.web', Icon: GlobeAltIcon },
 ];
 
 export function ScopeTabs(props: Props) {
   const { scope, onScopeChange } = props;
+  const { t } = useTranslation('sessionPanel');
 
   return (
     <div className="flex gap-1 p-0.5 bg-surface-overlay rounded">
@@ -36,7 +38,7 @@ export function ScopeTabs(props: Props) {
           }`}
         >
           <tab.Icon className="w-4 h-4" />
-          {tab.label}
+          {t(tab.labelKey)}
         </button>
       ))}
     </div>

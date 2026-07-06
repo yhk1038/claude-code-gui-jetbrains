@@ -1,3 +1,4 @@
+import {useTranslation} from "@/i18n";
 import {RendererProps, ToolWrapper, toolResultText, toolResultIsError, ResultCaption} from "../../common";
 import {CollapsibleBox} from "../_common";
 import {JetBrainsToolHeader, JetBrainsResultError, PathRow, Badge, RawJsonResult, safeParseJson, asStrings, inputProjectPath} from "./_shared";
@@ -9,6 +10,7 @@ interface OpenFilesResult {
 
 /** `get_all_open_file_paths`: list of open editors (active one badged). */
 export function OpenFilesRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const out = toolResultText(props.toolResult);
     const isError = toolResultIsError(props.toolResult);
     const parsed = safeParseJson<OpenFilesResult>(out);
@@ -29,7 +31,7 @@ export function OpenFilesRenderer(props: RendererProps) {
             ) : !hasFiles ? (
                 <RawJsonResult out={out} />
             ) : files.length === 0 ? (
-                <ResultCaption className="mt-1">No open files</ResultCaption>
+                <ResultCaption className="mt-1">{t('jetbrains.openFiles.none')}</ResultCaption>
             ) : (
                 <div className="mt-1.5">
                     <CollapsibleBox collapsedMaxHeight={200} className="flex flex-col gap-0.5">
@@ -38,7 +40,7 @@ export function OpenFilesRenderer(props: RendererProps) {
                                 key={i}
                                 path={f}
                                 projectPath={projectPath}
-                                left={f === active ? <Badge tone="success">active</Badge> : undefined}
+                                left={f === active ? <Badge tone="success">{t('jetbrains.openFiles.active')}</Badge> : undefined}
                             />
                         ))}
                     </CollapsibleBox>

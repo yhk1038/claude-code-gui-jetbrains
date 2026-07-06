@@ -1,0 +1,276 @@
+{
+  "tool": {
+    "in": "IN",
+    "out": "OUT",
+    "declined": "Você recusou esta ferramenta.",
+    "declinedWithInstruction": "Você recusou esta ferramenta. Pediu ao Claude, em vez disso: “{{instruction}}”"
+  },
+  "message": {
+    "copyMessage": "Copiar mensagem",
+    "retry": "Tentar novamente",
+    "unknownTool": "desconhecida"
+  },
+  "interrupted": {
+    "default": "interrompido",
+    "toolInterrupted": "Ferramenta interrompida"
+  },
+  "attachments": {
+    "imageAlt": "Imagem {{index}}",
+    "fullSizeAlt": "Tamanho completo"
+  },
+  "edit": {
+    "modified": "Modificado"
+  },
+  "write": {
+    "lineCount": "{{count}} linhas"
+  },
+  "glob": {
+    "pattern": "padrão: \"{{pattern}}\"",
+    "foundFiles": "{{count}} arquivos encontrados",
+    "foundFiles_one": "{{count}} arquivo encontrado",
+    "foundFiles_other": "{{count}} arquivos encontrados"
+  },
+  "grep": {
+    "inPath": "(em {{path}})",
+    "globPattern": "(padrão: {{glob}})"
+  },
+  "webFetch": {
+    "fetchedFrom": "Obtido de"
+  },
+  "todoWrite": {
+    "title": "Atualizar Tarefas"
+  },
+  "notebookEdit": {
+    "title": "Editar Célula do Notebook",
+    "noContent": "[Sem conteúdo]",
+    "status": {
+      "inserted": "Inserido",
+      "replaced": "Substituído",
+      "deleted": "Excluído",
+      "success": "Sucesso"
+    }
+  },
+  "skill": {
+    "fallback": "Habilidade",
+    "expandLabel": "habilidade"
+  },
+  "askUserQuestion": {
+    "ask": "ASK",
+    "out": "OUT"
+  },
+  "exitPlanMode": {
+    "title": "Plano do Claude",
+    "planModeTitle": "Modo Plano",
+    "approved": "O usuário aprovou o plano",
+    "stayedInPlanMode": "Permaneceu no modo plano",
+    "feedbackLabel": "RE:"
+  },
+  "task": {
+    "common": {
+      "in": "IN",
+      "out": "OUT",
+      "form": "FORM",
+      "taskPrefix": "tarefa:"
+    },
+    "create": {
+      "what": "WHAT"
+    },
+    "update": {
+      "status": "STATUS",
+      "subject": "SUBJECT",
+      "desc": "DESC",
+      "owner": "OWNER",
+      "blocks": "BLOCKS",
+      "blockedBy": "BLOCKED-BY"
+    },
+    "output": {
+      "type": "type",
+      "status": "status",
+      "retrieval": "recuperação",
+      "copied": "Copiado",
+      "retrievalCompleted": "concluído",
+      "retrievalTimedOut": "tempo esgotado",
+      "retrievalError": "erro"
+    }
+  },
+  "workflow": {
+    "agentsMeta": "{{count}} agentes",
+    "tokensMeta": "{{value}} tokens",
+    "phaseSuffix": " ({{count}} fases)",
+    "phaseSuffix_one": " ({{count}} fase)",
+    "phaseSuffix_other": " ({{count}} fases)",
+    "taskIdDetail": "ID da tarefa: {{taskId}}",
+    "runningInBackground": "Executando em segundo plano…",
+    "agentsUsageLabel": "agentes {{count}}",
+    "tokensUsageLabel": "tokens {{value}}",
+    "toolsUsageLabel": "ferramentas {{count}}"
+  },
+  "mcp": {
+    "common": {
+      "out": "OUT"
+    }
+  },
+  "filesystem": {
+    "common": {
+      "in": "IN",
+      "out": "OUT"
+    },
+    "editFile": {
+      "dryRun": "(simulação)"
+    },
+    "readMultipleFiles": {
+      "fileCount": "{{count}} arquivos"
+    }
+  },
+  "gmail": {
+    "common": {
+      "unknownSender": "(remetente desconhecido)"
+    },
+    "action": {
+      "addLabelsToThread": "Adicionar {{count}} etiqueta(s) à conversa",
+      "removeLabelsFromThread": "Remover {{count}} etiqueta(s) da conversa",
+      "addLabelsToMessage": "Adicionar {{count}} etiqueta(s) à mensagem",
+      "removeLabelsFromMessage": "Remover {{count}} etiqueta(s) da mensagem",
+      "createLabel": "Criar etiqueta",
+      "createLabelNamed": "Criar etiqueta: {{name}}",
+      "updateLabel": "Atualizar etiqueta",
+      "updateLabelNamed": "Atualizar etiqueta: {{name}}",
+      "deleteLabel": "Excluir etiqueta",
+      "moveToTrash": "Mover {{target}} para a lixeira",
+      "markAsSpam": "Marcar {{target}} como spam",
+      "applySensitiveLabel": "Aplicar etiqueta sensível a {{target}}",
+      "targetMessage": "mensagem",
+      "targetThread": "conversa"
+    },
+    "createDraft": {
+      "description": "Rascunho criado",
+      "to": "Para",
+      "cc": "Cc",
+      "bcc": "Cco"
+    },
+    "listDrafts": {
+      "count": "{{count}} rascunho(s)"
+    },
+    "listLabels": {
+      "count": "{{count}} etiqueta(s)",
+      "unnamed": "(sem nome)"
+    },
+    "searchThreads": {
+      "resultsFound": "{{count}} encontrado(s)"
+    }
+  },
+  "jetbrains": {
+    "common": {
+      "in": "IN",
+      "out": "OUT",
+      "exitCode": "saída {{code}}",
+      "projectRoot": "raiz do projeto",
+      "scopeIn": "em",
+      "currentProject": "projeto atual",
+      "differentProject": "projeto diferente",
+      "applied": "aplicado",
+      "notApplied": "não aplicado",
+      "declined": "recusado",
+      "declinedNote": "Você recusou esta ferramenta.",
+      "unrecognizedInputTitle": "Entrada não reconhecida — revise antes de permitir",
+      "unexpectedType": "(tipo inesperado)",
+      "debuggerStatus": {
+        "paused": "pausado",
+        "running": "em execução",
+        "stopped": "parado",
+        "timeout": "tempo esgotado"
+      }
+    },
+    "action": {
+      "debuggerAction": "Depurador: {{action}}",
+      "line": "linha {{line}}",
+      "patchOp": {
+        "add": "adicionar",
+        "delete": "excluir",
+        "update": "atualizar"
+      }
+    },
+    "breakpoint": {
+      "logpoint": "ponto de log",
+      "suspend": "suspender: {{policy}}",
+      "breakpointsMuted": "breakpoints silenciados",
+      "breakpointsUnmuted": "breakpoints reativados",
+      "temporary": "temporário",
+      "disabled": "desativado",
+      "logMessage": "msg de log",
+      "logStack": "pilha de log",
+      "id": "id {{id}}",
+      "owner": "proprietário: {{owner}}",
+      "conditionLabel": "se",
+      "logLabel": "log"
+    },
+    "createNewFile": {
+      "overwritesExisting": "substitui o arquivo existente",
+      "lineCount": "{{count}} linhas",
+      "lineCount_one": "{{count}} linha",
+      "lineCount_other": "{{count}} linhas"
+    },
+    "executeTerminalCommand": {
+      "executionModeTooltip": "Executar no shell padrão do usuário em vez de como processo direto",
+      "shell": "shell",
+      "direct": "direto"
+    },
+    "getRunConfigurations": {
+      "none": "Nenhuma configuração de execução"
+    },
+    "gitStatus": {
+      "includeIgnored": "incl. ignorados",
+      "includeUntracked": "incl. não rastreados",
+      "changeCount": "{{count}} alterações",
+      "changeCount_one": "{{count}} alteração",
+      "changeCount_other": "{{count}} alterações",
+      "clean": "Árvore de trabalho limpa",
+      "status": {
+        "untracked": "não rastreado",
+        "modified": "modificado",
+        "added": "adicionado",
+        "deleted": "excluído",
+        "renamed": "renomeado",
+        "copied": "copiado",
+        "conflict": "conflito",
+        "changed": "alterado"
+      }
+    },
+    "openFiles": {
+      "none": "Nenhum arquivo aberto",
+      "active": "ativo"
+    },
+    "problems": {
+      "errorsOnly": "somente erros",
+      "buildSucceeded": "Build bem-sucedido",
+      "none": "Nenhum problema",
+      "count": "{{count}} problemas",
+      "count_one": "{{count}} problema",
+      "count_other": "{{count}} problemas",
+      "infoSeverity": "informação"
+    },
+    "projectList": {
+      "none": "Nenhum"
+    },
+    "replaceText": {
+      "all": "tudo",
+      "caseSensitive": "diferencia maiúsculas/minúsculas",
+      "old": "antigo",
+      "new": "novo"
+    },
+    "search": {
+      "matchCount": "correspondências",
+      "matchCount_one": "correspondência",
+      "matchCount_other": "correspondências",
+      "word": {
+        "pattern": "padrão",
+        "text": "texto",
+        "regex": "regex",
+        "glob": "glob",
+        "name": "nome",
+        "symbol": "símbolo",
+        "query": "consulta"
+      }
+    }
+  }
+}

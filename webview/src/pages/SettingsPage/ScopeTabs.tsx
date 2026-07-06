@@ -1,11 +1,13 @@
 import {useSettings} from '@/contexts/SettingsContext';
 import {useClaudeSettings} from '@/contexts/ClaudeSettingsContext';
 import {useWorkingDir} from '@/contexts/WorkingDirContext';
+import {useTranslation} from '@/i18n';
 
 export function ScopeTabs() {
     const {scope, setScope} = useSettings();
     const {setScope: setClaudeScope} = useClaudeSettings();
     const {workingDirectory} = useWorkingDir();
+    const {t} = useTranslation('settings');
 
     const handleScopeChange = (newScope: 'global' | 'project') => {
         setScope(newScope);
@@ -22,7 +24,8 @@ export function ScopeTabs() {
                         : 'text-text-disabled hover:text-text-secondary'
                 }`}
             >
-                <span>User<span className="max-xs:hidden"> Settings</span> (Global)</span>
+                <span className="max-xs:hidden">{t('scope.global')}</span>
+                <span className="hidden max-xs:inline">{t('scope.globalShort')}</span>
             </button>
             <button
                 onClick={() => handleScopeChange('project')}
@@ -32,9 +35,10 @@ export function ScopeTabs() {
                         ? 'text-text-primary bg-surface-tooltip/50'
                         : 'text-text-disabled hover:text-text-secondary'
                 }`}
-                title={!workingDirectory ? 'Open a project to use project settings' : undefined}
+                title={!workingDirectory ? t('scope.projectDisabledTooltip') : undefined}
             >
-                <span>Project<span className="max-xs:hidden"> Settings</span> (Local)</span>
+                <span className="max-xs:hidden">{t('scope.project')}</span>
+                <span className="hidden max-xs:inline">{t('scope.projectShort')}</span>
             </button>
         </div>
     );

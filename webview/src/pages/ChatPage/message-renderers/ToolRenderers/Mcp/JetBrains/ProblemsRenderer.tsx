@@ -1,4 +1,5 @@
 import {ToolUseBlockDto} from "@/dto";
+import {useTranslation} from "@/i18n";
 import {RendererProps, ToolWrapper, toolResultText, toolResultIsError, ResultCaption} from "../../common";
 import {CollapsibleBox} from "../_common";
 import {JetBrainsToolHeader, JetBrainsResultError, PathRow, FileList, Badge, RawJsonResult, safeParseJson, inputProjectPath, resultIndicatesError} from "./_shared";
@@ -55,6 +56,7 @@ function severityTone(severity?: string): 'error' | 'warning' | 'default' {
 
 /** `get_file_problems` / `lint_files` / `build_project`: severity-badged problem rows. */
 export function ProblemsRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const toolUse = props.toolUse as unknown as ProblemsToolUseDto;
     const input = toolUse.input ?? {};
     const projectPath = inputProjectPath(input);
@@ -79,7 +81,7 @@ export function ProblemsRenderer(props: RendererProps) {
                 path={input.filePath}
                 projectPath={projectPath}
                 input={input as Record<string, unknown>}
-                extra={(input as Record<string, unknown>).errorsOnly === true ? <Badge>errors only</Badge> : undefined}
+                extra={(input as Record<string, unknown>).errorsOnly === true ? <Badge>{t('jetbrains.problems.errorsOnly')}</Badge> : undefined}
             />
             {!input.filePath && files.length > 0 && <FileList files={files} projectPath={projectPath} />}
             {isError ? (
@@ -87,10 +89,10 @@ export function ProblemsRenderer(props: RendererProps) {
             ) : problems === null ? (
                 <RawJsonResult out={out} />
             ) : problems.length === 0 ? (
-                <ResultCaption className="mt-1">{buildSucceeded ? 'Build succeeded' : 'No problems'}</ResultCaption>
+                <ResultCaption className="mt-1">{buildSucceeded ? t('jetbrains.problems.buildSucceeded') : t('jetbrains.problems.none')}</ResultCaption>
             ) : (
                 <div className="mt-1.5">
-                    <ResultCaption>{problems.length} {problems.length === 1 ? 'problem' : 'problems'}</ResultCaption>
+                    <ResultCaption>{t('jetbrains.problems.count', {count: problems.length})}</ResultCaption>
                     <CollapsibleBox collapsedMaxHeight={200} className="flex flex-col gap-1">
                         {problems.map((p, i) => (
                             <PathRow
@@ -98,7 +100,7 @@ export function ProblemsRenderer(props: RendererProps) {
                                 path={p.file ?? ''}
                                 line={p.line}
                                 projectPath={projectPath}
-                                left={<Badge tone={severityTone(p.severity)}>{p.severity ?? 'info'}</Badge>}
+                                left={<Badge tone={severityTone(p.severity)}>{p.severity ?? t('jetbrains.problems.infoSeverity')}</Badge>}
                                 right={p.message && <span className="text-text-primary/70 truncate">{p.message}</span>}
                             />
                         ))}

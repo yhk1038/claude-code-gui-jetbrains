@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PanelSection, PanelItem } from '@/types/commandPalette';
 import { useVersionInfo } from '@/hooks/useVersionInfo';
 import { useCliConfig } from '@/contexts/CliConfigContext';
@@ -22,6 +23,7 @@ export const CommandPalettePanel: React.FC<CommandPalettePanelProps> = ({
   onItemExecute,
   onClose,
 }) => {
+  const { t } = useTranslation('commandPalette');
   const panelRef = useRef<HTMLDivElement>(null);
   const selectedItemRef = useRef<HTMLDivElement>(null);
   const { pluginVersion, cliVersion, refresh: refreshVersion, isLoading: versionRefreshing } = useVersionInfo();
@@ -112,14 +114,14 @@ export const CommandPalettePanel: React.FC<CommandPalettePanelProps> = ({
                 type="button"
                 onClick={handleVersionRefresh}
                 disabled={versionRefreshing}
-                title="Refresh version"
+                title={t('panel.refreshVersion')}
                 className="text-text-secondary/80 hover:text-text-secondary hover:underline disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
             >
               {`${APP_NAME} v${cliVersion}`}
             </button>
 
             <a className="text-text-tertiary underline hover:text-text-secondary" href="https://github.com/anthropics/claude-code/issues" target="_blank">
-              Report a problem
+              {t('panel.reportProblem')}
             </a>
           </div>
 
@@ -132,7 +134,7 @@ export const CommandPalettePanel: React.FC<CommandPalettePanelProps> = ({
                 disabled={refreshing}
                 className="text-text-tertiary underline hover:text-text-secondary disabled:opacity-60 disabled:cursor-not-allowed leading-none"
             >
-              {refreshing ? 'Reloading…' : 'Reload commands'}
+              {refreshing ? t('panel.reloading') : t('panel.reloadCommands')}
             </button>
           </div>
         </div>
@@ -141,7 +143,7 @@ export const CommandPalettePanel: React.FC<CommandPalettePanelProps> = ({
         <div className=" text-[0.7rem] hidden xs:flex items-center justify-between px-3 pt-2 pb-3 -mt-2.5">
           <div className="flex items-center gap-3">
             <a className="text-text-tertiary underline hover:text-text-secondary" href="https://github.com/anthropics/claude-code/issues" target="_blank">
-              Report a problem
+              {t('panel.reportProblem')}
             </a>
             <button
                 type="button"
@@ -149,7 +151,7 @@ export const CommandPalettePanel: React.FC<CommandPalettePanelProps> = ({
                 disabled={refreshing}
                 className="text-text-tertiary underline hover:text-text-secondary disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {refreshing ? 'Reloading…' : 'Reload commands'}
+              {refreshing ? t('panel.reloading') : t('panel.reloadCommands')}
             </button>
           </div>
           <div className="text-text-secondary/80">
@@ -162,7 +164,7 @@ export const CommandPalettePanel: React.FC<CommandPalettePanelProps> = ({
                       type="button"
                       onClick={handleVersionRefresh}
                       disabled={versionRefreshing}
-                      title="Refresh version"
+                      title={t('panel.refreshVersion')}
                       className="hover:text-text-secondary hover:underline disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                   >
                     {`${APP_NAME} v${cliVersion}`}

@@ -1,6 +1,7 @@
 import {ToolUseBlockDto, ImageBlockDto, ContentBlockType} from "@/dto";
 import {getAdapter} from "@/adapters";
 import {cn} from "@/utils/cn";
+import {useTranslation} from "@/i18n";
 import {RendererProps, ToolHeader, ToolWrapper} from "../../common";
 import {McpToolBody, McpToolRow} from "../_common";
 
@@ -29,6 +30,7 @@ function extractTextContent(props: RendererProps): string {
 }
 
 export function ReadMediaFileRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const {toolUse: rawToolUse, toolResult} = props;
     const toolUse = rawToolUse as unknown as ReadMediaFileToolUseDto;
     const name = toolUse.name;
@@ -55,11 +57,11 @@ export function ReadMediaFileRenderer(props: RendererProps) {
             </ToolHeader>
 
             <McpToolBody>
-                <McpToolRow label="IN">
+                <McpToolRow label={t('filesystem.common.in')}>
                     {JSON.stringify(input, null, 2)}
                 </McpToolRow>
                 {hasResult && (
-                    <McpToolRow label="OUT">
+                    <McpToolRow label={t('filesystem.common.out')}>
                         {imageBlock ? (
                             <div>
                                 <img

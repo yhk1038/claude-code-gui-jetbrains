@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeftIcon, ArrowTopRightOnSquareIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { McpRegistryServer } from '@/shared';
 import { useMcpRegistry } from '@/hooks/useMcpRegistry';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   onPick: (server: McpRegistryServer) => void;
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function McpMarketplace(props: Props) {
+  const { t } = useTranslation('common');
   const { onPick, onBack } = props;
   const [input, setInput] = useState('');
   const [query, setQuery] = useState('');
@@ -42,7 +44,7 @@ export function McpMarketplace(props: Props) {
         <button
           onClick={onBack}
           className="w-8 h-8 flex items-center justify-center rounded text-gray-400 hover:bg-gray-500/50 transition-colors flex-shrink-0"
-          title="Back"
+          title={t('mcpModal.marketplace.back')}
         >
           <ArrowLeftIcon className="w-5 h-5" />
         </button>
@@ -52,7 +54,7 @@ export function McpMarketplace(props: Props) {
             className="w-full text-md bg-surface-hover border border-border-default rounded pl-8 pr-2 py-1.5 text-text-primary focus:outline-none focus:border-accent-primary"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Search the MCP registry…"
+            placeholder={t('mcpModal.marketplace.searchPlaceholder')}
             autoFocus
           />
         </div>
@@ -62,17 +64,17 @@ export function McpMarketplace(props: Props) {
       <div className="flex-1 min-h-0 overflow-y-auto px-4 py-2">
         {!hasQuery && (
           <p className="px-1 py-8 text-center text-sm text-text-tertiary">
-            Search the official MCP registry to find and install servers.
+            {t('mcpModal.marketplace.searchPrompt')}
           </p>
         )}
         {hasQuery && loading && (
-          <p className="px-1 py-8 text-center text-sm text-text-tertiary">Searching…</p>
+          <p className="px-1 py-8 text-center text-sm text-text-tertiary">{t('mcpModal.marketplace.searching')}</p>
         )}
         {hasQuery && !loading && error && (
           <p className="px-1 py-8 text-center text-sm text-state-error-fg">{error}</p>
         )}
         {hasQuery && !loading && !error && uniqueServers.length === 0 && (
-          <p className="px-1 py-8 text-center text-sm text-text-tertiary">No servers found.</p>
+          <p className="px-1 py-8 text-center text-sm text-text-tertiary">{t('mcpModal.marketplace.noServers')}</p>
         )}
         {hasQuery && !loading && !error && uniqueServers.length > 0 && (
           <div className="flex flex-col gap-2">
@@ -87,6 +89,7 @@ export function McpMarketplace(props: Props) {
 }
 
 function McpRegistryCard(props: { server: McpRegistryServer; onPick: (s: McpRegistryServer) => void }) {
+  const { t } = useTranslation('common');
   const { server, onPick } = props;
   const shortName = server.name.split('/').pop() || server.name;
   const installable = server.config !== null;
@@ -101,7 +104,7 @@ function McpRegistryCard(props: { server: McpRegistryServer; onPick: (s: McpRegi
               target="_blank"
               rel="noopener noreferrer"
               className="group/title inline-flex items-center gap-1 min-w-0 text-sm font-semibold text-text-primary hover:text-accent-primary transition-colors"
-              title={`Open ${server.repositoryUrl}`}
+              title={t('mcpModal.marketplace.openRepo', { url: server.repositoryUrl })}
             >
               <span className="truncate underline-offset-2 group-hover/title:underline">{shortName}</span>
               <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5 flex-shrink-0 text-text-tertiary group-hover/title:text-accent-primary" />
@@ -116,8 +119,10 @@ function McpRegistryCard(props: { server: McpRegistryServer; onPick: (s: McpRegi
         )}
         {server.requiredInputs.length > 0 && (
           <p className="mt-1 text-xs text-text-tertiary">
-            Needs {server.requiredInputs.length} input{server.requiredInputs.length > 1 ? 's' : ''}:{' '}
-            {server.requiredInputs.join(', ')}
+            {t('mcpModal.marketplace.needsInputs', {
+              count: server.requiredInputs.length,
+              inputs: server.requiredInputs.join(', '),
+            })}
           </p>
         )}
       </div>
@@ -125,9 +130,9 @@ function McpRegistryCard(props: { server: McpRegistryServer; onPick: (s: McpRegi
         disabled={!installable}
         onClick={() => onPick(server)}
         className="flex-shrink-0 text-md px-3 py-1.5 rounded bg-accent-primary text-white hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
-        title={installable ? 'Configure & add' : 'No install info available'}
+        title={installable ? t('mcpModal.marketplace.configureAdd') : t('mcpModal.marketplace.noInstallInfo')}
       >
-        Add
+        {t('mcpModal.marketplace.add')}
       </button>
     </div>
   );

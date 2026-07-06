@@ -2,6 +2,11 @@ import { useRef, useEffect, KeyboardEvent } from 'react';
 import { OptionItem } from '@/pages/ChatPage/message-renderers/ToolRenderers/AskUserQuestion/OptionItem';
 import { useTextareaAutoResize } from '@/pages/ChatPage/ChatInput/hooks/useTextareaAutoResize';
 import { QuestionOption } from './useFormState';
+import { useTranslation } from '@/i18n';
+
+/** Internal sentinel value for the "Other" option; must stay untranslated
+ * because form state (useFormState.ts) compares against this literal. */
+const OTHER_OPTION_VALUE = 'Other';
 
 interface Props {
   options: QuestionOption[];
@@ -26,6 +31,7 @@ export const OptionList = (props: Props) => {
     onOtherKeyDown,
   } = props;
 
+  const { t } = useTranslation('chat');
   const otherInputRef = useRef<HTMLTextAreaElement>(null);
 
   useTextareaAutoResize({ textareaRef: otherInputRef, value: otherText, maxHeight: 120 });
@@ -41,7 +47,7 @@ export const OptionList = (props: Props) => {
       {options.map((option) => (
         <OptionItem
           key={option.label}
-          label={option.label}
+          label={option.label === OTHER_OPTION_VALUE ? t('askUserQuestion.other') : option.label}
           description={option.description}
           selected={selected.includes(option.label)}
           multiSelect={multiSelect}
@@ -57,7 +63,7 @@ export const OptionList = (props: Props) => {
             value={otherText}
             onChange={e => onOtherTextChange(e.target.value)}
             onKeyDown={onOtherKeyDown}
-            placeholder="Type your answer..."
+            placeholder={t('askUserQuestion.otherPlaceholder')}
             rows={1}
             className="w-full px-3 py-1.5 rounded bg-surface-overlay border border-border-strong text-text-primary text-sm placeholder-text-tertiary focus:outline-none focus:border-border-focus/50 resize-none"
           />

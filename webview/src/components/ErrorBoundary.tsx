@@ -1,5 +1,6 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
 import { reportClientError } from '@/api/errorReporting';
+import { i18n } from '@/i18n';
 
 interface Props {
   children: ReactNode;
@@ -58,7 +59,7 @@ export class ErrorBoundary extends Component<Props, State> {
             boxSizing: 'border-box',
           }}
         >
-          <div style={{ fontSize: '14px', opacity: 0.8 }}>Something went wrong.</div>
+          <div style={{ fontSize: '14px', opacity: 0.8 }}>{i18n.t('errorBoundary.somethingWentWrong', { ns: 'common' })}</div>
           {this.state.error && (
             <div
               style={{
@@ -85,7 +86,7 @@ export class ErrorBoundary extends Component<Props, State> {
               borderRadius: '4px',
             }}
           >
-            Retry
+            {i18n.t('errorBoundary.retry', { ns: 'common' })}
           </button>
         </div>
       );

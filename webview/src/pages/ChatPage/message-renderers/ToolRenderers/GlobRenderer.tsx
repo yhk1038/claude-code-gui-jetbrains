@@ -1,6 +1,7 @@
 import {useState} from "react";
 import {ToolUseBlockDto} from "@/types";
 import {getAdapter} from "@/adapters";
+import {useTranslation} from "@/i18n";
 import {useSessionContext} from "@/contexts/SessionContext";
 import {RendererProps, ToolHeader, ToolWrapper} from "./common";
 
@@ -24,6 +25,7 @@ interface GlobToolResultDto {
 }
 
 export function GlobRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const [isExpanded, setIsExpanded] = useState(false);
     const toolUse = props.toolUse as unknown as GlobToolUseDto;
     const toolResult = props.toolResult as GlobToolResultDto | undefined;
@@ -48,7 +50,7 @@ export function GlobRenderer(props: RendererProps) {
         <ToolWrapper message={props.message}>
             <ToolHeader name={name}>
                 <div className="text-text-primary/80 text-[0.8461rem] line-clamp-2 font-mono">
-                    pattern: "{pattern}"
+                    {t('glob.pattern', {pattern})}
                 </div>
             </ToolHeader>
 
@@ -58,7 +60,7 @@ export function GlobRenderer(props: RendererProps) {
                         className="text-text-primary/50 text-[0.9230rem] mt-0.5 cursor-pointer hover:text-text-primary/70 select-none"
                         onClick={() => setIsExpanded(!isExpanded)}
                     >
-                        Found {numFiles} {numFiles === 1 ? 'file' : 'files'}
+                        {t('glob.foundFiles', {count: numFiles})}
                     </div>
 
                     {isExpanded && (

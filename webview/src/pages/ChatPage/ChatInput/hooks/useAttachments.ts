@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Attachment, ImageAttachment, FileAttachment, FolderAttachment, ATTACHMENT_LIMITS } from '../../../../types';
+import { useTranslation } from '@/i18n';
 
 export interface UseAttachmentsReturn {
   attachments: Attachment[];
@@ -16,6 +17,7 @@ export interface UseAttachmentsReturn {
 }
 
 export function useAttachments(): UseAttachmentsReturn {
+  const { t } = useTranslation('chat');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -26,7 +28,7 @@ export function useAttachments(): UseAttachmentsReturn {
 
     // Validate MIME type
     if (!ATTACHMENT_LIMITS.ALLOWED_IMAGE_MIME_TYPES.includes(file.type as (typeof ATTACHMENT_LIMITS.ALLOWED_IMAGE_MIME_TYPES)[number])) {
-      setError(`Unsupported file type: ${file.type || 'unknown'}`);
+      setError(t('chatInput.attachments.errors.unsupportedType', { type: file.type || 'unknown' }));
       setTimeout(() => setError(null), 3000);
       return;
     }
@@ -34,7 +36,8 @@ export function useAttachments(): UseAttachmentsReturn {
     // Validate file size
     if (file.size > ATTACHMENT_LIMITS.MAX_FILE_SIZE) {
       const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-      setError(`File too large: ${sizeMB}MB (max 10MB)`);
+      const maxMB = ATTACHMENT_LIMITS.MAX_FILE_SIZE / (1024 * 1024);
+      setError(t('chatInput.attachments.errors.tooLarge', { size: sizeMB, max: maxMB }));
       setTimeout(() => setError(null), 3000);
       return;
     }

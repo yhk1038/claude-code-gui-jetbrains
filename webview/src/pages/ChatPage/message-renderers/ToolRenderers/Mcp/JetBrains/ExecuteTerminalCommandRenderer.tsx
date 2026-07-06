@@ -1,4 +1,5 @@
 import {ToolUseBlockDto} from "@/dto";
+import {useTranslation} from "@/i18n";
 import {RendererProps, ToolWrapper, toolResultText, toolResultIsError} from "../../common";
 import {JetBrainsToolHeader, JetBrainsResultError, InOutBlock, Badge, safeParseJson} from "./_shared";
 
@@ -18,6 +19,7 @@ interface TerminalResult {
  * read exactly what will run before approving.
  */
 export function ExecuteTerminalCommandRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const toolUse = props.toolUse as unknown as ExecuteTerminalCommandToolUseDto;
     const input = (toolUse.input ?? {}) as Record<string, unknown>;
     const command = toolUse.input?.command ?? '';
@@ -37,8 +39,8 @@ export function ExecuteTerminalCommandRenderer(props: RendererProps) {
                 name={toolUse.name}
                 input={input}
                 extra={typeof input.executeInShell === 'boolean'
-                    ? <Badge title="Run in the user's default shell vs. as a direct process">
-                        {input.executeInShell ? 'shell' : 'direct'}
+                    ? <Badge title={t('jetbrains.executeTerminalCommand.executionModeTooltip')}>
+                        {input.executeInShell ? t('jetbrains.executeTerminalCommand.shell') : t('jetbrains.executeTerminalCommand.direct')}
                       </Badge>
                     : undefined}
             />
@@ -48,7 +50,7 @@ export function ExecuteTerminalCommandRenderer(props: RendererProps) {
                 <>
                     {typeof exitCode === 'number' && (
                         <div className="mt-1">
-                            <Badge tone={exitCode === 0 ? 'success' : 'error'}>exit {exitCode}</Badge>
+                            <Badge tone={exitCode === 0 ? 'success' : 'error'}>{t('jetbrains.common.exitCode', {code: exitCode})}</Badge>
                         </div>
                     )}
                     <InOutBlock inContent={command} outContent={output} />

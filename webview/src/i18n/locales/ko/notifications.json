@@ -1,0 +1,17 @@
+{
+  "sessionComplete": {
+    "body": "응답 완료"
+  },
+  "streamError": {
+    "body": "응답 실패"
+  },
+  "awaitingPermission": {
+    "body": "권한 요청됨"
+  },
+  "awaitingPlanApproval": {
+    "body": "검토할 계획 준비됨"
+  },
+  "awaitingUserInput": {
+    "body": "답변 대기 중"
+  }
+}

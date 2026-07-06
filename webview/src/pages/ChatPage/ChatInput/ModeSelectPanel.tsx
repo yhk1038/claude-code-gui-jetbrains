@@ -4,6 +4,7 @@ import { CheckIcon } from '@heroicons/react/16/solid';
 import { EffortSlider, EffortIcon } from '@/components/EffortSlider';
 import { useEffort } from '@/hooks/useEffort';
 import { isMobile } from '@/config/environment';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   modes: InputMode[];
@@ -20,16 +21,17 @@ interface Props {
 export function ModeSelectPanel(props: Props) {
   const { modes, currentMode, onSelect } = props;
   const { supportsEffort, def } = useEffort();
+  const { t } = useTranslation('chat');
 
   return (
     <div className={`flex flex-col gap-0.5 rounded-lg border border-border-subtle bg-surface-raised py-1.5 shadow-lg ${isMobile() ? 'w-full min-w-0' : 'min-w-[320px]'}`}>
       <div className="flex items-center justify-between px-3 py-1.5 text-[0.8461rem] text-text-tertiary">
-        <span>Modes</span>
+        <span>{t('chatInput.modeSelectPanel.modes')}</span>
         <span className="flex items-center gap-1">
           <kbd className="rounded bg-surface-hover px-1.5 py-0.5 text-[0.7rem]">⇧</kbd>
           <span>+</span>
           <kbd className="rounded bg-surface-hover px-1.5 py-0.5 text-[0.7rem]">tab</kbd>
-          <span>to switch</span>
+          <span>{t('chatInput.modeSelectPanel.toSwitch')}</span>
         </span>
       </div>
 
@@ -66,7 +68,7 @@ export function ModeSelectPanel(props: Props) {
               <EffortIcon className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1 text-[0.9rem] font-medium text-text-primary">
-              Effort <span className="font-normal text-text-tertiary">({def.label})</span>
+              {t('chatInput.modeSelectPanel.effort')} <span className="font-normal text-text-tertiary">({def.label})</span>
             </div>
             <EffortSlider />
           </div>

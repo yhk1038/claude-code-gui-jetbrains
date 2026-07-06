@@ -3,6 +3,7 @@ import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import { useRouter } from '@/router';
 import { Route } from '@/router/routes';
 import { useAuthContext } from '@/contexts';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   className?: string;
@@ -22,6 +23,7 @@ interface Props {
  */
 export function LoginCta(props: Props) {
   const { className = '' } = props;
+  const { t } = useTranslation('chat');
   const { navigate } = useRouter();
   const { loggedIn, refetch } = useAuthContext();
   const [isRechecking, setIsRechecking] = useState(false);
@@ -53,7 +55,7 @@ export function LoginCta(props: Props) {
       ) : (
         <ArrowRightOnRectangleIcon className="w-3.5 h-3.5" />
       )}
-      {isSignedIn ? 'Signed' : 'Re-Sign'}
+      {isSignedIn ? t('loginCta.signed') : t('loginCta.reSign')}
     </button>
   );
 }

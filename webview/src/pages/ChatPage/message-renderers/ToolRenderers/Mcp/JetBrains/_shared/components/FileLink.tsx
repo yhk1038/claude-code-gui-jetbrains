@@ -2,6 +2,7 @@ import {ReactNode} from "react";
 import {getAdapter} from "@/adapters";
 import {Tooltip} from "@/components";
 import {cn} from "@/utils/cn";
+import {useTranslation} from "@/i18n";
 import {useToolStatus} from "../../../../common";
 import {basename, dirname, joinProjectPath} from "../helpers";
 
@@ -22,6 +23,7 @@ interface ProjectRootLinkProps {
  * the root and for an empty search scope.
  */
 export const ProjectRootLink = (props: ProjectRootLinkProps) => {
+    const {t} = useTranslation('chatTools');
     const {projectPath, className} = props;
     const clickable = !!projectPath;
     return (
@@ -33,7 +35,7 @@ export const ProjectRootLink = (props: ProjectRootLinkProps) => {
                     void getAdapter().openFile(projectPath!);
                 } : undefined}
             >
-                project root
+                {t('jetbrains.common.projectRoot')}
             </span>
         </Tooltip>
     );
@@ -155,10 +157,11 @@ interface ScopeTextProps {
 
 /** Where a search runs: "in <glob list>" from `paths`, or a clickable "project root" when empty. */
 export const ScopeText = (props: ScopeTextProps) => {
+    const {t} = useTranslation('chatTools');
     const list = Array.isArray(props.paths) ? props.paths.filter((p): p is string => typeof p === 'string' && !!p) : [];
     return (
         <span className="text-text-primary/50 truncate">
-            in {list.length ? list.join(', ') : <ProjectRootLink projectPath={props.projectPath} />}
+            {t('jetbrains.common.scopeIn')} {list.length ? list.join(', ') : <ProjectRootLink projectPath={props.projectPath} />}
         </span>
     );
 };

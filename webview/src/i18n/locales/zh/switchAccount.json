@@ -1,0 +1,36 @@
+{
+  "welcomeArtAlt": "欢迎插图",
+  "intro": "Claude Code 既可以使用您的 Claude 订阅,也可以通过 Console 账户按 API 用量计费。",
+  "loginPrompt": "您想以哪种方式登录?",
+  "errors": {
+    "loginFailed": "登录失败,请重试。"
+  },
+  "claudeAi": {
+    "label": "Claude.ai 订阅",
+    "description": "使用您的 Claude Pro、Team 或 Enterprise 订阅"
+  },
+  "console": {
+    "label": "Anthropic Console",
+    "description": "通过 Console 账户按 API 用量付费"
+  },
+  "providers": {
+    "label": "Bedrock、Foundry 或 Vertex",
+    "description": "了解如何使用 API 密钥或第三方提供商。"
+  },
+  "terminal": {
+    "prompt": "更喜欢终端体验?",
+    "action": "在终端中运行 claude"
+  },
+  "codeInput": {
+    "title": "粘贴浏览器中显示的代码",
+    "description": "登录后,浏览器会显示一个代码。将其粘贴到此处以完成登录。",
+    "placeholder": "在此粘贴代码",
+    "submit": "提交代码"
+  },
+  "urlModal": {
+    "title": "登录 Claude",
+    "description": "Claude 正在打开浏览器以供登录。如果没有自动打开,请使用下方的按钮。",
+    "openButton": "打开登录页面",
+    "revealCode": "浏览器中收到了代码?点此输入"
+  }
+}

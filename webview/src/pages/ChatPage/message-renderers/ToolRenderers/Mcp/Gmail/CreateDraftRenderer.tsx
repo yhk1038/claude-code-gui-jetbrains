@@ -1,4 +1,5 @@
 import {ToolUseBlockDto} from "@/dto";
+import {useTranslation} from "@/i18n";
 import {RendererProps, ToolHeader, ToolWrapper, toolResultText} from "../../common";
 import {McpToolBody, McpToolRow, formatMcpToolName} from "../_common";
 
@@ -30,6 +31,7 @@ const RecipientLine = (props: {label: string; values?: string[]}) => {
 };
 
 export function CreateDraftRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const {toolUse: rawToolUse, toolResult} = props;
     const toolUse = rawToolUse as CreateDraftToolUseDto;
     const name = formatMcpToolName(toolUse.name);
@@ -41,12 +43,12 @@ export function CreateDraftRenderer(props: RendererProps) {
 
     return (
         <ToolWrapper message={props.message} groupClassName="pb-2.5">
-            <ToolHeader name={name} description="Draft created" />
+            <ToolHeader name={name} description={t('gmail.createDraft.description')} />
 
             <McpToolBody>
-                <RecipientLine label="To" values={input.to} />
-                <RecipientLine label="Cc" values={input.cc} />
-                <RecipientLine label="Bcc" values={input.bcc} />
+                <RecipientLine label={t('gmail.createDraft.to')} values={input.to} />
+                <RecipientLine label={t('gmail.createDraft.cc')} values={input.cc} />
+                <RecipientLine label={t('gmail.createDraft.bcc')} values={input.bcc} />
                 {subject && (
                     <div className="p-2 border-b border-border-subtle text-text-primary font-medium text-[0.9230rem]">
                         {subject}

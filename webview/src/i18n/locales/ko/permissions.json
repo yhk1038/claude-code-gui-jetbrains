@@ -1,0 +1,6 @@
+{
+  "notifications": {
+    "label": "데스크톱 알림",
+    "description": "응답이 완료되면 알림을 받습니다"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "sessionComplete": {
+    "body": "Respuesta completa"
+  },
+  "streamError": {
+    "body": "Error en la respuesta"
+  },
+  "awaitingPermission": {
+    "body": "Permiso solicitado"
+  },
+  "awaitingPlanApproval": {
+    "body": "Plan listo para revisar"
+  },
+  "awaitingUserInput": {
+    "body": "Esperando tu respuesta"
+  }
+}

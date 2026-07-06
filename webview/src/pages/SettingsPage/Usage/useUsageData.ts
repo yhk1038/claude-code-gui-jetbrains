@@ -6,6 +6,7 @@ import { useWorkingDir } from '@/contexts/WorkingDirContext';
 import type { UsageResponse, UsageErrorKind } from '@/types/usage';
 import { MessageType } from '@/shared';
 import { useUsageQuery, normalizeUsage, type RawUsageResponse } from '@/hooks/queries/useUsageQuery';
+import { useTranslation } from '@/i18n';
 
 interface UseUsageDataReturn {
   data: UsageResponse | null;
@@ -17,6 +18,7 @@ interface UseUsageDataReturn {
 }
 
 export function useUsageData(): UseUsageDataReturn {
+  const { t } = useTranslation('settings');
   const { send } = useBridgeContext();
   const queryClient = useQueryClient();
   const { messages } = useChatStreamContext();
@@ -47,7 +49,7 @@ export function useUsageData(): UseUsageDataReturn {
   return {
     data: result?.usage ?? null,
     isLoading: usageQuery.isLoading,
-    error: result?.error ?? (usageQuery.isError ? (usageQuery.error?.message ?? 'Unknown error') : null),
+    error: result?.error ?? (usageQuery.isError ? (usageQuery.error?.message ?? t('usage.errors.unknown')) : null),
     errorKind: result?.errorKind ?? null,
     lastUpdated: usageQuery.dataUpdatedAt ? new Date(usageQuery.dataUpdatedAt) : null,
     refresh,

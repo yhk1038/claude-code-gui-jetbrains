@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '@/i18n';
 
 interface MessageActionsProps {
   copied: boolean;
@@ -11,12 +12,13 @@ export const MessageActions: React.FC<MessageActionsProps> = ({
   onCopy,
   onRetry,
 }) => {
+  const { t } = useTranslation('chatTools');
   return (
     <div className="flex-shrink-0 flex items-start gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
       <button
         onClick={onCopy}
         className="p-1 hover:bg-surface-hover rounded transition-colors duration-150"
-        title="Copy message"
+        title={t('message.copyMessage')}
       >
         {copied ? (
           <svg
@@ -45,7 +47,7 @@ export const MessageActions: React.FC<MessageActionsProps> = ({
         <button
           onClick={onRetry}
           className="p-1 hover:bg-surface-hover rounded transition-colors duration-150"
-          title="Retry"
+          title={t('message.retry')}
         >
           <svg
             className="w-3.5 h-3.5 text-text-tertiary"

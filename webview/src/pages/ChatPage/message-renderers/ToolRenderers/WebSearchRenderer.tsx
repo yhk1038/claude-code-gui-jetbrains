@@ -1,4 +1,5 @@
 import {ToolUseBlockDto} from "@/dto";
+import {useTranslation} from "@/i18n";
 import {Container, LabelValue, RendererProps, ToolHeader, ToolWrapper} from "./common";
 
 class WebSearchToolUseDto extends ToolUseBlockDto {
@@ -8,6 +9,7 @@ class WebSearchToolUseDto extends ToolUseBlockDto {
 }
 
 export function WebSearchRenderer(props: RendererProps) {
+    const {t} = useTranslation('chatTools');
     const toolUse = props.toolUse as unknown as WebSearchToolUseDto;
     const query = toolUse.input?.query ?? '';
     const toolResult = props.toolResult as { message?: { content: Array<{ content: string }> } } | undefined;
@@ -21,7 +23,7 @@ export function WebSearchRenderer(props: RendererProps) {
 
             {props.toolResult && (
                 <Container>
-                    <LabelValue label="OUT" maxHeight="max-h-[60px]">
+                    <LabelValue label={t('tool.out')} maxHeight="max-h-[60px]">
                         {output}
                     </LabelValue>
                 </Container>

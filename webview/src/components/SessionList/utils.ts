@@ -1,13 +1,10 @@
 import { SessionMetaDto } from '@/dto';
+import { i18n } from '@/i18n';
 
 /**
- * 상대 시간 표시 (Cursor 방식)
- * - 1분 미만: "now"
- * - 1분~59분: "5m"
- * - 1시간~23시간: "3h"
- * - 1일~29일: "7d"
- * - 30일~364일: "2mo"
- * - 1년 이상: "1y"
+ * 상대 시간 표시 (Cursor 방식). 표기는 활성 로케일을 따른다.
+ * - 1분 미만: "now" / "방금"
+ * - 1분~59분: "5m" / "5분"  (이하 시/일/월/년)
  */
 export function getRelativeTime(date: Date): string {
   const elapsed = Date.now() - date.getTime();
@@ -18,12 +15,13 @@ export function getRelativeTime(date: Date): string {
   const months = Math.floor(days / 30);
   const years = Math.floor(days / 365);
 
-  if (years > 0) return `${years}y`;
-  if (months > 0) return `${months}mo`;
-  if (days > 0) return `${days}d`;
-  if (hours > 0) return `${hours}h`;
-  if (minutes > 0) return `${minutes}m`;
-  return 'now';
+  const rt = (unit: string, n: number) => i18n.t(`common:sessionList.relativeTime.${unit}`, { n });
+  if (years > 0) return rt('years', years);
+  if (months > 0) return rt('months', months);
+  if (days > 0) return rt('days', days);
+  if (hours > 0) return rt('hours', hours);
+  if (minutes > 0) return rt('minutes', minutes);
+  return i18n.t('common:sessionList.relativeTime.now');
 }
 
 export enum SessionGroup {
@@ -36,13 +34,8 @@ export enum SessionGroup {
 
 export type GroupedSessions = Record<SessionGroup, SessionMetaDto[]>;
 
-export const GROUP_LABELS: Record<SessionGroup, string> = {
-  [SessionGroup.Today]: 'Today',
-  [SessionGroup.Yesterday]: 'Yesterday',
-  [SessionGroup.PastWeek]: 'Past week',
-  [SessionGroup.PastMonth]: 'Past month',
-  [SessionGroup.PastYear]: 'Past year',
-};
+// Group headers are resolved through i18n at render time
+// (common:sessionList.groups.<SessionGroup>), so there is no static label map.
 
 export const GROUP_ORDER: SessionGroup[] = [
   SessionGroup.Today,
