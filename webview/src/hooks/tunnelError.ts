@@ -1,3 +1,5 @@
+import { i18n } from '@/i18n';
+
 // Mirrors TunnelErrorCode in the backend (backend/src/core/features/tunnel-manager.ts).
 // The two packages don't share types, so keep these in sync.
 export type TunnelErrorCode =
@@ -17,9 +19,12 @@ export interface TunnelErrorGuidance {
 const CLOUDFLARED_DOWNLOADS_URL =
   'https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/';
 
+const tt = (key: string) => i18n.t(`common:tunnelStatusNotice.errors.${key}`);
+
 /**
  * Map a tunnel error code to user-facing, actionable guidance. `fallback` is the
- * raw backend message, used only when the code is unknown.
+ * raw backend message, used only when the code is unknown. Title/detail resolve
+ * through i18n; the command and help URL are structural (not translated).
  */
 export function tunnelErrorGuidance(
   code: TunnelErrorCode | null | undefined,
@@ -28,27 +33,25 @@ export function tunnelErrorGuidance(
   switch (code) {
     case 'cloudflared-missing':
       return {
-        title: 'Couldn’t install cloudflared',
-        detail:
-          'The tunnel needs cloudflared, and it couldn’t be installed automatically. Install it manually, then try again.',
+        title: tt('cloudflaredMissing.title'),
+        detail: tt('cloudflaredMissing.detail'),
         manualInstallCommand: 'brew install cloudflared',
         helpUrl: CLOUDFLARED_DOWNLOADS_URL,
       };
     case 'tunnel-timeout':
       return {
-        title: 'Tunnel connection timed out',
-        detail:
-          'Couldn’t reach the Cloudflare tunnel server in time. Check your network or firewall — some regions restrict access to Cloudflare.',
+        title: tt('timeout.title'),
+        detail: tt('timeout.detail'),
       };
     case 'tunnel-exited':
       return {
-        title: 'cloudflared stopped unexpectedly',
-        detail: 'The tunnel process exited before it was ready. Please try again.',
+        title: tt('exited.title'),
+        detail: tt('exited.detail'),
       };
     default:
       return {
-        title: 'Couldn’t start the tunnel',
-        detail: fallback || 'An unexpected error occurred. Please try again.',
+        title: tt('unknown.title'),
+        detail: fallback || tt('unknown.detail'),
       };
   }
 }

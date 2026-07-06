@@ -140,7 +140,25 @@
     "installConsent": "cloudflared가 설치되어 있지 않습니다. 지금 설치하고 터널을 활성화하시겠습니까? cloudflared를 다운로드합니다 (처음 설치 시 약 3분 소요).",
     "installAndEnable": "설치 및 활성화",
     "cancel": "취소",
-    "notInstalledWarning": "cloudflared가 아직 설치되어 있지 않습니다. 터널을 켜면 다운로드를 요청합니다 (처음 설치 시 약 3분 소요)."
+    "notInstalledWarning": "cloudflared가 아직 설치되어 있지 않습니다. 터널을 켜면 다운로드를 요청합니다 (처음 설치 시 약 3분 소요).",
+    "errors": {
+      "cloudflaredMissing": {
+        "title": "cloudflared를 설치하지 못했습니다",
+        "detail": "터널에는 cloudflared가 필요하지만 자동으로 설치하지 못했습니다. 수동으로 설치한 뒤 다시 시도하세요."
+      },
+      "timeout": {
+        "title": "터널 연결 시간이 초과되었습니다",
+        "detail": "제한 시간 내에 Cloudflare 터널 서버에 연결하지 못했습니다. 네트워크나 방화벽을 확인하세요 — 일부 지역에서는 Cloudflare 접근이 제한됩니다."
+      },
+      "exited": {
+        "title": "cloudflared가 예기치 않게 중단되었습니다",
+        "detail": "터널 프로세스가 준비되기 전에 종료되었습니다. 다시 시도하세요."
+      },
+      "unknown": {
+        "title": "터널을 시작하지 못했습니다",
+        "detail": "예기치 않은 오류가 발생했습니다. 다시 시도하세요."
+      }
+    }
   },
   "sessionList": {
     "searchPlaceholder": "세션 검색...",

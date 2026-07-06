@@ -140,7 +140,25 @@
     "installConsent": "cloudflared no está instalado. ¿Instalarlo ahora y habilitar el túnel? Esto descarga cloudflared (unos 3 minutos la primera vez).",
     "installAndEnable": "Instalar y habilitar",
     "cancel": "Cancelar",
-    "notInstalledWarning": "cloudflared aún no está instalado. Activar el túnel pedirá descargarlo (unos 3 minutos la primera vez)."
+    "notInstalledWarning": "cloudflared aún no está instalado. Activar el túnel pedirá descargarlo (unos 3 minutos la primera vez).",
+    "errors": {
+      "cloudflaredMissing": {
+        "title": "No se pudo instalar cloudflared",
+        "detail": "El túnel necesita cloudflared y no se pudo instalar automáticamente. Instálalo manualmente y vuelve a intentarlo."
+      },
+      "timeout": {
+        "title": "Se agotó el tiempo de conexión del túnel",
+        "detail": "No se pudo conectar a tiempo con el servidor de túnel de Cloudflare. Revisa tu red o firewall: algunas regiones restringen el acceso a Cloudflare."
+      },
+      "exited": {
+        "title": "cloudflared se detuvo inesperadamente",
+        "detail": "El proceso del túnel se cerró antes de estar listo. Vuelve a intentarlo."
+      },
+      "unknown": {
+        "title": "No se pudo iniciar el túnel",
+        "detail": "Se produjo un error inesperado. Vuelve a intentarlo."
+      }
+    }
   },
   "sessionList": {
     "searchPlaceholder": "Buscar sesiones...",

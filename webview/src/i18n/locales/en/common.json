@@ -140,7 +140,25 @@
     "installConsent": "cloudflared isn’t installed. Install it now and enable the tunnel? This downloads cloudflared (about 3 minutes the first time).",
     "installAndEnable": "Install & enable",
     "cancel": "Cancel",
-    "notInstalledWarning": "cloudflared isn’t installed yet. Turning the tunnel on will ask to download it (about 3 minutes the first time)."
+    "notInstalledWarning": "cloudflared isn’t installed yet. Turning the tunnel on will ask to download it (about 3 minutes the first time).",
+    "errors": {
+      "cloudflaredMissing": {
+        "title": "Couldn’t install cloudflared",
+        "detail": "The tunnel needs cloudflared, and it couldn’t be installed automatically. Install it manually, then try again."
+      },
+      "timeout": {
+        "title": "Tunnel connection timed out",
+        "detail": "Couldn’t reach the Cloudflare tunnel server in time. Check your network or firewall — some regions restrict access to Cloudflare."
+      },
+      "exited": {
+        "title": "cloudflared stopped unexpectedly",
+        "detail": "The tunnel process exited before it was ready. Please try again."
+      },
+      "unknown": {
+        "title": "Couldn’t start the tunnel",
+        "detail": "An unexpected error occurred. Please try again."
+      }
+    }
   },
   "sessionList": {
     "searchPlaceholder": "Search sessions...",

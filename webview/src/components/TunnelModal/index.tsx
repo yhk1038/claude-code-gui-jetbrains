@@ -5,6 +5,7 @@ import { ToggleSwitch } from '@/components/ToggleSwitch';
 import { Portal } from '@/components/Portal';
 import { TunnelStatusNotice } from '@/components/TunnelStatusNotice';
 import { useTunnelStatus } from '@/hooks';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   onClose: () => void;
@@ -12,6 +13,7 @@ interface Props {
 
 export function TunnelModal(props: Props) {
   const { onClose } = props;
+  const { t } = useTranslation('common');
   const {
     tunnelEnabled,
     tunnelUrl,
@@ -89,7 +91,7 @@ export function TunnelModal(props: Props) {
       <div className="w-full max-w-sm bg-surface-raised border border-border-default rounded-xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-4 pt-4">
-          <h2 className="text-md font-semibold text-text-primary">Remote Tunnel</h2>
+          <h2 className="text-md font-semibold text-text-primary">{t('tunnelModal.title')}</h2>
           <button
             onClick={onClose}
             className="w-6 h-6 flex items-center justify-center rounded text-text-tertiary hover:text-text-secondary hover:bg-surface-hover transition-colors"
@@ -116,8 +118,8 @@ export function TunnelModal(props: Props) {
           {/* Tunnel toggle */}
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm text-text-primary">Remote Tunnel (Unofficial)</div>
-              <div className="text-xs text-text-tertiary">Expose via cloudflared</div>
+              <div className="text-sm text-text-primary">{t('tunnelModal.remoteTunnelUnofficial')}</div>
+              <div className="text-xs text-text-tertiary">{t('tunnelModal.exposeVia')}</div>
             </div>
             <ToggleSwitch
               checked={tunnelEnabled}
@@ -134,9 +136,9 @@ export function TunnelModal(props: Props) {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                <span>{installing ? 'Installing cloudflared…' : 'Connecting…'} ({elapsedSec}s)</span>
+                <span>{installing ? t('tunnelModal.installingCloudflared') : t('tunnelModal.connecting')} ({elapsedSec}s)</span>
               </div>
-              <p className="text-xs text-text-disabled">Typically ~1 min (install: ~3 min)</p>
+              <p className="text-xs text-text-disabled">{t('tunnelModal.typicalTime')}</p>
             </div>
           )}
 
@@ -163,8 +165,8 @@ export function TunnelModal(props: Props) {
           {/* Sleep prevention toggle */}
           <div className="flex items-center justify-between border-t border-border-default pt-4">
             <div>
-              <div className="text-sm text-text-primary">Prevent Sleep</div>
-              <div className="text-xs text-text-tertiary">Keep awake while tunnel is active</div>
+              <div className="text-sm text-text-primary">{t('tunnelModal.preventSleep')}</div>
+              <div className="text-xs text-text-tertiary">{t('tunnelModal.keepAwake')}</div>
             </div>
             <ToggleSwitch
               checked={preventSleep}

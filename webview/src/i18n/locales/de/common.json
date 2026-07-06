@@ -140,7 +140,25 @@
     "installConsent": "cloudflared ist nicht installiert. Jetzt installieren und den Tunnel aktivieren? Dies lädt cloudflared herunter (beim ersten Mal etwa 3 Minuten).",
     "installAndEnable": "Installieren & aktivieren",
     "cancel": "Abbrechen",
-    "notInstalledWarning": "cloudflared ist noch nicht installiert. Das Aktivieren des Tunnels fragt nach dem Herunterladen (beim ersten Mal etwa 3 Minuten)."
+    "notInstalledWarning": "cloudflared ist noch nicht installiert. Das Aktivieren des Tunnels fragt nach dem Herunterladen (beim ersten Mal etwa 3 Minuten).",
+    "errors": {
+      "cloudflaredMissing": {
+        "title": "cloudflared konnte nicht installiert werden",
+        "detail": "Der Tunnel benötigt cloudflared, das nicht automatisch installiert werden konnte. Installieren Sie es manuell und versuchen Sie es erneut."
+      },
+      "timeout": {
+        "title": "Zeitüberschreitung bei der Tunnelverbindung",
+        "detail": "Der Cloudflare-Tunnelserver konnte nicht rechtzeitig erreicht werden. Prüfen Sie Ihr Netzwerk oder Ihre Firewall — in einigen Regionen ist der Zugriff auf Cloudflare eingeschränkt."
+      },
+      "exited": {
+        "title": "cloudflared wurde unerwartet beendet",
+        "detail": "Der Tunnelprozess wurde beendet, bevor er bereit war. Bitte versuchen Sie es erneut."
+      },
+      "unknown": {
+        "title": "Der Tunnel konnte nicht gestartet werden",
+        "detail": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
+      }
+    }
   },
   "sessionList": {
     "searchPlaceholder": "Sitzungen durchsuchen...",

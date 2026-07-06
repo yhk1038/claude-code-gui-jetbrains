@@ -140,7 +140,25 @@
     "installConsent": "cloudflaredがインストールされていません。今すぐインストールしてトンネルを有効にしますか?初回はcloudflaredのダウンロードに約3分かかります。",
     "installAndEnable": "インストールして有効化",
     "cancel": "キャンセル",
-    "notInstalledWarning": "cloudflaredはまだインストールされていません。トンネルをオンにするとダウンロードを求められます(初回は約3分かかります)。"
+    "notInstalledWarning": "cloudflaredはまだインストールされていません。トンネルをオンにするとダウンロードを求められます(初回は約3分かかります)。",
+    "errors": {
+      "cloudflaredMissing": {
+        "title": "cloudflared をインストールできませんでした",
+        "detail": "トンネルには cloudflared が必要ですが、自動でインストールできませんでした。手動でインストールしてから再試行してください。"
+      },
+      "timeout": {
+        "title": "トンネル接続がタイムアウトしました",
+        "detail": "制限時間内に Cloudflare トンネルサーバーに接続できませんでした。ネットワークやファイアウォールを確認してください。一部の地域では Cloudflare へのアクセスが制限されています。"
+      },
+      "exited": {
+        "title": "cloudflared が予期せず停止しました",
+        "detail": "トンネルプロセスが準備完了前に終了しました。もう一度お試しください。"
+      },
+      "unknown": {
+        "title": "トンネルを開始できませんでした",
+        "detail": "予期しないエラーが発生しました。もう一度お試しください。"
+      }
+    }
   },
   "sessionList": {
     "searchPlaceholder": "セッションを検索...",

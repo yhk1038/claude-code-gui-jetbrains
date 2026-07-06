@@ -140,7 +140,25 @@
     "installConsent": "尚未安装 cloudflared。是否立即安装并启用隧道?这将下载 cloudflared(首次约需 3 分钟)。",
     "installAndEnable": "安装并启用",
     "cancel": "取消",
-    "notInstalledWarning": "尚未安装 cloudflared。开启隧道将提示下载(首次约需 3 分钟)。"
+    "notInstalledWarning": "尚未安装 cloudflared。开启隧道将提示下载(首次约需 3 分钟)。",
+    "errors": {
+      "cloudflaredMissing": {
+        "title": "无法安装 cloudflared",
+        "detail": "隧道需要 cloudflared，但无法自动安装。请手动安装后重试。"
+      },
+      "timeout": {
+        "title": "隧道连接超时",
+        "detail": "未能及时连接到 Cloudflare 隧道服务器。请检查网络或防火墙——部分地区会限制访问 Cloudflare。"
+      },
+      "exited": {
+        "title": "cloudflared 意外停止",
+        "detail": "隧道进程在就绪前退出。请重试。"
+      },
+      "unknown": {
+        "title": "无法启动隧道",
+        "detail": "发生意外错误。请重试。"
+      }
+    }
   },
   "sessionList": {
     "searchPlaceholder": "搜索会话...",
