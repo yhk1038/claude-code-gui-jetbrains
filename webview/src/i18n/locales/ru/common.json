@@ -177,11 +177,11 @@
     },
     "relativeTime": {
       "now": "сейчас",
-      "years": "{{count}} г",
-      "months": "{{count}} мес",
-      "days": "{{count}} дн",
-      "hours": "{{count}} ч",
-      "minutes": "{{count}} мин"
+      "years": "{{n}} г",
+      "months": "{{n}} мес",
+      "days": "{{n}} дн",
+      "hours": "{{n}} ч",
+      "minutes": "{{n}} мин"
     }
   }
 }

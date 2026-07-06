@@ -175,11 +175,11 @@
     },
     "relativeTime": {
       "now": "방금",
-      "years": "{{count}}년",
-      "months": "{{count}}개월",
-      "days": "{{count}}일",
-      "hours": "{{count}}시간",
-      "minutes": "{{count}}분"
+      "years": "{{n}}년",
+      "months": "{{n}}개월",
+      "days": "{{n}}일",
+      "hours": "{{n}}시간",
+      "minutes": "{{n}}분"
     }
   }
 }

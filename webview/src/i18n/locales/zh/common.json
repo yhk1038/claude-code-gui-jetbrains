@@ -175,11 +175,11 @@
     },
     "relativeTime": {
       "now": "刚刚",
-      "years": "{{count}}年",
-      "months": "{{count}}月",
-      "days": "{{count}}天",
-      "hours": "{{count}}时",
-      "minutes": "{{count}}分"
+      "years": "{{n}}年",
+      "months": "{{n}}月",
+      "days": "{{n}}天",
+      "hours": "{{n}}时",
+      "minutes": "{{n}}分"
     }
   }
 }

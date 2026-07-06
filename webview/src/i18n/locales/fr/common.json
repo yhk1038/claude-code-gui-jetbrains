@@ -175,11 +175,11 @@
     },
     "relativeTime": {
       "now": "maintenant",
-      "years": "{{count}} an",
-      "months": "{{count}} mois",
-      "days": "{{count}} j",
-      "hours": "{{count}} h",
-      "minutes": "{{count}} min"
+      "years": "{{n}} an",
+      "months": "{{n}} mois",
+      "days": "{{n}} j",
+      "hours": "{{n}} h",
+      "minutes": "{{n}} min"
     }
   }
 }

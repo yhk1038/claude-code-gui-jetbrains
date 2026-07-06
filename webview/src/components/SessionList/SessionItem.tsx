@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { SessionMetaDto } from '@/dto';
 import { getRelativeTime } from './utils';
 import { useSessionListScale } from './scale';
+import { useTranslation } from '@/i18n';
 
 interface Props {
   session: SessionMetaDto;
@@ -15,6 +16,7 @@ interface Props {
 
 export function SessionItem(props: Props) {
   const { session, isSelected, isHighlighted = false, onSelect, onDelete, onRename } = props;
+  const { t } = useTranslation('common');
   const scale = useSessionListScale();
   const [isHovered, setIsHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -122,7 +124,7 @@ export function SessionItem(props: Props) {
             role="button"
             onClick={startEditing}
             className="text-text-tertiary hover:text-text-primary transition-colors flex items-center justify-center"
-            title="Rename session"
+            title={t('sessionList.renameSession')}
           >
             <svg
               width="12"
@@ -144,7 +146,7 @@ export function SessionItem(props: Props) {
             role="button"
             onClick={handleDelete}
             className="text-text-tertiary hover:text-state-error-fg transition-colors flex items-center justify-center"
-            title="Delete session"
+            title={t('sessionList.deleteSession')}
           >
             <svg
               width="12"
