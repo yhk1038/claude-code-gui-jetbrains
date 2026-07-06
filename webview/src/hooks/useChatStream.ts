@@ -124,6 +124,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
   const devModeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const devModeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastSkillToolUseIdRef = useRef<string | null>(null);    // Skill tool_result의 tool_use_id 추적 (isSynthetic 매칭용)
+  const currentModelRef = useRef<string | null>(null);          // system/init의 model 문자열. result 이벤트엔 top-level model이 없어, modelUsage 조회 키로 이 값을 쓴다.
 
   // 콜백을 ref로 안정화 (useEffect 의존성 churn 방지)
   const onStreamStartRef = useRef(onStreamStart);
@@ -449,7 +450,10 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
               + (usage.cache_creation_input_tokens ?? 0)
               + (usage.cache_read_input_tokens ?? 0)
               + (usage.output_tokens ?? 0),
-            contextWindow: 200_000,
+            // 세션 로드 시엔 modelUsage(result 전용)에 접근할 수 없어 실제 contextWindow를
+            // 모른다. 0으로 두면 게이지는 첫 result 이후 정확한 값으로 표시된다. 임의의 200k로
+            // 넣으면 1M 모델에서 5배 부풀려진 사용률을 보이므로 금지.
+            contextWindow: 0,
             maxOutputTokens: 0,
           });
           break;
@@ -548,6 +552,9 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
       if (eventType === 'system') {
         if (cliEvent.subtype === 'init') {
           setSystemInit(cliEvent as Record<string, unknown>);
+          // system/init은 CLI spawn당 한 번만 오며 정확한 모델 키(예: `claude-opus-4-8[1m]`)를
+          // 담는다. result의 modelUsage 조회 키로 재사용한다.
+          if (typeof cliEvent.model === 'string') currentModelRef.current = cliEvent.model;
         }
         // Live thinking-token estimate: the CLI emits cumulative counts on a
         // dedicated `system/thinking_tokens` event (no block index — always the
@@ -746,7 +753,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
               + (assistantUsage.cache_creation_input_tokens ?? 0)
               + (assistantUsage.cache_read_input_tokens ?? 0)
               + (assistantUsage.output_tokens ?? 0),
-            contextWindow: prev?.contextWindow ?? 200_000,
+            contextWindow: prev?.contextWindow ?? 0,
             maxOutputTokens: prev?.maxOutputTokens ?? 0,
           }));
         }
@@ -828,15 +835,16 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
         }
 
         // result 이벤트에서 modelUsage를 통해 contextWindow/maxOutputTokens 업데이트.
-        // CLI 의 modelUsage 키와 model 문자열이 정확히 같지 않을 수 있어
-        // (예: `claude-opus-4-7[1m]` vs `claude-opus-4-7`) 퍼지 매칭을 시도한다.
+        // result 이벤트엔 top-level model이 없으므로 조회 키는 system/init에서 저장한
+        // currentModelRef를 1순위로 쓴다. modelUsage 키는 init model과 정확히 일치한다
+        // (예: 둘 다 `claude-opus-4-8[1m]`). 혹시 모를 값에 대비해 퍼지 매칭도 유지.
         const modelUsage = cliEvent.modelUsage as Record<string, { contextWindow?: number; maxOutputTokens?: number }> | null;
-        const currentModel = cliEvent.model as string | null;
+        const currentModel = (cliEvent.model as string | null) ?? currentModelRef.current;
         const modelData = pickModelUsage(modelUsage, currentModel);
         if (modelData) {
           setContextWindowUsage(prev => ({
             totalTokens: prev?.totalTokens ?? 0,
-            contextWindow: modelData.contextWindow ?? prev?.contextWindow ?? 200_000,
+            contextWindow: modelData.contextWindow ?? prev?.contextWindow ?? 0,
             maxOutputTokens: modelData.maxOutputTokens ?? prev?.maxOutputTokens ?? 0,
           }));
         } else if (modelUsage && currentModel) {

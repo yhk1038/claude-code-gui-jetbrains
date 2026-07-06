@@ -858,4 +858,94 @@ describe('useChatStream', () => {
       expect(typeof block[0].durationMillis).toBe('number');
     });
   });
+
+  describe('contextWindowUsage', () => {
+    // 실측 기준(claude-opus-4-8[1m]): system/init.model === 'claude-opus-4-8[1m]',
+    // result 이벤트엔 top-level model이 없고 modelUsage 키가 init.model과 동일하다.
+    const MODEL = 'claude-opus-4-8[1m]';
+
+    it('result 이벤트에 top-level model이 없어도 system/init의 model 키로 modelUsage를 조회해 contextWindow를 반영한다', () => {
+      const { bridge, emit } = createMockBridge();
+      const { result } = renderHook(() => useChatStream({ bridge }));
+
+      act(() => {
+        emit(MessageType.CLI_EVENT, { type: 'system', subtype: 'init', model: MODEL });
+      });
+      act(() => {
+        emit(MessageType.CLI_EVENT, {
+          type: 'assistant',
+          message: {
+            id: 'm1',
+            role: 'assistant',
+            content: [],
+            usage: {
+              input_tokens: 100,
+              output_tokens: 5,
+              cache_read_input_tokens: 200,
+              cache_creation_input_tokens: 300,
+            },
+          },
+        });
+      });
+      // top-level model 없음 — 오직 modelUsage 키로만 조회 가능
+      act(() => {
+        emit(MessageType.CLI_EVENT, {
+          type: 'result',
+          modelUsage: { [MODEL]: { contextWindow: 1_000_000, maxOutputTokens: 64_000 } },
+        });
+      });
+
+      expect(result.current.contextWindowUsage).toEqual({
+        totalTokens: 605,
+        contextWindow: 1_000_000,
+        maxOutputTokens: 64_000,
+      });
+    });
+
+    it('modelUsage에 키가 여러 개여도 init의 모델 키로 정확히 매칭한다 (단일 키 폴백에 의존하지 않음)', () => {
+      const { bridge, emit } = createMockBridge();
+      const { result } = renderHook(() => useChatStream({ bridge }));
+
+      act(() => {
+        emit(MessageType.CLI_EVENT, { type: 'system', subtype: 'init', model: MODEL });
+      });
+      act(() => {
+        emit(MessageType.CLI_EVENT, {
+          type: 'result',
+          // subagent 등으로 여러 모델이 섞인 상황: top-level model 없이 정확 키 매칭이 필요
+          modelUsage: {
+            'claude-haiku-4-5': { contextWindow: 200_000, maxOutputTokens: 8_000 },
+            [MODEL]: { contextWindow: 1_000_000, maxOutputTokens: 64_000 },
+          },
+        });
+      });
+
+      expect(result.current.contextWindowUsage?.contextWindow).toBe(1_000_000);
+      expect(result.current.contextWindowUsage?.maxOutputTokens).toBe(64_000);
+    });
+
+    it('result 이전(assistant usage만 도착)에는 contextWindow가 0이다 — 임의의 200k로 부풀리지 않는다', () => {
+      const { bridge, emit } = createMockBridge();
+      const { result } = renderHook(() => useChatStream({ bridge }));
+
+      act(() => {
+        emit(MessageType.CLI_EVENT, { type: 'system', subtype: 'init', model: MODEL });
+      });
+      act(() => {
+        emit(MessageType.CLI_EVENT, {
+          type: 'assistant',
+          message: {
+            id: 'm1',
+            role: 'assistant',
+            content: [],
+            usage: { input_tokens: 500_000, output_tokens: 0 },
+          },
+        });
+      });
+
+      // 아직 modelUsage를 못 받았으므로 게이지는 그려지지 않아야 한다(contextWindow 0).
+      expect(result.current.contextWindowUsage?.totalTokens).toBe(500_000);
+      expect(result.current.contextWindowUsage?.contextWindow).toBe(0);
+    });
+  });
 });
