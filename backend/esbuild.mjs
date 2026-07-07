@@ -39,7 +39,23 @@ const common = {
     ...injectedDefine,
   },
   banner: {
-    js: `import { createRequire } from 'node:module';\nconst require = createRequire(import.meta.url);`,
+    // Prepended verbatim to the top of every bundle, so these run before any
+    // bundled module body (including the MCP SDK → eventsource-parser code below).
+    js: [
+      `import { createRequire } from 'node:module';`,
+      `const require = createRequire(import.meta.url);`,
+      // Web Streams globals (TransformStream/Readable/Writable) are only guaranteed
+      // on the global scope in newer Node runtimes; older or non-standard nodes that
+      // the plugin may end up launching expose them only on `node:stream/web`. The
+      // bundled MCP SDK pulls in eventsource-parser, whose `class extends
+      // TransformStream` is evaluated at module load — a missing global there kills
+      // the backend before it can even print its PORT line (#159). Pull them from
+      // the module and fill any gap so the bundle loads on any Node >= 16.5.
+      `import { TransformStream as __ccgTransformStream, ReadableStream as __ccgReadableStream, WritableStream as __ccgWritableStream } from 'node:stream/web';`,
+      `globalThis.TransformStream ??= __ccgTransformStream;`,
+      `globalThis.ReadableStream ??= __ccgReadableStream;`,
+      `globalThis.WritableStream ??= __ccgWritableStream;`,
+    ].join('\n'),
   },
 };
 
