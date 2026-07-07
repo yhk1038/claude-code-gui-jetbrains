@@ -61,7 +61,7 @@ export const ToolWrapper = (props: {
         : 'text-text-tertiary';
 
     return (
-        <div className={cn(`group pt-2 pb-4 pl-6 pr-3`, groupClassName)}>
+        <div className={cn(`group pt-2 pb-4 ps-6 pe-3`, groupClassName)}>
             <div className="flex items-start gap-3">
                 {/* Bullet indicator — colored by tool status (success/error/pending) */}
                 <span className={cn('mt-[3px] text-[0.6923rem]', bulletColor)}>●</span>
@@ -129,9 +129,12 @@ export const ResultCaption = (props: {children?: ReactNode; className?: string})
     );
 };
 
+// dir="ltr": this wraps raw code / command / JSON output (Bash in/out,
+// NotebookEdit source, TaskOutput result, …). Without it, `<html dir="rtl">`
+// flips punctuation/indentation ordering inside the code content itself.
 export const Container = ({children, className = ''}: { children?: ReactNode; className?: string;}) => {
     return (
-        <div className={`bg-surface-hover border border-border-subtle rounded text-[0.8461rem] font-mono ${className}`}>
+        <div dir="ltr" className={`bg-surface-hover border border-border-subtle rounded text-[0.8461rem] font-mono ${className}`}>
             {children}
         </div>
     )
@@ -171,7 +174,7 @@ export const Value = (props: {
     const {isFocused, onClick, children, maxHeight = 'max-h-[105px]'} = props;
 
     return (
-        <div className={`flex-1 text-text-primary/80 whitespace-pre font-mono overflow-y-hidden overflow-x-auto no-scrollbar cursor-pointer ${isFocused ? '' : maxHeight}`} onClick={onClick}>
+        <div dir="ltr" className={`flex-1 text-text-primary/80 whitespace-pre font-mono overflow-y-hidden overflow-x-auto no-scrollbar cursor-pointer ${isFocused ? '' : maxHeight}`} onClick={onClick}>
             {children}
         </div>
     );

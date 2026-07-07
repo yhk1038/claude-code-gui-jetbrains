@@ -115,14 +115,14 @@ export function EditRenderer(props: RendererProps) {
     return (
         <ToolWrapper message={props.message}>
             <ToolHeader name={name} className="mb-[4px]" inProgress={!props.toolResult}>
-                <div className={cn("text-text-primary/80 text-[0.8461rem] font-mono", path && "cursor-pointer hover:underline")} onClick={path ? () => getAdapter().openFile(path) : undefined}>{fileName}</div>
+                <div dir="ltr" className={cn("text-text-primary/80 text-[0.8461rem] font-mono", path && "cursor-pointer hover:underline")} onClick={path ? () => getAdapter().openFile(path) : undefined}>{fileName}</div>
             </ToolHeader>
             <div ref={containerRef}>
                 <ResultCaption>{t('edit.modified')}</ResultCaption>
 
                 {showDiff && (
                     <div className="rounded overflow-hidden border border-border-default mt-2.5">
-                        <pre className="text-[0.9230rem] leading-[1.5] font-mono overflow-x-auto m-0">
+                        <pre dir="ltr" className="text-[0.9230rem] leading-[1.5] font-mono overflow-x-auto m-0">
                             {diffLines.map((line, i) => (
                                 <div key={i} className={`${lineStyles[line.type]}`}>
                                     <div className={`${prefixMap[line.type].trim() ? 'inline-flex' : 'inline-block'} items-center justify-center w-4 select-none bg-surface-pressed/20`}>{prefixMap[line.type]}</div>

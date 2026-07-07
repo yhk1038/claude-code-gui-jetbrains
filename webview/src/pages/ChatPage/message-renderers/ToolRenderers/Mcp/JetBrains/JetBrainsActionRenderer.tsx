@@ -101,7 +101,7 @@ function PatchView(props: PatchViewProps) {
                     </div>
                     {f.lines.length > 0 && (
                         <div className="rounded overflow-hidden border border-border-default">
-                            <pre className="text-[0.9230rem] leading-[1.5] font-mono overflow-x-auto m-0">
+                            <pre dir="ltr" className="text-[0.9230rem] leading-[1.5] font-mono overflow-x-auto m-0">
                                 {f.lines.map((l, i) => (
                                     <div key={i} className={lineStyles[l.type]}>
                                         <span className="inline-flex items-center justify-center w-4 select-none bg-surface-pressed/20">
@@ -165,13 +165,13 @@ export function JetBrainsActionRenderer(props: RendererProps) {
     const extraParts: ReactNode[] = [];
     if (file && line != null) extraParts.push(<span key="line" className="text-text-primary/50 shrink-0">:{line}</span>);
     if (!file && line != null) extraParts.push(<span key="line" className="text-text-primary/50 shrink-0">{t('jetbrains.action.line', {line})}</span>);
-    if (rename) extraParts.push(<span key="rn" className="font-mono text-text-primary/70 truncate">{rename}</span>);
+    if (rename) extraParts.push(<span key="rn" dir="ltr" className="font-mono text-text-primary/70 truncate">{rename}</span>);
     if (segments) extraParts.push(
-        <span key="seg" className="font-mono text-text-primary/70 truncate">
+        <span key="seg" dir="ltr" className="font-mono text-text-primary/70 truncate">
             {segments.join(' › ')}{newValue !== undefined ? ` = ${String(newValue)}` : ''}
         </span>,
     );
-    if (configName) extraParts.push(<span key="cfg" className="font-mono text-text-primary/70 truncate">{configName}</span>);
+    if (configName) extraParts.push(<span key="cfg" dir="ltr" className="font-mono text-text-primary/70 truncate">{configName}</span>);
     const extra = extraParts.length ? <span className="flex items-center gap-1.5 min-w-0">{extraParts}</span> : undefined;
 
     // Debugger ops: show a compact outcome (status / old→new / applied / message)

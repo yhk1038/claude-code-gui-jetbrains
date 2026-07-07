@@ -14,6 +14,13 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/__tests__/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
+    // CSS is excluded (replaced with empty strings) by default for speed.
+    // streaming.css is opted back in so RTL-exception tests can assert real
+    // computed styles (direction/unicode-bidi) on rendered code/katex nodes
+    // instead of just checking class/data-attribute presence.
+    css: {
+      include: [/streaming\.css/],
+    },
     reporters: ['default', 'html'],
     outputFile: {
       html: './html/index.html',

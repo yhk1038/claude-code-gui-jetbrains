@@ -76,7 +76,7 @@ export const UnrecognizedInputNotice = (props: UnrecognizedInputNoticeProps) => 
                 <span aria-hidden>⚠</span>
                 <span>{t('jetbrains.common.unrecognizedInputTitle')}</span>
             </div>
-            <div className="flex flex-col gap-0.5 font-mono text-text-primary/80">
+            <div dir="ltr" className="flex flex-col gap-0.5 font-mono text-text-primary/80">
                 {fields.map((f) => (
                     <div key={f.key} className="whitespace-pre-wrap break-all">
                         <span className="text-text-primary">{f.key}</span>
@@ -107,7 +107,7 @@ export const SensitiveInputDisclosure = (props: SensitiveInputDisclosureProps) =
     if (!fields.length) return null;
 
     return (
-        <div className="mt-1 flex flex-col gap-0.5 font-mono text-[0.8461rem] text-text-primary/80">
+        <div dir="ltr" className="mt-1 flex flex-col gap-0.5 font-mono text-[0.8461rem] text-text-primary/80">
             {fields.map((f) => (
                 <div key={f.key} className="whitespace-pre-wrap break-all">
                     <span className="text-text-primary/50">{f.key}: </span>
@@ -124,7 +124,7 @@ interface JetBrainsErrorRowProps {
 
 /** Distinct error line (the leading status dot is already red on error). */
 export const JetBrainsErrorRow = (props: JetBrainsErrorRowProps) => (
-    <div className="mt-1 text-[0.8461rem] font-mono text-state-error-fg whitespace-pre-wrap">{props.children}</div>
+    <div dir="ltr" className="mt-1 text-[0.8461rem] font-mono text-state-error-fg whitespace-pre-wrap">{props.children}</div>
 );
 
 interface JetBrainsDeclinedNoteProps {

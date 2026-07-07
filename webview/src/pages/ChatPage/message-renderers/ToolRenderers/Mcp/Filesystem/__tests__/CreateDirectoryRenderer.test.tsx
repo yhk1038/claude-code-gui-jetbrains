@@ -81,4 +81,11 @@ describe('CreateDirectoryRenderer', () => {
         render(<CreateDirectoryRenderer toolUse={makeToolUse({ path: '' })} />);
         expect(mockOpenFile).not.toHaveBeenCalled();
     });
+
+    // RTL exception: the path header must stay LTR regardless of <html dir="rtl">
+    // UI mirroring, or the path's `/` segments would reorder.
+    it('renders the path header with dir="ltr"', () => {
+        render(<CreateDirectoryRenderer toolUse={makeToolUse({ path: '/a/b/new-dir' })} />);
+        expect(screen.getByText('new-dir')).toHaveAttribute('dir', 'ltr');
+    });
 });

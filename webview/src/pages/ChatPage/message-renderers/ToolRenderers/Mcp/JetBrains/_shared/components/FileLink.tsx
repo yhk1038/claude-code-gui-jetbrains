@@ -81,6 +81,7 @@ export const JetBrainsFileLink = (props: JetBrainsFileLinkProps) => {
     return (
         <Tooltip content={abs}>
             <span
+                dir="ltr"
                 className={cn("font-mono text-[0.8461rem] truncate", clickable && "cursor-pointer hover:underline")}
                 onClick={clickable ? (e) => {
                     e.stopPropagation();
@@ -122,6 +123,7 @@ export const PathRow = (props: PathRowProps) => {
             {left}
             <Tooltip content={titleAbs}>
                 <span
+                    dir="ltr"
                     className={cn("font-mono text-text-primary/80 truncate", clickable && "cursor-pointer hover:underline")}
                     onClick={clickable ? (e) => {
                         // stopPropagation so opening a row doesn't also toggle the

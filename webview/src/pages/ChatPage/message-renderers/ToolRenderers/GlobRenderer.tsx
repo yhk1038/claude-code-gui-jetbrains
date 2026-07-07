@@ -49,7 +49,7 @@ export function GlobRenderer(props: RendererProps) {
     return (
         <ToolWrapper message={props.message}>
             <ToolHeader name={name}>
-                <div className="text-text-primary/80 text-[0.8461rem] line-clamp-2 font-mono">
+                <div dir="ltr" className="text-text-primary/80 text-[0.8461rem] line-clamp-2 font-mono">
                     {t('glob.pattern', {pattern})}
                 </div>
             </ToolHeader>
@@ -64,7 +64,7 @@ export function GlobRenderer(props: RendererProps) {
                     </div>
 
                     {isExpanded && (
-                        <div className="mt-1 ml-0.5 text-[0.9230rem] font-mono">
+                        <div dir="ltr" className="mt-1 ms-0.5 text-[0.9230rem] font-mono">
                             {filenames.map((filename) => (
                                 <div
                                     key={filename}

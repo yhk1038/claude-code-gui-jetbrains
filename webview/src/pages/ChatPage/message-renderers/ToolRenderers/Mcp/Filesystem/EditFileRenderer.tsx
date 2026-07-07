@@ -33,6 +33,7 @@ export function EditFileRenderer(props: RendererProps) {
             <ToolHeader name={name}>
                 <div className="flex items-center gap-1.5">
                     <div
+                        dir="ltr"
                         className={cn(
                             "text-text-link text-[0.9230rem] font-mono",
                             path && "cursor-pointer hover:underline"
