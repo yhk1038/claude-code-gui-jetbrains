@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mock BEFORE import
 vi.mock('../../claude', () => ({
   Claude: {
-    exec: vi.fn(),
+    execAuthed: vi.fn(),
   },
 }));
 
@@ -14,7 +14,7 @@ import type { Bridge } from '../../../bridge/bridge-interface';
 import type { IPCMessage } from '../../types';
 import { MessageType } from '../../../shared';
 
-const mockExec = vi.mocked(Claude.exec);
+const mockExec = vi.mocked(Claude.execAuthed);
 
 function createMockConnections() {
   return {
@@ -75,7 +75,7 @@ describe('getAccountHandler', () => {
     }));
   });
 
-  it('should send ACK with status error when Claude.exec throws', async () => {
+  it('should send ACK with status error when Claude.execAuthed throws', async () => {
     const connections = createMockConnections();
     const message: IPCMessage = { type: MessageType.GET_ACCOUNT, payload: {}, timestamp: 0, requestId: 'req-1' };
 
@@ -90,7 +90,7 @@ describe('getAccountHandler', () => {
     }));
   });
 
-  it('should call Claude.exec with auth status args and timeout 8000', async () => {
+  it('should call Claude.execAuthed with auth status args, workingDir, and timeout 8000', async () => {
     const connections = createMockConnections();
     const message: IPCMessage = { type: MessageType.GET_ACCOUNT, payload: {}, timestamp: 0, requestId: 'req-1' };
 
@@ -101,6 +101,7 @@ describe('getAccountHandler', () => {
 
     await getAccountHandler('conn-1', message, connections, mockBridge);
 
-    expect(mockExec).toHaveBeenCalledWith(['auth', 'status'], { timeout: 8000 });
+    // execAuthed(args, workingDir, options) — no workingDir in this payload → undefined.
+    expect(mockExec).toHaveBeenCalledWith(['auth', 'status'], undefined, { timeout: 8000 });
   });
 });

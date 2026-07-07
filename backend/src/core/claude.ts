@@ -7,6 +7,7 @@ import {
   type ExecFileOptions,
 } from 'child_process';
 import { readSettingsFile, resolveClaudeConfigDirOverride } from './features/settings';
+import { getStrippableAuthEnvKeys } from './features/claude-settings';
 import { augmentedPath } from './augmented-path';
 import { isWslUncPath, toWslPath } from './wsl-path';
 import { execViaCmdArgv } from './win-exec';
@@ -101,6 +102,52 @@ export class Claude {
         ...options?.env,
       },
     });
+  }
+
+  /**
+   * The env overrides that strip inherited OAuth *tokens* before handing the env to a
+   * spawned CLI child, given the merged Claude settings for [workingDir]. Centralizes the
+   * strip policy (see {@link getStrippableAuthEnvKeys}) so every auth-bearing CLI invocation
+   * — chat AND `auth status` — sees the SAME credentials. Previously only the chat spawn
+   * stripped, so `auth status` could report a "logged in" state the chat then didn't use.
+   * Returns `{ KEY: undefined }` pairs; child_process omits undefined-valued keys from the
+   * spawned env. ANTHROPIC_API_KEY is never stripped — see getStrippableAuthEnvKeys.
+   */
+  private static async authStripEnv(workingDir?: string): Promise<Record<string, undefined>> {
+    const keys = await getStrippableAuthEnvKeys(workingDir);
+    if (keys.length > 0) {
+      console.error('[node-backend]', `Stripping inherited auth env from CLI: ${keys.join(', ')}`);
+    }
+    return Object.fromEntries(keys.map((k) => [k, undefined]));
+  }
+
+  /**
+   * {@link spawn} for auth-bearing CLI calls (chat `-p`, `/usage`): identical to spawn but
+   * also strips inherited OAuth tokens for [workingDir] so the child authenticates the same
+   * way `auth status` reports. Use this instead of spawn for anything whose result depends on
+   * the active credentials. Do NOT use it for `auth login` (it intentionally re-authenticates).
+   */
+  static async spawnAuthed(
+    args: string[],
+    workingDir?: string,
+    options?: SpawnOptions,
+  ): Promise<ChildProcess> {
+    const stripEnv = await Claude.authStripEnv(workingDir);
+    return Claude.spawn(args, { ...options, env: { ...options?.env, ...stripEnv } });
+  }
+
+  /**
+   * {@link exec} for auth-bearing CLI calls (`auth status`): identical to exec but also strips
+   * inherited OAuth tokens for [workingDir], so the login state it reports matches what the
+   * chat spawn actually uses.
+   */
+  static async execAuthed(
+    args: string[],
+    workingDir?: string,
+    options?: ExecFileOptions,
+  ): Promise<{ stdout: string; stderr: string }> {
+    const stripEnv = await Claude.authStripEnv(workingDir);
+    return Claude.exec(args, { ...options, env: { ...options?.env, ...stripEnv } });
   }
 
   /**

@@ -13,9 +13,11 @@ interface ClaudeAuthStatus {
   orgName?: string | null;
 }
 
-async function runClaudeAuthStatus(): Promise<ClaudeAuthStatus | null> {
+async function runClaudeAuthStatus(workingDir?: string): Promise<ClaudeAuthStatus | null> {
   try {
-    const { stdout } = await Claude.exec(['auth', 'status'], { timeout: 8000 });
+    // execAuthed so the reported login state reflects the same credentials the chat spawn
+    // uses (inherited OAuth tokens stripped identically); env-provided API keys are kept.
+    const { stdout } = await Claude.execAuthed(['auth', 'status'], workingDir, { timeout: 8000 });
     if (!stdout.trim()) return null;
     return JSON.parse(stdout.trim()) as ClaudeAuthStatus;
   } catch {
@@ -35,7 +37,7 @@ export async function getAccountHandler(
   const workingDir = (message.payload as { workingDir?: string })?.workingDir;
   if (workingDir) await Claude.applyConfigDir(workingDir);
 
-  const authStatus = await runClaudeAuthStatus();
+  const authStatus = await runClaudeAuthStatus(workingDir);
 
   if (!authStatus) {
     connections.sendTo(connectionId, MessageType.ACK, {
