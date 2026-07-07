@@ -34,33 +34,33 @@ describe('mapMcpTool', () => {
 });
 
 describe('buildTransport', () => {
-  it('returns a transport for a stdio server with a command', () => {
+  it('returns a transport for a stdio server with a command', async () => {
     const config: McpServerConfig = {
       type: McpTransportType.STDIO,
       command: 'npx',
       args: ['@executeautomation/playwright-mcp-server'],
     };
-    expect(buildTransport(config)).not.toBeNull();
+    expect(await buildTransport(config)).not.toBeNull();
   });
 
-  it('returns null for a stdio server without a command', () => {
-    expect(buildTransport({ type: McpTransportType.STDIO })).toBeNull();
+  it('returns null for a stdio server without a command', async () => {
+    expect(await buildTransport({ type: McpTransportType.STDIO })).toBeNull();
   });
 
-  it('returns a transport for an http server with a url', () => {
-    expect(buildTransport({ type: McpTransportType.HTTP, url: 'http://localhost:8000/mcp' })).not.toBeNull();
+  it('returns a transport for an http server with a url', async () => {
+    expect(await buildTransport({ type: McpTransportType.HTTP, url: 'http://localhost:8000/mcp' })).not.toBeNull();
   });
 
-  it('returns a transport for an sse server with a url', () => {
-    expect(buildTransport({ type: McpTransportType.SSE, url: 'http://localhost:64342/sse' })).not.toBeNull();
+  it('returns a transport for an sse server with a url', async () => {
+    expect(await buildTransport({ type: McpTransportType.SSE, url: 'http://localhost:64342/sse' })).not.toBeNull();
   });
 
-  it('returns null for http/sse without a url', () => {
-    expect(buildTransport({ type: McpTransportType.HTTP })).toBeNull();
-    expect(buildTransport({ type: McpTransportType.SSE })).toBeNull();
+  it('returns null for http/sse without a url', async () => {
+    expect(await buildTransport({ type: McpTransportType.HTTP })).toBeNull();
+    expect(await buildTransport({ type: McpTransportType.SSE })).toBeNull();
   });
 
-  it('returns null for claudeai-proxy (needs OAuth, not directly probeable)', () => {
-    expect(buildTransport({ type: McpTransportType.CLAUDEAI_PROXY, url: 'https://example' })).toBeNull();
+  it('returns null for claudeai-proxy (needs OAuth, not directly probeable)', async () => {
+    expect(await buildTransport({ type: McpTransportType.CLAUDEAI_PROXY, url: 'https://example' })).toBeNull();
   });
 });

@@ -10,10 +10,15 @@
  * standard — it does NOT route through Claude's API/account/policy, so this
  * stays within the "no Claude-SDK / no undocumented protocol" rule in CLAUDE.md.
  */
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+// The SDK is imported *dynamically* inside the functions that actually connect to
+// a server (buildTransport/fetchServerTools) rather than at module top-level. The
+// SDK transitively pulls in eventsource-parser, whose `class extends TransformStream`
+// is evaluated on load; a static import here would drag that into the backend boot
+// path (handlers/index → this module), crashing startup on Node runtimes without the
+// Web Streams globals before the backend can even report its port (#159). MCP is only
+// needed when the user actually inspects a server's tools, so this defers the whole
+// SDK — and its Web Streams dependency — until that first use. Only the type is safe
+// to import statically (erased at build time, no runtime load).
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { McpTransportType } from '../../shared';
 import type { McpServerTool, McpServerConfig } from '../../shared';
@@ -50,10 +55,11 @@ export function mapMcpTool(tool: RawMcpTool): McpServerTool {
  * Build the SDK transport for a server config, or null when the transport can't
  * be probed directly (claudeai-proxy needs OAuth; ws is rare; missing url/cmd).
  */
-export function buildTransport(config: McpServerConfig): Transport | null {
+export async function buildTransport(config: McpServerConfig): Promise<Transport | null> {
   switch (config.type) {
-    case McpTransportType.STDIO:
+    case McpTransportType.STDIO: {
       if (!config.command) return null;
+      const { StdioClientTransport } = await import('@modelcontextprotocol/sdk/client/stdio.js');
       return new StdioClientTransport({
         command: config.command,
         args: config.args ?? [],
@@ -62,16 +68,21 @@ export function buildTransport(config: McpServerConfig): Transport | null {
         // the server's own env overrides on top.
         env: stdioEnv(config.env),
       });
-    case McpTransportType.HTTP:
+    }
+    case McpTransportType.HTTP: {
       if (!config.url) return null;
+      const { StreamableHTTPClientTransport } = await import('@modelcontextprotocol/sdk/client/streamableHttp.js');
       return new StreamableHTTPClientTransport(new URL(config.url), {
         requestInit: config.headers ? { headers: config.headers } : undefined,
       });
-    case McpTransportType.SSE:
+    }
+    case McpTransportType.SSE: {
       if (!config.url) return null;
+      const { SSEClientTransport } = await import('@modelcontextprotocol/sdk/client/sse.js');
       return new SSEClientTransport(new URL(config.url), {
         requestInit: config.headers ? { headers: config.headers } : undefined,
       });
+    }
     default:
       return null;
   }
@@ -104,9 +115,10 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
  */
 export async function fetchServerTools(config: McpServerConfig | null): Promise<McpServerTool[]> {
   if (!config) return [];
-  const transport = buildTransport(config);
+  const transport = await buildTransport(config);
   if (!transport) return [];
 
+  const { Client } = await import('@modelcontextprotocol/sdk/client/index.js');
   const client = new Client({ name: 'claude-code-gui', version: '1.0.0' });
   try {
     await withTimeout(client.connect(transport), TOOLS_TIMEOUT_MS, 'MCP connect');
