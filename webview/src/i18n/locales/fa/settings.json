@@ -1,0 +1,338 @@
+{
+  "layout": {
+    "title": "تنظیمات",
+    "back": "بازگشت",
+    "toggleMenu": "تغییر نمایش منو",
+    "close": "بستن"
+  },
+  "nav": {
+    "general": "عمومی",
+    "appearance": "ظاهر",
+    "permissions": "مجوزها",
+    "privacy": "حریم خصوصی",
+    "cli": "CLI",
+    "browser": "مرورگر",
+    "account": "حساب کاربری",
+    "usage": "مصرف",
+    "tunnel": "تونل",
+    "releases": "نسخه‌ها",
+    "about": "درباره"
+  },
+  "scope": {
+    "global": "تنظیمات کاربر (سراسری)",
+    "globalShort": "کاربر (سراسری)",
+    "project": "تنظیمات پروژه (محلی)",
+    "projectShort": "پروژه (محلی)",
+    "projectDisabledTooltip": "برای استفاده از تنظیمات پروژه، یک پروژه را باز کنید"
+  },
+  "general": {
+    "language": {
+      "label": "زبان",
+      "description": "زبان ترجیحی Claude برای پاسخ‌دهی",
+      "notSet": "تنظیم نشده (استفاده از سراسری)",
+      "placeholder": "انگلیسی"
+    },
+    "uiLanguage": {
+      "label": "زبان رابط کاربری",
+      "description": "زبان رابط برنامه، مستقل از زبان پاسخ‌دهی Claude."
+    },
+    "uiDirection": {
+      "label": "فعال‌سازی RTL (راست‌به‌چپ)"
+    },
+    "useCtrlEnterToSend": {
+      "label": "استفاده از Ctrl+Enter برای ارسال",
+      "description": "وقتی فعال باشد، برای ارسال دستورها به‌جای Enter از Ctrl/Cmd+Enter استفاده کنید. این کار به Enter اجازه می‌دهد خط جدید ایجاد کند."
+    },
+    "focusInputOnEditorContext": {
+      "label": "فوکوس روی ورودی گفتگو پس از پیوست مسیر فایل",
+      "description": "وقتی در ویرایشگر Alt+K را فشار می‌دهید، پس از درج مسیر فایل، فوکوس به ورودی گفتگو منتقل شود."
+    },
+    "respectGitignoreForContext": {
+      "label": "رعایت .gitignore برای زمینه ویرایشگر",
+      "description": "وقتی روشن باشد، محتوای فایل‌های نادیده‌گرفته‌شده در .gitignore از زمینه ویرایشگر حذف می‌شود — فقط مسیر فایل ارسال می‌شود."
+    },
+    "hostMode": {
+      "label": "مکان ترجیحی",
+      "description": "جایی که Claude به‌طور پیش‌فرض باز می‌شود.",
+      "sidebar": "نوار کناری",
+      "panel": "پنل"
+    },
+    "openSettings": {
+      "label": "باز کردن تنظیمات به‌صورت",
+      "description": "نمایش تنظیمات به‌صورت روکش یا در یک تب جدید.",
+      "overlay": "روکش",
+      "newTab": "تب جدید"
+    },
+    "chatPagination": {
+      "label": "صفحه‌بندی تاریخچه گفتگو",
+      "description": "با اسکرول کردن، پیام‌های قدیمی‌تر بارگذاری می‌شوند. در حالت خاموش، کل گفتگو یک‌جا بارگذاری می‌شود."
+    },
+    "configDir": {
+      "description": "دایرکتوری خانگی برای پیکربندی Claude. مشابه متغیر محیطی CLAUDE_CONFIG_DIR.",
+      "placeholder": "پیش‌فرض (~/.claude)",
+      "active": "فعال: {{value}}",
+      "projectUnavailable": "برای تنظیم مقدار پروژه، یک پروژه را باز کنید."
+    }
+  },
+  "appearance": {
+    "title": "ظاهر",
+    "theme": {
+      "sectionTitle": "پوسته",
+      "colorTheme": {
+        "label": "پوسته رنگی",
+        "description": "پوسته رنگی رابط کاربری را انتخاب کنید",
+        "notSet": "تنظیم نشده (استفاده از سراسری)",
+        "systemIde": "سیستم (IDE)",
+        "systemOs": "سیستم (OS)",
+        "light": "روشن",
+        "dark": "تیره"
+      },
+      "fontSize": {
+        "label": "اندازه فونت",
+        "description": "اندازه فونت پایه رابط کاربری",
+        "notSetPlaceholder": "تنظیم نشده"
+      }
+    },
+    "scrolling": {
+      "sectionTitle": "اسکرول",
+      "autoScrollThreshold": {
+        "label": "فاصله ازسرگیری اسکرول خودکار",
+        "description": "اسکرول به بالا همیشه اسکرول خودکار را متوقف می‌کند تا آزادانه بخوانید. با بازگشت به این فاصله (پیکسل) از پایین، دوباره از سر گرفته می‌شود. مقدار کمتر یعنی باید نزدیک‌تر برگردید تا دوباره فعال شود. پیش‌فرض {{value}}.",
+        "notSetPlaceholder": "تنظیم نشده"
+      }
+    }
+  },
+  "advanced": {
+    "title": "پیشرفته",
+    "debugging": {
+      "sectionTitle": "اشکال‌زدایی",
+      "debugMode": {
+        "label": "حالت اشکال‌زدایی",
+        "description": "فعال‌سازی لاگ‌گیری و تشخیص اشکال‌زدایی",
+        "notSet": "تنظیم نشده (استفاده از سراسری)"
+      },
+      "logLevel": {
+        "label": "سطح لاگ",
+        "description": "حداقل سطح لاگ برای نمایش",
+        "notSet": "تنظیم نشده (استفاده از سراسری)",
+        "debug": "اشکال‌زدایی",
+        "info": "اطلاعات",
+        "warning": "هشدار",
+        "error": "خطا"
+      }
+    }
+  },
+  "privacy": {
+    "title": "حریم خصوصی",
+    "privacyPolicyLink": "سیاست حریم خصوصی",
+    "telemetry": {
+      "sectionTitle": "تله‌متری",
+      "sendUsageStatistics": {
+        "label": "ارسال آمار مصرف",
+        "description": "آمار مصرفی که مستقیماً شما را شناسایی نمی‌کند برای کمک به بهبود محصول ارسال می‌شود. کد منبع و داده‌های شخصی هرگز ارسال نمی‌شوند. می‌توانید این گزینه را هر زمان خاموش کنید."
+      }
+    }
+  },
+  "account": {
+    "heading": "حساب کاربری",
+    "addAccount": "افزودن حساب",
+    "actionFailed": "عملیات ناموفق بود",
+    "loading": "در حال بارگذاری حساب‌ها…",
+    "empty": "هنوز هیچ حساب ذخیره‌شده‌ای وجود ندارد.",
+    "plan": "پلن",
+    "authMethod": "روش احراز هویت",
+    "lastAccess": "آخرین دسترسی",
+    "inUse": "در حال استفاده",
+    "switch": "تغییر",
+    "removeAccount": "حذف حساب",
+    "lastActive": {
+      "today": "امروز",
+      "yesterday": "دیروز",
+      "daysAgo": "{{value}} روز پیش",
+      "hoursAgo": "{{value}} ساعت پیش",
+      "minutesAgo": "{{value}} دقیقه پیش",
+      "justNow": "همین الان"
+    }
+  },
+  "permissions": {
+    "heading": "مجوزها",
+    "notSet": "تنظیم نشده (استفاده از سراسری)",
+    "bypassMode": {
+      "sectionTitle": "حالت دورزدن",
+      "label": "غیرفعال‌سازی حالت دورزدن",
+      "description": "جلوگیری از فعال شدن حالت دورزدن مجوزها"
+    },
+    "defaultMode": {
+      "sectionTitle": "حالت ورودی پیش‌فرض",
+      "label": "حالت ورودی پیش‌فرض",
+      "description": "حالت مجوز اولیه هنگام باز کردن یک نشست جدید"
+    }
+  },
+  "about": {
+    "heading": "درباره",
+    "versionInfo": {
+      "title": "اطلاعات نسخه",
+      "pluginVersion": "نسخه پلاگین",
+      "cliVersion": "نسخه {{appName}}",
+      "notDetected": "شناسایی نشد",
+      "refreshVersion": "تازه‌سازی نسخه",
+      "refresh": "تازه‌سازی"
+    },
+    "links": {
+      "title": "پیوندها",
+      "documentation": "مستندات",
+      "viewOnGithub": "مشاهده در GitHub",
+      "reportIssue": "گزارش مشکل",
+      "openIssue": "باز کردن مشکل"
+    },
+    "cliUpdate": {
+      "upToDate": "به‌روز است",
+      "confirmTitle": "به‌روزرسانی Claude Code",
+      "confirmMessage": "به‌روزرسانی، Claude Code CLI را جایگزین می‌کند و ممکن است نشست‌های در حال اجرا را متوقف کند. ادامه می‌دهید؟",
+      "update": "به‌روزرسانی",
+      "updating": "در حال به‌روزرسانی…",
+      "channel": {
+        "stable": "پایدار",
+        "latest": "آخرین نسخه"
+      },
+      "updateSuccess": "Claude Code v{{value}} به‌روزرسانی شد",
+      "updateFailed": "به‌روزرسانی ناموفق بود"
+    }
+  },
+  "browser": {
+    "notifications": {
+      "title": "اعلان‌ها",
+      "sound": {
+        "label": "صدا",
+        "ariaLabel": "صدای اعلان",
+        "off": "خاموش",
+        "description": "صدایی که هنگام فعال شدن اعلان دسکتاپ پخش می‌شود. انتخاب یک صدا، یک‌بار آن را پیش‌نمایش می‌کند.",
+        "loadingDescription": "در حال بارگذاری صداهای سیستم...",
+        "emptyDescription": "هیچ صدای سیستمی شناسایی نشد. برای بی‌صدا کردن اعلان‌ها، خاموش را انتخاب کنید.",
+        "errorDescription": "بارگذاری صداهای سیستم ممکن نشد: {{error}}"
+      }
+    },
+    "permissions": {
+      "title": "مجوزها",
+      "revokeHint": "برای لغو، آن را در تنظیمات مرورگر خود تغییر دهید.",
+      "deniedHint": "از تنظیمات مرورگر فعال کنید",
+      "granted": "اعطا شده",
+      "denied": "رد شده",
+      "request": "درخواست"
+    }
+  },
+  "tunnel": {
+    "connection": {
+      "title": "اتصال",
+      "enable": {
+        "label": "تونل ریموت (غیررسمی)",
+        "description": "سرور محلی خود را از طریق cloudflared برای دسترسی از راه دور در دسترس قرار دهید. نیازی به حساب کاربری نیست. اگر cloudflared نصب نشده باشد، ابتدا از شما نصب آن خواسته می‌شود."
+      },
+      "installingProgress": "در حال نصب cloudflared… ({{seconds}} ثانیه)",
+      "establishingProgress": "در حال برقراری اتصال تونل… ({{seconds}} ثانیه)",
+      "estimatedTime": "این کار معمولاً حدود 1 دقیقه طول می‌کشد (اگر نصب لازم باشد، حدود 3 دقیقه طول می‌کشد.)"
+    },
+    "sleepPrevention": {
+      "title": "جلوگیری از خواب سیستم",
+      "label": "جلوگیری از خواب سیستم",
+      "description": "حتی با بسته بودن درپوش، تا زمانی که تونل فعال است، سیستم شما را بیدار نگه می‌دارد."
+    }
+  },
+  "cli": {
+    "terminal": {
+      "title": "ترمینال",
+      "app": {
+        "label": "برنامه ترمینال",
+        "description": "برنامه ترمینالی که هنگام اجرای «باز کردن Claude در ترمینال» استفاده می‌شود",
+        "jetbrainsDescription": "همیشه از ترمینال داخلی IDE جت‌برینز استفاده می‌شود.",
+        "jetbrainsValue": "ترمینال داخلی جت‌برینز",
+        "detecting": "در حال شناسایی ترمینال‌ها...",
+        "systemDefault": "پیش‌فرض سیستم",
+        "defaultSuffix": "{{label}} (پیش‌فرض)",
+        "custom": "سفارشی...",
+        "customPlaceholder": "مثلاً Kitty"
+      }
+    },
+    "model": {
+      "title": "مدل",
+      "label": "مدل پیش‌فرض",
+      "description": "مدل پیش‌فرض برای نشست‌های جدید",
+      "defaultRecommended": "پیش‌فرض (توصیه‌شده)"
+    },
+    "path": {
+      "title": "Claude CLI",
+      "label": "مسیر CLI",
+      "description": "مسیر فایل اجرایی Claude CLI (برای شناسایی خودکار خالی بگذارید)",
+      "placeholder": "شناسایی خودکار"
+    },
+    "nodePath": {
+      "title": "Node.js",
+      "label": "مسیر Node",
+      "description": "مسیر فایل اجرایی Node.js که بک‌اند را اجرا می‌کند (برای شناسایی خودکار خالی بگذارید). پس از راه‌اندازی مجدد اعمال می‌شود.",
+      "placeholder": "شناسایی خودکار"
+    }
+  },
+  "releases": {
+    "title": "نسخه‌ها",
+    "restartRequired": "راه‌اندازی مجدد IDE لازم است",
+    "updateButton": "به‌روزرسانی به نسخه v{{version}}",
+    "current": "فعلی",
+    "noNotes": "بدون یادداشت انتشار",
+    "empty": "هیچ نسخه‌ای یافت نشد.",
+    "unknownDate": "تاریخ نامشخص",
+    "refresh": "تازه‌سازی"
+  },
+  "usage": {
+    "title": "مصرف",
+    "learnMore": "بیشتر درباره محدودیت‌های مصرف بدانید",
+    "lastUpdated": "آخرین به‌روزرسانی: {{time}}",
+    "refresh": "تازه‌سازی",
+    "relativeTime": {
+      "justNow": "همین الان",
+      "oneMinuteAgo": "1 دقیقه پیش",
+      "minutesAgo": "{{count}} دقیقه پیش",
+      "oneHourAgo": "1 ساعت پیش",
+      "hoursAgo": "{{count}} ساعت پیش"
+    },
+    "account": {
+      "active": "فعال",
+      "errorPrefix": "مصرف در دسترس نیست: {{error}}",
+      "currentSession": "نشست فعلی (5 ساعت)",
+      "weeklyLimits": "محدودیت‌های هفتگی",
+      "allModels": "همه مدل‌ها",
+      "sonnetOnly": "فقط Sonnet",
+      "opusOnly": "فقط Opus"
+    },
+    "meter": {
+      "resetsSoon": "به‌زودی بازنشانی می‌شود",
+      "resetsOnDay": "بازنشانی {{day}} {{period}} {{time}}",
+      "resetsInHours": "بازنشانی در {{hours}} ساعت و {{minutes}} دقیقه",
+      "resetsInMinutes": "بازنشانی در {{minutes}} دقیقه",
+      "am": "قبل‌ازظهر",
+      "pm": "بعدازظهر",
+      "days": {
+        "sun": "یکشنبه",
+        "mon": "دوشنبه",
+        "tue": "سه‌شنبه",
+        "wed": "چهارشنبه",
+        "thu": "پنجشنبه",
+        "fri": "جمعه",
+        "sat": "شنبه"
+      }
+    },
+    "notInstalled": {
+      "title": "یک وابستگی الزامی",
+      "description": "به دلیل سیاست مارکت‌پلیس، این ویژگی نمی‌تواند همراه با برنامه ارائه شود. این ویژگی به‌صورت یک کتابخانه جداگانه منتشر شده که باید خودتان آن را نصب کنید.",
+      "installVia": "آن را به‌صورت سراسری از طریق npm نصب کنید:",
+      "copy": "کپی",
+      "copied": "کپی شد",
+      "copyFailed": "کپی ناموفق بود",
+      "retryHint": "پس از نصب، روی «تلاش مجدد» در زیر کلیک کنید — نیازی به راه‌اندازی مجدد IDE نیست.",
+      "checking": "در حال بررسی...",
+      "retry": "تلاش مجدد"
+    },
+    "errors": {
+      "unknown": "خطای ناشناخته"
+    }
+  }
+}

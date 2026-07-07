@@ -36,6 +36,9 @@
       "label": "Idioma de la interfaz",
       "description": "Idioma de la interfaz de la aplicación, independiente del idioma de respuesta de Claude."
     },
+    "uiDirection": {
+      "label": "Activar RTL(Right-to-left)"
+    },
     "useCtrlEnterToSend": {
       "label": "Usar Ctrl+Enter para enviar",
       "description": "Cuando está activado, usa Ctrl/Cmd+Enter para enviar mensajes en lugar de solo Enter. Esto permite usar Enter para crear nuevas líneas."

@@ -1,0 +1,185 @@
+{
+  "confirmDialog": {
+    "confirm": "تأیید",
+    "cancel": "لغو"
+  },
+  "contextChip": {
+    "removeContext": "حذف زمینه"
+  },
+  "errorBoundary": {
+    "somethingWentWrong": "مشکلی پیش آمد.",
+    "retry": "تلاش مجدد"
+  },
+  "effortSlider": {
+    "tooltip": "برای تنظیم سطح تلاش کلیک یا درگ کنید",
+    "tooltipUltracode": "برای تنظیم سطح تلاش کلیک یا درگ کنید (بالاترین سطح = ultracode)"
+  },
+  "accountUsage": {
+    "title": "حساب کاربری و مصرف",
+    "accountSection": "حساب کاربری",
+    "authMethod": "روش احراز هویت",
+    "email": "ایمیل",
+    "plan": "پلن"
+  },
+  "usageSection": {
+    "title": "مصرف",
+    "updated": "به‌روزرسانی شده {{time}}",
+    "refresh": "تازه‌سازی",
+    "session5hr": "نشست (5 ساعته)",
+    "weekly7day": "هفتگی (7 روزه)",
+    "weeklySonnet": "Sonnet هفتگی",
+    "weeklyOpus": "Opus هفتگی"
+  },
+  "usageReport": {
+    "title": "سهم در مصرف",
+    "refresh": "تازه‌سازی",
+    "empty": "تفکیک مصرفی در دسترس نیست.",
+    "requests": "{{value}} درخواست",
+    "sessions": "{{value}} نشست",
+    "percentOfUsage": "٪ از مصرف"
+  },
+  "mcpModal": {
+    "title": "سرورهای MCP",
+    "refreshServers": "تازه‌سازی سرورهای MCP",
+    "browseRegistry": "مرور رجیستری MCP",
+    "addServer": "افزودن سرور MCP",
+    "checkingHealth": "در حال بررسی سلامت سرور MCP…",
+    "serverNotFound": "سرور یافت نشد.",
+    "learnMore": "بیشتر درباره MCP بدانید",
+    "editReplaceSingle": "ویرایش، یک سرور را جایگزین می‌کند — دقیقاً پیکربندی یک سرور را جای‌گذاری کنید.",
+    "saved": "{{name}} ذخیره شد",
+    "added": "{{name}} افزوده شد",
+    "addFailed": "افزودن {{failed}}/{{total}} سرور ناموفق بود:",
+    "form": {
+      "editTitle": "ویرایش سرور MCP",
+      "addTitle": "افزودن سرور MCP",
+      "back": "بازگشت",
+      "nameLabel": "نام",
+      "nameHint": "اختیاری — فقط زمانی استفاده می‌شود که JSON شما پوشش «mcpServers» نداشته باشد",
+      "namePlaceholder": "my-server",
+      "scopeLabel": "دامنه",
+      "scopeUser": "کاربر (همه پروژه‌ها)",
+      "scopeProject": "پروژه (.mcp.json)",
+      "scopeLocal": "محلی (فقط این پروژه)",
+      "configLabel": "پیکربندی (JSON)",
+      "configHint": "یک پیکربندی mcpServers یا پیکربندی یک سرور را جای‌گذاری کنید",
+      "cancel": "لغو",
+      "saving": "در حال ذخیره",
+      "adding": "در حال افزودن",
+      "save": "ذخیره",
+      "addButton": "افزودن سرور"
+    },
+    "marketplace": {
+      "back": "بازگشت",
+      "searchPlaceholder": "جستجو در رجیستری MCP…",
+      "searchPrompt": "برای یافتن و نصب سرورها، رجیستری رسمی MCP را جستجو کنید.",
+      "searching": "در حال جستجو…",
+      "noServers": "سروری یافت نشد.",
+      "openRepo": "باز کردن {{url}}",
+      "needsInputs": "به {{count}} ورودی نیاز دارد: {{inputs}}",
+      "needsInputs_one": "به {{count}} ورودی نیاز دارد: {{inputs}}",
+      "needsInputs_other": "به {{count}} ورودی نیاز دارد: {{inputs}}",
+      "configureAdd": "پیکربندی و افزودن",
+      "noInstallInfo": "اطلاعات نصب موجود نیست",
+      "add": "افزودن"
+    },
+    "list": {
+      "noServersConfigured": "هیچ سرور MCP پیکربندی نشده است.",
+      "addOne": "یکی اضافه کنید",
+      "scope": {
+        "project": "پروژه",
+        "local": "محلی",
+        "user": "کاربر",
+        "claudeai": "claude.ai",
+        "managed": "مدیریت‌شده",
+        "enterprise": "سازمانی"
+      }
+    },
+    "detail": {
+      "backToList": "بازگشت به فهرست",
+      "edit": "ویرایش",
+      "type": "نوع: {{value}}",
+      "authenticate": "احراز هویت",
+      "reconnect": "اتصال مجدد",
+      "reconnecting": "در حال اتصال مجدد",
+      "clearAuth": "پاک کردن احراز هویت",
+      "enable": "فعال‌سازی",
+      "disable": "غیرفعال‌سازی",
+      "loadingTools": "در حال بارگذاری ابزارها…",
+      "loadToolsError": "بارگذاری ابزارها ممکن نشد",
+      "viewTools": "مشاهده ابزارها ({{count}})",
+      "readOnly": "فقط‌خواندنی",
+      "destructive": "مخرب",
+      "removeConfirm": "«{{name}}» حذف شود؟",
+      "remove": "حذف",
+      "cancel": "لغو",
+      "removeServer": "حذف سرور"
+    },
+    "status": {
+      "connected": "متصل",
+      "failed": "ناموفق",
+      "needsAuth": "نیاز به احراز هویت",
+      "connecting": "در حال اتصال…",
+      "disabled": "غیرفعال"
+    }
+  },
+  "tunnelModal": {
+    "title": "تونل ریموت",
+    "remoteTunnelUnofficial": "تونل ریموت (غیررسمی)",
+    "exposeVia": "دسترس‌پذیر کردن از طریق cloudflared",
+    "installingCloudflared": "در حال نصب cloudflared…",
+    "connecting": "در حال اتصال…",
+    "typicalTime": "معمولاً حدود 1 دقیقه (نصب: حدود 3 دقیقه)",
+    "preventSleep": "جلوگیری از خواب سیستم",
+    "keepAwake": "بیدار نگه‌داشتن سیستم تا زمانی که تونل فعال است"
+  },
+  "tunnelStatusNotice": {
+    "tryAgain": "تلاش مجدد",
+    "installGuide": "راهنمای نصب",
+    "copyCommand": "کپی دستور",
+    "installConsent": "cloudflared نصب نشده است. اکنون نصب و تونل فعال شود؟ این کار cloudflared را دانلود می‌کند (بار اول حدود 3 دقیقه).",
+    "installAndEnable": "نصب و فعال‌سازی",
+    "cancel": "لغو",
+    "notInstalledWarning": "cloudflared هنوز نصب نشده است. روشن کردن تونل، درخواست دانلود آن را می‌دهد (بار اول حدود 3 دقیقه).",
+    "errors": {
+      "cloudflaredMissing": {
+        "title": "نصب cloudflared ممکن نشد",
+        "detail": "تونل به cloudflared نیاز دارد و نصب خودکار آن ممکن نشد. آن را به‌صورت دستی نصب کنید و دوباره تلاش کنید."
+      },
+      "timeout": {
+        "title": "اتصال تونل با وقفه مواجه شد",
+        "detail": "اتصال به سرور تونل Cloudflare به‌موقع برقرار نشد. شبکه یا فایروال خود را بررسی کنید — برخی مناطق دسترسی به Cloudflare را محدود می‌کنند."
+      },
+      "exited": {
+        "title": "cloudflared به‌طور غیرمنتظره متوقف شد",
+        "detail": "فرآیند تونل پیش از آماده شدن خارج شد. لطفاً دوباره تلاش کنید."
+      },
+      "unknown": {
+        "title": "راه‌اندازی تونل ممکن نشد",
+        "detail": "خطایی غیرمنتظره رخ داد. لطفاً دوباره تلاش کنید."
+      }
+    }
+  },
+  "sessionList": {
+    "searchPlaceholder": "جستجوی نشست‌ها...",
+    "loadingSessions": "در حال بارگذاری نشست‌ها...",
+    "refreshSessions": "تازه‌سازی نشست‌ها",
+    "renameSession": "تغییر نام نشست",
+    "deleteSession": "حذف نشست",
+    "groups": {
+      "today": "امروز",
+      "yesterday": "دیروز",
+      "pastWeek": "هفته گذشته",
+      "pastMonth": "ماه گذشته",
+      "pastYear": "سال گذشته"
+    },
+    "relativeTime": {
+      "now": "اکنون",
+      "years": "{{n}} سال",
+      "months": "{{n}} ماه",
+      "days": "{{n}} روز",
+      "hours": "{{n}} ساعت",
+      "minutes": "{{n}} دقیقه"
+    }
+  }
+}

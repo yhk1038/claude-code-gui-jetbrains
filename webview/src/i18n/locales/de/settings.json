@@ -36,6 +36,9 @@
       "label": "Sprache der Oberfläche",
       "description": "Sprache der App-Oberfläche, unabhängig von der Antwortsprache von Claude."
     },
+    "uiDirection": {
+      "label": "RTL(Right-to-left) aktivieren"
+    },
     "useCtrlEnterToSend": {
       "label": "Mit Strg+Enter senden",
       "description": "Wenn aktiviert, wird Strg/Cmd+Enter statt nur Enter verwendet, um Prompts zu senden. So kann mit Enter ein Zeilenumbruch eingefügt werden."

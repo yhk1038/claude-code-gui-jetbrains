@@ -1,0 +1,36 @@
+{
+  "welcomeArtAlt": "تصویر خوش‌آمدگویی",
+  "intro": "می‌توانید از Claude Code با اشتراک Claude خود استفاده کنید یا هزینه آن بر اساس مصرف API از طریق حساب Console شما محاسبه شود.",
+  "loginPrompt": "چگونه می‌خواهید وارد شوید؟",
+  "errors": {
+    "loginFailed": "ورود ناموفق بود. لطفاً دوباره تلاش کنید."
+  },
+  "claudeAi": {
+    "label": "اشتراک Claude.ai",
+    "description": "از اشتراک Claude Pro، Team یا Enterprise خود استفاده کنید"
+  },
+  "console": {
+    "label": "Anthropic Console",
+    "description": "پرداخت برای مصرف API از طریق حساب Console شما"
+  },
+  "providers": {
+    "label": "Bedrock، Foundry یا Vertex",
+    "description": "دستورالعمل‌هایی برای استفاده از کلیدهای API یا ارائه‌دهندگان شخص ثالث."
+  },
+  "terminal": {
+    "prompt": "تجربه ترمینال را ترجیح می‌دهید؟",
+    "action": "اجرای claude در ترمینال"
+  },
+  "codeInput": {
+    "title": "کد را از مرورگر خود جای‌گذاری کنید",
+    "description": "پس از ورود، مرورگر شما یک کد نمایش می‌دهد. آن را اینجا جای‌گذاری کنید تا ورود کامل شود.",
+    "placeholder": "کد را اینجا جای‌گذاری کنید",
+    "submit": "ارسال کد"
+  },
+  "urlModal": {
+    "title": "ورود به Claude",
+    "description": "Claude در حال باز کردن مرورگر شما برای ورود است. اگر به‌طور خودکار باز نشد، از دکمه زیر استفاده کنید.",
+    "openButton": "باز کردن صفحه ورود",
+    "revealCode": "کدی در مرورگر خود دریافت کردید؟ آن را وارد کنید"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "sessionComplete": {
+    "body": "پاسخ کامل شد"
+  },
+  "streamError": {
+    "body": "پاسخ ناموفق بود"
+  },
+  "awaitingPermission": {
+    "body": "درخواست مجوز"
+  },
+  "awaitingPlanApproval": {
+    "body": "برنامه آماده بررسی است"
+  },
+  "awaitingUserInput": {
+    "body": "در انتظار پاسخ شما"
+  }
+}

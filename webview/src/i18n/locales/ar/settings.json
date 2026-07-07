@@ -1,0 +1,338 @@
+{
+  "layout": {
+    "title": "الإعدادات",
+    "back": "رجوع",
+    "toggleMenu": "تبديل القائمة",
+    "close": "إغلاق"
+  },
+  "nav": {
+    "general": "عام",
+    "appearance": "المظهر",
+    "permissions": "الأذونات",
+    "privacy": "الخصوصية",
+    "cli": "CLI",
+    "browser": "المتصفح",
+    "account": "الحساب",
+    "usage": "الاستخدام",
+    "tunnel": "النفق",
+    "releases": "الإصدارات",
+    "about": "حول"
+  },
+  "scope": {
+    "global": "إعدادات المستخدم (عام)",
+    "globalShort": "المستخدم (عام)",
+    "project": "إعدادات المشروع (محلي)",
+    "projectShort": "المشروع (محلي)",
+    "projectDisabledTooltip": "افتح مشروعًا لاستخدام إعدادات المشروع"
+  },
+  "general": {
+    "language": {
+      "label": "اللغة",
+      "description": "اللغة المفضّلة لردود Claude",
+      "notSet": "غير معيّنة (استخدام الإعداد العام)",
+      "placeholder": "الإنجليزية"
+    },
+    "uiLanguage": {
+      "label": "لغة الواجهة",
+      "description": "لغة واجهة التطبيق، بغض النظر عن لغة ردود Claude."
+    },
+    "uiDirection": {
+      "label": "تفعيل الاتجاه من اليمين إلى اليسار (RTL)"
+    },
+    "useCtrlEnterToSend": {
+      "label": "استخدام Ctrl+Enter للإرسال",
+      "description": "عند التفعيل، استخدم Ctrl/Cmd+Enter لإرسال الطلبات بدلًا من Enter فقط. يتيح هذا استخدام Enter لإنشاء أسطر جديدة."
+    },
+    "focusInputOnEditorContext": {
+      "label": "التركيز على إدخال المحادثة بعد إرفاق مسار الملف",
+      "description": "عند الضغط على Alt+K في المحرر، انقل التركيز إلى إدخال المحادثة بعد إدراج مسار الملف."
+    },
+    "respectGitignoreForContext": {
+      "label": "احترام .gitignore في سياق المحرر",
+      "description": "عند التفعيل، تُستبعد محتويات الملفات المدرجة في .gitignore من سياق المحرر — يُرسل مسار الملف فقط."
+    },
+    "hostMode": {
+      "label": "الموقع المفضّل",
+      "description": "أين يُفتح Claude افتراضيًا.",
+      "sidebar": "الشريط الجانبي",
+      "panel": "اللوحة"
+    },
+    "openSettings": {
+      "label": "فتح الإعدادات كـ",
+      "description": "عرض الإعدادات كطبقة علوية أو في تبويب جديد.",
+      "overlay": "طبقة علوية",
+      "newTab": "تبويب جديد"
+    },
+    "chatPagination": {
+      "label": "تقسيم سجل المحادثة إلى صفحات",
+      "description": "تحميل الرسائل الأقدم أثناء التمرير. الإيقاف يحمّل المحادثة بأكملها دفعة واحدة."
+    },
+    "configDir": {
+      "description": "الدليل الرئيسي لإعدادات Claude. مماثل لمتغيّر البيئة CLAUDE_CONFIG_DIR.",
+      "placeholder": "الافتراضي (~/.claude)",
+      "active": "نشط: {{value}}",
+      "projectUnavailable": "افتح مشروعًا لتعيين قيمة خاصة بالمشروع."
+    }
+  },
+  "appearance": {
+    "title": "المظهر",
+    "theme": {
+      "sectionTitle": "السمة",
+      "colorTheme": {
+        "label": "سمة الألوان",
+        "description": "اختر سمة الألوان للواجهة",
+        "notSet": "غير معيّنة (استخدام الإعداد العام)",
+        "systemIde": "النظام (IDE)",
+        "systemOs": "النظام (نظام التشغيل)",
+        "light": "فاتحة",
+        "dark": "داكنة"
+      },
+      "fontSize": {
+        "label": "حجم الخط",
+        "description": "حجم الخط الأساسي للواجهة",
+        "notSetPlaceholder": "غير معيّن"
+      }
+    },
+    "scrolling": {
+      "sectionTitle": "التمرير",
+      "autoScrollThreshold": {
+        "label": "مسافة استئناف التمرير التلقائي",
+        "description": "التمرير للأعلى يوقف التمرير التلقائي دائمًا لتتمكن من القراءة بحرية. يُستأنف بمجرد التمرير للعودة إلى ضمن هذا العدد من البكسلات من الأسفل. كلما كانت القيمة أصغر، وجب العودة أقرب لإعادة التفعيل. الافتراضي {{value}}.",
+        "notSetPlaceholder": "غير معيّن"
+      }
+    }
+  },
+  "advanced": {
+    "title": "متقدّم",
+    "debugging": {
+      "sectionTitle": "تصحيح الأخطاء",
+      "debugMode": {
+        "label": "وضع التصحيح",
+        "description": "تفعيل تسجيل التصحيح والتشخيصات",
+        "notSet": "غير معيّن (استخدام الإعداد العام)"
+      },
+      "logLevel": {
+        "label": "مستوى السجل",
+        "description": "الحد الأدنى لمستوى السجل المراد عرضه",
+        "notSet": "غير معيّن (استخدام الإعداد العام)",
+        "debug": "تصحيح",
+        "info": "معلومات",
+        "warning": "تحذير",
+        "error": "خطأ"
+      }
+    }
+  },
+  "privacy": {
+    "title": "الخصوصية",
+    "privacyPolicyLink": "سياسة الخصوصية",
+    "telemetry": {
+      "sectionTitle": "القياس عن بُعد",
+      "sendUsageStatistics": {
+        "label": "إرسال إحصاءات الاستخدام",
+        "description": "يرسل إحصاءات استخدام لا تحدد هويتك مباشرة، للمساعدة في تحسين المنتج. لا يتم إرسال الشفرة المصدرية أو البيانات الشخصية أبدًا. يمكنك إيقاف هذا في أي وقت."
+      }
+    }
+  },
+  "account": {
+    "heading": "الحساب",
+    "addAccount": "إضافة حساب",
+    "actionFailed": "فشل الإجراء",
+    "loading": "جارٍ تحميل الحسابات…",
+    "empty": "لا توجد حسابات محفوظة بعد.",
+    "plan": "الخطة",
+    "authMethod": "طريقة المصادقة",
+    "lastAccess": "آخر وصول",
+    "inUse": "قيد الاستخدام",
+    "switch": "تبديل",
+    "removeAccount": "إزالة الحساب",
+    "lastActive": {
+      "today": "اليوم",
+      "yesterday": "أمس",
+      "daysAgo": "منذ {{value}} يوم",
+      "hoursAgo": "منذ {{value}} ساعة",
+      "minutesAgo": "منذ {{value}} دقيقة",
+      "justNow": "الآن"
+    }
+  },
+  "permissions": {
+    "heading": "الأذونات",
+    "notSet": "غير معيّن (استخدام الإعداد العام)",
+    "bypassMode": {
+      "sectionTitle": "وضع التجاوز",
+      "label": "تعطيل وضع التجاوز",
+      "description": "منع تفعيل وضع تجاوز الأذونات"
+    },
+    "defaultMode": {
+      "sectionTitle": "وضع الإدخال الافتراضي",
+      "label": "وضع الإدخال الافتراضي",
+      "description": "وضع الأذونات الأولي عند فتح جلسة جديدة"
+    }
+  },
+  "about": {
+    "heading": "حول",
+    "versionInfo": {
+      "title": "معلومات الإصدار",
+      "pluginVersion": "إصدار الإضافة",
+      "cliVersion": "إصدار {{appName}}",
+      "notDetected": "لم يُكتشف",
+      "refreshVersion": "تحديث الإصدار",
+      "refresh": "تحديث"
+    },
+    "links": {
+      "title": "الروابط",
+      "documentation": "التوثيق",
+      "viewOnGithub": "عرض على GitHub",
+      "reportIssue": "الإبلاغ عن مشكلة",
+      "openIssue": "فتح مشكلة"
+    },
+    "cliUpdate": {
+      "upToDate": "محدَّث",
+      "confirmTitle": "تحديث Claude Code",
+      "confirmMessage": "يستبدل التحديث الـ CLI الخاص بـ Claude Code وقد يقاطع الجلسات الجارية. المتابعة؟",
+      "update": "تحديث",
+      "updating": "جارٍ التحديث…",
+      "channel": {
+        "stable": "مستقر",
+        "latest": "الأحدث"
+      },
+      "updateSuccess": "تم تحديث Claude Code v{{value}}",
+      "updateFailed": "فشل التحديث"
+    }
+  },
+  "browser": {
+    "notifications": {
+      "title": "الإشعارات",
+      "sound": {
+        "label": "الصوت",
+        "ariaLabel": "صوت الإشعار",
+        "off": "إيقاف",
+        "description": "الصوت الذي يُشغَّل عند إطلاق إشعار سطح المكتب. اختيار صوت يعاينه مرة واحدة.",
+        "loadingDescription": "جارٍ تحميل أصوات النظام...",
+        "emptyDescription": "لم يتم اكتشاف أصوات نظام. اختر إيقاف لكتم الإشعارات.",
+        "errorDescription": "تعذّر تحميل أصوات النظام: {{error}}"
+      }
+    },
+    "permissions": {
+      "title": "الأذونات",
+      "revokeHint": "للإلغاء، غيّر ذلك في إعدادات متصفحك.",
+      "deniedHint": "التفعيل من إعدادات المتصفح",
+      "granted": "ممنوح",
+      "denied": "مرفوض",
+      "request": "طلب"
+    }
+  },
+  "tunnel": {
+    "connection": {
+      "title": "الاتصال",
+      "enable": {
+        "label": "النفق البعيد (غير رسمي)",
+        "description": "كشف خادمك المحلي عبر cloudflared للوصول عن بُعد. لا حاجة لحساب. إذا لم يكن cloudflared مثبّتًا، سيُطلب منك تثبيته أولًا."
+      },
+      "installingProgress": "جارٍ تثبيت cloudflared… ({{seconds}} ثانية)",
+      "establishingProgress": "جارٍ إنشاء اتصال النفق… ({{seconds}} ثانية)",
+      "estimatedTime": "يستغرق هذا عادةً حوالي دقيقة واحدة (إذا كان التثبيت مطلوبًا، فيستغرق حوالي 3 دقائق.)"
+    },
+    "sleepPrevention": {
+      "title": "منع السكون",
+      "label": "منع السكون",
+      "description": "إبقاء جهازك مستيقظًا أثناء تفعيل النفق، حتى مع إغلاق الغطاء."
+    }
+  },
+  "cli": {
+    "terminal": {
+      "title": "الطرفية",
+      "app": {
+        "label": "تطبيق الطرفية",
+        "description": "تطبيق الطرفية المُستخدم عند تشغيل 'فتح Claude في الطرفية'",
+        "jetbrainsDescription": "تُستخدم دائمًا الطرفية المدمجة في IDE الخاص بـ JetBrains.",
+        "jetbrainsValue": "الطرفية المدمجة في JetBrains",
+        "detecting": "جارٍ اكتشاف الطرفيات...",
+        "systemDefault": "افتراضي النظام",
+        "defaultSuffix": "{{label}} (افتراضي)",
+        "custom": "مخصص...",
+        "customPlaceholder": "مثال: Kitty"
+      }
+    },
+    "model": {
+      "title": "النموذج",
+      "label": "النموذج الافتراضي",
+      "description": "النموذج الافتراضي للجلسات الجديدة",
+      "defaultRecommended": "الافتراضي (موصى به)"
+    },
+    "path": {
+      "title": "Claude CLI",
+      "label": "مسار CLI",
+      "description": "مسار الملف التنفيذي لـ Claude CLI (اتركه فارغًا للاكتشاف التلقائي)",
+      "placeholder": "اكتشاف تلقائي"
+    },
+    "nodePath": {
+      "title": "Node.js",
+      "label": "مسار Node",
+      "description": "مسار الملف التنفيذي لـ Node.js الذي يشغّل الخلفية (اتركه فارغًا للاكتشاف التلقائي). يسري المفعول بعد إعادة التشغيل.",
+      "placeholder": "اكتشاف تلقائي"
+    }
+  },
+  "releases": {
+    "title": "الإصدارات",
+    "restartRequired": "يلزم إعادة تشغيل IDE",
+    "updateButton": "التحديث إلى v{{version}}",
+    "current": "الحالي",
+    "noNotes": "لا توجد ملاحظات إصدار",
+    "empty": "لم يتم العثور على إصدارات.",
+    "unknownDate": "تاريخ غير معروف",
+    "refresh": "تحديث"
+  },
+  "usage": {
+    "title": "الاستخدام",
+    "learnMore": "معرفة المزيد عن حدود الاستخدام",
+    "lastUpdated": "آخر تحديث: {{time}}",
+    "refresh": "تحديث",
+    "relativeTime": {
+      "justNow": "الآن",
+      "oneMinuteAgo": "منذ دقيقة",
+      "minutesAgo": "منذ {{count}} دقيقة",
+      "oneHourAgo": "منذ ساعة",
+      "hoursAgo": "منذ {{count}} ساعة"
+    },
+    "account": {
+      "active": "نشط",
+      "errorPrefix": "الاستخدام غير متاح: {{error}}",
+      "currentSession": "الجلسة الحالية (5 ساعات)",
+      "weeklyLimits": "الحدود الأسبوعية",
+      "allModels": "جميع النماذج",
+      "sonnetOnly": "Sonnet فقط",
+      "opusOnly": "Opus فقط"
+    },
+    "meter": {
+      "resetsSoon": "يُعاد التعيين قريبًا",
+      "resetsOnDay": "يُعاد التعيين {{day}} الساعة {{time}} {{period}}",
+      "resetsInHours": "يُعاد التعيين خلال {{hours}} ساعة و{{minutes}} دقيقة",
+      "resetsInMinutes": "يُعاد التعيين خلال {{minutes}} دقيقة",
+      "am": "ص",
+      "pm": "م",
+      "days": {
+        "sun": "الأحد",
+        "mon": "الاثنين",
+        "tue": "الثلاثاء",
+        "wed": "الأربعاء",
+        "thu": "الخميس",
+        "fri": "الجمعة",
+        "sat": "السبت"
+      }
+    },
+    "notInstalled": {
+      "title": "تبعية مطلوبة",
+      "description": "بسبب سياسة المتجر، لا يمكن تضمين هذه الميزة داخليًا. تُنشر كمكتبة منفصلة يجب عليك تثبيتها بنفسك.",
+      "installVia": "ثبّتها عالميًا عبر npm:",
+      "copy": "نسخ",
+      "copied": "تم النسخ",
+      "copyFailed": "فشل النسخ",
+      "retryHint": "بعد التثبيت، انقر على إعادة المحاولة أدناه — لا حاجة لإعادة تشغيل IDE.",
+      "checking": "جارٍ التحقق...",
+      "retry": "إعادة المحاولة"
+    },
+    "errors": {
+      "unknown": "خطأ غير معروف"
+    }
+  }
+}

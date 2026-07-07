@@ -36,6 +36,9 @@
       "label": "インターフェース言語",
       "description": "アプリのインターフェース言語です。Claude の応答言語とは別に設定できます。"
     },
+    "uiDirection": {
+      "label": "RTL(Right-to-left) を有効化"
+    },
     "useCtrlEnterToSend": {
       "label": "送信にCtrl+Enterを使用",
       "description": "有効にすると、Enterだけでなく Ctrl/Cmd+Enter でプロンプトを送信します。Enterキーは改行に使用できるようになります。"

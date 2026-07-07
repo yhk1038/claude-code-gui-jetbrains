@@ -36,6 +36,9 @@
       "label": "Langue de l'interface",
       "description": "Langue de l'interface de l'application, indépendante de la langue de réponse de Claude."
     },
+    "uiDirection": {
+      "label": "Activer RTL(Right-to-left)"
+    },
     "useCtrlEnterToSend": {
       "label": "Utiliser Ctrl+Entrée pour envoyer",
       "description": "Lorsque cette option est activée, utilisez Ctrl/Cmd+Entrée pour envoyer les invites au lieu de simplement Entrée. Cela permet à Entrée de créer de nouvelles lignes."

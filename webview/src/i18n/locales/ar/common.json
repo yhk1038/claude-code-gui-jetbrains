@@ -1,0 +1,189 @@
+{
+  "confirmDialog": {
+    "confirm": "تأكيد",
+    "cancel": "إلغاء"
+  },
+  "contextChip": {
+    "removeContext": "إزالة السياق"
+  },
+  "errorBoundary": {
+    "somethingWentWrong": "حدث خطأ ما.",
+    "retry": "إعادة المحاولة"
+  },
+  "effortSlider": {
+    "tooltip": "انقر أو اسحب لتحديد مستوى الجهد",
+    "tooltipUltracode": "انقر أو اسحب لتحديد مستوى الجهد (الدرجة العليا = ultracode)"
+  },
+  "accountUsage": {
+    "title": "الحساب والاستخدام",
+    "accountSection": "الحساب",
+    "authMethod": "طريقة المصادقة",
+    "email": "البريد الإلكتروني",
+    "plan": "الخطة"
+  },
+  "usageSection": {
+    "title": "الاستخدام",
+    "updated": "تم التحديث {{time}}",
+    "refresh": "تحديث",
+    "session5hr": "الجلسة (5 ساعات)",
+    "weekly7day": "أسبوعي (7 أيام)",
+    "weeklySonnet": "Sonnet الأسبوعي",
+    "weeklyOpus": "Opus الأسبوعي"
+  },
+  "usageReport": {
+    "title": "المساهمة في الاستخدام",
+    "refresh": "تحديث",
+    "empty": "لا يتوفر تفصيل للاستخدام.",
+    "requests": "{{value}} طلبات",
+    "sessions": "{{value}} جلسات",
+    "percentOfUsage": "% من الاستخدام"
+  },
+  "mcpModal": {
+    "title": "خوادم MCP",
+    "refreshServers": "تحديث خوادم MCP",
+    "browseRegistry": "تصفح سجل MCP",
+    "addServer": "إضافة خادم MCP",
+    "checkingHealth": "جارٍ التحقق من سلامة خادم MCP…",
+    "serverNotFound": "الخادم غير موجود.",
+    "learnMore": "معرفة المزيد عن MCP",
+    "editReplaceSingle": "التعديل يستبدل خادمًا واحدًا فقط — الصق إعداد خادم واحد بالضبط.",
+    "saved": "تم حفظ {{name}}",
+    "added": "تمت إضافة {{name}}",
+    "addFailed": "فشلت إضافة {{failed}}/{{total}} من الخوادم:",
+    "form": {
+      "editTitle": "تعديل خادم MCP",
+      "addTitle": "إضافة خادم MCP",
+      "back": "رجوع",
+      "nameLabel": "الاسم",
+      "nameHint": "اختياري — يُستخدم فقط عندما لا يحتوي JSON على غلاف “mcpServers”",
+      "namePlaceholder": "my-server",
+      "scopeLabel": "النطاق",
+      "scopeUser": "المستخدم (كل المشاريع)",
+      "scopeProject": "المشروع (.mcp.json)",
+      "scopeLocal": "محلي (هذا المشروع فقط)",
+      "configLabel": "الإعداد (JSON)",
+      "configHint": "الصق إعداد mcpServers أو إعداد خادم واحد",
+      "cancel": "إلغاء",
+      "saving": "جارٍ الحفظ",
+      "adding": "جارٍ الإضافة",
+      "save": "حفظ",
+      "addButton": "إضافة خادم"
+    },
+    "marketplace": {
+      "back": "رجوع",
+      "searchPlaceholder": "ابحث في سجل MCP…",
+      "searchPrompt": "ابحث في سجل MCP الرسمي للعثور على الخوادم وتثبيتها.",
+      "searching": "جارٍ البحث…",
+      "noServers": "لم يتم العثور على خوادم.",
+      "openRepo": "فتح {{url}}",
+      "needsInputs": "يتطلب {{count}} مدخلات: {{inputs}}",
+      "needsInputs_zero": "لا يتطلب أي مدخلات: {{inputs}}",
+      "needsInputs_one": "يتطلب مدخلاً واحدًا: {{inputs}}",
+      "needsInputs_two": "يتطلب مدخلين: {{inputs}}",
+      "needsInputs_few": "يتطلب {{count}} مدخلات: {{inputs}}",
+      "needsInputs_many": "يتطلب {{count}} مدخلاً: {{inputs}}",
+      "needsInputs_other": "يتطلب {{count}} مدخل: {{inputs}}",
+      "configureAdd": "إعداد وإضافة",
+      "noInstallInfo": "لا تتوفر معلومات تثبيت",
+      "add": "إضافة"
+    },
+    "list": {
+      "noServersConfigured": "لا توجد خوادم MCP مُعدّة.",
+      "addOne": "إضافة خادم",
+      "scope": {
+        "project": "المشروع",
+        "local": "محلي",
+        "user": "المستخدم",
+        "claudeai": "claude.ai",
+        "managed": "مُدار",
+        "enterprise": "مؤسسي"
+      }
+    },
+    "detail": {
+      "backToList": "العودة إلى القائمة",
+      "edit": "تعديل",
+      "type": "النوع: {{value}}",
+      "authenticate": "مصادقة",
+      "reconnect": "إعادة الاتصال",
+      "reconnecting": "جارٍ إعادة الاتصال",
+      "clearAuth": "مسح المصادقة",
+      "enable": "تفعيل",
+      "disable": "تعطيل",
+      "loadingTools": "جارٍ تحميل الأدوات…",
+      "loadToolsError": "تعذّر تحميل الأدوات",
+      "viewTools": "عرض الأدوات ({{count}})",
+      "readOnly": "للقراءة فقط",
+      "destructive": "تدميري",
+      "removeConfirm": "إزالة \"{{name}}\"؟",
+      "remove": "إزالة",
+      "cancel": "إلغاء",
+      "removeServer": "إزالة الخادم"
+    },
+    "status": {
+      "connected": "متصل",
+      "failed": "فشل",
+      "needsAuth": "يتطلب مصادقة",
+      "connecting": "جارٍ الاتصال…",
+      "disabled": "معطّل"
+    }
+  },
+  "tunnelModal": {
+    "title": "النفق البعيد",
+    "remoteTunnelUnofficial": "النفق البعيد (غير رسمي)",
+    "exposeVia": "الكشف عبر cloudflared",
+    "installingCloudflared": "جارٍ تثبيت cloudflared…",
+    "connecting": "جارٍ الاتصال…",
+    "typicalTime": "عادةً حوالي دقيقة واحدة (التثبيت: حوالي 3 دقائق)",
+    "preventSleep": "منع السكون",
+    "keepAwake": "إبقاء الجهاز مستيقظًا أثناء تفعيل النفق"
+  },
+  "tunnelStatusNotice": {
+    "tryAgain": "أعد المحاولة",
+    "installGuide": "دليل التثبيت",
+    "copyCommand": "نسخ الأمر",
+    "installConsent": "cloudflared غير مثبّت. هل تريد تثبيته الآن وتفعيل النفق؟ سيتم تنزيل cloudflared (حوالي 3 دقائق في المرة الأولى).",
+    "installAndEnable": "تثبيت وتفعيل",
+    "cancel": "إلغاء",
+    "notInstalledWarning": "cloudflared غير مثبّت بعد. سيطلب تفعيل النفق تنزيله (حوالي 3 دقائق في المرة الأولى).",
+    "errors": {
+      "cloudflaredMissing": {
+        "title": "تعذّر تثبيت cloudflared",
+        "detail": "يحتاج النفق إلى cloudflared، ولم يتمكن من تثبيته تلقائيًا. ثبّته يدويًا ثم أعد المحاولة."
+      },
+      "timeout": {
+        "title": "انتهت مهلة اتصال النفق",
+        "detail": "تعذّر الوصول إلى خادم نفق Cloudflare في الوقت المحدد. تحقق من شبكتك أو جدار الحماية — بعض المناطق تقيّد الوصول إلى Cloudflare."
+      },
+      "exited": {
+        "title": "توقف cloudflared بشكل غير متوقع",
+        "detail": "خرجت عملية النفق قبل أن تصبح جاهزة. يرجى إعادة المحاولة."
+      },
+      "unknown": {
+        "title": "تعذّر بدء تشغيل النفق",
+        "detail": "حدث خطأ غير متوقع. يرجى إعادة المحاولة."
+      }
+    }
+  },
+  "sessionList": {
+    "searchPlaceholder": "البحث في الجلسات...",
+    "loadingSessions": "جارٍ تحميل الجلسات...",
+    "refreshSessions": "تحديث الجلسات",
+    "renameSession": "إعادة تسمية الجلسة",
+    "deleteSession": "حذف الجلسة",
+    "groups": {
+      "today": "اليوم",
+      "yesterday": "أمس",
+      "pastWeek": "الأسبوع الماضي",
+      "pastMonth": "الشهر الماضي",
+      "pastYear": "العام الماضي"
+    },
+    "relativeTime": {
+      "now": "الآن",
+      "years": "{{n}}س",
+      "months": "{{n}}ش",
+      "days": "{{n}}ي",
+      "hours": "{{n}}سا",
+      "minutes": "{{n}}د"
+    }
+  }
+}

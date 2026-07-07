@@ -1,0 +1,276 @@
+{
+  "tool": {
+    "in": "IN",
+    "out": "OUT",
+    "declined": "شما این ابزار را رد کردید.",
+    "declinedWithInstruction": "شما این ابزار را رد کردید. در عوض از Claude خواستید: «{{instruction}}»"
+  },
+  "message": {
+    "copyMessage": "کپی پیام",
+    "retry": "تلاش مجدد",
+    "unknownTool": "ناشناخته"
+  },
+  "interrupted": {
+    "default": "متوقف شد",
+    "toolInterrupted": "ابزار متوقف شد"
+  },
+  "attachments": {
+    "imageAlt": "تصویر {{index}}",
+    "fullSizeAlt": "اندازه کامل"
+  },
+  "edit": {
+    "modified": "تغییر یافت"
+  },
+  "write": {
+    "lineCount": "{{count}} خط"
+  },
+  "glob": {
+    "pattern": "الگو: «{{pattern}}»",
+    "foundFiles": "{{count}} فایل یافت شد",
+    "foundFiles_one": "{{count}} فایل یافت شد",
+    "foundFiles_other": "{{count}} فایل یافت شد"
+  },
+  "grep": {
+    "inPath": "(در {{path}})",
+    "globPattern": "(الگو: {{glob}})"
+  },
+  "webFetch": {
+    "fetchedFrom": "دریافت‌شده از"
+  },
+  "todoWrite": {
+    "title": "به‌روزرسانی کارها"
+  },
+  "notebookEdit": {
+    "title": "ویرایش سلول دفترچه",
+    "noContent": "[بدون محتوا]",
+    "status": {
+      "inserted": "درج شد",
+      "replaced": "جایگزین شد",
+      "deleted": "حذف شد",
+      "success": "موفق"
+    }
+  },
+  "skill": {
+    "fallback": "مهارت",
+    "expandLabel": "مهارت"
+  },
+  "askUserQuestion": {
+    "ask": "ASK",
+    "out": "OUT"
+  },
+  "exitPlanMode": {
+    "title": "برنامه Claude",
+    "planModeTitle": "حالت برنامه‌ریزی",
+    "approved": "کاربر برنامه را تأیید کرد",
+    "stayedInPlanMode": "در حالت برنامه‌ریزی باقی ماند",
+    "feedbackLabel": "RE:"
+  },
+  "task": {
+    "common": {
+      "in": "IN",
+      "out": "OUT",
+      "form": "FORM",
+      "taskPrefix": "task:"
+    },
+    "create": {
+      "what": "WHAT"
+    },
+    "update": {
+      "status": "STATUS",
+      "subject": "SUBJECT",
+      "desc": "DESC",
+      "owner": "OWNER",
+      "blocks": "BLOCKS",
+      "blockedBy": "BLOCKED-BY"
+    },
+    "output": {
+      "type": "نوع",
+      "status": "وضعیت",
+      "retrieval": "بازیابی",
+      "copied": "کپی شد",
+      "retrievalCompleted": "تکمیل شد",
+      "retrievalTimedOut": "زمان به پایان رسید",
+      "retrievalError": "خطا"
+    }
+  },
+  "workflow": {
+    "agentsMeta": "{{count}} ایجنت",
+    "tokensMeta": "{{value}} توکن",
+    "phaseSuffix": " ({{count}} مرحله)",
+    "phaseSuffix_one": " ({{count}} مرحله)",
+    "phaseSuffix_other": " ({{count}} مرحله)",
+    "taskIdDetail": "شناسه کار: {{taskId}}",
+    "runningInBackground": "در حال اجرا در پس‌زمینه…",
+    "agentsUsageLabel": "ایجنت‌ها {{count}}",
+    "tokensUsageLabel": "توکن‌ها {{value}}",
+    "toolsUsageLabel": "ابزارها {{count}}"
+  },
+  "mcp": {
+    "common": {
+      "out": "OUT"
+    }
+  },
+  "filesystem": {
+    "common": {
+      "in": "IN",
+      "out": "OUT"
+    },
+    "editFile": {
+      "dryRun": "(اجرای آزمایشی)"
+    },
+    "readMultipleFiles": {
+      "fileCount": "{{count}} فایل"
+    }
+  },
+  "gmail": {
+    "common": {
+      "unknownSender": "(فرستنده ناشناس)"
+    },
+    "action": {
+      "addLabelsToThread": "افزودن {{count}} برچسب به رشته",
+      "removeLabelsFromThread": "حذف {{count}} برچسب از رشته",
+      "addLabelsToMessage": "افزودن {{count}} برچسب به پیام",
+      "removeLabelsFromMessage": "حذف {{count}} برچسب از پیام",
+      "createLabel": "ایجاد برچسب",
+      "createLabelNamed": "ایجاد برچسب: {{name}}",
+      "updateLabel": "به‌روزرسانی برچسب",
+      "updateLabelNamed": "به‌روزرسانی برچسب: {{name}}",
+      "deleteLabel": "حذف برچسب",
+      "moveToTrash": "انتقال {{target}} به زباله‌دان",
+      "markAsSpam": "علامت‌گذاری {{target}} به‌عنوان اسپم",
+      "applySensitiveLabel": "اعمال برچسب حساس به {{target}}",
+      "targetMessage": "پیام",
+      "targetThread": "رشته"
+    },
+    "createDraft": {
+      "description": "پیش‌نویس ایجاد شد",
+      "to": "به",
+      "cc": "رونوشت",
+      "bcc": "رونوشت مخفی"
+    },
+    "listDrafts": {
+      "count": "{{count}} پیش‌نویس"
+    },
+    "listLabels": {
+      "count": "{{count}} برچسب",
+      "unnamed": "(بدون نام)"
+    },
+    "searchThreads": {
+      "resultsFound": "{{count}} نتیجه یافت شد"
+    }
+  },
+  "jetbrains": {
+    "common": {
+      "in": "IN",
+      "out": "OUT",
+      "exitCode": "خروج {{code}}",
+      "projectRoot": "ریشه پروژه",
+      "scopeIn": "در",
+      "currentProject": "پروژه فعلی",
+      "differentProject": "پروژه دیگر",
+      "applied": "اعمال شد",
+      "notApplied": "اعمال نشد",
+      "declined": "رد شد",
+      "declinedNote": "شما این ابزار را رد کردید.",
+      "unrecognizedInputTitle": "ورودی ناشناخته — پیش از اجازه دادن بررسی کنید",
+      "unexpectedType": "(نوع غیرمنتظره)",
+      "debuggerStatus": {
+        "paused": "متوقف‌شده",
+        "running": "در حال اجرا",
+        "stopped": "ایست کرده",
+        "timeout": "پایان زمان"
+      }
+    },
+    "action": {
+      "debuggerAction": "دیباگر: {{action}}",
+      "line": "خط {{line}}",
+      "patchOp": {
+        "add": "افزودن",
+        "delete": "حذف",
+        "update": "به‌روزرسانی"
+      }
+    },
+    "breakpoint": {
+      "logpoint": "نقطه لاگ",
+      "suspend": "تعلیق: {{policy}}",
+      "breakpointsMuted": "نقاط توقف بی‌صدا شدند",
+      "breakpointsUnmuted": "نقاط توقف باصدا شدند",
+      "temporary": "موقت",
+      "disabled": "غیرفعال",
+      "logMessage": "پیام لاگ",
+      "logStack": "پشته لاگ",
+      "id": "شناسه {{id}}",
+      "owner": "مالک: {{owner}}",
+      "conditionLabel": "اگر",
+      "logLabel": "لاگ"
+    },
+    "createNewFile": {
+      "overwritesExisting": "فایل موجود را بازنویسی می‌کند",
+      "lineCount": "{{count}} خط",
+      "lineCount_one": "{{count}} خط",
+      "lineCount_other": "{{count}} خط"
+    },
+    "executeTerminalCommand": {
+      "executionModeTooltip": "اجرا در شل پیش‌فرض کاربر در برابر اجرا به‌عنوان یک فرآیند مستقیم",
+      "shell": "شل",
+      "direct": "مستقیم"
+    },
+    "getRunConfigurations": {
+      "none": "هیچ پیکربندی اجرایی وجود ندارد"
+    },
+    "gitStatus": {
+      "includeIgnored": "شامل نادیده‌گرفته‌شده‌ها",
+      "includeUntracked": "شامل ردیابی‌نشده‌ها",
+      "changeCount": "{{count}} تغییر",
+      "changeCount_one": "{{count}} تغییر",
+      "changeCount_other": "{{count}} تغییر",
+      "clean": "درخت کاری تمیز است",
+      "status": {
+        "untracked": "ردیابی‌نشده",
+        "modified": "تغییریافته",
+        "added": "افزوده‌شده",
+        "deleted": "حذف‌شده",
+        "renamed": "تغییرنام‌یافته",
+        "copied": "کپی‌شده",
+        "conflict": "تعارض",
+        "changed": "تغییریافته"
+      }
+    },
+    "openFiles": {
+      "none": "هیچ فایل بازی وجود ندارد",
+      "active": "فعال"
+    },
+    "problems": {
+      "errorsOnly": "فقط خطاها",
+      "buildSucceeded": "بیلد موفق بود",
+      "none": "بدون مشکل",
+      "count": "{{count}} مشکل",
+      "count_one": "{{count}} مشکل",
+      "count_other": "{{count}} مشکل",
+      "infoSeverity": "اطلاعات"
+    },
+    "projectList": {
+      "none": "هیچ‌کدام"
+    },
+    "replaceText": {
+      "all": "همه",
+      "caseSensitive": "حساس به بزرگی‌وکوچکی حروف",
+      "old": "قدیم",
+      "new": "جدید"
+    },
+    "search": {
+      "matchCount": "مورد یافت‌شده",
+      "matchCount_one": "مورد یافت‌شده",
+      "matchCount_other": "مورد یافت‌شده",
+      "word": {
+        "pattern": "الگو",
+        "text": "متن",
+        "regex": "regex",
+        "glob": "glob",
+        "name": "نام",
+        "symbol": "نماد",
+        "query": "پرس‌وجو"
+      }
+    }
+  }
+}

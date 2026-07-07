@@ -1,0 +1,36 @@
+{
+  "welcomeArtAlt": "صورة ترحيبية",
+  "intro": "يمكن استخدام Claude Code مع اشتراكك في Claude أو الفوترة حسب استخدام API عبر حساب Console الخاص بك.",
+  "loginPrompt": "كيف تريد تسجيل الدخول؟",
+  "errors": {
+    "loginFailed": "فشل تسجيل الدخول. يرجى المحاولة مرة أخرى."
+  },
+  "claudeAi": {
+    "label": "اشتراك Claude.ai",
+    "description": "استخدم اشتراكك في Claude Pro أو Team أو Enterprise"
+  },
+  "console": {
+    "label": "Anthropic Console",
+    "description": "ادفع مقابل استخدام API عبر حساب Console الخاص بك"
+  },
+  "providers": {
+    "label": "Bedrock أو Foundry أو Vertex",
+    "description": "تعليمات حول كيفية استخدام مفاتيح API أو موفري الخدمة الخارجيين."
+  },
+  "terminal": {
+    "prompt": "تفضّل تجربة الطرفية؟",
+    "action": "تشغيل claude في الطرفية"
+  },
+  "codeInput": {
+    "title": "الصق الرمز من متصفحك",
+    "description": "بعد تسجيل الدخول، سيعرض متصفحك رمزًا. الصقه هنا لإنهاء تسجيل الدخول.",
+    "placeholder": "الصق الرمز هنا",
+    "submit": "إرسال الرمز"
+  },
+  "urlModal": {
+    "title": "تسجيل الدخول إلى Claude",
+    "description": "سيفتح Claude متصفحك لتسجيل الدخول. إذا لم يُفتح تلقائيًا، استخدم الزر أدناه.",
+    "openButton": "فتح صفحة تسجيل الدخول",
+    "revealCode": "هل تلقيت رمزًا في متصفحك؟ أدخله"
+  }
+}

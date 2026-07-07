@@ -1,0 +1,300 @@
+{
+  "tool": {
+    "in": "دخل",
+    "out": "خرج",
+    "declined": "لقد رفضت هذه الأداة.",
+    "declinedWithInstruction": "لقد رفضت هذه الأداة. طلبت من Claude بدلًا من ذلك: “{{instruction}}”"
+  },
+  "message": {
+    "copyMessage": "نسخ الرسالة",
+    "retry": "إعادة المحاولة",
+    "unknownTool": "غير معروف"
+  },
+  "interrupted": {
+    "default": "تمت المقاطعة",
+    "toolInterrupted": "تمت مقاطعة الأداة"
+  },
+  "attachments": {
+    "imageAlt": "صورة {{index}}",
+    "fullSizeAlt": "الحجم الكامل"
+  },
+  "edit": {
+    "modified": "معدَّل"
+  },
+  "write": {
+    "lineCount": "{{count}} أسطر"
+  },
+  "glob": {
+    "pattern": "النمط: \"{{pattern}}\"",
+    "foundFiles": "تم العثور على {{count}} ملفات",
+    "foundFiles_zero": "لم يتم العثور على أي ملفات",
+    "foundFiles_one": "تم العثور على ملف واحد",
+    "foundFiles_two": "تم العثور على ملفين",
+    "foundFiles_few": "تم العثور على {{count}} ملفات",
+    "foundFiles_many": "تم العثور على {{count}} ملفًا",
+    "foundFiles_other": "تم العثور على {{count}} ملف"
+  },
+  "grep": {
+    "inPath": "(في {{path}})",
+    "globPattern": "(نمط: {{glob}})"
+  },
+  "webFetch": {
+    "fetchedFrom": "تم الجلب من"
+  },
+  "todoWrite": {
+    "title": "تحديث المهام"
+  },
+  "notebookEdit": {
+    "title": "تعديل خلية الدفتر",
+    "noContent": "[لا يوجد محتوى]",
+    "status": {
+      "inserted": "تم الإدراج",
+      "replaced": "تم الاستبدال",
+      "deleted": "تم الحذف",
+      "success": "نجاح"
+    }
+  },
+  "skill": {
+    "fallback": "المهارة",
+    "expandLabel": "مهارة"
+  },
+  "askUserQuestion": {
+    "ask": "سؤال",
+    "out": "خرج"
+  },
+  "exitPlanMode": {
+    "title": "خطة Claude",
+    "planModeTitle": "وضع التخطيط",
+    "approved": "وافق المستخدم على الخطة",
+    "stayedInPlanMode": "بقي في وضع التخطيط",
+    "feedbackLabel": "الرد:"
+  },
+  "task": {
+    "common": {
+      "in": "دخل",
+      "out": "خرج",
+      "form": "نموذج",
+      "taskPrefix": "مهمة:"
+    },
+    "create": {
+      "what": "المحتوى"
+    },
+    "update": {
+      "status": "الحالة",
+      "subject": "الموضوع",
+      "desc": "الوصف",
+      "owner": "المالك",
+      "blocks": "يحجب",
+      "blockedBy": "محجوب بواسطة"
+    },
+    "output": {
+      "type": "النوع",
+      "status": "الحالة",
+      "retrieval": "الاسترجاع",
+      "copied": "تم النسخ",
+      "retrievalCompleted": "مكتمل",
+      "retrievalTimedOut": "انتهت المهلة",
+      "retrievalError": "خطأ"
+    }
+  },
+  "workflow": {
+    "agentsMeta": "{{count}} وكلاء",
+    "tokensMeta": "{{value}} رمز",
+    "phaseSuffix": " ({{count}} مراحل)",
+    "phaseSuffix_zero": " (بلا مراحل)",
+    "phaseSuffix_one": " ({{count}} مرحلة)",
+    "phaseSuffix_two": " ({{count}} مرحلتان)",
+    "phaseSuffix_few": " ({{count}} مراحل)",
+    "phaseSuffix_many": " ({{count}} مرحلة)",
+    "phaseSuffix_other": " ({{count}} مرحلة)",
+    "taskIdDetail": "معرّف المهمة: {{taskId}}",
+    "runningInBackground": "قيد التشغيل في الخلفية…",
+    "agentsUsageLabel": "وكلاء {{count}}",
+    "tokensUsageLabel": "رموز {{value}}",
+    "toolsUsageLabel": "أدوات {{count}}"
+  },
+  "mcp": {
+    "common": {
+      "out": "خرج"
+    }
+  },
+  "filesystem": {
+    "common": {
+      "in": "دخل",
+      "out": "خرج"
+    },
+    "editFile": {
+      "dryRun": "(تجربة تنفيذ)"
+    },
+    "readMultipleFiles": {
+      "fileCount": "{{count}} ملفات"
+    }
+  },
+  "gmail": {
+    "common": {
+      "unknownSender": "(مرسل غير معروف)"
+    },
+    "action": {
+      "addLabelsToThread": "إضافة {{count}} تصنيف(ات) إلى المحادثة",
+      "removeLabelsFromThread": "إزالة {{count}} تصنيف(ات) من المحادثة",
+      "addLabelsToMessage": "إضافة {{count}} تصنيف(ات) إلى الرسالة",
+      "removeLabelsFromMessage": "إزالة {{count}} تصنيف(ات) من الرسالة",
+      "createLabel": "إنشاء تصنيف",
+      "createLabelNamed": "إنشاء تصنيف: {{name}}",
+      "updateLabel": "تحديث تصنيف",
+      "updateLabelNamed": "تحديث تصنيف: {{name}}",
+      "deleteLabel": "حذف تصنيف",
+      "moveToTrash": "نقل {{target}} إلى سلة المحذوفات",
+      "markAsSpam": "وضع علامة على {{target}} كرسالة مزعجة",
+      "applySensitiveLabel": "تطبيق تصنيف حساس على {{target}}",
+      "targetMessage": "رسالة",
+      "targetThread": "محادثة"
+    },
+    "createDraft": {
+      "description": "تم إنشاء المسودة",
+      "to": "إلى",
+      "cc": "نسخة",
+      "bcc": "نسخة مخفية"
+    },
+    "listDrafts": {
+      "count": "{{count}} مسودة(مسودات)"
+    },
+    "listLabels": {
+      "count": "{{count}} تصنيف(ات)",
+      "unnamed": "(بدون اسم)"
+    },
+    "searchThreads": {
+      "resultsFound": "تم العثور على {{count}}"
+    }
+  },
+  "jetbrains": {
+    "common": {
+      "in": "دخل",
+      "out": "خرج",
+      "exitCode": "خروج بالرمز {{code}}",
+      "projectRoot": "جذر المشروع",
+      "scopeIn": "في",
+      "currentProject": "المشروع الحالي",
+      "differentProject": "مشروع مختلف",
+      "applied": "مُطبَّق",
+      "notApplied": "غير مُطبَّق",
+      "declined": "مرفوض",
+      "declinedNote": "لقد رفضت هذه الأداة.",
+      "unrecognizedInputTitle": "إدخال غير معروف — راجع قبل السماح",
+      "unexpectedType": "(نوع غير متوقع)",
+      "debuggerStatus": {
+        "paused": "متوقف مؤقتًا",
+        "running": "قيد التشغيل",
+        "stopped": "متوقف",
+        "timeout": "انتهت المهلة"
+      }
+    },
+    "action": {
+      "debuggerAction": "المصحح: {{action}}",
+      "line": "السطر {{line}}",
+      "patchOp": {
+        "add": "إضافة",
+        "delete": "حذف",
+        "update": "تحديث"
+      }
+    },
+    "breakpoint": {
+      "logpoint": "نقطة تسجيل",
+      "suspend": "تعليق: {{policy}}",
+      "breakpointsMuted": "نقاط التوقف مكتومة",
+      "breakpointsUnmuted": "نقاط التوقف غير مكتومة",
+      "temporary": "مؤقت",
+      "disabled": "معطّل",
+      "logMessage": "رسالة السجل",
+      "logStack": "تتبع المكدس",
+      "id": "المعرّف {{id}}",
+      "owner": "المالك: {{owner}}",
+      "conditionLabel": "إذا",
+      "logLabel": "سجل"
+    },
+    "createNewFile": {
+      "overwritesExisting": "يستبدل ملفًا موجودًا",
+      "lineCount": "{{count}} أسطر",
+      "lineCount_zero": "بلا أسطر",
+      "lineCount_one": "سطر واحد",
+      "lineCount_two": "سطران",
+      "lineCount_few": "{{count}} أسطر",
+      "lineCount_many": "{{count}} سطرًا",
+      "lineCount_other": "{{count}} سطر"
+    },
+    "executeTerminalCommand": {
+      "executionModeTooltip": "التشغيل في الصدفة الافتراضية للمستخدم مقابل التشغيل كعملية مباشرة",
+      "shell": "الصدفة",
+      "direct": "مباشر"
+    },
+    "getRunConfigurations": {
+      "none": "لا توجد إعدادات تشغيل"
+    },
+    "gitStatus": {
+      "includeIgnored": "متضمنًا المتجاهَل",
+      "includeUntracked": "متضمنًا غير المتتبَّع",
+      "changeCount": "{{count}} تغييرات",
+      "changeCount_zero": "بلا تغييرات",
+      "changeCount_one": "تغيير واحد",
+      "changeCount_two": "تغييران",
+      "changeCount_few": "{{count}} تغييرات",
+      "changeCount_many": "{{count}} تغييرًا",
+      "changeCount_other": "{{count}} تغيير",
+      "clean": "شجرة العمل نظيفة",
+      "status": {
+        "untracked": "غير متتبَّع",
+        "modified": "معدَّل",
+        "added": "مُضاف",
+        "deleted": "محذوف",
+        "renamed": "أُعيدت تسميته",
+        "copied": "منسوخ",
+        "conflict": "تعارض",
+        "changed": "متغيّر"
+      }
+    },
+    "openFiles": {
+      "none": "لا توجد ملفات مفتوحة",
+      "active": "نشط"
+    },
+    "problems": {
+      "errorsOnly": "الأخطاء فقط",
+      "buildSucceeded": "نجح البناء",
+      "none": "لا توجد مشكلات",
+      "count": "{{count}} مشكلات",
+      "count_zero": "لا مشكلات",
+      "count_one": "مشكلة واحدة",
+      "count_two": "مشكلتان",
+      "count_few": "{{count}} مشكلات",
+      "count_many": "{{count}} مشكلة",
+      "count_other": "{{count}} مشكلة",
+      "infoSeverity": "معلومة"
+    },
+    "projectList": {
+      "none": "لا شيء"
+    },
+    "replaceText": {
+      "all": "الكل",
+      "caseSensitive": "حساس لحالة الأحرف",
+      "old": "القديم",
+      "new": "الجديد"
+    },
+    "search": {
+      "matchCount": "تطابقات",
+      "matchCount_zero": "بلا تطابقات",
+      "matchCount_one": "تطابق واحد",
+      "matchCount_two": "تطابقان",
+      "matchCount_few": "تطابقات",
+      "matchCount_many": "تطابقًا",
+      "matchCount_other": "تطابق",
+      "word": {
+        "pattern": "نمط",
+        "text": "نص",
+        "regex": "تعبير نمطي",
+        "glob": "نمط ملفات",
+        "name": "اسم",
+        "symbol": "رمز",
+        "query": "استعلام"
+      }
+    }
+  }
+}
