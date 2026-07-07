@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" translate="no">
+<html lang="en" translate="no" dir="ltr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content" />
@@ -12,11 +12,14 @@
     <title></title>
     <!--
       FOUC guard: runs before the CSS bundle and React mount so a new JCEF tab
-      paints the correct surface color immediately instead of flashing white.
-      Mirrors webview/src/theme/bootstrapTheme.ts (resolveBootstrapTheme) — keep
-      both in sync. The background colors MUST match --surface-base in
-      src/index.css (light :root #FFFFFF, dark .dark #1A1A1A).
-      Setting documentElement.style here is intentional (not a React component).
+      paints the correct surface color and layout direction immediately instead
+      of flashing white / re-flowing after mount. Mirrors
+      webview/src/theme/bootstrapTheme.ts (resolveBootstrapTheme,
+      resolveBootstrapDirection, resolveBootstrapLang) — keep all three in
+      sync. The background colors MUST match --surface-base in src/index.css
+      (light :root #FFFFFF, dark .dark #1A1A1A). Setting
+      documentElement.style/attributes here is intentional (not a React
+      component).
     -->
     <script>
       (function () {
@@ -38,6 +41,49 @@
         // Direct color values: CSS variables are not available yet at this point.
         document.documentElement.style.backgroundColor =
           resolved === 'dark' ? '#1A1A1A' : '#FFFFFF';
+
+        // UI mirroring: no Kotlin-injected hint exists for this, so the only
+        // source of truth is the persisted `uiDirection` setting in the
+        // SettingsContext localStorage cache (key 'claude-code-settings').
+        try {
+          var stored = JSON.parse(localStorage.getItem('claude-code-settings') || 'null');
+          var uiDirection = stored && stored.uiDirection;
+          if (uiDirection === 'rtl') {
+            document.documentElement.setAttribute('dir', 'rtl');
+          }
+        } catch (e) {
+          /* localStorage unavailable or unparsable: keep static dir="ltr" */
+        }
+
+        // <html lang> (a11y correctness): uiLanguage is owned by
+        // ClaudeSettingsContext, which has no localStorage cache of its own —
+        // I18nLocaleSync.tsx writes a dedicated cache (key
+        // 'claude-code-ui-language') on every sync for this exact purpose.
+        // This map is a verbatim copy of LANGUAGE_TO_LOCALE in
+        // webview/src/i18n/languageMap.ts (this script cannot import a module
+        // before the bundle loads) — keep both, and resolveBootstrapLang in
+        // bootstrapTheme.ts, in sync.
+        try {
+          var uiLanguage = localStorage.getItem('claude-code-ui-language');
+          var languageToLocale = {
+            english: 'en',
+            korean: 'ko',
+            japanese: 'ja',
+            chinese: 'zh',
+            'chinese-traditional': 'zh-TW',
+            spanish: 'es',
+            french: 'fr',
+            german: 'de',
+            portuguese: 'pt',
+            russian: 'ru',
+            persian: 'fa',
+            arabic: 'ar',
+          };
+          var locale = (uiLanguage && languageToLocale[uiLanguage]) || 'en';
+          document.documentElement.setAttribute('lang', locale);
+        } catch (e) {
+          /* localStorage unavailable or unparsable: keep static lang="en" */
+        }
       })();
     </script>
   </head>

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { SettingsState, DEFAULT_SETTINGS, SettingKey, ThemeMode } from '@/types/settings';
+import { SettingsState, DEFAULT_SETTINGS, SettingKey, ThemeMode, UiDirection } from '@/types/settings';
 import { useBridgeContext } from '@/contexts/BridgeContext';
 import { useWorkingDir } from '@/contexts/WorkingDirContext';
 import { isJetBrains, getIdeTheme, subscribeIdeTheme } from '@/config/environment';
@@ -141,6 +141,13 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     const handler = (e: MediaQueryListEvent) => (e.matches ? applyDark() : applyLight());
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
+  }, [settings]);
+
+  // Apply UI mirroring to <html> element. Toggles the `dir` attribute based on
+  // the uiDirection setting: 'ltr' (default) or 'rtl'.
+  useEffect(() => {
+    const uiDirection = settings[SettingKey.UI_DIRECTION];
+    document.documentElement.setAttribute('dir', uiDirection === UiDirection.RTL ? 'rtl' : 'ltr');
   }, [settings]);
 
   // External changes pushed by the backend: patch the merged cache and
