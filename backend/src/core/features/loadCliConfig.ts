@@ -129,7 +129,29 @@ export function _resetCliConfigCache(): void {
   pendingByWorkingDir.clear();
 }
 
-function loadCliConfigInternal(workingDir: string): Promise<CliConfigControlResponse | null> {
+async function loadCliConfigInternal(workingDir: string): Promise<CliConfigControlResponse | null> {
+  const args = [
+    '-p',
+    '--no-session-persistence',
+    '--output-format', 'stream-json',
+    '--input-format', 'stream-json',
+    '--verbose',
+    '--permission-mode', 'default',
+  ];
+
+  // spawnAuthed: the config probe runs as the same authenticated identity as chat
+  // (inherited OAuth tokens stripped identically); env-provided API keys are kept. Awaited
+  // before wiring handlers — the 'spawn' event fires only after this sync block registers it.
+  const proc = await Claude.spawnAuthed(args, workingDir, {
+    cwd: workingDir,
+    stdio: ['pipe', 'pipe', 'pipe'],
+    env: {
+      TERM: 'dumb',
+      CI: 'true',
+      CLAUDECODE: undefined,
+    },
+  });
+
   return new Promise((resolve) => {
     let resolved = false;
     const safeResolve = (value: CliConfigControlResponse | null): void => {
@@ -137,24 +159,6 @@ function loadCliConfigInternal(workingDir: string): Promise<CliConfigControlResp
       resolved = true;
       resolve(value);
     };
-    const args = [
-      '-p',
-      '--no-session-persistence',
-      '--output-format', 'stream-json',
-      '--input-format', 'stream-json',
-      '--verbose',
-      '--permission-mode', 'default',
-    ];
-
-    const proc = Claude.spawn(args, {
-      cwd: workingDir,
-      stdio: ['pipe', 'pipe', 'pipe'],
-      env: {
-        TERM: 'dumb',
-        CI: 'true',
-        CLAUDECODE: undefined,
-      },
-    });
 
     let stdout = '';
 

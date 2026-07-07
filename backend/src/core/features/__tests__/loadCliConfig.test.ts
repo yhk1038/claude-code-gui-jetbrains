@@ -5,7 +5,11 @@ import type { ChildProcess } from 'child_process';
 
 vi.mock('../../claude', () => ({
   Claude: {
-    spawn: vi.fn(),
+    // loadCliConfig now goes through spawnAuthed (auth-env strip centralized in Claude).
+    // killTree is mocked too so the 15s safety-timeout callback — which can fire after a
+    // fast test has torn down — doesn't throw "Claude.killTree is not a function".
+    spawnAuthed: vi.fn(),
+    killTree: vi.fn(),
   },
 }));
 
@@ -51,14 +55,13 @@ function controlResponse(commandName: string): string {
 describe('loadCliConfig', () => {
   beforeEach(() => {
     _resetCliConfigCache();
-    vi.mocked(Claude.spawn).mockReset();
+    vi.mocked(Claude.spawnAuthed).mockReset();
   });
 
   describe('cache', () => {
     it('caches per workingDir — different projects get different configs', async () => {
-      vi.mocked(Claude.spawn).mockImplementation((_args, options) => {
-        const cwd = options?.cwd as string;
-        const cmdName = cwd === '/project/a' ? 'skill-a' : 'skill-b';
+      vi.mocked(Claude.spawnAuthed).mockImplementation(async (_args, workingDir) => {
+        const cmdName = workingDir === '/project/a' ? 'skill-a' : 'skill-b';
         return makeFakeProc(controlResponse(cmdName));
       });
 
@@ -70,24 +73,24 @@ describe('loadCliConfig', () => {
     });
 
     it('returns the cached config for the same workingDir without respawning', async () => {
-      vi.mocked(Claude.spawn).mockImplementation(() => makeFakeProc(controlResponse('skill-a')));
+      vi.mocked(Claude.spawnAuthed).mockImplementation(async () => makeFakeProc(controlResponse('skill-a')));
 
       await loadCliConfig('/project/a');
       await loadCliConfig('/project/a');
 
-      expect(vi.mocked(Claude.spawn)).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(Claude.spawnAuthed)).toHaveBeenCalledTimes(1);
     });
 
     it('refresh:true bypasses the cache and re-spawns', async () => {
-      vi.mocked(Claude.spawn).mockImplementationOnce(() => makeFakeProc(controlResponse('first')));
+      vi.mocked(Claude.spawnAuthed).mockImplementationOnce(async () => makeFakeProc(controlResponse('first')));
       const first = await loadCliConfig('/project/a');
 
-      vi.mocked(Claude.spawn).mockImplementationOnce(() => makeFakeProc(controlResponse('second')));
+      vi.mocked(Claude.spawnAuthed).mockImplementationOnce(async () => makeFakeProc(controlResponse('second')));
       const second = await loadCliConfig('/project/a', { refresh: true });
 
       expect(first?.response.response.commands[0].name).toBe('first');
       expect(second?.response.response.commands[0].name).toBe('second');
-      expect(vi.mocked(Claude.spawn)).toHaveBeenCalledTimes(2);
+      expect(vi.mocked(Claude.spawnAuthed)).toHaveBeenCalledTimes(2);
     });
   });
 

@@ -37,7 +37,9 @@ interface ClaudeAuthStatus {
 /** Run `claude auth status` for the live account. Null when it fails / not JSON. */
 async function runAuthStatus(): Promise<ClaudeAuthStatus | null> {
   try {
-    const { stdout } = await Claude.exec(['auth', 'status', '--json'], { timeout: 8000 });
+    // execAuthed (global context — account management is not project-scoped) so the live
+    // account matches what the chat spawn authenticates as; env-provided API keys are kept.
+    const { stdout } = await Claude.execAuthed(['auth', 'status', '--json'], undefined, { timeout: 8000 });
     // Extract the JSON object from stdout to guard against shell banner noise
     // (e.g. Windows Console banners, .bashrc printf sequences) that can prefix
     // or suffix the actual JSON output.

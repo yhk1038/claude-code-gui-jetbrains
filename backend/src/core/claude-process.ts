@@ -2,7 +2,6 @@ import type { ConnectionManager } from '../ws/connection-manager';
 import type { Bridge } from '../bridge/bridge-interface';
 import { Claude } from './claude';
 import { diagnoseAuthError } from './features/auth-diagnosis';
-import { getStrippableAuthEnvKeys } from './features/claude-settings';
 import { EditedFileTracker } from './features/editedFileTracker';
 import { WorkflowProgressTracker } from './features/workflow-tracker';
 import { isWslUncPath } from './wsl-path';
@@ -165,25 +164,16 @@ export async function ensureClaudeProcess(
   // spawning, so the CLI resolves the right Claude data dir for THIS workingDir. (#123)
   await Claude.applyConfigDir(workingDir);
 
-  // Strip OAuth env inherited from parent (e.g. Claude Desktop spawning the IDE) so the
-  // CLI falls through to its keychain-based auth, which can refresh expired tokens.
-  // User-pinned keys in Claude settings are preserved by getStrippableAuthEnvKeys().
-  const stripKeys = await getStrippableAuthEnvKeys(workingDir);
-  if (stripKeys.length > 0) {
-    console.error('[node-backend]', `Stripping inherited auth env from CLI spawn: ${stripKeys.join(', ')}`);
-  }
-  const stripEnv: Record<string, undefined> = Object.fromEntries(
-    stripKeys.map((k) => [k, undefined]),
-  );
-
-  const proc = Claude.spawn(args, {
+  // spawnAuthed strips inherited OAuth tokens (e.g. from Claude Desktop spawning the IDE) so
+  // the CLI falls through to its refreshable keychain auth. Centralized in Claude so chat and
+  // `auth status` strip identically; user-pinned / ANTHROPIC_API_KEY env is preserved there.
+  const proc = await Claude.spawnAuthed(args, workingDir, {
     cwd: workingDir,
     stdio: ['pipe', 'pipe', 'pipe'],
     env: {
       TERM: 'dumb',
       CI: 'true',
       CLAUDECODE: undefined,
-      ...stripEnv,
     },
   });
 

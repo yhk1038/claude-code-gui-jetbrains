@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mock BEFORE imports
 vi.mock('../../claude', () => ({
   Claude: {
-    exec: vi.fn(),
+    execAuthed: vi.fn(),
     applyConfigDir: vi.fn(),
   },
 }));
@@ -26,7 +26,7 @@ import type { Bridge } from '../../../bridge/bridge-interface';
 import type { IPCMessage } from '../../types';
 import { MessageType } from '../../../shared';
 
-const mockExec = vi.mocked(Claude.exec);
+const mockExec = vi.mocked(Claude.execAuthed);
 const mockReadRegistry = vi.mocked(readRegistry);
 const mockRunCcbUsage = vi.mocked(runCcbUsage);
 

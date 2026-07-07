@@ -25,14 +25,17 @@ export function resetUsageReportCache(): void {
  * `/usage` in the terminal, so it stays aligned with the CLI and depends on no
  * SDK or undocumented protocol.
  */
-export function runUsageReport(workingDir?: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const proc = Claude.spawn(['-p', '/usage', '--no-session-persistence'], {
-      cwd: workingDir,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      env: { TERM: 'dumb', CI: 'true', CLAUDECODE: undefined },
-    });
+export async function runUsageReport(workingDir?: string): Promise<string> {
+  // spawnAuthed: /usage runs as the same authenticated identity as chat (inherited OAuth
+  // tokens stripped identically); env-provided API keys are kept. Must await before wiring
+  // the stream handlers, so the spawn happens outside the result Promise's executor.
+  const proc = await Claude.spawnAuthed(['-p', '/usage', '--no-session-persistence'], workingDir, {
+    cwd: workingDir,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: { TERM: 'dumb', CI: 'true', CLAUDECODE: undefined },
+  });
 
+  return new Promise((resolve, reject) => {
     let stdout = '';
     let stderr = '';
     let settled = false;

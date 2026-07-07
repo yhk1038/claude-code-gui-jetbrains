@@ -18,7 +18,7 @@ vi.mock('../account-store', () => ({
   deleteAccountFiles: vi.fn(),
   newAccountId: vi.fn(() => 'acc-new'),
 }));
-vi.mock('../../claude', () => ({ Claude: { exec: vi.fn() } }));
+vi.mock('../../claude', () => ({ Claude: { execAuthed: vi.fn() } }));
 
 import {
   readLiveCredentials,
@@ -48,7 +48,7 @@ const mockReadSnapshot = vi.mocked(readSnapshot);
 const mockUpsert = vi.mocked(upsertAccount);
 const mockSetCurrent = vi.mocked(setCurrentAccount);
 const mockDeleteFiles = vi.mocked(deleteAccountFiles);
-const mockExec = vi.mocked(Claude.exec);
+const mockExec = vi.mocked(Claude.execAuthed);
 
 function authStatus(obj: Record<string, unknown>): void {
   mockExec.mockResolvedValue({ stdout: JSON.stringify(obj), stderr: '' });
