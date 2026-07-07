@@ -146,19 +146,15 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
-            <h3>0.23.1 - UI fixes and /usage improvements</h3>
+            <h3>0.24.0 - i18n & RTL now available 🎉</h3>
             <ul>
-                <li>Fixed the scroll-to-bottom button position (#156)</li>
-                <li>Fixed UI that broke on narrow / mobile screens (#156)</li>
-                <li>/usage now opens the usage modal with a full breakdown (#148, reported by @georgelvov)</li>
-                <li>Fixed stray line breaks in the middle of sentences (#155, reported by @sarang2dan)</li>
-            </ul>
-            <h3>0.23.0 - The Fable 5 model & native MCP tool cards</h3>
-            <ul>
-                <li><b>New model: Fable 5</b> — added to the model picker (requires Claude CLI 2.1.170+; you'll be prompted to update if your CLI is older). (#153)</li>
-                <li><b>Native rendering for JetBrains IDE MCP tools</b> — tool calls from your IDE's built-in MCP server (files, editor, symbols, inspections, run/debug, terminal, VCS, database) now render as rich, IDE-quality chat cards — with clickable file:line links, a project chip, and truthful success/failure status — instead of raw JSON. (#147 by @lukaszszczesniak)</li>
-                <li><b>Faster chat history</b> — long conversations now load a page at a time and open at the newest message. Toggle pagination on/off in Settings → General. (#145 by @P1rnazarov)</li>
-                <li><b>Model control fixes</b> — the effort slider now shows correctly on Opus and other models, the fast-mode toggle is stable, and unsupported controls stay visible but disabled with an explanatory tooltip instead of disappearing. (#154, reported by @maicol07)</li>
+                <li>Add language Internationalization (i18n): Settings -> General > Interface Language (#160)</li>
+                <li>language added: 简体中文, 繁體中文, Persian, Arabic</li>
+                <li>RTL (Right to Left) support (#164, reported by @emadmrz)</li>
+                <li>Improved token display animation in Thinking Stream</li>
+                <li>Context gauge now reflects the model's real context window instead of a fixed fallback</li>
+                <li>More reliable backend startup — the MCP SDK no longer blocks Node.js boot (#162, reported by @pledwig-creativestyle)</li>
+                <li>Preserve a user-provided ANTHROPIC_API_KEY when launching the Claude CLI (#163)</li>
             </ul>
         """.trimIndent()
     }
