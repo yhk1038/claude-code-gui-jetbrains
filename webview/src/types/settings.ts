@@ -28,6 +28,9 @@ export enum SettingKey {
 
   // Chat history paging
   CHAT_PAGINATION = 'chatPagination',
+
+  // UI mirroring (RTL/LTR layout direction)
+  UI_DIRECTION = 'uiDirection',
 }
 
 /**
@@ -65,6 +68,15 @@ export enum ThemeMode {
 }
 
 /**
+ * UI 미러링(레이아웃 방향) Enum. 'auto'(로케일 자동연동) 확장 여지를 위해
+ * boolean이 아닌 문자열 값을 사용한다.
+ */
+export enum UiDirection {
+  LTR = 'ltr',
+  RTL = 'rtl',
+}
+
+/**
  * 로그 레벨 Enum
  */
 export enum LogLevel {
@@ -89,6 +101,7 @@ export interface SettingsState {
   [SettingKey.HOST_MODE]: HostMode;
   [SettingKey.OPEN_SETTINGS_AS]: OpenSettingsMode;
   [SettingKey.CHAT_PAGINATION]: boolean;
+  [SettingKey.UI_DIRECTION]: UiDirection;
 }
 
 /**
@@ -106,4 +119,5 @@ export const DEFAULT_SETTINGS: SettingsState = {
   [SettingKey.HOST_MODE]: HostMode.EDITOR_TAB,
   [SettingKey.OPEN_SETTINGS_AS]: OpenSettingsMode.OVERLAY,
   [SettingKey.CHAT_PAGINATION]: true,
+  [SettingKey.UI_DIRECTION]: UiDirection.LTR,
 };

@@ -318,3 +318,36 @@
   max-width: 100%;
   border-radius: 6px;
 }
+
+/* ============================================
+   RTL exception: code, terminal-like text, and math must always render
+   LTR, regardless of the surrounding UI mirroring direction (`dir="rtl"`
+   on <html>). Mixing Persian/Arabic identifiers or comments into code
+   should not flip punctuation/indentation ordering.
+
+   `direction: ltr` fixes block flow + default text-align (`start`
+   resolves against the element's own direction, not the ancestor's).
+   `unicode-bidi: isolate` establishes a bidi boundary so embedded
+   RTL runs don't reorder relative to surrounding RTL prose — this is
+   the CSS-only equivalent of an HTML `dir="ltr"` attribute and is
+   especially important for `inline-code`, which sits inline inside
+   RTL paragraph text.
+   ============================================ */
+[data-streamdown="code-block"],
+[data-streamdown="code-block-header"],
+[data-streamdown="code-block-body"],
+[data-streamdown="code-block-body"] code,
+[data-streamdown="inline-code"] {
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: isolate;
+}
+
+/* KaTeX: force LTR direction only — `text-align` is intentionally left
+   untouched so block equations (`.katex-display`) keep their centered
+   layout; that centering is unrelated to the bidi/RTL bug. */
+.katex,
+.katex-display {
+  direction: ltr;
+  unicode-bidi: isolate;
+}

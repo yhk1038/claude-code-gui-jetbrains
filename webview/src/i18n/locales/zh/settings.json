@@ -36,6 +36,9 @@
       "label": "界面语言",
       "description": "应用界面的语言，与 Claude 的回复语言相互独立。"
     },
+    "uiDirection": {
+      "label": "启用 RTL(Right-to-left)"
+    },
     "useCtrlEnterToSend": {
       "label": "使用 Ctrl+Enter 发送",
       "description": "启用后,使用 Ctrl/Cmd+Enter 发送提示,而不是单独按 Enter。这样 Enter 键可用于换行。"

@@ -4,10 +4,14 @@ import { ToggleSwitch } from '@/components/ToggleSwitch';
 import { HostModeRow } from './HostModeRow';
 import { OpenSettingsRow } from './OpenSettingsRow';
 import { ChatPaginationRow } from './ChatPaginationRow';
+import { UiDirectionRow } from './UiDirectionRow';
 import { ClaudeConfigDirRow } from './ClaudeConfigDirRow';
 import { APP_NAME } from '@/config/app';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { SettingKey, UiDirection } from '@/types/settings';
 import { useTranslation } from '@/i18n';
+import { isRtlLanguage } from '@/i18n/languageMap';
 
 const NOT_SET_VALUE = '__NOT_SET__';
 
@@ -25,11 +29,14 @@ const LANGUAGE_OPTIONS = [
   { value: 'german', label: 'Deutsch' },
   { value: 'portuguese', label: 'Português' },
   { value: 'russian', label: 'Русский' },
+  { value: 'persian', label: 'فارسی' },
+  { value: 'arabic', label: 'العربية' },
 ] as const;
 
 export function GeneralSettings() {
   const { t } = useTranslation('settings');
   const { scopeSettings, updateSetting, scope, resetToGlobal } = useClaudeSettings();
+  const { updateSettingWithScope } = useSettings();
 
   // Claude's response language is a free-text field in Claude's settings.json.
   // Show the value stored at the current scope (empty → English placeholder);
@@ -87,10 +94,26 @@ export function GeneralSettings() {
                 resetToGlobal('uiLanguage');
                 return;
               }
+              // Direction auto-sync fires whenever the effective direction
+              // actually changes. When the previous value is NOT_SET (project
+              // scope inheriting global), isRtlLanguage(undefined) already
+              // resolves to false (LTR) — the same default the UI shows for
+              // NOT_SET — so treating it as LTR here keeps the comparison
+              // consistent instead of skipping the sync entirely.
+              const previousUiLanguage = currentUiLanguage === NOT_SET_VALUE ? undefined : currentUiLanguage;
+              const wasRtl = isRtlLanguage(previousUiLanguage);
+              const willBeRtl = isRtlLanguage(value);
+              if (willBeRtl && !wasRtl) {
+                updateSettingWithScope(SettingKey.UI_DIRECTION, UiDirection.RTL, 'global');
+              } else if (!willBeRtl && wasRtl) {
+                updateSettingWithScope(SettingKey.UI_DIRECTION, UiDirection.LTR, 'global');
+              }
               updateSetting('uiLanguage', value);
             }}
           />
         </SettingRow>
+
+        <UiDirectionRow />
 
         <SettingRow
           label={t('general.useCtrlEnterToSend.label')}

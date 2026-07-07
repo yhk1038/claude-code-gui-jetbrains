@@ -27,7 +27,7 @@ export function OptionButton(props: Props) {
             onClick={onClick}
             tabIndex={0}
             onFocus={onFocus}
-            className={`w-full flex items-center gap-2.5 px-2.5 py-[3.5px] border border-border-strong/20 rounded-[4px] text-left font-bold transition-colors duration-100 select-none outline-none ${
+            className={`w-full flex items-center gap-2.5 px-2.5 py-[3.5px] border border-border-strong/20 rounded-[4px] text-start font-bold transition-colors duration-100 select-none outline-none ${
                 isFocused
                     ? 'text-text-primary bg-accent-primary-subtle'
                     : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover'

@@ -120,7 +120,7 @@ export function SwitchAccountPage(props: Props) {
           className="p-1 rounded text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors"
           title={Label.BACK}
         >
-          <ArrowLeftIcon className="w-4 h-4" />
+          <ArrowLeftIcon className="w-4 h-4 rtl:-scale-x-100" />
         </button>
         <h1 className="text-sm font-semibold text-text-primary">{meta.label}</h1>
       </header>

@@ -31,7 +31,7 @@ const SCALE_TOKENS: Record<SessionListScale, ScaleTokens> = {
     itemText: 'text-xs',
     itemTime: 'text-[0.8461rem]',
     searchPad: 'p-1.5',
-    searchInput: 'text-xs px-2.5 py-1.5 pr-7',
+    searchInput: 'text-xs px-2.5 py-1.5 pe-7',
   },
   [SessionListScale.Regular]: {
     listPad: 'p-2 pt-0',
@@ -40,7 +40,7 @@ const SCALE_TOKENS: Record<SessionListScale, ScaleTokens> = {
     itemText: 'text-sm',
     itemTime: 'text-xs',
     searchPad: 'p-2',
-    searchInput: 'text-sm px-3 py-2 pr-9',
+    searchInput: 'text-sm px-3 py-2 pe-9',
   },
 };
 

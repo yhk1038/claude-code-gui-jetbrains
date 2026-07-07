@@ -31,7 +31,7 @@ export function MoveFileRenderer(props: RendererProps) {
     return (
         <ToolWrapper message={props.message} groupClassName="pb-2.5">
             <ToolHeader name={name}>
-                <div className="flex items-center gap-1.5 text-[0.9230rem] font-mono">
+                <div dir="ltr" className="flex items-center gap-1.5 text-[0.9230rem] font-mono">
                     <span
                         className={cn("text-text-link", source && "cursor-pointer hover:underline")}
                         onClick={source ? () => getAdapter().openFile(source) : undefined}

@@ -12,8 +12,13 @@ export const ToggleSwitch = (props: Props) => {
   const isSmall = size === 'small';
   const trackClass = isSmall ? 'h-4 w-7' : 'h-6 w-11';
   const knobClass = isSmall ? 'h-3 w-3' : 'h-4 w-4';
-  const knobOn = isSmall ? 'translate-x-3.5' : 'translate-x-6';
-  const knobOff = isSmall ? 'translate-x-0.5' : 'translate-x-1';
+  // The knob moves via a physical `translate-x` (positive = physical right).
+  // Under `dir="rtl"` the flex start edge flips to the right, so the same
+  // positive translate would push the knob out of the track. The `rtl:`
+  // variants negate the shift so the knob mirrors correctly while keeping the
+  // `transition-transform` slide animation.
+  const knobOn = isSmall ? 'translate-x-3.5 rtl:-translate-x-3.5' : 'translate-x-6 rtl:-translate-x-6';
+  const knobOff = isSmall ? 'translate-x-0.5 rtl:-translate-x-0.5' : 'translate-x-1 rtl:-translate-x-1';
 
   return (
     <button

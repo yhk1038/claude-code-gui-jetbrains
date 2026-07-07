@@ -59,10 +59,13 @@ export interface McpToolNamer {
     sessionScopeLabel(name: string): string;
 }
 
+// dir="ltr": wraps raw JSON/code IN-OUT rows (JSON.stringify(input), tool
+// output text) for every MCP renderer. Left mirrored, this content's
+// punctuation/indentation would flip under `<html dir="rtl">`.
 export const McpToolBody = (props: {children?: ReactNode}) => {
     const {children} = props;
     return (
-        <div className="mt-1.5 border border-border-subtle rounded text-[0.8461rem] font-mono overflow-hidden">
+        <div dir="ltr" className="mt-1.5 border border-border-subtle rounded text-[0.8461rem] font-mono overflow-hidden">
             {children}
         </div>
     );

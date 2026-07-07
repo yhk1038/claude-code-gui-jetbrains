@@ -30,7 +30,7 @@ export function WorkingDirToggle(props: Props) {
       <FolderIcon className="w-5 h-5" />
       {showOffRootIndicator && (
         <span
-          className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-accent-default"
+          className="absolute top-0.5 end-0.5 w-1.5 h-1.5 rounded-full bg-accent-default"
           aria-hidden="true"
         />
       )}

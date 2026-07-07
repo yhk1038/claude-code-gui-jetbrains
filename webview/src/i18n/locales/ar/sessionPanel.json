@@ -1,0 +1,12 @@
+{
+  "newSession": "جلسة جديدة",
+  "scope": {
+    "local": "محلي",
+    "web": "الويب"
+  },
+  "empty": {
+    "noMatches": "لا توجد جلسات مطابقة",
+    "noSessions": "لا توجد جلسات بعد",
+    "noWebSessions": "لا توجد جلسات ويب"
+  }
+}

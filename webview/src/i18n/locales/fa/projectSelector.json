@@ -1,0 +1,16 @@
+{
+  "loading": "در حال بارگذاری پروژه‌ها...",
+  "select": {
+    "title": "انتخاب پروژه",
+    "subtitle": "پروژه‌ای برای کار انتخاب کنید"
+  },
+  "empty": "هیچ پروژه‌ای در دسترس نیست",
+  "addProject": "افزودن پروژه",
+  "retry": "تلاش مجدد",
+  "sessionCount": "{{count}} نشست",
+  "sessionCount_one": "{{count}} نشست",
+  "sessionCount_other": "{{count}} نشست",
+  "errors": {
+    "loadFailed": "بارگذاری پروژه‌ها ناموفق بود"
+  }
+}

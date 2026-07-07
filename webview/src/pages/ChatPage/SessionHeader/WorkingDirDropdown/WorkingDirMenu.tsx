@@ -128,7 +128,7 @@ export function WorkingDirMenu(props: Props) {
 
   return (
     <div
-      className="absolute left-0 top-full mt-1 w-[22rem] bg-surface-raised border border-border-default rounded-md shadow-xl overflow-hidden z-50"
+      className="absolute start-0 top-full mt-1 w-[22rem] bg-surface-raised border border-border-default rounded-md shadow-xl overflow-hidden z-50"
       role="menu"
     >
       {isLoading && nodes.length === 0 ? (
@@ -160,7 +160,7 @@ export function WorkingDirMenu(props: Props) {
         <Link
           to={routeToPath(Route.PROJECT_SELECTOR)}
           onClick={handleFooterClick}
-          className="px-2.5 py-2 hover:text-text-primary hover:bg-[var(--surface-hover)] border-r border-border-default"
+          className="px-2.5 py-2 hover:text-text-primary hover:bg-[var(--surface-hover)] border-e border-border-default"
         >
           <span className="block text-center scale-90">{t('sessionHeader.workingDir.browseAll')}</span>
         </Link>

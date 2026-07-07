@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, act, waitFor } from '@testing-library/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { SettingsProvider } from '../SettingsContext';
-import { SettingKey, ThemeMode } from '@/types/settings';
+import { SettingKey, ThemeMode, UiDirection } from '@/types/settings';
 import { _resetRuntimeCache } from '@/config/environment';
 import { createTestQueryClient } from '@/hooks/queries/__tests__/testQueryClient';
 
@@ -120,6 +120,29 @@ function renderWithTheme(theme: ThemeMode) {
   );
 }
 
+function seedUiDirection(uiDirection: UiDirection) {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ [SettingKey.UI_DIRECTION]: uiDirection }),
+    );
+  } catch {
+    // ignore
+  }
+}
+
+function renderWithDirection(uiDirection: UiDirection) {
+  seedUiDirection(uiDirection);
+  const client = createTestQueryClient();
+  return render(
+    <QueryClientProvider client={client}>
+      <SettingsProvider>
+        <div data-testid="child">child</div>
+      </SettingsProvider>
+    </QueryClientProvider>,
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Setup / teardown
 // ---------------------------------------------------------------------------
@@ -132,6 +155,7 @@ beforeEach(() => {
     // ignore
   }
   document.documentElement.classList.remove('dark');
+  document.documentElement.setAttribute('dir', 'ltr');
   setJcefEnv(false);
   setIdeTheme(null);
   installMatchMediaMock(false);
@@ -139,6 +163,7 @@ beforeEach(() => {
 
 afterEach(() => {
   document.documentElement.classList.remove('dark');
+  document.documentElement.setAttribute('dir', 'ltr');
   setJcefEnv(false);
   setIdeTheme(null);
 });
@@ -274,6 +299,24 @@ describe('SettingsContext theme — explicit modes', () => {
 
     await waitFor(() => {
       expect(document.documentElement.classList.contains('dark')).toBe(false);
+    });
+  });
+});
+
+describe('SettingsContext uiDirection — <html dir> mirroring', () => {
+  it('sets dir="rtl" on <html> when uiDirection is RTL', async () => {
+    renderWithDirection(UiDirection.RTL);
+
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute('dir')).toBe('rtl');
+    });
+  });
+
+  it('sets dir="ltr" on <html> when uiDirection is LTR (default)', async () => {
+    renderWithDirection(UiDirection.LTR);
+
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute('dir')).toBe('ltr');
     });
   });
 });

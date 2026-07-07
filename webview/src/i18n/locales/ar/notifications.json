@@ -1,0 +1,17 @@
+{
+  "sessionComplete": {
+    "body": "اكتمل الرد"
+  },
+  "streamError": {
+    "body": "فشل الرد"
+  },
+  "awaitingPermission": {
+    "body": "طُلب إذن"
+  },
+  "awaitingPlanApproval": {
+    "body": "الخطة جاهزة للمراجعة"
+  },
+  "awaitingUserInput": {
+    "body": "في انتظار إجابتك"
+  }
+}

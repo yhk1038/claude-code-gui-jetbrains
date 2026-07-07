@@ -52,7 +52,7 @@ export function OptionItem(props: {
                 <span className="text-text-primary/90 text-[1rem]">{label}</span>
             </div>
             {description && (
-                <div className="text-text-primary/50 text-[0.8461rem] mt-0.5 ml-5">{description}</div>
+                <div className="text-text-primary/50 text-[0.8461rem] mt-0.5 ms-5">{description}</div>
             )}
         </div>
     );

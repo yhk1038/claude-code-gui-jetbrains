@@ -90,7 +90,7 @@ export function ContextChip({ context, onRemove }: ContextChipProps) {
       </div>
       <button
         onClick={() => onRemove(context.id)}
-        className="ml-1 p-0.5 rounded hover:bg-surface-tooltip/50 transition-colors opacity-0 group-hover:opacity-100"
+        className="ms-1 p-0.5 rounded hover:bg-surface-tooltip/50 transition-colors opacity-0 group-hover:opacity-100"
         aria-label={t('contextChip.removeContext')}
       >
         <svg className="w-3 h-3 text-text-secondary hover:text-text-primary" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

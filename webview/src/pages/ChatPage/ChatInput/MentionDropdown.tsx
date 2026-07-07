@@ -41,7 +41,7 @@ export function MentionDropdown(props: Props) {
             <li key={result.relativePath}>
               <button
                 type="button"
-                className={`w-full px-3 py-1.5 text-left text-xs flex items-center gap-2 ${
+                className={`w-full px-3 py-1.5 text-start text-xs flex items-center gap-2 ${
                   index === selectedIndex ? 'bg-surface-tooltip text-text-primary' : 'text-text-secondary hover:bg-surface-tooltip/60'
                 }`}
                 onMouseDown={(e) => {

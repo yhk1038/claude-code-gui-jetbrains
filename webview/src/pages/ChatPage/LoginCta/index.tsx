@@ -53,7 +53,7 @@ export function LoginCta(props: Props) {
       {isRechecking ? (
         <span className="w-3.5 h-3.5 border-2 border-border-strong border-t-text-primary rounded-full animate-spin" />
       ) : (
-        <ArrowRightOnRectangleIcon className="w-3.5 h-3.5" />
+        <ArrowRightOnRectangleIcon className="w-3.5 h-3.5 rtl:-scale-x-100" />
       )}
       {isSignedIn ? t('loginCta.signed') : t('loginCta.reSign')}
     </button>

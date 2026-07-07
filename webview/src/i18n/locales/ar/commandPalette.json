@@ -1,0 +1,60 @@
+{
+  "sections": {
+    "context": "السياق",
+    "model": "النموذج",
+    "customize": "التخصيص",
+    "slashCommands": "أوامر الشرطة المائلة",
+    "settings": "الإعدادات",
+    "support": "الدعم"
+  },
+  "context": {
+    "attachFile": "إرفاق ملف...",
+    "mentionFile": "الإشارة إلى ملف من هذا المشروع...",
+    "clearConversation": "مسح المحادثة",
+    "resumeConversation": "استئناف المحادثة",
+    "showBackgroundTasks": "مهمة سير العمل: عرض المهام الخلفية"
+  },
+  "model": {
+    "switchModel": "تبديل النموذج...",
+    "effort": "الجهد",
+    "thinking": "التفكير",
+    "accountUsage": "الحساب والاستخدام...",
+    "toggleFastMode": "تبديل الوضع السريع",
+    "effortUnsupportedReason": "هذا النموذج لا يدعم مستويات الجهد",
+    "fastModeUnsupportedReason": "الوضع السريع متاح فقط في نماذج Opus"
+  },
+  "customize": {
+    "outputStyles": "أنماط الإخراج",
+    "agents": "الوكلاء",
+    "hooks": "الخطافات",
+    "memory": "الذاكرة",
+    "permissions": "الأذونات",
+    "mcpServers": "خوادم MCP",
+    "managePlugins": "إدارة الإضافات",
+    "openInTerminal": "فتح Claude في الطرفية"
+  },
+  "settings": {
+    "switchAccount": "تبديل الحساب",
+    "generalConfig": "الإعدادات العامة..."
+  },
+  "support": {
+    "viewHelpDocs": "عرض وثائق المساعدة",
+    "restartPlugin": "إعادة تشغيل الإضافة",
+    "restartConfirm": {
+      "title": "إعادة تشغيل الإضافة؟",
+      "message": "سيتم مقاطعة العمل الجاري.",
+      "confirmLabel": "إعادة التشغيل"
+    }
+  },
+  "slashCommands": {
+    "clearDescription": "مسح المحادثة",
+    "usageDescription": "الحساب والاستخدام"
+  },
+  "panel": {
+    "reportProblem": "الإبلاغ عن مشكلة",
+    "reloading": "جارٍ إعادة التحميل…",
+    "reloadCommands": "إعادة تحميل الأوامر",
+    "refreshVersion": "تحديث الإصدار",
+    "comingSoon": "قريبًا"
+  }
+}

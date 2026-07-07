@@ -1,0 +1,409 @@
+{
+  "inputBanner": {
+    "close": "إغلاق"
+  },
+  "connectionLost": {
+    "offline": "لا يوجد اتصال بالإنترنت. جارٍ انتظار الشبكة{{dots}}",
+    "reconnecting": "انقطع الاتصال بالخلفية. جارٍ إعادة الاتصال{{dots}}"
+  },
+  "updateBanner": {
+    "released": "تم إصدار v{{version}}!",
+    "restartRequired": "يلزم إعادة تشغيل IDE",
+    "update": "تحديث",
+    "skip": "تخطي"
+  },
+  "fableNotice": {
+    "availableTitle": "Fable متاح الآن",
+    "updateRequiredTitle": "حدّث لاستخدام Fable 5",
+    "availableBody": "يمكنك استخدام حتى 50% من حدود خطتك على Fable 5 حتى 7 يوليو. بعد ذلك، انتقل إلى أرصدة الاستخدام لمواصلة استخدامه.",
+    "updateRequiredBody": "يتطلب Fable 5 إصدار Claude Code CLI v2.1.170 أو أحدث. حدّث الـ CLI من الإعدادات ← حول لتحديده.",
+    "learnMore": "معرفة المزيد"
+  },
+  "telemetry": {
+    "title": "السماح بجمع إحصاءات الاستخدام لتحسين المنتج؟",
+    "subtitle": "لا يتم إرسال الشفرة المصدرية أو البيانات الشخصية أبدًا. يمكنك إيقاف هذا في أي وقت من الإعدادات.",
+    "accept": "سماح",
+    "deny": "رفض",
+    "privacyPolicy": "سياسة الخصوصية"
+  },
+  "browserPermission": {
+    "enableFromSettings": "التفعيل من إعدادات المتصفح",
+    "allow": "سماح",
+    "dismiss": "تجاهل"
+  },
+  "streamError": {
+    "authDiagnosis": {
+      "title": "مفاتيح API معيّنة في env ضمن ~/.claude/settings.json:",
+      "hint": "قد تكون هذه المفاتيح منتهية الصلاحية أو غير صالحة. يرجى التحقق منها، ثم إزالتها أو تجديدها."
+    },
+    "sessionConflict": {
+      "message": "خطأ: هذه الجلسة قيد الاستخدام بالفعل.",
+      "reclaiming": "جارٍ الاستعادة...",
+      "reclaim": "استعادة الجلسة"
+    }
+  },
+  "chatInput": {
+    "actionButtons": {
+      "attachFile": "إرفاق ملف",
+      "slashCommands": "أوامر الشرطة المائلة",
+      "stopGenerating": "إيقاف التوليد",
+      "sendMessage": "إرسال الرسالة"
+    },
+    "attachMenu": {
+      "image": "صورة",
+      "file": "ملف",
+      "folder": "مجلد"
+    },
+    "attachmentPreview": {
+      "fullSize": "الحجم الكامل"
+    },
+    "attachments": {
+      "errors": {
+        "unsupportedType": "نوع ملف غير مدعوم: {{type}}",
+        "tooLarge": "الملف كبير جدًا: {{size}} ميغابايت (الحد الأقصى {{max}} ميغابايت)"
+      }
+    },
+    "contextWindow": {
+      "remaining": "{{percent}}% من السياق متبقٍّ حتى الضغط التلقائي.",
+      "tokensUsed": "تم استخدام {{tokens}} رمز",
+      "clickToCompact": "انقر للضغط الآن.",
+      "used": "{{percent}}% مستخدَم"
+    },
+    "dragOverlay": {
+      "dropHere": "أفلت الملفات أو المجلدات هنا"
+    },
+    "ideSelectionTag": {
+      "including": "سيتم تضمين {{path}} في الرسالة التالية — انقر للاستبعاد",
+      "excluding": "تم استبعاد {{path}} — انقر للتضمين"
+    },
+    "mentionDropdown": {
+      "searching": "جارٍ البحث...",
+      "noMatchingFiles": "لا توجد ملفات مطابقة",
+      "closeAriaLabel": "إغلاق قائمة الإشارة"
+    },
+    "modeSelectPanel": {
+      "modes": "الأوضاع",
+      "toSwitch": "للتبديل",
+      "effort": "الجهد"
+    },
+    "modelTag": {
+      "switchModel": "تبديل النموذج ({{hint}})",
+      "setModelNotification": "تعيين النموذج إلى {{model}}"
+    },
+    "placeholder": {
+      "queueMessage": "إضافة رسالة أخرى إلى القائمة...",
+      "focusHint": "⌘ Esc للتركيز على Claude أو إلغاء التركيز"
+    },
+    "ariaLabel": "مراسلة Claude",
+    "autoModeFallback": "الوضع التلقائي غير متاح هنا — سيُستخدم وضع الأذونات الافتراضي بدلًا منه."
+  },
+  "sessionHeader": {
+    "newTab": {
+      "title": "فتح تبويب جديد"
+    },
+    "backgroundTasks": {
+      "title": "المهام الخلفية"
+    },
+    "tokenBattery": {
+      "setupTitle": "انقر لإعداد تتبع الاستخدام",
+      "setupLabel": "إعداد"
+    },
+    "tunnel": {
+      "title": "النفق البعيد (غير رسمي)"
+    },
+    "accountSwitcher": {
+      "title": "الحسابات",
+      "noSavedAccounts": "لا توجد حسابات محفوظة.",
+      "addAccount": "إضافة حساب",
+      "manageAccounts": "إدارة الحسابات",
+      "switchedTo": "تم التبديل إلى {{account}}",
+      "switchFailed": "فشل التبديل",
+      "fallbackAccountLabel": "حساب",
+      "relativeTime": {
+        "daysAgo": "منذ {{count}} يوم",
+        "hoursAgo": "منذ {{count}} ساعة",
+        "minutesAgo": "منذ {{count}} دقيقة",
+        "justNow": "الآن"
+      }
+    },
+    "sessionDropdown": {
+      "pastConversations": "المحادثات السابقة",
+      "newChat": "محادثة جديدة",
+      "noMatchingSessions": "لا توجد جلسات مطابقة",
+      "noSessionsYet": "لا توجد جلسات بعد"
+    },
+    "workingDir": {
+      "switchDisabledTitle": "لا يمكن تبديل دليل العمل أثناء نشاط الجلسة",
+      "switchTitle": "تبديل دليل العمل",
+      "draftBadge": "مسودة",
+      "draftBadgeTitle": "تم اختياره عبر إضافة جديد — يصبح دليل عمل دائمًا بمجرد بدء جلسة هنا.",
+      "ideRootTitle": "جذر مشروع IDE",
+      "loading": "جارٍ التحميل…",
+      "noWorkingDirectoriesFound": "لم يتم العثور على أدلة عمل",
+      "browseAll": "تصفح الكل…",
+      "addNew": "+ إضافة جديد"
+    }
+  },
+  "acceptPlan": {
+    "title": "قبول هذه الخطة؟",
+    "subtitle": "حدد نصًا في المعاينة لإضافة تعليقات",
+    "textareaPlaceholder": "أخبر Claude بما يجب فعله بدلًا من ذلك",
+    "options": {
+      "autoAccept": "نعم، والقبول التلقائي",
+      "manualApprove": "نعم، والموافقة اليدوية على التعديلات",
+      "keepPlanning": "لا، تابع التخطيط"
+    }
+  },
+  "approvalPanel": {
+    "defaultTextareaPlaceholder": "أخبر Claude بما يجب فعله بدلًا من ذلك",
+    "escToCancel": "Esc للإلغاء"
+  },
+  "askUserQuestion": {
+    "escToCancel": "Esc للإلغاء",
+    "submit": "إرسال الإجابات",
+    "next": "التالي",
+    "other": "أخرى",
+    "otherPlaceholder": "اكتب إجابتك..."
+  },
+  "backgroundTasks": {
+    "title": "المهام الخلفية",
+    "close": "إغلاق",
+    "empty": "لا توجد مهام سير عمل بعد.",
+    "running": "قيد التشغيل",
+    "finishedCount": "اكتمل {{count}}",
+    "clear": "مسح",
+    "dismiss": "تجاهل",
+    "dismissRunning": "تجاهل (يمسح مهمة سير عمل عالقة)",
+    "workflowLabel": "مهمة سير العمل",
+    "agentsCount": "{{count}} وكلاء",
+    "agentsCount_zero": "لا وكلاء",
+    "agentsCount_one": "وكيل واحد",
+    "agentsCount_two": "وكيلان",
+    "agentsCount_few": "{{count}} وكلاء",
+    "agentsCount_many": "{{count}} وكيلاً",
+    "agentsCount_other": "{{count}} وكيل",
+    "tokensLabel": "{{tokens}} رمز",
+    "phasesLabel": "المراحل",
+    "tableHeader": {
+      "agent": "الوكيل",
+      "tokens": "الرموز",
+      "tools": "الأدوات",
+      "time": "الوقت"
+    }
+  },
+  "modelSwitch": {
+    "selectModel": "اختر نموذجًا",
+    "loadingModels": "جارٍ تحميل النماذج…",
+    "setModelTo": "تعيين النموذج إلى {{model}}"
+  },
+  "permissionBanner": {
+    "textareaPlaceholder": "أخبر Claude بما يجب فعله بدلًا من ذلك",
+    "workflowNotice": "تُشغّل مهام سير العمل الديناميكية العديد من الوكلاء الفرعيين بالتوازي ويمكن أن تستهلك قدرًا كبيرًا من حد استخدامك. أوقفها في أي وقت من لوحة المهام.",
+    "yes": "نعم",
+    "no": "لا",
+    "allowMcpTool": "السماح بـ {{tool}}؟",
+    "editWithFile": "إجراء هذا التعديل على {{file}}؟",
+    "editNoFile": "إجراء هذا التعديل؟",
+    "writeWithFile": "الكتابة إلى {{file}}؟",
+    "writeNoFile": "كتابة هذا الملف؟",
+    "deleteWithFile": "حذف {{file}}؟",
+    "deleteNoFile": "حذف هذا الملف؟",
+    "runCommand": "تشغيل هذا الأمر؟",
+    "readWithFile": "قراءة {{file}}؟",
+    "readNoFile": "قراءة هذا الملف؟",
+    "editNotebookWithFile": "تعديل الدفتر {{file}}؟",
+    "editNotebookNoFile": "تعديل هذا الدفتر؟",
+    "allowWorkflow": "السماح لـ Claude بتشغيل مهمة سير عمل {{name}}؟",
+    "allowTool": "السماح بـ {{tool}}؟",
+    "sessionLabel": {
+      "edit": "نعم، السماح بجميع التعديلات لهذه الجلسة",
+      "write": "نعم، السماح بجميع عمليات الكتابة لهذه الجلسة",
+      "bash": "نعم، السماح بجميع الأوامر لهذه الجلسة",
+      "delete": "نعم، السماح بجميع عمليات الحذف لهذه الجلسة",
+      "read": "نعم، السماح بجميع عمليات القراءة لهذه الجلسة",
+      "workflow": "نعم، السماح بجميع مهام سير العمل لهذه الجلسة",
+      "mcp": "نعم، السماح بجميع {{scope}} لهذه الجلسة",
+      "default": "نعم، السماح بجميع {{tool}} لهذه الجلسة"
+    }
+  },
+  "loginCta": {
+    "signed": "تم تسجيل الدخول",
+    "reSign": "إعادة تسجيل الدخول"
+  },
+  "diffCard": {
+    "operation": {
+      "create": "إنشاء",
+      "modify": "تعديل",
+      "delete": "حذف"
+    },
+    "status": {
+      "pending": "معلّق",
+      "applied": "مُطبَّق",
+      "rejected": "مرفوض"
+    },
+    "collapse": "طيّ",
+    "expand": "توسيع",
+    "openInIdeTitle": "فتح في عارض الفروقات الخاص بـ IDE",
+    "opening": "جارٍ الفتح...",
+    "openInIde": "فتح في IDE",
+    "applying": "جارٍ التطبيق...",
+    "apply": "تطبيق",
+    "reject": "رفض"
+  },
+  "diffList": {
+    "noChanges": "لا توجد تغييرات في الملفات",
+    "noChangesHint": "ستظهر التغييرات هنا عند توفرها",
+    "pendingCount": "تغييرات معلّقة",
+    "pendingCount_zero": "لا تغييرات معلّقة",
+    "pendingCount_one": "تغيير معلّق واحد",
+    "pendingCount_two": "تغييران معلّقان",
+    "pendingCount_few": "تغييرات معلّقة",
+    "pendingCount_many": "تغييرًا معلّقًا",
+    "pendingCount_other": "تغيير معلّق",
+    "applyingAll": "جارٍ تطبيق الكل...",
+    "applyAll": "تطبيق الكل",
+    "rejectAll": "رفض الكل"
+  },
+  "diffViewer": {
+    "noDiff": "لا يتوفر فرق",
+    "unknownError": "خطأ غير معروف",
+    "parseError": "فشل تحليل الفرق: {{message}}"
+  },
+  "toolCard": {
+    "status": {
+      "pending": "بانتظار الموافقة",
+      "approved": "تمت الموافقة",
+      "denied": "مرفوض",
+      "executing": "قيد التنفيذ",
+      "completed": "مكتمل",
+      "failed": "فشل"
+    },
+    "toolId": "معرّف الأداة: {{id}}...",
+    "inputParameters": "معلمات الإدخال",
+    "result": "النتيجة",
+    "error": "خطأ",
+    "approve": "موافقة",
+    "deny": "رفض"
+  },
+  "emptyState": {
+    "initialHint": "ما الذي تريد فعله أولًا؟ اسأل عن قاعدة الشيفرة هذه أو يمكننا البدء في كتابة الكود.",
+    "hints": {
+      "todoStart": "// TODO: كل شيء. لنبدأ.",
+      "readyToCodeLine1": "مستعد للبرمجة؟",
+      "readyToCodeLine2": "لنكتب شيئًا يستحق النشر.",
+      "pickModel": "اكتب /model لاختيار الأداة المناسبة للمهمة.",
+      "claudeMdInstructions": "أنشئ ملف CLAUDE.md لتعليمات سيقرأها Claude في كل مرة.",
+      "claudeMdRemember": "سئمت من التكرار؟ اطلب من Claude تذكّر ما أخبرته به باستخدام CLAUDE.md.",
+      "approveEditsPrefix": "اضغط",
+      "approveEditsSuffix": "للموافقة تلقائيًا على تعديلات الكود",
+      "highlightChatPrefix": "حدد أي نص واضغط",
+      "highlightChatSuffix": "للمحادثة حوله",
+      "mcpManagePrefix": "اكتب",
+      "mcpManageSuffix": "لإضافة خوادم MCP وإزالتها وإدارتها هنا مباشرة.",
+      "planningModePrefix": "استخدم وضع التخطيط لمناقشة التغييرات الكبيرة قبل الالتزام بها. اضغط",
+      "planningModeSuffix": "للتنقل بين الأوضاع.",
+      "rightPlace": "لقد وصلت إلى المكان الصحيح تمامًا!"
+    }
+  },
+  "streamingIndicator": {
+    "verbs": [
+      "إنجاز",
+      "تفعيل",
+      "تحقيق",
+      "خبز",
+      "نقر",
+      "تخمير",
+      "حساب",
+      "تعقّل",
+      "توجيه",
+      "خضّ",
+      "كلودنة",
+      "اندماج",
+      "تفكّر",
+      "حوسبة",
+      "تنظيم",
+      "تدبير",
+      "اعتبار",
+      "تأمل",
+      "طهي",
+      "صياغة",
+      "ابتكار",
+      "سحق",
+      "فك تشفير",
+      "مداولة",
+      "تحديد",
+      "تشويش",
+      "عمل",
+      "تنفيذ",
+      "توضيح",
+      "سحر",
+      "تصوّر",
+      "تحايل",
+      "ثرثرة",
+      "سبك",
+      "تشكيل",
+      "مرح",
+      "توليد",
+      "إنبات",
+      "تفقيس",
+      "حشد",
+      "زمر",
+      "توليد أفكار",
+      "تخيّل",
+      "احتضان",
+      "استنتاج",
+      "تجسيد",
+      "تتبيل",
+      "تجوال",
+      "تمهّل",
+      "تأني",
+      "استجماع",
+      "شرود",
+      "عبث",
+      "ترشيح",
+      "تصفّح",
+      "تفلسف",
+      "خطابة",
+      "إمعان",
+      "معالجة",
+      "تسكّع",
+      "حيرة",
+      "تنسيق",
+      "اجترار",
+      "تآمر",
+      "جرّ",
+      "تمايل",
+      "غليان",
+      "خلط",
+      "استكشاف",
+      "دوران",
+      "نضج",
+      "تحرّي",
+      "تركيب",
+      "تفكير",
+      "تلاعب",
+      "تحويل",
+      "نشر",
+      "حل",
+      "انسجام",
+      "تيه",
+      "طنين",
+      "تذبذب",
+      "اشتغال",
+      "ترويض"
+    ]
+  },
+  "thinking": {
+    "thoughtFor": "فكّر لمدة {{seconds}} ثانية",
+    "thinkingEllipsis": "جارٍ التفكير...",
+    "thinking": "التفكير"
+  },
+  "chatMessageArea": {
+    "loadingWorkingDirectory": "جارٍ تحميل دليل العمل...",
+    "loadingEarlierMessages": "جارٍ تحميل الرسائل السابقة…",
+    "loadOlderMessages": "تحميل الرسائل الأقدم"
+  },
+  "chatPage": {
+    "scrollToBottom": "التمرير إلى الأسفل"
+  }
+}

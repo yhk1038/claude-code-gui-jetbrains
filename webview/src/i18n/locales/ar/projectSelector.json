@@ -1,0 +1,20 @@
+{
+  "loading": "جارٍ تحميل المشاريع...",
+  "select": {
+    "title": "اختر مشروعًا",
+    "subtitle": "اختر مشروعًا للعمل عليه"
+  },
+  "empty": "لا توجد مشاريع متاحة",
+  "addProject": "إضافة مشروع",
+  "retry": "إعادة المحاولة",
+  "sessionCount": "{{count}} جلسات",
+  "sessionCount_zero": "لا جلسات",
+  "sessionCount_one": "جلسة واحدة",
+  "sessionCount_two": "جلستان",
+  "sessionCount_few": "{{count}} جلسات",
+  "sessionCount_many": "{{count}} جلسة",
+  "sessionCount_other": "{{count}} جلسة",
+  "errors": {
+    "loadFailed": "فشل تحميل المشاريع"
+  }
+}

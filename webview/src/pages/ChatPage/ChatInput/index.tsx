@@ -558,7 +558,7 @@ export function ChatInput() {
       >
         {/* Mention dropdown */}
         {mention.isActive && !palette.showSlashCommands && (
-          <div className="absolute bottom-full left-0 w-full z-20">
+          <div className="absolute bottom-full start-0 w-full z-20">
             <MentionDropdown
               results={mention.results}
               selectedIndex={mention.selectedIndex}
@@ -571,7 +571,7 @@ export function ChatInput() {
 
         {/* Slash command panel */}
         {palette.showSlashCommands && (
-          <div className="absolute bottom-full left-0 w-full z-20">
+          <div className="absolute bottom-full start-0 w-full z-20">
             <CommandPalettePanel
               sections={palette.filteredSections}
               selectedSectionIndex={palette.selectedSectionIndex}
@@ -633,7 +633,7 @@ export function ChatInput() {
                 on desktop it stays a compact panel above the mode tag. */}
             <div className={`${isMobile() ? '' : 'relative'} flex items-center`} ref={modePanelRef}>
               {showModePanel && (
-                <div className={`absolute bottom-full left-0 z-30 mb-2 ${isMobile() ? 'right-0' : ''}`}>
+                <div className={`absolute bottom-full start-0 z-30 mb-2 ${isMobile() ? 'end-0' : ''}`}>
                   <ModeSelectPanel
                     modes={availableModes}
                     currentMode={mode}

@@ -159,6 +159,19 @@ describe('settings', () => {
       expect(result.error).toContain('hostMode must be one of');
     });
 
+    it('should accept valid uiDirection values', async () => {
+      for (const dir of ['ltr', 'rtl']) {
+        const result = await saveSettingToFile('uiDirection', dir);
+        expect(result.status).toBe('ok');
+      }
+    });
+
+    it('should reject invalid uiDirection value', async () => {
+      const result = await saveSettingToFile('uiDirection', 'vertical');
+      expect(result.status).toBe('error');
+      expect(result.error).toContain('uiDirection must be one of');
+    });
+
     it('should accept an env object of string values', async () => {
       const result = await saveSettingToFile('env', { CLAUDE_CONFIG_DIR: '/home/u/.claude-work' });
       expect(result.status).toBe('ok');
@@ -208,6 +221,7 @@ describe('settings', () => {
         hostMode: 'editor-tab',
         openSettingsAs: 'overlay',
         chatPagination: true,
+        uiDirection: 'ltr',
         env: {},
       });
       expect(mockWriteFile).toHaveBeenCalled();
@@ -280,6 +294,7 @@ export default {
         hostMode: 'editor-tab',
         openSettingsAs: 'overlay',
         chatPagination: true,
+        uiDirection: 'ltr',
         env: {},
       });
     });

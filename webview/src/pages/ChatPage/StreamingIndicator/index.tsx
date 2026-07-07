@@ -64,7 +64,7 @@ export const StreamingIndicator: React.FC = () => {
 
     return (
         <div>
-            <div className="group pt-2 pb-4 pl-[22px] pr-3">
+            <div className="group pt-2 pb-4 ps-[22px] pe-3">
                 <div className="flex items-start gap-3">
                     {/* 아이콘 프레임 */}
                     <span className="text-accent-primary mt-[3px] text-[0.8461rem] leading-none select-none w-3 text-center shrink-0">

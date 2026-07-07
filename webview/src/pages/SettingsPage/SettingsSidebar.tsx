@@ -21,10 +21,10 @@ export function SettingsSidebar({ isDrawer = false, open = false, onNavigate }: 
 
   return (
     <nav
-      className={`w-48 flex-shrink-0 border-r border-border-default py-4 bg-surface-base ${
+      className={`w-48 flex-shrink-0 border-e border-border-default py-4 bg-surface-base ${
         isDrawer
-          ? `absolute left-0 top-0 bottom-0 z-20 transition-transform duration-200 ${
-              open ? 'translate-x-0' : '-translate-x-full'
+          ? `absolute start-0 top-0 bottom-0 z-20 transition-transform duration-200 ${
+              open ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full'
             }`
           : ''
       }`}
@@ -57,7 +57,7 @@ export function SettingsSidebar({ isDrawer = false, open = false, onNavigate }: 
                 {Icon && <Icon className="w-4 h-4" />}
                 <span>{navLabel}</span>
                 {showBadge && (
-                  <span className="ml-auto w-2 h-2 rounded-full bg-accent-primary" />
+                  <span className="ms-auto w-2 h-2 rounded-full bg-accent-primary" />
                 )}
               </button>
             </li>

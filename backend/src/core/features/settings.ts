@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS: Record<string, unknown> = {
   hostMode: 'editor-tab',
   openSettingsAs: 'overlay',
   chatPagination: true,
+  uiDirection: 'ltr',
   env: {},
 };
 
@@ -34,6 +35,7 @@ const COMMENT_MAP: Record<string, string> = {
   hostMode: '채팅을 띄우는 자리: "editor-tab" | "tool-window"',
   openSettingsAs: '설정 화면을 여는 방식: "overlay" | "new-tab"',
   chatPagination: '채팅 기록을 페이지 단위로 로드(스크롤 시 이전 메시지 추가). false면 전체를 한 번에 로드',
+  uiDirection: 'UI 미러링(레이아웃 방향): "ltr" | "rtl"',
   env: '자식 프로세스(claude, ccb)에 주입할 환경 변수. 예: { CLAUDE_CONFIG_DIR: "..." }',
 };
 
@@ -156,6 +158,11 @@ function validateSetting(key: string, value: unknown): string | null {
     case 'chatPagination':
       if (typeof value !== 'boolean') {
         return `${key} must be a boolean`;
+      }
+      break;
+    case 'uiDirection':
+      if (!['ltr', 'rtl'].includes(value as string)) {
+        return 'uiDirection must be one of "ltr", "rtl"';
       }
       break;
     case 'env': {

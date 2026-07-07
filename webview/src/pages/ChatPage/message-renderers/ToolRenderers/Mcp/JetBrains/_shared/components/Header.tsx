@@ -105,7 +105,7 @@ export const ProjectPathChip = () => {
         <div className="mt-1 flex items-center gap-1.5 min-w-0">
             {known && <Badge tone="warning">{t('jetbrains.common.differentProject')}</Badge>}
             <Tooltip content={path}>
-                <span className={cn("font-mono text-[0.8461rem] truncate", known ? "text-state-warning-fg" : "text-text-primary/60")}>
+                <span dir="ltr" className={cn("font-mono text-[0.8461rem] truncate", known ? "text-state-warning-fg" : "text-text-primary/60")}>
                     {path}
                 </span>
             </Tooltip>

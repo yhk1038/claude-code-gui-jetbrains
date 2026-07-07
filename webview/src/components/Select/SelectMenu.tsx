@@ -83,7 +83,7 @@ export function SelectMenu(props: Props) {
               role="option"
               aria-selected={isSelected}
               onClick={() => onSelect(option.value)}
-              className={`flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm transition-colors hover:bg-surface-hover ${
+              className={`flex w-full items-center justify-between gap-2 px-3 py-1.5 text-start text-sm transition-colors hover:bg-surface-hover ${
                 isSelected ? 'text-text-primary' : 'text-text-secondary'
               } ${option.italic ? 'italic text-text-tertiary' : ''}`}
             >

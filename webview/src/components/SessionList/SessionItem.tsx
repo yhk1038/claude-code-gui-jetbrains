@@ -110,7 +110,7 @@ export function SessionItem(props: Props) {
       onClick={onSelect}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`w-full ${scale.itemPad} text-left ${scale.itemText} rounded transition-colors flex justify-between items-center gap-2 ${
+      className={`w-full ${scale.itemPad} text-start ${scale.itemText} rounded transition-colors flex justify-between items-center gap-2 ${
         isSelected || isHighlighted
           ? 'text-text-primary bg-[var(--surface-selected)]'
           : 'text-text-secondary hover:text-text-primary hover:bg-[var(--surface-selected)]'

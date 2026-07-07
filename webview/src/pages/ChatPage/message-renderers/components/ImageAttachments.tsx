@@ -53,7 +53,7 @@ export const ImageAttachments: React.FC<ImageAttachmentsProps> = ({ images }) =>
               onClick={(e) => e.stopPropagation()}
             />
             <button
-              className="absolute -top-3.5 -right-3.5 w-7 h-7 flex items-center justify-center rounded-full bg-surface-hover hover:bg-surface-tooltip/70 border border-border-default text-text-primary transition-colors"
+              className="absolute -top-3.5 -end-3.5 w-7 h-7 flex items-center justify-center rounded-full bg-surface-hover hover:bg-surface-tooltip/70 border border-border-default text-text-primary transition-colors"
               onClick={() => setSelectedImage(null)}
             >
               ✕

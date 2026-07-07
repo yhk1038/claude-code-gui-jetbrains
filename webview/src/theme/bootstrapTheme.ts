@@ -17,6 +17,8 @@
  * that logic unit-tested. Keep the two in sync.
  */
 
+import { toLocale } from '@/i18n/languageMap';
+
 export type BootstrapTheme = 'dark' | 'light';
 
 /**
@@ -42,4 +44,47 @@ export function resolveBootstrapTheme(
   if (themeParam === 'dark') return 'dark';
   if (themeParam === 'light') return 'light';
   return prefersDark ? 'dark' : 'light';
+}
+
+/**
+ * FOUC prevention for UI mirroring (RTL/LTR layout direction).
+ *
+ * Unlike theme, direction has no Kotlin-injected URL hint — its only source of
+ * truth is the `uiDirection` setting persisted by SettingsContext to
+ * localStorage (key `claude-code-settings`, see STORAGE_KEY there). The inline
+ * <script> in webview/index.html reads that localStorage entry directly (it
+ * cannot import a module before the bundle loads) and replicates this
+ * resolution logic verbatim. Keep the two in sync.
+ */
+export type BootstrapDirection = 'ltr' | 'rtl';
+
+/**
+ * @param storedUiDirection value of the `uiDirection` field read from the
+ * `claude-code-settings` localStorage entry (or undefined/null when absent
+ * or unparsable).
+ */
+export function resolveBootstrapDirection(
+  storedUiDirection: string | null | undefined,
+): BootstrapDirection {
+  return storedUiDirection === 'rtl' ? 'rtl' : 'ltr';
+}
+
+/**
+ * FOUC prevention for `<html lang>` (screen-reader / a11y correctness).
+ *
+ * Unlike theme/direction, `uiLanguage` is owned by ClaudeSettingsContext,
+ * which has no localStorage cache of its own — the only persisted source
+ * before the bridge connects is the dedicated cache I18nLocaleSync writes on
+ * every sync (key `claude-code-ui-language`, see UI_LANGUAGE_STORAGE_KEY in
+ * i18n/I18nLocaleSync.tsx). The inline <script> in webview/index.html reads
+ * that same localStorage entry directly (it cannot import a module before the
+ * bundle loads) and replicates the uiLanguage → BCP-47 locale mapping
+ * verbatim. Keep i18n/languageMap.ts (LANGUAGE_TO_LOCALE, the single source of
+ * truth), this function, and the inline script in sync.
+ *
+ * @param storedUiLanguage value of the `claude-code-ui-language` localStorage
+ * entry (or undefined/null when absent).
+ */
+export function resolveBootstrapLang(storedUiLanguage: string | null | undefined): string {
+  return toLocale(storedUiLanguage);
 }

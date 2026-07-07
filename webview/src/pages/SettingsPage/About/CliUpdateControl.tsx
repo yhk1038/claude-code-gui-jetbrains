@@ -32,6 +32,9 @@ function VersionItem(props: { label: string; version: string; current: string | 
   const isDowngrade = cmp < 0;
 
   const Icon = isCurrent ? CheckCircleIcon : isDowngrade ? ArrowUturnLeftIcon : ArrowDownTrayIcon;
+  // Only the downgrade "undo" glyph is directional (curves left); the checkmark and
+  // download-tray icons are dir-neutral and must not be mirrored.
+  const iconDirClass = isDowngrade ? 'rtl:-scale-x-100' : '';
 
   return (
     <button
@@ -46,7 +49,7 @@ function VersionItem(props: { label: string; version: string; current: string | 
       <span className={`font-medium ${isCurrent ? 'opacity-50' : ''}`}>{label}</span>
       <span className="flex items-center gap-1.5 text-text-tertiary">
         {version}
-        <Icon className={`w-3.5 h-3.5 ${isCurrent ? 'text-state-success-fg' : ''}`} />
+        <Icon className={`w-3.5 h-3.5 ${iconDirClass} ${isCurrent ? 'text-state-success-fg' : ''}`} />
       </span>
     </button>
   );

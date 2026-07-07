@@ -100,7 +100,7 @@ export function WorkflowRenderer(props: RendererProps) {
                     <button
                         type="button"
                         onClick={() => openPanel(toolUse.id)}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-surface-hover transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-start hover:bg-surface-hover transition-colors"
                     >
                         <div className="min-w-0 flex-1 text-text-primary text-[1rem] font-semibold truncate">
                             {name}
@@ -108,7 +108,7 @@ export function WorkflowRenderer(props: RendererProps) {
                         {status && (
                             <span className={`text-[0.8461rem] shrink-0 ${statusColor}`}>{status}</span>
                         )}
-                        <ChevronRightIcon className="w-4 h-4 text-text-tertiary shrink-0" />
+                        <ChevronRightIcon className="w-4 h-4 text-text-tertiary shrink-0 rtl:-scale-x-100" />
                     </button>
 
                     {/* Meta line: N agents · duration · tokens */}

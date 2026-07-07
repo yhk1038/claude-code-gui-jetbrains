@@ -57,6 +57,7 @@ export function NotebookEditRenderer(props: RendererProps) {
         <ToolWrapper message={props.message}>
             <ToolHeader name={t('notebookEdit.title')} className="mb-[4px]" inProgress={!hasResult}>
                 <div
+                    dir="ltr"
                     className={cn(
                         "text-text-primary/80 text-[0.8461rem] font-mono",
                         notebookPath && "cursor-pointer hover:underline",

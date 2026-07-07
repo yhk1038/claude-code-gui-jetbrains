@@ -1,0 +1,60 @@
+{
+  "sections": {
+    "context": "زمینه",
+    "model": "مدل",
+    "customize": "سفارشی‌سازی",
+    "slashCommands": "دستورهای اسلش",
+    "settings": "تنظیمات",
+    "support": "پشتیبانی"
+  },
+  "context": {
+    "attachFile": "پیوست فایل...",
+    "mentionFile": "اشاره به فایلی از این پروژه...",
+    "clearConversation": "پاک کردن گفتگو",
+    "resumeConversation": "ازسرگیری گفتگو",
+    "showBackgroundTasks": "جریان کاری: نمایش کارهای پس‌زمینه"
+  },
+  "model": {
+    "switchModel": "تغییر مدل...",
+    "effort": "تلاش",
+    "thinking": "تفکر",
+    "accountUsage": "حساب کاربری و مصرف...",
+    "toggleFastMode": "تغییر حالت سریع",
+    "effortUnsupportedReason": "این مدل از سطوح تلاش پشتیبانی نمی‌کند",
+    "fastModeUnsupportedReason": "حالت سریع فقط در مدل‌های Opus در دسترس است"
+  },
+  "customize": {
+    "outputStyles": "سبک‌های خروجی",
+    "agents": "ایجنت‌ها",
+    "hooks": "هوک‌ها",
+    "memory": "حافظه",
+    "permissions": "مجوزها",
+    "mcpServers": "سرورهای MCP",
+    "managePlugins": "مدیریت پلاگین‌ها",
+    "openInTerminal": "باز کردن Claude در ترمینال"
+  },
+  "settings": {
+    "switchAccount": "تغییر حساب",
+    "generalConfig": "پیکربندی عمومی..."
+  },
+  "support": {
+    "viewHelpDocs": "مشاهده مستندات راهنما",
+    "restartPlugin": "راه‌اندازی مجدد پلاگین",
+    "restartConfirm": {
+      "title": "پلاگین راه‌اندازی مجدد شود؟",
+      "message": "کارهای در حال انجام متوقف خواهند شد.",
+      "confirmLabel": "راه‌اندازی مجدد"
+    }
+  },
+  "slashCommands": {
+    "clearDescription": "پاک کردن گفتگو",
+    "usageDescription": "حساب کاربری و مصرف"
+  },
+  "panel": {
+    "reportProblem": "گزارش مشکل",
+    "reloading": "در حال بارگذاری مجدد…",
+    "reloadCommands": "بارگذاری مجدد دستورها",
+    "refreshVersion": "تازه‌سازی نسخه",
+    "comingSoon": "به‌زودی"
+  }
+}

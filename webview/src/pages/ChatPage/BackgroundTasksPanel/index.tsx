@@ -110,25 +110,25 @@ function WorkflowTaskRow({
                 <div className="mt-2 overflow-x-auto no-scrollbar">
                     <table className="w-full text-[0.8461rem] font-mono">
                         <thead>
-                            <tr className="text-text-tertiary text-left">
-                                <th className="font-normal pb-1 pr-2">{t('backgroundTasks.tableHeader.agent')}</th>
-                                <th className="font-normal pb-1 px-2 text-right">{t('backgroundTasks.tableHeader.tokens')}</th>
-                                <th className="font-normal pb-1 px-2 text-right">{t('backgroundTasks.tableHeader.tools')}</th>
-                                <th className="font-normal pb-1 pl-2 text-right">{t('backgroundTasks.tableHeader.time')}</th>
+                            <tr className="text-text-tertiary text-start">
+                                <th className="font-normal pb-1 pe-2">{t('backgroundTasks.tableHeader.agent')}</th>
+                                <th className="font-normal pb-1 px-2 text-end">{t('backgroundTasks.tableHeader.tokens')}</th>
+                                <th className="font-normal pb-1 px-2 text-end">{t('backgroundTasks.tableHeader.tools')}</th>
+                                <th className="font-normal pb-1 ps-2 text-end">{t('backgroundTasks.tableHeader.time')}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {task.agents.map((a) => (
                                 <tr key={a.agentId} className="text-text-primary/75">
-                                    <td className="py-0.5 pr-2 max-w-[10rem] truncate">
+                                    <td className="py-0.5 pe-2 max-w-[10rem] truncate">
                                         <span
-                                            className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle ${agentDotClass(a.status)}`}
+                                            className={`inline-block w-1.5 h-1.5 rounded-full me-1.5 align-middle ${agentDotClass(a.status)}`}
                                         />
                                         {a.label}
                                     </td>
-                                    <td className="py-0.5 px-2 text-right">{formatTokens(a.tokens) ?? '0'}</td>
-                                    <td className="py-0.5 px-2 text-right">{a.tools}</td>
-                                    <td className="py-0.5 pl-2 text-right">{formatDuration(a.durationMs) ?? '—'}</td>
+                                    <td className="py-0.5 px-2 text-end">{formatTokens(a.tokens) ?? '0'}</td>
+                                    <td className="py-0.5 px-2 text-end">{a.tools}</td>
+                                    <td className="py-0.5 ps-2 text-end">{formatDuration(a.durationMs) ?? '—'}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -171,7 +171,7 @@ export function BackgroundTasksPanel() {
                         closePanel();
                     }
                 }}
-                className="fixed right-0 top-0 bottom-0 w-[24rem] max-w-[92vw] z-40 flex flex-col bg-surface-raised border-l border-border-default shadow-2xl outline-none"
+                className="fixed end-0 top-0 bottom-0 w-[24rem] max-w-[92vw] z-40 flex flex-col bg-surface-raised border-s border-border-default shadow-2xl outline-none"
             >
                 <div className="flex items-center justify-between px-4 h-[44px] border-b border-border-subtle shrink-0">
                     <div className="text-text-primary text-[1rem] font-semibold">{t('backgroundTasks.title')}</div>

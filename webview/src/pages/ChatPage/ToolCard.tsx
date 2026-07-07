@@ -77,7 +77,7 @@ export function ToolCard({ toolUse, onApprove, onDeny }: ToolCardProps) {
           <span className="text-lg">{config.icon}</span>
         </div>
 
-        <div className="flex-1 text-left min-w-0">
+        <div className="flex-1 text-start min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             <span className="font-semibold text-text-primary text-sm tracking-tight">
               {toolUse.name}
@@ -116,7 +116,7 @@ export function ToolCard({ toolUse, onApprove, onDeny }: ToolCardProps) {
                 {t('toolCard.inputParameters')}
               </div>
               <div className="bg-surface-base/50 border border-border-divider rounded-lg p-3 font-mono text-xs text-text-secondary overflow-x-auto">
-                <pre className="whitespace-pre-wrap break-all">
+                <pre dir="ltr" className="whitespace-pre-wrap break-all">
                   {JSON.stringify(toolUse.input, null, 2)}
                 </pre>
               </div>
@@ -129,7 +129,7 @@ export function ToolCard({ toolUse, onApprove, onDeny }: ToolCardProps) {
                   {t('toolCard.result')}
                 </div>
                 <div className="bg-surface-base/50 border border-state-success-border rounded-lg p-3 font-mono text-xs text-state-success-fg/80 overflow-x-auto">
-                  <pre className="whitespace-pre-wrap break-all">
+                  <pre dir="ltr" className="whitespace-pre-wrap break-all">
                     {toolUse.result}
                   </pre>
                 </div>
@@ -143,7 +143,7 @@ export function ToolCard({ toolUse, onApprove, onDeny }: ToolCardProps) {
                   {t('toolCard.error')}
                 </div>
                 <div className="bg-surface-base/50 border border-state-error-border rounded-lg p-3 font-mono text-xs text-state-error-fg/80 overflow-x-auto">
-                  <pre className="whitespace-pre-wrap break-all">
+                  <pre dir="ltr" className="whitespace-pre-wrap break-all">
                     {toolUse.error}
                   </pre>
                 </div>
