@@ -32,10 +32,10 @@ interface Props {
   onNavigate: () => void;
 }
 
-// Tailwind can't generate `pl-{n}` from runtime values, so we pre-pick a small
+// Tailwind can't generate `ps-{n}` from runtime values, so we pre-pick a small
 // palette of widening steps. Anything deeper than the array length is clamped
 // — extra nesting still groups visually under its parent.
-const DEPTH_PADDING = ['pl-2.5', 'pl-6', 'pl-9', 'pl-12', 'pl-15', 'pl-18'];
+const DEPTH_PADDING = ['ps-2.5', 'ps-6', 'ps-9', 'ps-12', 'ps-15', 'ps-18'];
 
 function depthClass(depth: number): string {
   const clamped = Math.max(0, Math.min(depth, DEPTH_PADDING.length - 1));
@@ -86,7 +86,7 @@ export function WorkingDirItem(props: Props) {
     return (
       <div
         className={[
-          'flex items-center gap-1.5 py-1.5 pr-2.5 text-xs cursor-default',
+          'flex items-center gap-1.5 py-1.5 pe-2.5 text-xs cursor-default',
           padding,
           'text-text-primary bg-[var(--surface-selected)] font-medium',
         ].join(' ')}
@@ -109,7 +109,7 @@ export function WorkingDirItem(props: Props) {
       to={href}
       onClick={handleClick}
       className={[
-        'flex items-center gap-1.5 py-1.5 pr-2.5 text-xs text-text-secondary',
+        'flex items-center gap-1.5 py-1.5 pe-2.5 text-xs text-text-secondary',
         padding,
         'hover:text-text-primary hover:bg-[var(--surface-hover)]',
       ].join(' ')}

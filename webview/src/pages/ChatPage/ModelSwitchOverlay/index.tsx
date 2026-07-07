@@ -116,7 +116,7 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
             <button
               key={m.value}
               onClick={() => void handleSelect(m.value)}
-              className={`w-full relative flex items-center justify-between px-2 py-1 rounded-md text-left transition-colors ${
+              className={`w-full relative flex items-center justify-between px-2 py-1 rounded-md text-start transition-colors ${
                 selected ? 'bg-surface-hover' : 'hover:bg-surface-hover'
               }`}
             >
@@ -136,7 +136,7 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
                 </span>
               </span>
               {selected && (
-                <CheckIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 flex-shrink-0 text-text-secondary" />
+                <CheckIcon className="absolute end-4 top-1/2 -translate-y-1/2 w-4 h-4 flex-shrink-0 text-text-secondary" />
               )}
             </button>
           );

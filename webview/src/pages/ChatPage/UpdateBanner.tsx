@@ -31,12 +31,12 @@ export function UpdateBanner() {
       <div className="w-full z-20 border-t border-b border-state-info-border bg-state-info-bg px-4 py-1.5 flex items-center gap-2">
         <span className="text-text-primary text-[0.8461rem] flex-1 min-w-0 truncate sm:whitespace-normal sm:overflow-visible">
           <strong>{t('updateBanner.released', { version: latestVersion })}</strong>
-          {title && <span className="ml-2 text-text-link text-[0.7692rem]">{title}</span>}
+          {title && <span className="ms-2 text-text-link text-[0.7692rem]">{title}</span>}
         </span>
 
         {showActions && (
-          <div className="ml-auto flex items-center gap-2 flex-shrink-0">
-            {requiresRestart && <span className="ml-2 text-text-link text-[0.7692rem]">{t('updateBanner.restartRequired')}</span>}
+          <div className="ms-auto flex items-center gap-2 flex-shrink-0">
+            {requiresRestart && <span className="ms-2 text-text-link text-[0.7692rem]">{t('updateBanner.restartRequired')}</span>}
             <button
                 onClick={handleUpdate}
                 className="px-3 py-1 rounded text-[0.7692rem] font-medium bg-surface-base text-text-link hover:bg-state-info-bg transition-colors"

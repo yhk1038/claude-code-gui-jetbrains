@@ -27,7 +27,7 @@ export function ImagePreview(props: Props) {
         <button
           type="button"
           onClick={() => onRemove(attachment.id)}
-          className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center rounded-full bg-surface-tooltip hover:bg-state-error-fg text-text-secondary text-[0.7692rem] transition-colors opacity-0 group-hover:opacity-100"
+          className="absolute -top-1.5 -end-1.5 w-4 h-4 flex items-center justify-center rounded-full bg-surface-tooltip hover:bg-state-error-fg text-text-secondary text-[0.7692rem] transition-colors opacity-0 group-hover:opacity-100"
         >
           ×
         </button>
@@ -50,7 +50,7 @@ export function ImagePreview(props: Props) {
               onClick={(e) => e.stopPropagation()}
             />
             <button
-              className="absolute -top-3.5 -right-3.5 w-7 h-7 flex items-center justify-center rounded-full bg-surface-hover hover:bg-surface-tooltip/70 border border-border-default text-text-primary transition-colors"
+              className="absolute -top-3.5 -end-3.5 w-7 h-7 flex items-center justify-center rounded-full bg-surface-hover hover:bg-surface-tooltip/70 border border-border-default text-text-primary transition-colors"
               onClick={() => setShowLightbox(false)}
             >
               ✕

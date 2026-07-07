@@ -97,7 +97,7 @@ export function AccountRow(props: AccountRowProps) {
       {/* Actions */}
       <div className="flex items-center gap-1.5 shrink-0">
         {account.active ? (
-          <span className="flex items-center gap-1 text-[0.8461rem] text-state-success-fg pr-4">
+          <span className="flex items-center gap-1 text-[0.8461rem] text-state-success-fg pe-4">
             <CheckBadgeIcon className="w-4 h-4" />
             {t('account.inUse')}
           </span>

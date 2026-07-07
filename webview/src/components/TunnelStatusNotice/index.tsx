@@ -96,7 +96,7 @@ export function TunnelStatusNotice(props: Props) {
           <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <span>{t('tunnelStatusNotice.installConsent')}</span>
         </div>
-        <div className="flex items-center gap-3 pt-1 pl-6">
+        <div className="flex items-center gap-3 pt-1 ps-6">
           <button onClick={onConfirmInstall} className="text-xs font-medium underline cursor-pointer">
             {t('tunnelStatusNotice.installAndEnable')}
           </button>

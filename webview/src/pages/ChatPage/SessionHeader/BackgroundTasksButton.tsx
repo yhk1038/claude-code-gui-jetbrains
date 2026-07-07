@@ -25,7 +25,7 @@ export function BackgroundTasksButton() {
                 }`}
             />
             {runningCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] px-[3px] rounded-full bg-text-link text-text-inverse text-[0.6153rem] font-semibold leading-[14px] text-center">
+                <span className="absolute -top-0.5 -end-0.5 min-w-[14px] h-[14px] px-[3px] rounded-full bg-text-link text-text-inverse text-[0.6153rem] font-semibold leading-[14px] text-center">
                     {runningCount}
                 </span>
             )}

@@ -105,7 +105,7 @@ export function UsageReportSection() {
                   <div className="space-y-0.5">
                     {breakdown.items.map((item) => (
                       <div key={item.name} className="flex items-center justify-between text-xs">
-                        <span className="text-text-secondary truncate mr-2">{item.name}</span>
+                        <span className="text-text-secondary truncate me-2">{item.name}</span>
                         <span className="text-text-primary flex-shrink-0">{item.percent}%</span>
                       </div>
                     ))}

@@ -99,7 +99,7 @@ export function ApprovalPanel(props: Props) {
               onChange={e => setFeedbackText(e.target.value)}
               onKeyDown={handleInputKeyDown}
               placeholder={textareaPlaceholder}
-              className="w-full bg-transparent text-[1rem] px-2.5 py-[5px] text-text-primary placeholder-text-tertiary focus:outline-none border border-border-strong/20 rounded-[4px] text-left font-normal transition-colors duration-100 resize-none overflow-hidden"
+              className="w-full bg-transparent text-[1rem] px-2.5 py-[5px] text-text-primary placeholder-text-tertiary focus:outline-none border border-border-strong/20 rounded-[4px] text-start font-normal transition-colors duration-100 resize-none overflow-hidden"
             />
           )}
         </div>

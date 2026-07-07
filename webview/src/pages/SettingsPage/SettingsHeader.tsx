@@ -20,7 +20,7 @@ export function SettingsHeader({ onToggleSidebar }: SettingsHeaderProps) {
         className="hidden xs:inline-block p-1 rounded text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors"
         title={t('layout.back')}
       >
-        <ArrowLeftIcon className="w-6 h-6 xs:w-4 xs:h-4" />
+        <ArrowLeftIcon className="w-6 h-6 xs:w-4 xs:h-4 rtl:-scale-x-100" />
       </button>
 
       {onToggleSidebar && (

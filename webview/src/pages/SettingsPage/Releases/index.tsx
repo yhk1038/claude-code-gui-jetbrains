@@ -158,16 +158,21 @@ function ReleaseAccordion(props: ReleaseAccordionProps) {
     <div className="bg-surface-raised rounded-lg border border-border-default">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex flex-col gap-1 px-4 py-3 text-left hover:bg-surface-hover transition-colors rounded-lg"
+        className="w-full flex flex-col gap-1 px-4 py-3 text-start hover:bg-surface-hover transition-colors rounded-lg"
       >
         <div className="flex items-center gap-2 w-full">
           <ChevronRightIcon
-            className={`w-4 h-4 text-text-tertiary shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`}
+            // Collapsed: points toward reading-forward direction (right in LTR, left in
+            // RTL via rtl:-scale-x-100). Expanded: always points down. Tailwind composes
+            // transforms as rotate() then scaleX(), so under RTL the mirrored coordinate
+            // frame needs the rotation sign flipped too (rtl:-rotate-90) to still land on
+            // "down" instead of "up" once combined with the mirror.
+            className={`w-4 h-4 text-text-tertiary shrink-0 transition-transform rtl:-scale-x-100 ${isOpen ? 'rotate-90 rtl:-rotate-90' : ''}`}
           />
           <span className="text-sm font-semibold text-text-primary shrink-0">
             v{update.version}
           </span>
-          <span className="text-xs text-text-tertiary shrink-0 ml-auto">
+          <span className="text-xs text-text-tertiary shrink-0 ms-auto">
             {formatDate(update.cdate, t)}
           </span>
           {isCurrent && (
@@ -177,15 +182,15 @@ function ReleaseAccordion(props: ReleaseAccordionProps) {
           )}
         </div>
         {title && (
-          <span className="text-sm text-text-secondary pl-6">{title}</span>
+          <span className="text-sm text-text-secondary ps-6">{title}</span>
         )}
       </button>
       {isOpen && (
-        <div className="px-4 pb-4 pl-10">
+        <div className="px-4 pb-4 ps-10">
           {body ? (
             <div
               className="text-sm text-text-secondary prose prose-invert prose-sm max-w-none
-                [&_ul]:list-disc [&_ul]:pl-4 [&_li]:my-0.5
+                [&_ul]:list-disc [&_ul]:ps-4 [&_li]:my-0.5
                 [&_h1]:text-text-primary [&_h2]:text-text-primary [&_h3]:text-text-secondary
                 [&_a]:text-text-link [&_a:hover]:text-text-link"
               dangerouslySetInnerHTML={{ __html: body }}

@@ -128,7 +128,7 @@ export function ProjectSelectorPage() {
             <button
               key={project.path}
               onClick={() => setWorkingDirectory(project.path, { replace: false })}
-              className="w-full px-4 py-3 text-left hover:bg-surface-hover transition-colors border-b border-border-default last:border-b-0 group"
+              className="w-full px-4 py-3 text-start hover:bg-surface-hover transition-colors border-b border-border-default last:border-b-0 group"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-text-primary text-sm font-medium truncate">

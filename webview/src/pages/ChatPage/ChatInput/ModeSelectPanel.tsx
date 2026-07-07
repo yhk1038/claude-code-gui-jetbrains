@@ -43,7 +43,7 @@ export function ModeSelectPanel(props: Props) {
             key={m}
             type="button"
             onClick={() => onSelect(m)}
-            className={`mx-1 flex items-start gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors ${
+            className={`mx-1 flex items-start gap-2.5 rounded-md px-2.5 py-2 text-start transition-colors ${
               selected ? 'bg-surface-hover' : 'hover:bg-surface-hover'
             }`}
           >

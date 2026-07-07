@@ -95,7 +95,7 @@ export function McpServerDetail(props: Props) {
           onClick={onBack}
           className="flex items-center gap-1 text-md text-text-secondary hover:text-text-primary transition-colors"
         >
-          <ChevronLeftIcon className="w-6 h-6" />
+          <ChevronLeftIcon className="w-6 h-6 rtl:-scale-x-100" />
           <span>{t('mcpModal.detail.backToList')}</span>
         </button>
       </div>
@@ -219,7 +219,7 @@ export function McpServerDetail(props: Props) {
                   {t('mcpModal.detail.viewTools', { count: tools.length })}
                 </button>
                 {toolsOpen && (
-                  <ul className="mt-2 space-y-3.5 pl-8">
+                  <ul className="mt-2 space-y-3.5 ps-8">
                     {tools.map((tool) => (
                       <li key={tool.name} className="list-disc">
                         <div className="flex items-center gap-2">

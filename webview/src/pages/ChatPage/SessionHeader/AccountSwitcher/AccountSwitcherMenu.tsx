@@ -63,7 +63,7 @@ export function AccountSwitcherMenu(props: Props) {
   };
 
   return (
-    <div className="absolute right-0 top-full mt-1 w-[20rem] bg-surface-raised border border-border-default rounded-md shadow-xl overflow-hidden z-50">
+    <div className="absolute end-0 top-full mt-1 w-[20rem] bg-surface-raised border border-border-default rounded-md shadow-xl overflow-hidden z-50">
       {error && (
         <p className="text-[0.7692rem] text-state-error-fg px-3 py-2 border-b border-border-default">{error}</p>
       )}
@@ -81,7 +81,7 @@ export function AccountSwitcherMenu(props: Props) {
                 key={account.id}
                 disabled={account.active || switchingId !== null}
                 onClick={() => void handleSwitch(account.id)}
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-surface-hover disabled:cursor-default disabled:hover:bg-transparent transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-start hover:bg-surface-hover disabled:cursor-default disabled:hover:bg-transparent transition-colors"
               >
                 <AccountAvatar account={account} className="w-6 h-6 text-[0.6153rem] shrink-0" />
                 <span className="min-w-0 flex-1 overflow-hidden">

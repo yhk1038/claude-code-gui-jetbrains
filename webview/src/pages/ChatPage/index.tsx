@@ -295,7 +295,7 @@ export function ChatPage() {
   }, [textareaRef, focusInput]);
 
   return (
-    <div className="flex flex-col w-full h-full bg-surface-base text-text-primary fixed left-0 top-0" onMouseDown={handleContainerMouseDown}>
+    <div className="flex flex-col w-full h-full bg-surface-base text-text-primary fixed start-0 top-0" onMouseDown={handleContainerMouseDown}>
       {/* Header - Minimal */}
       <div className="fixed w-full top-0 bg-blend-darken bg-surface-base z-30">
         <SessionHeader />
@@ -320,7 +320,7 @@ export function ChatPage() {
         <div id="scroll-bottom-marker" />
 
         {/* Input Area */}
-        <div className="sticky w-full left-0 bottom-0 z-10">
+        <div className="sticky w-full start-0 bottom-0 z-10">
           {showScrollButton && (
               <button
                   onClick={scrollToBottom}

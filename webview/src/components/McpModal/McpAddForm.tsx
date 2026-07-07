@@ -72,7 +72,7 @@ export function McpAddForm(props: Props) {
             className="w-8 h-8 flex items-center justify-center rounded text-gray-400 hover:bg-gray-500/50 transition-colors flex-shrink-0 disabled:opacity-50"
             title={t('mcpModal.form.back')}
           >
-            <ArrowLeftIcon className="w-5 h-5" />
+            <ArrowLeftIcon className="w-5 h-5 rtl:-scale-x-100" />
           </button>
           <h3 className="text-lg font-semibold text-text-primary">{isEdit ? t('mcpModal.form.editTitle') : t('mcpModal.form.addTitle')}</h3>
         </div>

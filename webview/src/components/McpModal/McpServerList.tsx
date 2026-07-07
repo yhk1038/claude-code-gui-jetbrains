@@ -96,10 +96,10 @@ export function McpServerList(props: Props) {
             {group.map((server) => (
               <button
                 key={server.name}
-                className={`w-full flex items-center justify-between p-3.5 text-left bg-surface-base border border-border-default rounded-lg hover:bg-surface-hover transition-colors ${server.status === McpServerStatus.DISABLED ? 'opacity-45' : ''}`}
+                className={`w-full flex items-center justify-between p-3.5 text-start bg-surface-base border border-border-default rounded-lg hover:bg-surface-hover transition-colors ${server.status === McpServerStatus.DISABLED ? 'opacity-45' : ''}`}
                 onClick={() => onSelect(server.name)}
               >
-                <span className="text-sm text-text-primary font-mono truncate mr-3">{server.name}</span>
+                <span className="text-sm text-text-primary font-mono truncate me-3">{server.name}</span>
                 <McpStatusBadge status={server.status} />
               </button>
             ))}

@@ -46,12 +46,12 @@ export function McpMarketplace(props: Props) {
           className="w-8 h-8 flex items-center justify-center rounded text-gray-400 hover:bg-gray-500/50 transition-colors flex-shrink-0"
           title={t('mcpModal.marketplace.back')}
         >
-          <ArrowLeftIcon className="w-5 h-5" />
+          <ArrowLeftIcon className="w-5 h-5 rtl:-scale-x-100" />
         </button>
         <div className="relative flex-1">
-          <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary pointer-events-none" />
+          <MagnifyingGlassIcon className="absolute start-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary pointer-events-none" />
           <input
-            className="w-full text-md bg-surface-hover border border-border-default rounded pl-8 pr-2 py-1.5 text-text-primary focus:outline-none focus:border-accent-primary"
+            className="w-full text-md bg-surface-hover border border-border-default rounded ps-8 pe-2 py-1.5 text-text-primary focus:outline-none focus:border-accent-primary"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={t('mcpModal.marketplace.searchPlaceholder')}
