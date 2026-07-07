@@ -203,13 +203,21 @@ const API_KEY_PATTERNS = [
   /AUTH_TOKEN$/i,
 ];
 
-// OAuth/API credential env keys that the Claude CLI consults BEFORE the keychain.
-// If these are inherited from a parent process (e.g. Claude Desktop spawning Claude Code,
-// IDE-integrated terminals, or stale env in the user's shell), the CLI will use them as-is
-// and never trigger its keychain-based refresh_token flow — so once the inherited token
-// expires, every call returns 401 indefinitely.
+// OAuth *token* env keys that the Claude CLI consults BEFORE the keychain. When these are
+// inherited from a parent process (e.g. Claude Desktop spawning Claude Code, IDE-integrated
+// terminals, or stale env in the user's shell), the CLI uses them as-is and never triggers
+// its keychain-based refresh_token flow — so once the inherited token EXPIRES, every call
+// returns 401 indefinitely. Stripping them lets the CLI fall back to its refreshable keychain
+// auth.
+//
+// ANTHROPIC_API_KEY is intentionally NOT in this list. An API key does not expire and has no
+// refresh flow, so it never causes the 401 loop above — the only reason the OAuth tokens are
+// stripped. Stripping it only broke users who authenticate by exporting ANTHROPIC_API_KEY
+// (shell env / Windows `setx`) rather than pinning it in settings.json: the `claude` CLI
+// honors that env var directly, so the GUI must too (CLI parity). See marketplace review
+// #140950 — the plugin showed "Not logged in" / prompts failed on Windows precisely because
+// this strip removed the user's env-provided API key before spawning the CLI.
 const STRIPPABLE_AUTH_ENV_KEYS = [
-  'ANTHROPIC_API_KEY',
   'CLAUDE_CODE_OAUTH_TOKEN',
   'CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR',
 ] as const;

@@ -41,7 +41,7 @@ describe('getStrippableAuthEnvKeys()', () => {
     vi.clearAllMocks();
   });
 
-  it('returns ALL OAuth-related env keys when no settings file specifies any of them', async () => {
+  it('strips the OAuth token keys — but NOT ANTHROPIC_API_KEY — when no settings specify any', async () => {
     mockSettingsByPath({
       [HOME_SETTINGS]: { env: {} },
       [HOME_SETTINGS_LOCAL]: {},
@@ -49,61 +49,69 @@ describe('getStrippableAuthEnvKeys()', () => {
     const keys = await getStrippableAuthEnvKeys();
     expect(keys).toEqual(
       expect.arrayContaining([
-        'ANTHROPIC_API_KEY',
         'CLAUDE_CODE_OAUTH_TOKEN',
         'CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR',
       ]),
     );
-    expect(keys).toHaveLength(3);
+    expect(keys).toHaveLength(2);
   });
 
-  it('returns ALL keys when settings files do not exist at all', async () => {
+  it('strips only the OAuth token keys when settings files do not exist at all', async () => {
     mockReadFile.mockRejectedValue(new Error('ENOENT'));
     const keys = await getStrippableAuthEnvKeys();
     expect(keys).toEqual(
       expect.arrayContaining([
-        'ANTHROPIC_API_KEY',
         'CLAUDE_CODE_OAUTH_TOKEN',
         'CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR',
       ]),
     );
-    expect(keys).toHaveLength(3);
+    expect(keys).toHaveLength(2);
   });
 
-  it('excludes a key when user explicitly sets it in global settings.json env', async () => {
+  // Regression for marketplace review #140950: a user who authenticates by exporting
+  // ANTHROPIC_API_KEY (shell env / Windows `setx`) without pinning it in settings.json must
+  // NOT have it stripped — the CLI reads that env var directly, and stripping it left the
+  // plugin "Not logged in" / unable to prompt. The API key never expires, so it is never a
+  // strip target regardless of settings.
+  it('never strips ANTHROPIC_API_KEY even when it is not pinned in any settings file', async () => {
+    mockReadFile.mockRejectedValue(new Error('ENOENT'));
+    const keys = await getStrippableAuthEnvKeys();
+    expect(keys).not.toContain('ANTHROPIC_API_KEY');
+  });
+
+  it('excludes an OAuth token key when user explicitly sets it in global settings.json env', async () => {
     mockSettingsByPath({
-      [HOME_SETTINGS]: { env: { ANTHROPIC_API_KEY: 'sk-ant-user-pinned' } },
+      [HOME_SETTINGS]: { env: { CLAUDE_CODE_OAUTH_TOKEN: 'token-user-pinned' } },
       [HOME_SETTINGS_LOCAL]: {},
     });
     const keys = await getStrippableAuthEnvKeys();
-    expect(keys).not.toContain('ANTHROPIC_API_KEY');
-    expect(keys).toContain('CLAUDE_CODE_OAUTH_TOKEN');
+    expect(keys).not.toContain('CLAUDE_CODE_OAUTH_TOKEN');
     expect(keys).toContain('CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR');
   });
 
-  it('excludes a key when user explicitly sets it in settings.local.json env', async () => {
+  it('excludes an OAuth token key when user explicitly sets it in settings.local.json env', async () => {
     mockSettingsByPath({
       [HOME_SETTINGS]: {},
       [HOME_SETTINGS_LOCAL]: { env: { CLAUDE_CODE_OAUTH_TOKEN: 'token-from-local' } },
     });
     const keys = await getStrippableAuthEnvKeys();
     expect(keys).not.toContain('CLAUDE_CODE_OAUTH_TOKEN');
-    expect(keys).toContain('ANTHROPIC_API_KEY');
+    expect(keys).toContain('CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR');
   });
 
-  it('excludes a key when user explicitly sets it in project settings.json env', async () => {
+  it('excludes an OAuth token key when user explicitly sets it in project settings.json env', async () => {
     mockSettingsByPath({
       [HOME_SETTINGS]: {},
       [HOME_SETTINGS_LOCAL]: {},
-      [PROJECT_SETTINGS]: { env: { ANTHROPIC_API_KEY: 'project-api-key' } },
+      [PROJECT_SETTINGS]: { env: { CLAUDE_CODE_OAUTH_TOKEN: 'project-token' } },
       [PROJECT_SETTINGS_LOCAL]: {},
     });
     const keys = await getStrippableAuthEnvKeys(PROJECT_DIR);
-    expect(keys).not.toContain('ANTHROPIC_API_KEY');
-    expect(keys).toContain('CLAUDE_CODE_OAUTH_TOKEN');
+    expect(keys).not.toContain('CLAUDE_CODE_OAUTH_TOKEN');
+    expect(keys).toContain('CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR');
   });
 
-  it('excludes a key when user explicitly sets it in project settings.local.json env', async () => {
+  it('excludes an OAuth token key when user explicitly sets it in project settings.local.json env', async () => {
     mockSettingsByPath({
       [HOME_SETTINGS]: {},
       [HOME_SETTINGS_LOCAL]: {},
@@ -112,7 +120,6 @@ describe('getStrippableAuthEnvKeys()', () => {
     });
     const keys = await getStrippableAuthEnvKeys(PROJECT_DIR);
     expect(keys).not.toContain('CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR');
-    expect(keys).toContain('ANTHROPIC_API_KEY');
     expect(keys).toContain('CLAUDE_CODE_OAUTH_TOKEN');
   });
 
@@ -122,15 +129,15 @@ describe('getStrippableAuthEnvKeys()', () => {
       [HOME_SETTINGS_LOCAL]: {},
     });
     const keys = await getStrippableAuthEnvKeys();
-    expect(keys).toHaveLength(3);
+    expect(keys).toHaveLength(2);
   });
 
-  it('honors precedence: project explicit overrides global, but global explicit alone is enough', async () => {
-    // ANTHROPIC_API_KEY explicit only in project; CLAUDE_CODE_OAUTH_TOKEN explicit only in global
+  it('honors precedence: a project-explicit OAuth key overrides, leaving only the unspecified one', async () => {
+    // CLAUDE_CODE_OAUTH_TOKEN explicit only in global; nothing pins FILE_DESCRIPTOR anywhere.
     mockSettingsByPath({
       [HOME_SETTINGS]: { env: { CLAUDE_CODE_OAUTH_TOKEN: 'g' } },
       [HOME_SETTINGS_LOCAL]: {},
-      [PROJECT_SETTINGS]: { env: { ANTHROPIC_API_KEY: 'p' } },
+      [PROJECT_SETTINGS]: {},
       [PROJECT_SETTINGS_LOCAL]: {},
     });
     const keys = await getStrippableAuthEnvKeys(PROJECT_DIR);
