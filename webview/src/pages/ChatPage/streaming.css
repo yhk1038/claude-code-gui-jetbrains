@@ -207,7 +207,8 @@
 
 [data-streamdown="code-block-body"] > code > span > span {
   font-size: 0.9em !important;
-  border-radius: 1px !important;
+  border-radius: 0 !important;
+  padding: 1.5px 0;
 }
 
 [data-streamdown="code-block-copy-button"] {
