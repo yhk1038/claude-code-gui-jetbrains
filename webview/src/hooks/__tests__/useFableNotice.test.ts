@@ -27,7 +27,8 @@ describe('useFableNotice', () => {
   });
 
   it('is hidden after the promo window ends', () => {
-    vi.setSystemTime(new Date('2026-07-08T00:00:00Z'));
+    // Past FABLE_PROMO_END (2026-07-12, extended from 07-07).
+    vi.setSystemTime(new Date('2026-07-13T00:00:00Z'));
     const { result } = renderHook(() => useFableNotice(SUPPORTED_CLI));
     expect(result.current.visible).toBe(false);
   });

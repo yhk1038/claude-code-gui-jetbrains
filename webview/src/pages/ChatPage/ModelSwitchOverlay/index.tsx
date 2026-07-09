@@ -8,7 +8,6 @@ import { useCurrentModel } from '@/hooks/useCurrentModel';
 import { useVersionInfo } from '@/hooks/useVersionInfo';
 import { LoadedMessageType } from '@/types';
 import {
-  FABLE_PROMO_BADGE,
   isFablePromoActive,
   resolveModelInfo,
   resolveModelLabel,
@@ -127,7 +126,7 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
                   </span>
                   {toModelAlias(m.value) === 'fable' && promoActive && (
                     <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[0.7692rem] bg-surface-tooltip text-text-secondary whitespace-nowrap">
-                      {FABLE_PROMO_BADGE}
+                      {t('fableNotice.promoBadge')}
                     </span>
                   )}
                 </span>

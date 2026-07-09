@@ -539,7 +539,7 @@ export function ChatInput() {
           onClose={() => setConsentDismissed(true)}
         />
       )}
-      {/* Fable 5 프로모션 공지: 프로모션 기간(~2026-07-07)이고 아직 닫지 않았을 때만 (issue #153) */}
+      {/* Fable 5 프로모션 공지: 프로모션 기간(~2026-07-12)이고 아직 닫지 않았을 때만 (issue #153) */}
       {fableNotice.visible && <FableNoticeBanner variant={fableNotice.variant} onClose={fableNotice.dismiss} />}
       {/* Auto mode 강등 안내: auto를 요청했으나 CLI가 이 환경에서 미지원이라 기본 모드로 적용한 경우 */}
       {autoFallbackNotice && (
