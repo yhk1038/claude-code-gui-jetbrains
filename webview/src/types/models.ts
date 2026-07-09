@@ -31,20 +31,20 @@ export function toModelAlias(value: string | null | undefined): string {
  * fine. To honour CLI equivalence ("what works in the CLI works in the GUI")
  * we surface Fable as a fallback item when the account's catalog omits it.
  *
- * `FABLE_PROMO_END` is the promotion window end used for the "included until"
- * badge and, past that date, to stop offering the fallback.
- * TODO(after 2026-07-07): the promotion window ends; revisit the fallback,
+ * `FABLE_PROMO_END` is the promotion window end used to gate the "included
+ * until" badge (rendered from the `fableNotice.promoBadge` i18n string) and,
+ * past that date, to stop offering the fallback.
+ *
+ * The window has already been extended once: Anthropic pushed the subscription
+ * inclusion cutoff from 2026-07-07 to 2026-07-12 (after which Fable moves to
+ * prepaid usage credits rather than being retired). The badge/date text is
+ * server-supplied per account, not baked into the CLI binary, so we mirror the
+ * publicly announced date here. When the window shifts again, update this date
+ * AND the `fableNotice.promoBadge` string in every locale so the two agree.
+ * TODO(after 2026-07-12): the promotion window ends; revisit the fallback,
  * badge, and announcement once Fable's post-promo availability is known.
  */
-export const FABLE_PROMO_END = '2026-07-07';
-
-/**
- * Badge shown next to the Fable row during the promo window. Kept in the CLI's
- * own wording ("Included until July 7", verbatim from the Fable model row) —
- * see issue #153 appendix. Update alongside `FABLE_PROMO_END` if the window
- * shifts.
- */
-export const FABLE_PROMO_BADGE = 'Included until July 7';
+export const FABLE_PROMO_END = '2026-07-12';
 
 /**
  * Whether the Fable promotion window is still open on `now` (inclusive of the

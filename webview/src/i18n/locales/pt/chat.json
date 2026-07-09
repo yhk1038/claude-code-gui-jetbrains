@@ -15,7 +15,8 @@
   "fableNotice": {
     "availableTitle": "O Fable já está disponível",
     "updateRequiredTitle": "Atualize para usar o Fable 5",
-    "availableBody": "Você pode usar até 50% dos limites do seu plano no Fable 5 até 7 de julho. Depois disso, mude para créditos de uso para continuar utilizando-o.",
+    "promoBadge": "Incluído até 12 de julho",
+    "availableBody": "Você pode usar até 50% dos seus limites semanais no Fable 5; depois disso, muda para créditos de uso. O Fable 5 consome seu uso muito mais rápido que o Opus 4.8.",
     "updateRequiredBody": "O Fable 5 requer o Claude Code CLI v2.1.170 ou mais recente. Atualize seu CLI em Configurações → Sobre para selecioná-lo.",
     "learnMore": "Saiba mais"
   },

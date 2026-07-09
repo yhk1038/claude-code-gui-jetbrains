@@ -6,7 +6,7 @@ describe('FableNoticeBanner', () => {
   it('renders the available title, usage copy, and a Learn more link', () => {
     render(<FableNoticeBanner variant="available" onClose={() => {}} />);
     expect(screen.getByText('Fable is now available')).toBeInTheDocument();
-    expect(screen.getByText(/50% of your plan limits on Fable 5 through July 7/)).toBeInTheDocument();
+    expect(screen.getByText(/50% of your weekly limits on Fable 5/)).toBeInTheDocument();
     const link = screen.getByRole('link', { name: /learn more/i });
     expect(link).toHaveAttribute('href', 'https://www.anthropic.com/news/fable-mythos-access');
     expect(link).toHaveAttribute('target', '_blank');
@@ -17,7 +17,7 @@ describe('FableNoticeBanner', () => {
     expect(screen.getByText('Update to use Fable 5')).toBeInTheDocument();
     expect(screen.getByText(/requires Claude Code CLI v2\.1\.170 or newer/)).toBeInTheDocument();
     // The promo usage copy must NOT appear in the update-required variant.
-    expect(screen.queryByText(/50% of your plan limits/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/50% of your weekly limits/)).not.toBeInTheDocument();
     // Learn more link is reused across variants.
     expect(screen.getByRole('link', { name: /learn more/i })).toHaveAttribute(
       'href',

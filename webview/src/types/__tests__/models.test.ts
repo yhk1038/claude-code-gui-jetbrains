@@ -13,8 +13,10 @@ import {
 import type { ModelInfo } from '../slashCommand';
 
 // A date inside the promo window and one past it, for the Fable fallback tests.
+// The window end is FABLE_PROMO_END (2026-07-12, extended from 07-07), so
+// AFTER_PROMO must sit past the 12th.
 const DURING_PROMO = new Date('2026-07-03T00:00:00Z');
-const AFTER_PROMO = new Date('2026-07-08T00:00:00Z');
+const AFTER_PROMO = new Date('2026-07-13T00:00:00Z');
 
 function model(value: string, displayName = value): ModelInfo {
   return { value, displayName, description: `${displayName} desc` };
@@ -165,7 +167,7 @@ describe('modelChangeLabel', () => {
 describe('isFablePromoActive', () => {
   it('is true inside the promo window (incl. the end day)', () => {
     expect(isFablePromoActive(DURING_PROMO)).toBe(true);
-    expect(isFablePromoActive(new Date('2026-07-07T12:00:00Z'))).toBe(true);
+    expect(isFablePromoActive(new Date('2026-07-12T12:00:00Z'))).toBe(true);
   });
 
   it('is false after the promo window ends', () => {
