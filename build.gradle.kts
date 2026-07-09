@@ -146,6 +146,11 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
+            <h3>0.24.1 - Rendering fixes</h3>
+            <ul>
+                <li>Fixed random stale-paint ghosts/artifacts that could appear in the chat window (#171, reported by @deniskrizanovic)</li>
+                <li>Polished code block token rendering</li>
+            </ul>
             <h3>0.24.0 - i18n & RTL now available 🎉</h3>
             <ul>
                 <li>Add language Internationalization (i18n): Settings -> General > Interface Language (#160)</li>
