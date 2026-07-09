@@ -242,6 +242,13 @@ class ClaudeCodePanel(
             acquired.nativeDropBridgeInstalled = true
         }
 
+        // OSR-only: install the stale-paint repaint nudge once per holder. Windowed
+        // (non-OSR) browsers don't leave leftover edge pixels, so we skip it there.
+        if (acquired.isOsr && !acquired.repaintNudgeInstalled) {
+            installOsrRepaintNudge()
+            acquired.repaintNudgeInstalled = true
+        }
+
         // Mirror the backend's start sub-phases in the placeholder label so a slow
         // start (heavy .zshrc shell-PATH capture, first-run extraction) reads as
         // progress, not a frozen screen. Registered BEFORE ensureStarted so the first
@@ -674,6 +681,119 @@ class ClaudeCodePanel(
         } catch (e: Exception) {
             logger.warn("Failed to install LafManager listener", e)
         }
+    }
+
+    /**
+     * Correct OSR (off-screen / remote-mode) stale-paint artifacts.
+     *
+     * In OSR mode CEF occasionally drops part of a dirty rect (typically the right
+     * and bottom edges), leaving stale pixels from the previous frame as a ghost
+     * along the panel border. This is a known CEF behavior (CEF #3272) and shows up
+     * as chopped text near the top and a leftover colored line near the input; it
+     * clears the moment something forces a full re-composite (e.g. leaving and
+     * returning to the panel). Reported as issue #171.
+     *
+     * The fix is not to disable OSR — windowed mode has its own HiDPI/blank-screen
+     * problems (#23/#51/#79) — but to make CEF re-deliver the whole frame so the
+     * ghost edge pixels are overwritten.
+     *
+     * CEF's `CefBrowser.invalidate()` (Invalidate(PET_VIEW)) would be the most direct
+     * trigger, but it is absent from the JCEF `CefBrowser` interface in our compile
+     * target. A bare `component.repaint()` is no good either — in OSR the component
+     * only re-blits the bitmap CEF already handed it, which is exactly the *stale*
+     * one. We poke CEF itself: `notifyScreenInfoChanged()` forces a full re-composite,
+     * and `wasResized()` makes CEF re-query GetViewRect and repaint the whole view.
+     * Crucially we call wasResized with a *different* size first (w-1, h) then restore
+     * (w, h): CEF ignores a wasResized call whose dimensions match the current view,
+     * so nudging with the same size alone would be a no-op. The one-pixel round trip
+     * is invisible to the user (it never reaches Swing layout — only CEF's view rect).
+     *
+     * Two nudges, both running on the EDT:
+     *   (a) a low-frequency backup timer that catches artifacts even while idle, and
+     *   (b) a throttled mouse-motion hook that clears them promptly during interaction.
+     *
+     * Lifetime: timer + listener are owned by a child Disposable stored on the
+     * [ClaudeCodeBrowserService.BrowserHolder], so they survive tab move/split and
+     * are torn down only when the holder is released — same as [installLafListener].
+     */
+    // Called only from realizeBrowser() — holder and browser are non-null.
+    private fun installOsrRepaintNudge() {
+        val parent = Disposer.newDisposable("ClaudeCodePanel.osrRepaintNudge.$tabId")
+        holder!!.repaintNudgeDisposable = parent
+
+        // Push a fresh full frame from CEF, but only while the component is on-screen
+        // (no point nudging a hidden/background tab). Both calls run on the EDT —
+        // every caller below already is.
+        // Resolve CefBrowser.invalidate() once — the canonical OSR full-view repaint
+        // (native Invalidate(PET_VIEW)): it marks the WHOLE view dirty so CEF re-delivers
+        // a full frame, clearing stale-paint ghosts anywhere on screen. Present in JCEF
+        // 137+ but absent on older builds, so we reflect on it (direct calls would fail
+        // to compile against older SDKs) and fall back to the resize toggle when missing.
+        val invalidateMethod: java.lang.reflect.Method? = try {
+            Class.forName("org.cef.browser.CefBrowser").getMethod("invalidate")
+        } catch (_: Throwable) {
+            null
+        }
+        var loggedNudgePath = false
+
+        fun nudge() {
+            val b = browser ?: return
+            if (!b.component.isShowing) return
+            val w = b.component.width
+            val h = b.component.height
+            if (w < 2 || h < 2) return
+            val cef = b.cefBrowser
+            // Prefer invalidate(): the resize toggle below did NOT clear ghosts in
+            // practice because remote (out-of-process) JCEF ignores a same-size
+            // wasResized round trip. invalidate() forces the whole view to repaint.
+            val usedInvalidate = invalidateMethod?.let { m ->
+                try {
+                    m.invoke(cef)
+                    true
+                } catch (_: Throwable) {
+                    false
+                }
+            } ?: false
+            if (!usedInvalidate) {
+                try { cef.notifyScreenInfoChanged() } catch (_: Throwable) {}
+                try {
+                    cef.wasResized(w - 1, h)
+                    cef.wasResized(w, h)
+                } catch (_: Throwable) {}
+            }
+            if (!loggedNudgePath) {
+                loggedNudgePath = true
+                logger.info(
+                    "OSR repaint nudge path: " +
+                        (if (usedInvalidate) "invalidate()" else "resize-toggle fallback") +
+                        " (tab: $tabId)",
+                )
+            }
+        }
+
+        // (a) Low-frequency backup timer. javax.swing.Timer fires on the EDT.
+        val timer = javax.swing.Timer(REPAINT_NUDGE_INTERVAL_MS) { nudge() }
+        timer.isRepeats = true
+        timer.start()
+        Disposer.register(parent, Disposable { timer.stop() })
+
+        // (b) Throttled mouse-motion nudge: clear ghosts promptly during interaction,
+        // but no more than once per REPAINT_NUDGE_MIN_GAP_NANOS so we don't re-frame
+        // CEF on every pixel of movement.
+        val b = browser!!
+        var lastNudgeNanos = 0L
+        val motionListener = object : java.awt.event.MouseMotionAdapter() {
+            override fun mouseMoved(e: java.awt.event.MouseEvent?) {
+                val now = System.nanoTime()
+                if (now - lastNudgeNanos < REPAINT_NUDGE_MIN_GAP_NANOS) return
+                lastNudgeNanos = now
+                nudge()
+            }
+        }
+        b.component.addMouseMotionListener(motionListener)
+        Disposer.register(parent, Disposable { b.component.removeMouseMotionListener(motionListener) })
+
+        logger.info("OSR repaint nudge installed for tab: $tabId")
     }
 
     /**
@@ -1277,6 +1397,14 @@ class ClaudeCodePanel(
          * `wsl.exe` start, while still bounding the formerly-unbounded wait. See issue #97.
          */
         private const val BACKEND_START_TIMEOUT_MS = 30_000L
+
+        /** Backup interval (ms) for the OSR stale-paint repaint nudge. Low frequency
+         * on purpose — it only has to catch artifacts the mouse-motion nudge missed. */
+        private const val REPAINT_NUDGE_INTERVAL_MS = 2500
+
+        /** Minimum gap (ns) between mouse-motion repaint nudges so we don't invalidate
+         * the whole view on every pixel of movement (250ms). */
+        private const val REPAINT_NUDGE_MIN_GAP_NANOS = 250_000_000L
 
         /** Escape the minimal set of HTML metacharacters so backend stderr can be safely
          * embedded in the Swing HTML error label without breaking its markup. */

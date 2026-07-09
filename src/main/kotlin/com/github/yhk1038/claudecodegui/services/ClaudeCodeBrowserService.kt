@@ -71,6 +71,13 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
         val browser: JBCefBrowser,
         val cursorQuery: JBCefJSQuery,
         val streamingQuery: JBCefJSQuery,
+        /**
+         * Whether this browser renders off-screen (OSR / remote-mode JCEF). Computed
+         * once at creation from [resolveRemoteJcef]. The OSR stale-paint repaint nudge
+         * (see ClaudeCodePanel.installOsrRepaintNudge) is installed only when true —
+         * windowed (non-OSR) browsers don't exhibit the leftover-pixel artifact.
+         */
+        val isOsr: Boolean,
     ) {
         /** Callback for WebView title changes (set by ClaudeCodePanel, consumed by handlers). */
         var onTitleChanged: ((String) -> Unit)? = null
@@ -103,6 +110,17 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
          * disposed in [release] and the service's [dispose].
          */
         var lafListenerDisposable: Disposable? = null
+
+        /** Whether the OSR stale-paint repaint nudge has been installed (OSR only). */
+        var repaintNudgeInstalled: Boolean = false
+
+        /**
+         * Parent Disposable for the OSR repaint nudge (backup timer + mouse-motion
+         * listener). Disposing this stops the timer and removes the listener. Tied to
+         * the browser holder lifecycle (NOT the panel) so it survives tab move/split,
+         * same as [lafListenerDisposable]. Disposed in [disposeHolder].
+         */
+        var repaintNudgeDisposable: Disposable? = null
 
         /**
          * Number of live panels referencing this browser. Incremented on
@@ -204,7 +222,7 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
         val browser = builder.build()
         val cursorQuery = JBCefJSQuery.create(browser as JBCefBrowserBase)
         val streamingQuery = JBCefJSQuery.create(browser as JBCefBrowserBase)
-        return BrowserHolder(browser, cursorQuery, streamingQuery)
+        return BrowserHolder(browser, cursorQuery, streamingQuery, isOsr = isRemoteJcef)
     }
 
     /**
@@ -260,6 +278,7 @@ class ClaudeCodeBrowserService(private val project: Project) : Disposable {
      */
     private fun disposeHolder(holder: BrowserHolder) {
         logger.info("Releasing JCEF browser holder")
+        try { holder.repaintNudgeDisposable?.let { Disposer.dispose(it) } } catch (_: Exception) {}
         try { holder.lafListenerDisposable?.let { Disposer.dispose(it) } } catch (_: Exception) {}
         try { Disposer.dispose(holder.streamingQuery) } catch (_: Exception) {}
         try { Disposer.dispose(holder.cursorQuery) } catch (_: Exception) {}
