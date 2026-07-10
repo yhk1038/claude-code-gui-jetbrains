@@ -63,13 +63,15 @@ export const PanelItemComponent = React.forwardRef<HTMLDivElement, Props>((props
       style={{ height: 'var(--item-height, 28px)' }}
     >
       {/* Left side: label (+ optional suffix, e.g. Effort's "(Extra high)").
-          For slash commands the label is a fixed-width name column and the
-          description fills the rest (issue #167), so it doesn't grow to push
-          the description off-screen. */}
+          For slash commands the label is a min-width name column so
+          descriptions line up across rows (issue #167). It never shrinks
+          (flex-shrink-0) or truncates — a long command name just takes more
+          space instead of being cut off, pushing that row's description
+          over. */}
       <div
         className={cn(
           'flex items-center gap-1.5',
-          isCommand ? 'flex-shrink-0 max-w-[55%]' : 'min-w-0 flex-1',
+          isCommand ? 'flex-shrink-0 min-w-[9rem]' : 'min-w-0 flex-1',
         )}
       >
         <span
