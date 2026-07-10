@@ -8,6 +8,7 @@ export const PanelSectionComponent: React.FC<{
   selectedSectionIndex: number;
   selectedItemIndex: number;
   selectedItemRef: React.RefObject<HTMLDivElement>;
+  query?: string;
   onItemClick: (sectionIndex: number, itemIndex: number) => void;
   onItemExecute: (item: PanelItem) => void;
 }> = ({
@@ -16,6 +17,7 @@ export const PanelSectionComponent: React.FC<{
   selectedSectionIndex,
   selectedItemIndex,
   selectedItemRef,
+  query,
   onItemClick,
   onItemExecute,
 }) => {
@@ -62,6 +64,7 @@ export const PanelSectionComponent: React.FC<{
               key={item.id}
               item={item}
               isSelected={isSelected}
+              query={query}
               ref={isSelected ? selectedItemRef : null}
               onClick={() => onItemClick(sectionIndex, itemIndex)}
               onExecute={() => onItemExecute(item)}

@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   toModelAlias,
   resolveModelInfo,
+  resolveModelLabel,
+  findModelForSelection,
   modelChangeLabel,
   isAutoModeAvailable,
   withFableFallback,
@@ -25,6 +27,43 @@ function model(value: string, displayName = value): ModelInfo {
 function modelWithAuto(value: string, supportsAutoMode: boolean): ModelInfo {
   return { value, displayName: value, description: `${value} desc`, supportsAutoMode };
 }
+
+describe('findModelForSelection', () => {
+  const models = [
+    model('default', 'Default'),
+    model('sonnet', 'Sonnet'),
+    model('haiku', 'Haiku'),
+    model('opus[1m]', 'Opus (1M)'),
+  ];
+
+  it('matches by exact value', () => {
+    expect(findModelForSelection(models, 'sonnet')?.value).toBe('sonnet');
+  });
+
+  it('matches by model family alias', () => {
+    expect(findModelForSelection(models, 'opus')?.value).toBe('opus[1m]');
+  });
+
+  it('returns null when the requested family is absent — does NOT fall back to default', () => {
+    // Regression: "/model fable" must NOT silently switch to Opus/default when
+    // Fable isn't in the list. autoSelect uses this instead of resolveModelInfo
+    // (which falls back to default for display).
+    expect(findModelForSelection(models, 'fable')).toBeNull();
+  });
+
+  it('matches fable when it is present', () => {
+    const withFable = [...models, model('fable', 'Fable')];
+    expect(findModelForSelection(withFable, 'fable')?.value).toBe('fable');
+  });
+
+  it('returns null for an unknown token', () => {
+    expect(findModelForSelection(models, 'zzz')).toBeNull();
+  });
+
+  it('matches an explicit "default" request', () => {
+    expect(findModelForSelection(models, 'default')?.value).toBe('default');
+  });
+});
 
 describe('isAutoModeAvailable', () => {
   const models = [
@@ -187,7 +226,10 @@ describe('withFableFallback', () => {
     expect(merged).toHaveLength(3);
     expect(merged[2]).toBe(FABLE_FALLBACK_MODEL);
     expect(merged[2].value).toBe('fable');
-    expect(merged[2].displayName).toBe('Fable 5');
+    // Verbatim CLI structure: short displayName + "Fable 5 · …" description so
+    // resolveModelLabel can extract "Fable 5" as the label.
+    expect(merged[2].displayName).toBe('Fable');
+    expect(resolveModelLabel(merged[2])).toBe('Fable 5');
   });
 
   it('does not append when a "fable" alias item is already present (dedup)', () => {

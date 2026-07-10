@@ -1,8 +1,7 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PanelSection, PanelItem } from '@/types/commandPalette';
 import { useVersionInfo } from '@/hooks/useVersionInfo';
-import { useCliConfig } from '@/contexts/CliConfigContext';
 import { APP_NAME } from '@/config/app';
 import { PanelSectionComponent } from './PanelSectionComponent';
 
@@ -10,6 +9,8 @@ interface CommandPalettePanelProps {
   sections: PanelSection[];
   selectedSectionIndex: number;
   selectedItemIndex: number;
+  /** Current slash-command filter text, forwarded so items can highlight matches. */
+  filterQuery?: string;
   onItemClick: (sectionIndex: number, itemIndex: number) => void;
   onItemExecute: (item: PanelItem) => void;
   onClose: () => void;
@@ -19,6 +20,7 @@ export const CommandPalettePanel: React.FC<CommandPalettePanelProps> = ({
   sections,
   selectedSectionIndex,
   selectedItemIndex,
+  filterQuery,
   onItemClick,
   onItemExecute,
   onClose,
@@ -27,20 +29,6 @@ export const CommandPalettePanel: React.FC<CommandPalettePanelProps> = ({
   const panelRef = useRef<HTMLDivElement>(null);
   const selectedItemRef = useRef<HTMLDivElement>(null);
   const { pluginVersion, cliVersion, refresh: refreshVersion, isLoading: versionRefreshing } = useVersionInfo();
-  const { refresh } = useCliConfig();
-  const [refreshing, setRefreshing] = useState(false);
-
-  const handleRefresh = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (refreshing) return;
-    setRefreshing(true);
-    try {
-      await refresh();
-    } finally {
-      setRefreshing(false);
-    }
-  };
 
   // Clicking the version text re-queries the CLI version — same action as the
   // Settings › About refresh button (both hit the shared [GET_VERSION] query).
@@ -101,6 +89,7 @@ export const CommandPalettePanel: React.FC<CommandPalettePanelProps> = ({
           selectedSectionIndex={selectedSectionIndex}
           selectedItemIndex={selectedItemIndex}
           selectedItemRef={selectedItemRef}
+          query={filterQuery}
           onItemClick={onItemClick}
           onItemExecute={onItemExecute}
         />
@@ -126,16 +115,7 @@ export const CommandPalettePanel: React.FC<CommandPalettePanelProps> = ({
           </div>
 
           <div className="flex items-center justify-between py-2">
-            <span className="text-text-secondary/80 hover:text-text-secondary hover:underline disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer leading-none">CCG v{pluginVersion}</span>
-
-            <button
-                type="button"
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="text-text-tertiary underline hover:text-text-secondary disabled:opacity-60 disabled:cursor-not-allowed leading-none"
-            >
-              {refreshing ? t('panel.reloading') : t('panel.reloadCommands')}
-            </button>
+            <span className="text-text-secondary/80 leading-none">CCG v{pluginVersion}</span>
           </div>
         </div>
 
@@ -145,14 +125,6 @@ export const CommandPalettePanel: React.FC<CommandPalettePanelProps> = ({
             <a className="text-text-tertiary underline hover:text-text-secondary" href="https://github.com/anthropics/claude-code/issues" target="_blank">
               {t('panel.reportProblem')}
             </a>
-            <button
-                type="button"
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="text-text-tertiary underline hover:text-text-secondary disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {refreshing ? t('panel.reloading') : t('panel.reloadCommands')}
-            </button>
           </div>
           <div className="text-text-secondary/80">
             {cliVersion ? (

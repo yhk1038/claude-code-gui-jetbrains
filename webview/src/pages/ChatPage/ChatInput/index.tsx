@@ -89,6 +89,7 @@ export function ChatInput() {
   const lastMetaArrowTime = useRef<number>(0);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showModelSwitch, setShowModelSwitch] = useState(false);
+  const [modelSwitchQuery, setModelSwitchQuery] = useState<string | null>(null);
   const [showModePanel, setShowModePanel] = useState(false);
   const modePanelRef = useRef<HTMLDivElement>(null);
 
@@ -194,9 +195,14 @@ export function ChatInput() {
     return () => window.removeEventListener(OPEN_SESSION_DROPDOWN_EVENT, handleResumeFromPalette);
   }, [onChange]);
 
-  // 커맨드 팔레트 "Switch model..." 항목 연동
+  // 커맨드 팔레트 "Switch model..." 항목 + "/model [name]" 슬래시 연동.
+  // "/model sonnet"은 detail.query로 이름을 실어 보내 오버레이가 즉시 전환한다.
   useEffect(() => {
-    const handler = () => setShowModelSwitch(true);
+    const handler = (e: Event) => {
+      const query = (e as CustomEvent<{ query?: string }>).detail?.query;
+      setModelSwitchQuery(typeof query === 'string' ? query : null);
+      setShowModelSwitch(true);
+    };
     window.addEventListener(SWITCH_MODEL_EVENT, handler);
     return () => window.removeEventListener(SWITCH_MODEL_EVENT, handler);
   }, []);
@@ -576,6 +582,7 @@ export function ChatInput() {
               sections={palette.filteredSections}
               selectedSectionIndex={palette.selectedSectionIndex}
               selectedItemIndex={palette.selectedItemIndex}
+              filterQuery={palette.filterQuery}
               onItemClick={palette.selectItem}
               onItemExecute={palette.handlePanelItemExecute}
               onClose={palette.closePanel}
@@ -585,7 +592,10 @@ export function ChatInput() {
 
         {/* Model switch panel */}
         {showModelSwitch && (
-          <ModelSwitchOverlay onClose={() => setShowModelSwitch(false)} />
+          <ModelSwitchOverlay
+            autoSelectQuery={modelSwitchQuery}
+            onClose={() => { setShowModelSwitch(false); setModelSwitchQuery(null); }}
+          />
         )}
 
         {/* 드래그 오버 오버레이 */}

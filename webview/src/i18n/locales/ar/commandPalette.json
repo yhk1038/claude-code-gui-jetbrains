@@ -52,8 +52,6 @@
   },
   "panel": {
     "reportProblem": "الإبلاغ عن مشكلة",
-    "reloading": "جارٍ إعادة التحميل…",
-    "reloadCommands": "إعادة تحميل الأوامر",
     "refreshVersion": "تحديث الإصدار",
     "comingSoon": "قريبًا"
   }

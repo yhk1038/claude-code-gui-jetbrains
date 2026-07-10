@@ -27,6 +27,7 @@ import {
   ClearCommand,
   UsageCommand,
   CliPassthroughCommand,
+  ModelSlashCommand,
   getContextItems,
   getModelItems,
   getCustomizeItems,
@@ -226,7 +227,14 @@ export function CommandPaletteProvider({ children }: CommandPaletteProviderProps
           seen.add(normalized);
           return true;
         })
-        .map((cmd, i) => new CliPassthroughCommand(cmd, 100 + i));
+        .map((cmd, i) => {
+          const normalized = cmd.name.startsWith('/') ? cmd.name : `/${cmd.name}`;
+          // "/model" can't run in stream-json mode, so intercept it and drive
+          // our own model switch instead of passing it to the CLI.
+          return normalized === '/model'
+            ? new ModelSlashCommand(cmd, 100 + i)
+            : new CliPassthroughCommand(cmd, 100 + i);
+        });
       const sortedCommands = [...localCommands, ...dynamicCommands]
         .sort((a, b) => a.label.localeCompare(b.label));
       sortedCommands.forEach((cmd, i) => { (cmd as { order: number }).order = i; });

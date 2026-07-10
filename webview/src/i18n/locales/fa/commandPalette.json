@@ -52,8 +52,6 @@
   },
   "panel": {
     "reportProblem": "گزارش مشکل",
-    "reloading": "در حال بارگذاری مجدد…",
-    "reloadCommands": "بارگذاری مجدد دستورها",
     "refreshVersion": "تازه‌سازی نسخه",
     "comingSoon": "به‌زودی"
   }

@@ -52,8 +52,6 @@
   },
   "panel": {
     "reportProblem": "문제 신고",
-    "reloading": "다시 불러오는 중…",
-    "reloadCommands": "명령어 다시 불러오기",
     "refreshVersion": "버전 새로고침",
     "comingSoon": "출시 예정"
   }

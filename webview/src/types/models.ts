@@ -70,12 +70,16 @@ export function isFableSupportedCli(cliVersion: string | null | undefined): bool
 /**
  * Hardcoded Fable item appended only when the CLI-provided catalog lacks Fable.
  * `value: 'fable'` matches the verified `--model fable` / `set_model` path.
- * `description` is the CLI's own Fable row text (kept verbatim, not invented).
+ * Structure mirrors the CLI's own rows verbatim — `displayName: 'Fable'` (the
+ * short name) and `description: 'Fable 5 · …'` (name+version, then blurb). The
+ * leading "Fable 5 ·" matters: `resolveModelLabel` reads the model label out of
+ * the description's first "·" segment, so without it the label degrades to the
+ * full blurb ("Most capable for your…") instead of "Fable 5".
  */
 export const FABLE_FALLBACK_MODEL: ModelInfo = {
   value: 'fable',
-  displayName: 'Fable 5',
-  description: 'Most capable for your hardest and longest-running tasks',
+  displayName: 'Fable',
+  description: 'Fable 5 · Most capable for your hardest and longest-running tasks',
 };
 
 /**
@@ -158,6 +162,30 @@ export function resolveModelLabel(info: ModelInfo): string {
  *  3. the `default` item — a sane visible fallback
  *  4. `null` — caller renders a raw label of last resort
  */
+/**
+ * Resolve a model the user *explicitly named* (e.g. "/model fable"), matching
+ * only by exact value or model family — with NO default fallback. Unlike
+ * `resolveModelInfo` (which always returns something so the indicator never
+ * blanks), this returns null when the requested model isn't available, so
+ * "/model fable" never silently switches to Opus/default when Fable is absent.
+ */
+export function findModelForSelection(
+  models: ModelInfo[],
+  query: string,
+): ModelInfo | null {
+  const exact = models.find((m) => m.value === query);
+  if (exact) return exact;
+
+  const alias = toModelAlias(query);
+  // toModelAlias returns DEFAULT_MODEL_ALIAS for anything it doesn't recognise;
+  // treat that as "no family match" (unless the user literally asked for the
+  // default) so an unknown token can't map onto the default model.
+  if (alias === DEFAULT_MODEL_ALIAS && query.toLowerCase() !== DEFAULT_MODEL_ALIAS) {
+    return null;
+  }
+  return models.find((m) => toModelAlias(m.value) === alias) ?? null;
+}
+
 export function resolveModelInfo(
   models: ModelInfo[],
   current: string | null | undefined,
