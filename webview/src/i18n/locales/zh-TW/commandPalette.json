@@ -52,8 +52,6 @@
   },
   "panel": {
     "reportProblem": "回報問題",
-    "reloading": "正在重新載入…",
-    "reloadCommands": "重新載入指令",
     "refreshVersion": "重新整理版本",
     "comingSoon": "即將推出"
   }

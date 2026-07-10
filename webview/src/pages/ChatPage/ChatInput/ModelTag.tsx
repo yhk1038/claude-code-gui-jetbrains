@@ -71,6 +71,7 @@ export function ModelTag() {
         uuid: crypto.randomUUID(),
         timestamp: new Date().toISOString(),
         summary: t('chatInput.modelTag.setModelNotification', { model: resolveModelLabel(next) }),
+        modelChangeValue: next.value,
       });
       if (currentSessionId) void send(MessageType.SET_MODEL, { model: next.value });
     };

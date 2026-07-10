@@ -2,7 +2,7 @@ import React from 'react';
 import { LoadedMessageDto, LoadedMessageType, getTextContent } from '../../../types';
 import { useChatStreamContext } from '@/contexts/ChatStreamContext';
 import { useCliConfig } from '@/contexts/CliConfigContext';
-import { modelChangeLabel } from '@/types/models';
+import { modelChangeTarget } from '@/types/models';
 import { parseUserContent } from './utils/parseUserContent';
 import type { ModelInfo } from '@/types/slashCommand';
 
@@ -28,13 +28,18 @@ export const NotificationMessageRenderer: React.FC<NotificationMessageRendererPr
   // and that echo lands at the correct chronological position (and persists in
   // the session). Once the echo exists, hide this ephemeral notice so the two
   // converge to a single line whose position stays stable across reloads.
-  if (text.startsWith('Set model to ')) {
+  //
+  // Match by model identity (the notice's `modelChangeValue`), not by display
+  // text: the notice summary is localized while the echo is English, so string
+  // equality would never converge and both lines would linger.
+  const modelValue = message.modelChangeValue;
+  if (modelValue) {
     const models: ModelInfo[] = controlResponse?.response?.response?.models ?? [];
     const echoArrived = messages.some((m) => {
       if (m.type !== LoadedMessageType.User) return false;
       const parsed = parseUserContent(getTextContent(m));
       if (!parsed.hasLocalCommandStdout && parsed.commandName !== 'model') return false;
-      return modelChangeLabel(parsed.text, models) === text;
+      return modelChangeTarget(parsed.text, models)?.value === modelValue;
     });
     if (echoArrived) return null;
   }

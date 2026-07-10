@@ -1,6 +1,7 @@
 import { getAdapter } from '@/adapters';
 import { i18n } from '@/i18n';
 import { StaticItem } from '../../types';
+import { enKeyword } from '../../enKeyword';
 import { Route, routeToPath, withWorkingDir } from '@/router/routes';
 
 /** Navigate to the account switch page. Shared by "Switch account" and /login. */
@@ -27,11 +28,12 @@ export const getSettingsItems = (): StaticItem[] => [
   new StaticItem('switch-account', i18n.t('commandPalette:settings.switchAccount'), {
     disabled: false,
     // Also surfaces under the `/login` search, alongside the /login alias.
-    keywords: ['login'],
+    keywords: ['login', enKeyword('commandPalette:settings.switchAccount')],
     action: openSwitchAccount,
   }),
   new StaticItem('general-config', i18n.t('commandPalette:settings.generalConfig'), {
     disabled: false,
+    keywords: [enKeyword('commandPalette:settings.generalConfig')],
     action: async () => {
       await getAdapter().openSettings();
     },

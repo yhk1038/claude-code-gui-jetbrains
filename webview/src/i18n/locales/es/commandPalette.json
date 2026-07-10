@@ -52,8 +52,6 @@
   },
   "panel": {
     "reportProblem": "Reportar un problema",
-    "reloading": "Recargando…",
-    "reloadCommands": "Recargar comandos",
     "refreshVersion": "Actualizar versión",
     "comingSoon": "Próximamente"
   }

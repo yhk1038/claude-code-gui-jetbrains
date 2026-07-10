@@ -52,8 +52,6 @@
   },
   "panel": {
     "reportProblem": "問題を報告",
-    "reloading": "再読み込み中…",
-    "reloadCommands": "コマンドを再読み込み",
     "refreshVersion": "バージョンを更新",
     "comingSoon": "近日公開"
   }

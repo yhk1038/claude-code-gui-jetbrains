@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { CheckIcon } from '@heroicons/react/24/outline';
 import { useChatStreamContext } from '@/contexts/ChatStreamContext';
 import { useBridge } from '@/hooks/useBridge';
@@ -8,6 +8,7 @@ import { useCurrentModel } from '@/hooks/useCurrentModel';
 import { useVersionInfo } from '@/hooks/useVersionInfo';
 import { LoadedMessageType } from '@/types';
 import {
+  findModelForSelection,
   isFablePromoActive,
   resolveModelInfo,
   resolveModelLabel,
@@ -22,9 +23,12 @@ export const SWITCH_MODEL_EVENT = 'switch-model';
 
 interface ModelSwitchOverlayProps {
   onClose: () => void;
+  /** When set (e.g. from "/model sonnet"), resolve this to a model and switch
+   *  immediately; if it matches nothing, the picker just stays open. */
+  autoSelectQuery?: string | null;
 }
 
-export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
+export function ModelSwitchOverlay({ onClose, autoSelectQuery }: ModelSwitchOverlayProps) {
   const { t } = useTranslation('chat');
   const { setSessionModel, appendMessage } = useChatStreamContext();
   const { send } = useBridge();
@@ -60,7 +64,7 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
     };
   }, [onClose]);
 
-  const handleSelect = async (value: string) => {
+  const handleSelect = useCallback(async (value: string) => {
     setSessionModel(value);
 
     // Instant local feedback (same label & dedup behavior as the rotate path):
@@ -72,6 +76,7 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
       uuid: crypto.randomUUID(),
       timestamp: new Date().toISOString(),
       summary: t('modelSwitch.setModelTo', { model: info ? resolveModelLabel(info) : value }),
+      modelChangeValue: value,
     });
 
     if (currentSessionId) {
@@ -79,7 +84,21 @@ export function ModelSwitchOverlay({ onClose }: ModelSwitchOverlayProps) {
     }
 
     onClose();
-  };
+  }, [setSessionModel, models, appendMessage, t, currentSessionId, send, onClose]);
+
+  // "/model <name>": resolve the typed name to a model and switch immediately.
+  // Guarded to fire once per open; on no match the picker stays open so the
+  // user can choose manually.
+  const autoSelectedRef = useRef(false);
+  useEffect(() => {
+    if (autoSelectedRef.current) return;
+    if (!autoSelectQuery || models.length === 0) return;
+    autoSelectedRef.current = true;
+    // Exact/family match only (no default fallback): if the named model isn't
+    // available we leave the picker open instead of switching to Opus/default.
+    const info = findModelForSelection(models, autoSelectQuery);
+    if (info) void handleSelect(info.value);
+  }, [autoSelectQuery, models, handleSelect]);
 
   return (
     <div

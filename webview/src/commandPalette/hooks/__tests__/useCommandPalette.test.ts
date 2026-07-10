@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useCommandPalette } from '../useCommandPalette';
 import { PanelItemType } from '@/types/commandPalette';
-import type { ActionItem, PanelSection } from '@/types/commandPalette';
+import type { ActionItem, CommandItem, PanelSection } from '@/types/commandPalette';
 import { PanelSectionId } from '@/types/commandPalette';
 
 // Mock useCommandPaletteRegistry so we don't need Provider context
@@ -10,7 +10,16 @@ vi.mock('../../CommandPaletteProvider', () => ({
   useCommandPaletteRegistry: vi.fn(),
 }));
 
+// Mock useCliConfig so the hook can trigger a refresh on panel open (issue #176)
+// without a real CliConfigProvider / React Query client.
+vi.mock('@/contexts/CliConfigContext', () => ({
+  useCliConfig: vi.fn(),
+}));
+
 import { useCommandPaletteRegistry } from '../../CommandPaletteProvider';
+import { useCliConfig } from '@/contexts/CliConfigContext';
+
+const mockRefresh = vi.fn();
 
 const mockSections: PanelSection[] = [
   {
@@ -45,6 +54,11 @@ describe('useCommandPalette', () => {
     onChange = vi.fn();
     textareaRef = { current: null };
     setupMockRegistry();
+    vi.mocked(useCliConfig).mockReturnValue({
+      controlResponse: null,
+      isLoading: false,
+      refresh: mockRefresh,
+    });
   });
 
   // ──────────────────────────────────────────────────────
@@ -428,6 +442,325 @@ describe('useCommandPalette', () => {
 
       const items = result.current.filteredSections.flatMap(s => s.items);
       expect(items.find(i => i.id === 'switch-account')).toBeUndefined();
+    });
+  });
+
+  // ──────────────────────────────────────────────────────
+  // description matching — slash commands surface on their description text,
+  // not just the command name (issue #167). The CLI ships a description for
+  // every command; the terminal matches on it, so the GUI must too.
+  // ──────────────────────────────────────────────────────
+
+  describe('description matching (command items)', () => {
+    const sectionsWithCommand: PanelSection[] = [
+      {
+        id: PanelSectionId.SlashCommands,
+        title: 'Slash Commands',
+        showDividerAbove: false,
+        items: [
+          {
+            id: 'cli-review',
+            label: '/review',
+            type: PanelItemType.Command,
+            name: '/review',
+            description: 'Review a GitHub pull request',
+            action: vi.fn(),
+          } as CommandItem,
+          {
+            id: 'cli-roadmap',
+            label: '/roadmap',
+            type: PanelItemType.Command,
+            name: '/roadmap',
+            description: 'Show the product roadmap',
+            action: vi.fn(),
+          } as CommandItem,
+        ],
+      },
+    ];
+
+    it('surfaces a command when the query matches its description but not the name', () => {
+      setupMockRegistry(sectionsWithCommand);
+      const { result } = renderHook(() =>
+        useCommandPalette({ onChange, textareaRef }),
+      );
+
+      act(() => {
+        result.current.setFilterQuery('github');
+      });
+
+      const items = result.current.filteredSections.flatMap(s => s.items);
+      expect(items.find(i => i.id === 'cli-review')).toBeDefined();
+      // The other command's name and description both lack "github".
+      expect(items.find(i => i.id === 'cli-roadmap')).toBeUndefined();
+    });
+
+    it('still matches on the command name', () => {
+      setupMockRegistry(sectionsWithCommand);
+      const { result } = renderHook(() =>
+        useCommandPalette({ onChange, textareaRef }),
+      );
+
+      act(() => {
+        result.current.setFilterQuery('road');
+      });
+
+      const items = result.current.filteredSections.flatMap(s => s.items);
+      expect(items.find(i => i.id === 'cli-roadmap')).toBeDefined();
+      expect(items.find(i => i.id === 'cli-review')).toBeUndefined();
+    });
+
+    it('hides commands when the query matches neither name nor description', () => {
+      setupMockRegistry(sectionsWithCommand);
+      const { result } = renderHook(() =>
+        useCommandPalette({ onChange, textareaRef }),
+      );
+
+      act(() => {
+        result.current.setFilterQuery('zzz');
+      });
+
+      const items = result.current.filteredSections.flatMap(s => s.items);
+      expect(items).toHaveLength(0);
+    });
+
+    it('ranks a name match above a description-only match', () => {
+      // "/model" matches its own name; "/claude-api" only matches via its
+      // description ("...model ids..."). The exact-name command must rank first
+      // even though it sorts later alphabetically (regression: /claude-api on top).
+      const sections: PanelSection[] = [
+        {
+          id: PanelSectionId.SlashCommands,
+          title: 'Slash Commands',
+          showDividerAbove: false,
+          items: [
+            {
+              id: 'cli-claude-api',
+              label: '/claude-api',
+              type: PanelItemType.Command,
+              name: '/claude-api',
+              description: 'Reference for the Claude API — model ids, pricing',
+              action: vi.fn(),
+            } as CommandItem,
+            {
+              id: 'cli-model',
+              label: '/model',
+              type: PanelItemType.Command,
+              name: '/model',
+              description: 'Set the AI model for Claude Code',
+              action: vi.fn(),
+            } as CommandItem,
+          ],
+        },
+      ];
+      setupMockRegistry(sections);
+      const { result } = renderHook(() =>
+        useCommandPalette({ onChange, textareaRef }),
+      );
+
+      act(() => {
+        result.current.setFilterQuery('model');
+      });
+
+      const items = result.current.filteredSections.flatMap(s => s.items);
+      expect(items.map(i => i.id)).toEqual(['cli-model', 'cli-claude-api']);
+    });
+
+    it('ranks an earlier (prefix) name match above a later substring match', () => {
+      const sections: PanelSection[] = [
+        {
+          id: PanelSectionId.SlashCommands,
+          title: 'Slash Commands',
+          showDividerAbove: false,
+          items: [
+            {
+              id: 'cli-remodel',
+              label: '/remodel',
+              type: PanelItemType.Command,
+              name: '/remodel',
+              description: '',
+              action: vi.fn(),
+            } as CommandItem,
+            {
+              id: 'cli-model',
+              label: '/model',
+              type: PanelItemType.Command,
+              name: '/model',
+              description: '',
+              action: vi.fn(),
+            } as CommandItem,
+          ],
+        },
+      ];
+      setupMockRegistry(sections);
+      const { result } = renderHook(() =>
+        useCommandPalette({ onChange, textareaRef }),
+      );
+
+      act(() => {
+        result.current.setFilterQuery('model');
+      });
+
+      const items = result.current.filteredSections.flatMap(s => s.items);
+      // "/model" matches at index 1 (right after "/"), "/remodel" at index 3.
+      expect(items.map(i => i.id)).toEqual(['cli-model', 'cli-remodel']);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────
+  // panel-open refresh — reopening the panel refetches the CLI config so
+  // runtime-added skills/commands appear without a manual reload (issue #176).
+  // The cached list stays visible until the refetch resolves.
+  // ──────────────────────────────────────────────────────
+
+  describe('panel-open refresh (issue #176)', () => {
+    it('refreshes CLI config when the panel opens via the slash button', () => {
+      const { result } = renderHook(() =>
+        useCommandPalette({ onChange, textareaRef }),
+      );
+
+      expect(mockRefresh).not.toHaveBeenCalled();
+
+      act(() => {
+        result.current.handleSlashButtonClick();
+      });
+
+      expect(mockRefresh).toHaveBeenCalledTimes(1);
+    });
+
+    it('refreshes CLI config when the panel opens via typing "/"', () => {
+      const { result } = renderHook(() =>
+        useCommandPalette({ onChange, textareaRef }),
+      );
+
+      act(() => {
+        result.current.detectSlashCommand('/');
+      });
+
+      expect(mockRefresh).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not refresh again while the panel stays open', () => {
+      const { result } = renderHook(() =>
+        useCommandPalette({ onChange, textareaRef }),
+      );
+
+      act(() => {
+        result.current.detectSlashCommand('/');
+      });
+      // Typing more of the command keeps the panel open — no second refresh.
+      act(() => {
+        result.current.detectSlashCommand('/re');
+      });
+
+      expect(mockRefresh).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────
+  // detectSlashCommand with arguments — the panel must stay open while typing
+  // a command's arguments so "/model sonnet" keeps "/model" selected, instead
+  // of vanishing the moment a space is typed.
+  // ──────────────────────────────────────────────────────
+
+  describe('detectSlashCommand with arguments', () => {
+    it('keeps the panel open and filters by the command name when typing args', () => {
+      const { result } = renderHook(() =>
+        useCommandPalette({ onChange, textareaRef }),
+      );
+
+      act(() => {
+        result.current.detectSlashCommand('/model sonnet');
+      });
+
+      expect(result.current.showSlashCommands).toBe(true);
+      // Filter by the first token ("/model") so the command still matches.
+      expect(result.current.filterQuery).toBe('model');
+    });
+
+    it('still opens the panel with no args', () => {
+      const { result } = renderHook(() =>
+        useCommandPalette({ onChange, textareaRef }),
+      );
+
+      act(() => {
+        result.current.detectSlashCommand('/model');
+      });
+
+      expect(result.current.showSlashCommands).toBe(true);
+      expect(result.current.filterQuery).toBe('model');
+    });
+
+    it('hides the panel when the text does not start with a slash', () => {
+      const { result } = renderHook(() =>
+        useCommandPalette({ onChange, textareaRef }),
+      );
+
+      act(() => {
+        result.current.detectSlashCommand('hello world');
+      });
+
+      expect(result.current.showSlashCommands).toBe(false);
+    });
+
+    // Once an argument is being typed the command is settled, so the panel
+    // should narrow to the exact command — not keep showing other fuzzy
+    // (description) matches like /claude-api.
+    describe('narrows to the exact command in argument mode', () => {
+      const modelSections: PanelSection[] = [
+        {
+          id: PanelSectionId.SlashCommands,
+          title: 'Slash Commands',
+          showDividerAbove: false,
+          items: [
+            {
+              id: 'cli-model',
+              label: '/model',
+              type: PanelItemType.Command,
+              name: '/model',
+              description: 'Set the AI model for Claude Code',
+              action: vi.fn(),
+            } as CommandItem,
+            {
+              id: 'cli-claude-api',
+              label: '/claude-api',
+              type: PanelItemType.Command,
+              name: '/claude-api',
+              description: 'Reference for the Claude API — model ids',
+              action: vi.fn(),
+            } as CommandItem,
+          ],
+        },
+      ];
+
+      it('shows only the exact command once an argument is typed', () => {
+        setupMockRegistry(modelSections);
+        const { result } = renderHook(() =>
+          useCommandPalette({ onChange, textareaRef }),
+        );
+
+        act(() => {
+          result.current.detectSlashCommand('/model so');
+        });
+
+        const items = result.current.filteredSections.flatMap(s => s.items);
+        expect(items.map(i => i.id)).toEqual(['cli-model']);
+      });
+
+      it('still shows fuzzy matches while only the name is being typed', () => {
+        setupMockRegistry(modelSections);
+        const { result } = renderHook(() =>
+          useCommandPalette({ onChange, textareaRef }),
+        );
+
+        act(() => {
+          result.current.detectSlashCommand('/model');
+        });
+
+        const items = result.current.filteredSections.flatMap(s => s.items);
+        // description of /claude-api also mentions "model", so it stays visible.
+        expect(items.map(i => i.id)).toContain('cli-model');
+        expect(items.map(i => i.id)).toContain('cli-claude-api');
+      });
     });
   });
 });

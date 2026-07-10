@@ -1,6 +1,7 @@
-import { useState, useCallback, useMemo, KeyboardEvent, RefObject } from 'react';
+import { useState, useCallback, useEffect, useMemo, KeyboardEvent, RefObject } from 'react';
 import { PanelSection, PanelItemType, ActionItem, CommandItem, PanelItem } from '@/types/commandPalette';
 import { useCommandPaletteRegistry } from '../CommandPaletteProvider';
+import { useCliConfig } from '@/contexts/CliConfigContext';
 
 interface UseCommandPaletteOptions {
   onChange: (value: string) => void;
@@ -9,16 +10,39 @@ interface UseCommandPaletteOptions {
 
 export function useCommandPalette({ onChange, textareaRef }: UseCommandPaletteOptions) {
   const { sections } = useCommandPaletteRegistry();
+  const { refresh: refreshCliConfig } = useCliConfig();
 
   // --- Panel state (from useSlashCommandPanel) ---
   const [filterQuery, setFilterQuery] = useState('');
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(0);
   const [selectedItemIndex, setSelectedItemIndex] = useState(0);
   const [showSlashCommands, setShowSlashCommands] = useState(false);
+  // True once the user types a space after the command (i.e. arguments). The
+  // command is settled, so the panel narrows to the exact command instead of
+  // keeping fuzzy description matches around.
+  const [argMode, setArgMode] = useState(false);
+
+  // Refetch the CLI config each time the panel opens so runtime-added skills/
+  // commands (e.g. after /reload) show up without a manual reload. The cached
+  // list stays visible until the refetch resolves — no flicker (issue #176).
+  useEffect(() => {
+    if (showSlashCommands) void refreshCliConfig();
+  }, [showSlashCommands, refreshCliConfig]);
 
   const filteredSections = useMemo(() => {
     const query = filterQuery.toLowerCase();
     const hasQuery = query.length > 0;
+
+    // Rank a match so a name (label) hit beats a description-only hit, and an
+    // earlier name position (prefix) beats a later one — otherwise "/model"
+    // ranks below "/claude-api" just because its description mentions "model".
+    // Lower is better; items are already filtered so a match always exists.
+    const matchRank = (item: PanelItem): number => {
+      const labelIdx = item.label.toLowerCase().indexOf(query);
+      if (labelIdx !== -1) return labelIdx;
+      if (item.keywords?.some(k => k.toLowerCase().includes(query))) return 500;
+      return 1000; // description-only match
+    };
 
     return sections
       .map((section, index) => {
@@ -26,23 +50,38 @@ export function useCommandPalette({ onChange, textareaRef }: UseCommandPaletteOp
           // searchOnly items stay hidden until the user types a matching query.
           if (item.searchOnly && !hasQuery) return false;
           if (hasQuery) {
+            // Argument mode: the command is settled ("/model sonnet"), so only
+            // the exact command name stays — no fuzzy/description matches.
+            if (argMode) {
+              return item.label.toLowerCase() === `/${query}`;
+            }
             const matchesLabel = item.label.toLowerCase().includes(query);
             const matchesKeyword = item.keywords?.some(keyword =>
               keyword.toLowerCase().includes(query),
             );
-            return matchesLabel || (matchesKeyword ?? false);
+            // Slash commands carry a CLI-provided description; match on it too
+            // so e.g. "/review" surfaces on "github pull request" (issue #167).
+            const matchesDescription =
+              item.type === PanelItemType.Command &&
+              (item as CommandItem).description.toLowerCase().includes(query);
+            return matchesLabel || (matchesKeyword ?? false) || matchesDescription;
           }
           return true;
         });
         if (filteredItems.length === 0) return null;
+        // Order by relevance when searching; keep the section's own order (e.g.
+        // alphabetical) otherwise. Sort is stable, so equal ranks keep it.
+        const orderedItems = hasQuery
+          ? [...filteredItems].sort((a, b) => matchRank(a) - matchRank(b))
+          : filteredItems;
         return {
           ...section,
           showDividerAbove: hasQuery ? index > 0 : section.showDividerAbove,
-          items: filteredItems,
+          items: orderedItems,
         };
       })
       .filter((section): section is PanelSection => section !== null);
-  }, [sections, filterQuery]);
+  }, [sections, filterQuery, argMode]);
 
   const selectItem = useCallback((sectionIndex: number, itemIndex: number) => {
     setSelectedSectionIndex(sectionIndex);
@@ -53,6 +92,7 @@ export function useCommandPalette({ onChange, textareaRef }: UseCommandPaletteOp
     setSelectedSectionIndex(0);
     setSelectedItemIndex(0);
     setFilterQuery('');
+    setArgMode(false);
   }, []);
 
   const getTotalItemCount = useCallback(() => {
@@ -191,12 +231,16 @@ export function useCommandPalette({ onChange, textareaRef }: UseCommandPaletteOp
   }, [showSlashCommands, filteredSections, selectedSectionIndex, selectedItemIndex, executeSelectedItem, executeAndClear, closePanel, moveSelection, onChange]);
 
   const detectSlashCommand = useCallback((newValue: string) => {
-    // Show panel only while typing the command name itself. As soon as
-    // whitespace appears the user is typing arguments — keep the panel
-    // hidden so a stray match doesn't override what they typed.
-    if (newValue.startsWith('/') && !/\s/.test(newValue)) {
+    // Keep the panel open while typing a slash command AND its arguments, so
+    // "/model sonnet" still shows "/model" selected instead of the panel
+    // vanishing the moment a space is typed. Filter by the command name (the
+    // first whitespace-delimited token) rather than the whole input.
+    if (newValue.startsWith('/')) {
+      const commandToken = newValue.split(/\s/, 1)[0]; // "/model" from "/model sonnet"
       setShowSlashCommands(true);
-      setFilterQuery(newValue.substring(1));
+      setFilterQuery(commandToken.substring(1));
+      // A space means arguments are being typed — lock to the exact command.
+      setArgMode(/\s/.test(newValue));
       setSelectedSectionIndex(0);
       setSelectedItemIndex(0);
     } else {

@@ -52,8 +52,6 @@
   },
   "panel": {
     "reportProblem": "Сообщить о проблеме",
-    "reloading": "Перезагрузка…",
-    "reloadCommands": "Перезагрузить команды",
     "refreshVersion": "Обновить версию",
     "comingSoon": "Скоро"
   }

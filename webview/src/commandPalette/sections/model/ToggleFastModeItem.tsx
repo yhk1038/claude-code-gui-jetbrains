@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { StaticItem } from '../../types';
 import { i18n } from '@/i18n';
+import { enKeyword } from '../../enKeyword';
 import { useClaudeSettings } from '@/contexts/ClaudeSettingsContext';
 import { useChatStreamContext } from '@/contexts/ChatStreamContext';
 import { useCliConfig } from '@/contexts/CliConfigContext';
@@ -33,6 +34,7 @@ function resolveActiveModel(
 // applyModelCapabilityFlags for the source of truth).
 export const createToggleFastModeItem = (): StaticItem =>
   new StaticItem('toggle-fast-mode', i18n.t('commandPalette:model.toggleFastMode'), {
+    keywords: [enKeyword('commandPalette:model.toggleFastMode'), 'fast mode'],
     disabled: false,
     keepOpen: true,
     valueComponent: () => <FastModeToggle />,

@@ -3,18 +3,22 @@ import { useTranslation } from 'react-i18next';
 import { PanelItem, PanelItemBase, ToggleItem, CommandItem, PanelItemType, IconType } from '@/types/commandPalette';
 import { ToggleSwitch } from '@/components/ToggleSwitch';
 import { TerminalIcon, LinkIcon } from './icons/PaletteIcons';
+import { HighlightedText } from './HighlightedText';
 import { cn } from '@/utils/cn';
 
 interface Props {
   item: PanelItem;
   isSelected: boolean;
+  /** Current slash-command filter text, used to highlight matches. */
+  query?: string;
   onClick: () => void;
   onExecute: () => void;
 }
 
 export const PanelItemComponent = React.forwardRef<HTMLDivElement, Props>((props, ref) => {
-  const { item, isSelected, onClick, onExecute } = props;
+  const { item, isSelected, query = '', onClick, onExecute } = props;
   const { t } = useTranslation('commandPalette');
+  const isCommand = item.type === PanelItemType.Command;
 
   const handleClick = () => {
     if (item.disabled) {
@@ -58,8 +62,18 @@ export const PanelItemComponent = React.forwardRef<HTMLDivElement, Props>((props
       )}
       style={{ height: 'var(--item-height, 28px)' }}
     >
-      {/* Left side: label (+ optional suffix, e.g. Effort's "(Extra high)") */}
-      <div className="flex min-w-0 flex-1 items-center gap-1.5">
+      {/* Left side: label (+ optional suffix, e.g. Effort's "(Extra high)").
+          For slash commands the label is a min-width name column so
+          descriptions line up across rows (issue #167). It never shrinks
+          (flex-shrink-0) or truncates — a long command name just takes more
+          space instead of being cut off, pushing that row's description
+          over. */}
+      <div
+        className={cn(
+          'flex items-center gap-1.5',
+          isCommand ? 'flex-shrink-0 min-w-[9rem]' : 'min-w-0 flex-1',
+        )}
+      >
         <span
           className={cn(
             'overflow-hidden whitespace-nowrap text-ellipsis transition-colors duration-100',
@@ -73,7 +87,7 @@ export const PanelItemComponent = React.forwardRef<HTMLDivElement, Props>((props
           )}
           style={{ fontSize: 'var(--item-size, 13px)' }}
         >
-          {item.label}
+          <HighlightedText text={item.label} query={query} />
         </span>
         {item.labelSuffix && (
           <span
@@ -84,6 +98,23 @@ export const PanelItemComponent = React.forwardRef<HTMLDivElement, Props>((props
           </span>
         )}
       </div>
+
+      {/* Slash command description column: the CLI-provided summary, matched
+          text bolded. Truncates so long descriptions never wrap. */}
+      {isCommand && (
+        <span
+          className={cn(
+            'ms-3 min-w-0 flex-1 overflow-hidden whitespace-nowrap text-ellipsis transition-colors duration-100',
+            isSelected
+              ? 'text-[var(--text-on-selected)]'
+              : 'text-[var(--secondary-text-color)]',
+            isClickable && 'group-hover:text-[var(--text-on-selected)]',
+          )}
+          style={{ fontSize: 'var(--item-size, 13px)' }}
+        >
+          <HighlightedText text={(item as CommandItem).description} query={query} />
+        </span>
+      )}
 
       {/* Right side: secondary label / toggle / icon */}
       <div className="flex flex-shrink-0 items-center gap-2">

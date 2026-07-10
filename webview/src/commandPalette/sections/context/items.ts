@@ -1,6 +1,7 @@
 import { IconType } from '@/types/commandPalette';
 import { i18n } from '@/i18n';
 import { StaticItem } from '../../types';
+import { enKeyword } from '../../enKeyword';
 
 /**
  * Fired when the user runs `/resume`. The session dropdown opens (browse/resume
@@ -15,6 +16,7 @@ export const OPEN_SESSION_DROPDOWN_EVENT = 'command-palette:open-session-dropdow
  */
 export const getContextItems = (): StaticItem[] => [
   new StaticItem('attach-file', i18n.t('commandPalette:context.attachFile'), {
+    keywords: [enKeyword('commandPalette:context.attachFile')],
     icon: IconType.File,
     disabled: false,
     action: async () => {
@@ -22,6 +24,7 @@ export const getContextItems = (): StaticItem[] => [
     },
   }),
   new StaticItem('mention-file', i18n.t('commandPalette:context.mentionFile'), {
+    keywords: [enKeyword('commandPalette:context.mentionFile')],
     icon: IconType.File,
     disabled: false,
     action: async () => {
@@ -29,6 +32,7 @@ export const getContextItems = (): StaticItem[] => [
     },
   }),
   new StaticItem('clear-conversation', i18n.t('commandPalette:context.clearConversation'), {
+    keywords: [enKeyword('commandPalette:context.clearConversation')],
     disabled: false,
     serviceAction: async (services) => {
       if (services.chatStream.isStreaming) services.chatStream.stop();
@@ -39,6 +43,7 @@ export const getContextItems = (): StaticItem[] => [
   // Search-only: surfaces when the user types `/resume`. Opens the session
   // dropdown so past conversations can be browsed and resumed (issue #28).
   new StaticItem('resume-conversation', i18n.t('commandPalette:context.resumeConversation'), {
+    keywords: [enKeyword('commandPalette:context.resumeConversation'), 'resume'],
     disabled: false,
     searchOnly: true,
     action: async () => {
