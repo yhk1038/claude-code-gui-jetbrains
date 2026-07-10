@@ -104,6 +104,11 @@ export class LoadedMessageDto {
   // UI-only fields (not in JSONL, set during streaming/local creation)
   isStreaming?: boolean;
   context?: Context[];
+
+  // UI-only: a locally-created model-change notice carries the target model's
+  // stable value so the CLI's `/model` echo can be deduped against it across
+  // locales (the summary text itself is localized). Not in JSONL.
+  modelChangeValue?: string;
 }
 
 /**

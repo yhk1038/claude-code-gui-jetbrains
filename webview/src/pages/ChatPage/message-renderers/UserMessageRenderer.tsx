@@ -13,7 +13,7 @@ import { InterruptedMessageRenderer } from './InterruptedMessageRenderer';
 import { NotificationLine } from './NotificationMessageRenderer';
 import { MessageBox } from './components/MessageBox';
 import { useCliConfig } from '@/contexts/CliConfigContext';
-import { modelChangeLabel } from '@/types/models';
+import { modelChangeTarget } from '@/types/models';
 import type { ModelInfo } from '@/types/slashCommand';
 import { useTranslation } from '@/i18n';
 
@@ -68,13 +68,14 @@ export const UserMessageRenderer: React.FC<UserMessageRendererProps> = ({ messag
   // and on reload.
   if (parsedContent.hasLocalCommandStdout || parsedContent.commandName === 'model') {
     const models: ModelInfo[] = controlResponse?.response?.response?.models ?? [];
-    const label = modelChangeLabel(parsedContent.text, models);
-    // Always render the echo at its correct chronological position. The matching
-    // ephemeral local notification (added on model switch for instant feedback)
-    // hides itself once this echo exists — see NotificationMessageRenderer — so
-    // they converge to a single centered line at the right spot.
-    if (label) {
-      return <NotificationLine text={label} />;
+    const target = modelChangeTarget(parsedContent.text, models);
+    // Always render the echo at its correct chronological position, localized to
+    // the current locale (the CLI echo itself is English). The matching ephemeral
+    // local notification (added on model switch for instant feedback) hides
+    // itself once this echo exists — see NotificationMessageRenderer — so they
+    // converge to a single centered line at the right spot.
+    if (target) {
+      return <NotificationLine text={t('modelSwitch.setModelTo', { ns: 'chat', model: target.label })} />;
     }
     // A `/model` entry with no parseable model line carries no useful text —
     // drop the redundant bubble rather than show an empty notice.

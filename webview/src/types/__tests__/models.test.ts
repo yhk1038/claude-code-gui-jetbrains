@@ -4,7 +4,7 @@ import {
   resolveModelInfo,
   resolveModelLabel,
   findModelForSelection,
-  modelChangeLabel,
+  modelChangeTarget,
   isAutoModeAvailable,
   withFableFallback,
   isFablePromoActive,
@@ -169,7 +169,7 @@ describe('resolveModelInfo', () => {
   });
 });
 
-describe('modelChangeLabel', () => {
+describe('modelChangeTarget', () => {
   const models: ModelInfo[] = [
     { value: 'default', displayName: 'Default (recommended)', description: 'Opus 4.8 with 1M context · recommended' },
     { value: 'opus[1m]', displayName: 'Opus', description: 'Opus 4.8 with 1M context · best for hard tasks' },
@@ -177,29 +177,38 @@ describe('modelChangeLabel', () => {
     { value: 'haiku', displayName: 'Haiku', description: 'Haiku 4.5 · fast' },
   ];
 
-  it('parses "Set model to <full id>" into a friendly label', () => {
+  it('resolves "Set model to <full id>" to the model value + friendly label', () => {
     // CLI echoes the bare id for the opus[1m] selection
-    expect(modelChangeLabel('Set model to claude-opus-4-8[1m]', models)).toBe('Set model to Opus 4.8');
+    expect(modelChangeTarget('Set model to claude-opus-4-8[1m]', models)).toEqual({
+      value: 'opus[1m]',
+      label: 'Opus 4.8',
+    });
   });
 
-  it('parses "Set model to <alias> (<id>)" by the alias before the paren', () => {
-    expect(modelChangeLabel('Set model to sonnet (claude-sonnet-4-6)', models)).toBe('Set model to Sonnet 4.6');
-    expect(modelChangeLabel('Set model to haiku (claude-haiku-4-5-20251001)', models)).toBe('Set model to Haiku 4.5');
+  it('resolves "Set model to <alias> (<id>)" by the alias before the paren', () => {
+    expect(modelChangeTarget('Set model to sonnet (claude-sonnet-4-6)', models)).toEqual({
+      value: 'sonnet',
+      label: 'Sonnet 4.6',
+    });
+    expect(modelChangeTarget('Set model to haiku (claude-haiku-4-5-20251001)', models)).toEqual({
+      value: 'haiku',
+      label: 'Haiku 4.5',
+    });
   });
 
   it('still parses when wrapped in a local-command-stdout tag', () => {
     expect(
-      modelChangeLabel('<local-command-stdout>Set model to claude-opus-4-8[1m]</local-command-stdout>', models),
-    ).toBe('Set model to Opus 4.8');
+      modelChangeTarget('<local-command-stdout>Set model to claude-opus-4-8[1m]</local-command-stdout>', models),
+    ).toEqual({ value: 'opus[1m]', label: 'Opus 4.8' });
   });
 
   it('returns null for text that is not a model-change line', () => {
-    expect(modelChangeLabel('hello world', models)).toBeNull();
-    expect(modelChangeLabel('', models)).toBeNull();
+    expect(modelChangeTarget('hello world', models)).toBeNull();
+    expect(modelChangeTarget('', models)).toBeNull();
   });
 
-  it('falls back to the raw token when the model is unknown', () => {
-    expect(modelChangeLabel('Set model to mystery', [])).toBe('Set model to mystery');
+  it('falls back to the raw token (value and label) when the model is unknown', () => {
+    expect(modelChangeTarget('Set model to mystery', [])).toEqual({ value: 'mystery', label: 'mystery' });
   });
 });
 

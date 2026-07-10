@@ -76,6 +76,7 @@ export function ModelSwitchOverlay({ onClose, autoSelectQuery }: ModelSwitchOver
       uuid: crypto.randomUUID(),
       timestamp: new Date().toISOString(),
       summary: t('modelSwitch.setModelTo', { model: info ? resolveModelLabel(info) : value }),
+      modelChangeValue: value,
     });
 
     if (currentSessionId) {

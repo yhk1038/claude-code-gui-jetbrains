@@ -227,17 +227,24 @@ export function isAutoModeAvailable(
 }
 
 /**
- * Turn a CLI `/model` echo line into a friendly notice label, or null if the
- * text isn't a model-change line. Accepts both "Set model to <id>" and
+ * Resolve the model a CLI `/model` echo line refers to, against the account
+ * catalog. Returns the model's stable `value` and a friendly `label`, or null
+ * if the text isn't a model-change line. Accepts both "Set model to <id>" and
  * "Set model to <alias> (<id>)" shapes (and ignores any surrounding tags by
  * matching only from "Set model to" up to the first "(" or a tag/end).
- * The resulting label matches the one our local notification uses, so the two
- * can be deduped by string equality.
+ *
+ * The `value` is locale-independent, so the CLI echo can be deduped against our
+ * local (localized) model-change notification by comparing model identity — not
+ * by display text, which differs per locale. When the token can't be resolved,
+ * both `value` and `label` fall back to the raw token.
  */
-export function modelChangeLabel(text: string, models: ModelInfo[]): string | null {
+export function modelChangeTarget(
+  text: string,
+  models: ModelInfo[],
+): { value: string; label: string } | null {
   const match = text.match(/Set model to (.+?)(?:\s*[(<]|$)/);
   if (!match) return null;
   const raw = match[1].trim();
   const info = resolveModelInfo(models, raw);
-  return `Set model to ${info ? resolveModelLabel(info) : raw}`;
+  return info ? { value: info.value, label: resolveModelLabel(info) } : { value: raw, label: raw };
 }
