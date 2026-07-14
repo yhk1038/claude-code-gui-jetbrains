@@ -2,16 +2,26 @@ import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { SettingSection, SettingRow } from '../common';
 import { APP_NAME } from '@/config/app';
 import { useVersionInfo } from '@/hooks/useVersionInfo';
+import { useSponsorMenuUnlock } from '@/hooks/useSponsorMenuUnlock';
 import { useTranslation } from '@/i18n';
 import { CliUpdateControl } from './CliUpdateControl';
 
 export function AboutSettings() {
   const { t } = useTranslation('settings');
   const { pluginVersion, cliVersion, refresh, isLoading } = useVersionInfo();
+  // Hidden gesture: double-clicking this heading toggles the Settings > Sponsor
+  // entry, which ships hidden while Lemon Squeezy is in test mode. Intentionally
+  // undiscoverable — for our own testing and the payment provider's review.
+  const { toggle: toggleSponsorMenu } = useSponsorMenuUnlock();
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-text-primary mb-6">{t('about.heading')}</h2>
+      <h2
+        className="text-xl font-semibold text-text-primary mb-6 select-none"
+        onDoubleClick={toggleSponsorMenu}
+      >
+        {t('about.heading')}
+      </h2>
 
       <SettingSection title={t('about.versionInfo.title')}>
         <SettingRow label={t('about.versionInfo.pluginVersion')}>

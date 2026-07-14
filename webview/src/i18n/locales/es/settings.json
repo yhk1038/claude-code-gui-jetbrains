@@ -16,7 +16,8 @@
     "usage": "Uso",
     "tunnel": "Túnel",
     "releases": "Versiones",
-    "about": "Acerca de"
+    "about": "Acerca de",
+    "sponsor": "Patrocinar"
   },
   "scope": {
     "global": "Configuración de usuario (Global)",
@@ -333,6 +334,33 @@
     },
     "errors": {
       "unknown": "Error desconocido"
+    }
+  },
+  "sponsor": {
+    "title": "Apoya Claude Code with GUI",
+    "description": "Claude Code with GUI seguirá siendo gratis. Patrocinar mantiene vivo este proyecto independiente que prioriza JetBrains.",
+    "promises": [
+      "Acceso ilimitado a todas las funciones exclusivas para patrocinadores",
+      "Todas las funciones futuras incluidas automáticamente",
+      "El nivel más alto: nunca habrá un nivel de pago superior",
+      "Tu precio se mantiene fijo, aunque suba para nuevos patrocinadores"
+    ],
+    "cta": "Saber más",
+    "opening": "Abriendo…",
+    "trust": "Cancela cuando quieras.",
+    "activate": {
+      "title": "¿Ya eres patrocinador?",
+      "description": "Introduce tu clave de patrocinador para activar el patrocinio en este dispositivo.",
+      "placeholder": "Introduce tu clave de patrocinador",
+      "button": "Activar",
+      "verifying": "Verificando…",
+      "invalid": "Esa clave no es válida. Compruébala e inténtalo de nuevo."
+    },
+    "active": {
+      "title": "Patrocinando",
+      "description": "Gracias por apoyar Claude Code with GUI.",
+      "keyLabel": "Clave de patrocinador",
+      "deactivate": "Desactivar"
     }
   }
 }

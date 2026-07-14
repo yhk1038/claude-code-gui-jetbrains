@@ -16,7 +16,8 @@
     "usage": "사용량",
     "tunnel": "터널",
     "releases": "릴리스",
-    "about": "정보"
+    "about": "정보",
+    "sponsor": "후원"
   },
   "scope": {
     "global": "사용자 설정 (전역)",
@@ -333,6 +334,33 @@
     },
     "errors": {
       "unknown": "알 수 없는 오류"
+    }
+  },
+  "sponsor": {
+    "title": "Claude Code with GUI 후원하기",
+    "description": "Claude Code with GUI는 계속 무료입니다. 후원은 JetBrains를 우선하는 이 독립 프로젝트를 이어가게 합니다.",
+    "promises": [
+      "모든 후원자 전용 기능에 무제한 접근",
+      "앞으로 추가되는 모든 기능 자동 포함",
+      "최상위 등급 — 더 비싼 유료 등급은 없습니다",
+      "신규 후원자 가격이 올라도 당신의 가격은 그대로"
+    ],
+    "cta": "자세히 알아보기",
+    "opening": "여는 중…",
+    "trust": "언제든 취소할 수 있습니다.",
+    "activate": {
+      "title": "이미 후원자세요?",
+      "description": "후원자 키를 입력해 이 기기에서 후원을 활성화하세요.",
+      "placeholder": "후원자 키 입력",
+      "button": "활성화",
+      "verifying": "확인 중…",
+      "invalid": "유효하지 않은 키입니다. 다시 확인해 주세요."
+    },
+    "active": {
+      "title": "후원 중",
+      "description": "Claude Code with GUI를 후원해 주셔서 감사합니다.",
+      "keyLabel": "후원자 키",
+      "deactivate": "해제"
     }
   }
 }

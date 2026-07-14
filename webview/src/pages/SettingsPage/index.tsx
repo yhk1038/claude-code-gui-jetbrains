@@ -14,6 +14,7 @@ import { ReleasesSettings } from './Releases';
 import { AccountSettings } from './Account';
 import { BrowserSettings } from './Browser';
 import { PrivacySettings } from './Privacy';
+import { SponsorSettings } from './Sponsor';
 
 /**
  * Settings 메인 컴포넌트 - 현재 라우트에 따라 적절한 설정 페이지 렌더링
@@ -46,6 +47,8 @@ export function SettingsPage() {
         return <BrowserSettings />;
       case Route.SETTINGS_ACCOUNT:
         return <AccountSettings />;
+      case Route.SETTINGS_SPONSOR:
+        return <SponsorSettings />;
       case Route.SETTINGS_ABOUT:
         return <AboutSettings />;
       case Route.SETTINGS_USAGE:

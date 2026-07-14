@@ -16,7 +16,8 @@
     "usage": "用量",
     "tunnel": "隧道",
     "releases": "版本發布",
-    "about": "關於"
+    "about": "關於",
+    "sponsor": "贊助"
   },
   "scope": {
     "global": "使用者設定(全域)",
@@ -333,6 +334,33 @@
     },
     "errors": {
       "unknown": "未知錯誤"
+    }
+  },
+  "sponsor": {
+    "title": "贊助 Claude Code with GUI",
+    "description": "Claude Code with GUI 始終免費使用。贊助讓這個以 JetBrains 為先的獨立專案得以持續。",
+    "promises": [
+      "無限使用所有贊助者專屬功能",
+      "自動包含未來所有新功能",
+      "最高等級 — 永遠不會有更高的付費等級",
+      "即使新贊助者價格上漲，你的價格也保持不變"
+    ],
+    "cta": "了解更多",
+    "opening": "正在開啟…",
+    "trust": "可隨時取消。",
+    "activate": {
+      "title": "已經是贊助者？",
+      "description": "輸入你的贊助者金鑰，在此裝置上啟用贊助。",
+      "placeholder": "輸入贊助者金鑰",
+      "button": "啟用",
+      "verifying": "驗證中…",
+      "invalid": "此金鑰無效，請確認後再試一次。"
+    },
+    "active": {
+      "title": "贊助中",
+      "description": "感謝你贊助 Claude Code with GUI。",
+      "keyLabel": "贊助者金鑰",
+      "deactivate": "取消啟用"
     }
   }
 }

@@ -16,7 +16,8 @@
     "usage": "Usage",
     "tunnel": "Tunnel",
     "releases": "Releases",
-    "about": "About"
+    "about": "About",
+    "sponsor": "Sponsor"
   },
   "scope": {
     "global": "User Settings (Global)",
@@ -333,6 +334,33 @@
     },
     "errors": {
       "unknown": "Unknown error"
+    }
+  },
+  "sponsor": {
+    "title": "Support Claude Code with GUI",
+    "description": "Claude Code with GUI stays free to use. Sponsoring keeps this independent, JetBrains-first project going.",
+    "promises": [
+      "Unlimited access to every sponsor-only feature",
+      "All future features included, automatically",
+      "The top tier — no higher paid tier, ever",
+      "Your price stays locked, even if it rises for new sponsors"
+    ],
+    "cta": "Learn more",
+    "opening": "Opening…",
+    "trust": "Cancel anytime.",
+    "activate": {
+      "title": "Already a sponsor?",
+      "description": "Enter your sponsor key to activate sponsorship on this device.",
+      "placeholder": "Enter your sponsor key",
+      "button": "Activate",
+      "verifying": "Verifying…",
+      "invalid": "That key isn't valid. Please check it and try again."
+    },
+    "active": {
+      "title": "Sponsoring",
+      "description": "Thank you for supporting Claude Code with GUI.",
+      "keyLabel": "Sponsor key",
+      "deactivate": "Deactivate"
     }
   }
 }

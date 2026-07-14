@@ -12,6 +12,7 @@ import {
   ComputerDesktopIcon,
   BellIcon,
   LockClosedIcon,
+  HeartIcon,
 } from '@heroicons/react/24/outline';
 import type { ComponentType, SVGProps } from 'react';
 
@@ -33,6 +34,7 @@ export enum IconName {
   COMPUTER_DESKTOP = 'ComputerDesktopIcon',
   BELL = 'BellIcon',
   LOCK_CLOSED = 'LockClosedIcon',
+  HEART = 'HeartIcon',
 }
 
 /**
@@ -57,6 +59,7 @@ export enum Route {
   SETTINGS_RELEASES = 'settings/releases',
   SETTINGS_BROWSER = 'settings/browser',
   SETTINGS_ACCOUNT = 'settings/account',
+  SETTINGS_SPONSOR = 'settings/sponsor',
   SETTINGS_ABOUT = 'settings/about',
   SETTINGS_PRIVACY = 'settings/privacy',
   SWITCH_ACCOUNT = 'switch-account',
@@ -175,6 +178,13 @@ export const ROUTE_META: Record<Route, RouteMeta> = {
     description: 'Profile and authentication',
     scopeSupport: 'none',
   },
+  [Route.SETTINGS_SPONSOR]: {
+    path: '/settings/sponsor',
+    label: 'Sponsor',
+    icon: IconName.HEART,
+    description: 'Support the project',
+    scopeSupport: 'none',
+  },
   [Route.SETTINGS_ABOUT]: {
     path: '/settings/about',
     label: 'About',
@@ -208,6 +218,7 @@ export const ICON_COMPONENTS: Record<IconName, ComponentType<SVGProps<SVGSVGElem
   [IconName.COMPUTER_DESKTOP]: ComputerDesktopIcon,
   [IconName.BELL]: BellIcon,
   [IconName.LOCK_CLOSED]: LockClosedIcon,
+  [IconName.HEART]: HeartIcon,
 };
 
 /**
@@ -300,6 +311,8 @@ export const SETTINGS_SUB_ROUTES: Route[] = [
   Route.SETTINGS_TUNNEL,
   Route.SETTINGS_RELEASES,
   Route.SETTINGS_ABOUT,
+  // Sponsor sits last — it's a support/marketing entry, not a settings group.
+  Route.SETTINGS_SPONSOR,
 ];
 
 /**

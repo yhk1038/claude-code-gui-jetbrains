@@ -76,6 +76,18 @@ export enum MessageType {
   /** Persist the user's telemetry consent decision. */
   SET_TELEMETRY_CONSENT = 'SET_TELEMETRY_CONSENT',
 
+  // -- Sponsor / license --
+  /** Build the sponsorship (pricing) URL with the install id + account context prefilled, for the webview to open in the external browser. The install id stays backend-side (never exposed to the webview). inbound webview→backend */
+  GET_SPONSOR_URL = 'GET_SPONSOR_URL',
+  /** Read the current sponsor entitlement (derived from the locally stored license key). inbound webview→backend */
+  GET_SPONSOR_STATUS = 'GET_SPONSOR_STATUS',
+  /** Verify a sponsor license key against www; persists it locally on success. inbound webview→backend */
+  VERIFY_LICENSE = 'VERIFY_LICENSE',
+  /** Remove the stored sponsor license (turn sponsorship off on this install). inbound webview→backend */
+  DEACTIVATE_LICENSE = 'DEACTIVATE_LICENSE',
+  /** Poll www for a sponsor key minted for this install id and auto-activate it (copy/paste-free). inbound webview→backend */
+  CHECK_SPONSOR = 'CHECK_SPONSOR',
+
   // -- Account / usage / version --
   /** Read the signed-in Claude account info. */
   GET_ACCOUNT = 'GET_ACCOUNT',

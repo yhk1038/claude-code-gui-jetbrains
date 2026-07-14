@@ -11,3 +11,12 @@ export const APP_NAME = 'Claude Code';
  * Marketplace plugin page as well (required when collecting telemetry).
  */
 export const PRIVACY_POLICY_URL = 'https://claude-code-gui.com/privacy';
+
+/**
+ * Public sponsorship (pricing) page. Locale-agnostic like the privacy URL — the
+ * site redirects to the visitor's locale. The backend appends the install id and
+ * account context as query params (see the GET_SPONSOR_URL handler) so the
+ * checkout can prefill them and the payment can be mapped back to this install;
+ * this bare constant is the fallback target when that context is unavailable.
+ */
+export const PRICING_URL = 'https://claude-code-gui.com/pricing';

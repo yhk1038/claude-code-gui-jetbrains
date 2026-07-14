@@ -19,6 +19,11 @@ import { getClaudeConfigDirHandler } from './getClaudeConfigDir';
 import { saveClaudeConfigDirHandler } from './saveClaudeConfigDir';
 import { getTelemetryConsentHandler } from './getTelemetryConsent';
 import { setTelemetryConsentHandler } from './setTelemetryConsent';
+import { getSponsorUrlHandler } from './getSponsorUrl';
+import { verifyLicenseHandler } from './verifyLicense';
+import { getSponsorStatusHandler } from './getSponsorStatus';
+import { deactivateLicenseHandler } from './deactivateLicense';
+import { checkSponsorHandler } from './checkSponsor';
 import { getProjectsHandler } from './getProjects';
 import { getUsageHandler } from './getUsage';
 import { getUsageReportHandler } from './getUsageReport';
@@ -150,6 +155,21 @@ export async function handleMessage(
       break;
     case MessageType.SET_TELEMETRY_CONSENT:
       await setTelemetryConsentHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.GET_SPONSOR_URL:
+      await getSponsorUrlHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.GET_SPONSOR_STATUS:
+      await getSponsorStatusHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.VERIFY_LICENSE:
+      await verifyLicenseHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.DEACTIVATE_LICENSE:
+      await deactivateLicenseHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.CHECK_SPONSOR:
+      await checkSponsorHandler(connectionId, message, connections, bridge);
       break;
     case MessageType.GET_PROJECTS:
       await getProjectsHandler(connectionId, message, connections, bridge);

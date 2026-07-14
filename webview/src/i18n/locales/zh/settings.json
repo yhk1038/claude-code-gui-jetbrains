@@ -16,7 +16,8 @@
     "usage": "用量",
     "tunnel": "隧道",
     "releases": "版本发布",
-    "about": "关于"
+    "about": "关于",
+    "sponsor": "赞助"
   },
   "scope": {
     "global": "用户设置(全局)",
@@ -333,6 +334,33 @@
     },
     "errors": {
       "unknown": "未知错误"
+    }
+  },
+  "sponsor": {
+    "title": "赞助 Claude Code with GUI",
+    "description": "Claude Code with GUI 始终免费使用。赞助让这个以 JetBrains 为先的独立项目得以持续。",
+    "promises": [
+      "无限使用所有赞助者专属功能",
+      "自动包含未来所有新功能",
+      "最高等级 — 永不会有更高的付费等级",
+      "即使新赞助者价格上涨，你的价格也保持不变"
+    ],
+    "cta": "了解更多",
+    "opening": "正在打开…",
+    "trust": "可随时取消。",
+    "activate": {
+      "title": "已经是赞助者？",
+      "description": "输入你的赞助者密钥，在此设备上激活赞助。",
+      "placeholder": "输入赞助者密钥",
+      "button": "激活",
+      "verifying": "验证中…",
+      "invalid": "该密钥无效，请检查后重试。"
+    },
+    "active": {
+      "title": "赞助中",
+      "description": "感谢你赞助 Claude Code with GUI。",
+      "keyLabel": "赞助者密钥",
+      "deactivate": "取消激活"
     }
   }
 }

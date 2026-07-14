@@ -16,7 +16,8 @@
     "usage": "使用状況",
     "tunnel": "トンネル",
     "releases": "リリース",
-    "about": "情報"
+    "about": "情報",
+    "sponsor": "スポンサー"
   },
   "scope": {
     "global": "ユーザー設定(グローバル)",
@@ -333,6 +334,33 @@
     },
     "errors": {
       "unknown": "不明なエラー"
+    }
+  },
+  "sponsor": {
+    "title": "Claude Code with GUI を支援する",
+    "description": "Claude Code with GUI は無料のままご利用いただけます。スポンサーは、この独立した JetBrains 優先プロジェクトの継続を支えます。",
+    "promises": [
+      "すべてのスポンサー限定機能に無制限アクセス",
+      "今後追加されるすべての機能を自動的に含む",
+      "最上位ティア — これ以上の有料ティアはありません",
+      "新規スポンサーの価格が上がっても、あなたの価格は据え置き"
+    ],
+    "cta": "詳しく見る",
+    "opening": "開いています…",
+    "trust": "いつでもキャンセルできます。",
+    "activate": {
+      "title": "すでにスポンサーですか？",
+      "description": "スポンサーキーを入力して、この端末でスポンサーを有効化します。",
+      "placeholder": "スポンサーキーを入力",
+      "button": "有効化",
+      "verifying": "確認中…",
+      "invalid": "有効なキーではありません。ご確認のうえ、もう一度お試しください。"
+    },
+    "active": {
+      "title": "スポンサー中",
+      "description": "Claude Code with GUI をご支援いただきありがとうございます。",
+      "keyLabel": "スポンサーキー",
+      "deactivate": "解除"
     }
   }
 }
