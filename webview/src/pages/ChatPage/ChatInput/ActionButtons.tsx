@@ -57,7 +57,7 @@ export function ActionButtons(props: Props) {
         <button
           type="button"
           onClick={onStop}
-          className="flex items-center justify-center w-[26px] h-[26px] rounded-md bg-state-error-fg hover:bg-state-error-fg text-text-inverse transition-colors"
+          className={`flex items-center justify-center w-[26px] h-[26px] rounded-md ${config.sendButtonBg} text-text-inverse transition-colors`}
           title={t('chatInput.actionButtons.stopGenerating')}
         >
           <svg className="w-5 h-5" viewBox="0 0 16 16" fill="currentColor">
