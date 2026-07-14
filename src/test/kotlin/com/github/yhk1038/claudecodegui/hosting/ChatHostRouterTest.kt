@@ -123,6 +123,42 @@ class ChatHostRouterTest {
     }
 
     @Nested
+    inner class PlanOpen {
+
+        @Test
+        fun `no open tabs mints the new tab id`() {
+            assertEquals(
+                "new",
+                ChatHostRouter.planOpen(openTabIds = emptyList(), activeTabId = null, newTabId = "new")
+            )
+        }
+
+        @Test
+        fun `an open tab focuses the active one instead of opening a new tab`() {
+            assertEquals(
+                "b",
+                ChatHostRouter.planOpen(openTabIds = listOf("a", "b", "c"), activeTabId = "b", newTabId = "new")
+            )
+        }
+
+        @Test
+        fun `null active id falls back to the most recently opened tab`() {
+            assertEquals(
+                "c",
+                ChatHostRouter.planOpen(openTabIds = listOf("a", "b", "c"), activeTabId = null, newTabId = "new")
+            )
+        }
+
+        @Test
+        fun `stale active id not in the open list falls back to the most recent tab`() {
+            assertEquals(
+                "c",
+                ChatHostRouter.planOpen(openTabIds = listOf("a", "b", "c"), activeTabId = "x", newTabId = "new")
+            )
+        }
+    }
+
+    @Nested
     inner class PlanHydrate {
 
         @Test

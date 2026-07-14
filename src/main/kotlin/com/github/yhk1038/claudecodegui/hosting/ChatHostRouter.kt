@@ -45,6 +45,25 @@ object ChatHostRouter {
     }
 
     /**
+     * Which tab id the "Open Claude Code" action should target.
+     *
+     * "Open" means *reveal the chat*, not *always spawn a new one* — spawning a
+     * fresh tab is the separate "New Tab" action's job (Cmd/Ctrl+N). So when any
+     * chat tab is already open this returns the tab to focus: the active one, or
+     * the most recently opened tab as a fallback when the persisted [activeTabId]
+     * is null or stale (not in [openTabIds]). Only when nothing is open does it
+     * return [newTabId] to mint a brand-new session.
+     *
+     * Without this, every invocation passed a fresh random tab id, so
+     * `openOrFocus` never matched an existing tab and a new (empty) tab piled up
+     * on every keypress (issue #180).
+     */
+    fun planOpen(openTabIds: List<String>, activeTabId: String?, newTabId: String): String {
+        if (openTabIds.isEmpty()) return newTabId
+        return activeTabId?.takeIf { it in openTabIds } ?: openTabIds.last()
+    }
+
+    /**
      * What a host should do when its UI is first built (e.g. the tool window is
      * opened for the first time):
      *

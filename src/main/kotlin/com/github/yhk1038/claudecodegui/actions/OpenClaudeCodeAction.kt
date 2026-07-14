@@ -1,6 +1,7 @@
 package com.github.yhk1038.claudecodegui.actions
 
 import com.github.yhk1038.claudecodegui.hosting.ChatHostRouter
+import com.github.yhk1038.claudecodegui.services.EditorTabStateService
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -11,8 +12,16 @@ class OpenClaudeCodeAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        // 새 탭 열기 (탭 ID로 UUID 생성)
-        openTab(project, UUID.randomUUID().toString())
+        // "Open" reveals the chat: focus an already-open tab if there is one,
+        // and only mint a fresh tab id when none is open. Spawning extra tabs is
+        // the New Tab action's job — see ChatHostRouter.planOpen (issue #180).
+        val state = EditorTabStateService.getInstance(project)
+        val tabId = ChatHostRouter.planOpen(
+            state.getOpenTabIds(),
+            state.getActiveTabId(),
+            UUID.randomUUID().toString(),
+        )
+        openTab(project, tabId)
     }
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
