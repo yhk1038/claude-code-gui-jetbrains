@@ -105,10 +105,17 @@ class ToolWindowHost(private val project: Project) : ChatHost {
         // Mirror the editor-tab callbacks (ClaudeCodeFileEditor) so the persisted
         // title/path stay in sync and the content label tracks the WebView title.
         panel.onTitleChanged = { title ->
-            virtualFile.setDisplayName(title)
-            state.updateTitle(tabId, title)
-            ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID)?.let { tw ->
-                findContent(tw, tabId)?.displayName = virtualFile.presentableName
+            // onTitleChange fires from the JCEF display handler on the AppKit
+            // thread, but setDisplayName / Content.displayName mutate UI model
+            // state and must run on the EDT, otherwise the platform throws
+            // "Access is allowed from Event Dispatch Thread (EDT) only". Marshal
+            // onto the EDT (runs immediately if already on it).
+            ApplicationManager.getApplication().invokeLater {
+                virtualFile.setDisplayName(title)
+                state.updateTitle(tabId, title)
+                ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID)?.let { tw ->
+                    findContent(tw, tabId)?.displayName = virtualFile.presentableName
+                }
             }
         }
         panel.onPathChanged = { path ->

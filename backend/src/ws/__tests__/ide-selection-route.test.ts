@@ -162,11 +162,13 @@ describe('handleIdeSelectionRequest', () => {
     expect(sent.payload.selectedText).toBeNull();
   });
 
-  it('does NOT broadcast and does NOT buffer when there are no connections', () => {
+  it('does NOT broadcast when there are no connections, but stores the last selection for replay', () => {
     const cm = new ConnectionManager();
     const broadcastSpy = vi.spyOn(cm, 'broadcastToAll');
-    // ide-selection must NOT call setPendingEditorContext either
+    // ide-selection must NOT touch the one-shot editor-context buffer...
     const setPendingSpy = vi.spyOn(cm, 'setPendingEditorContext');
+    // ...it uses its own persistent last-selection buffer instead.
+    const setLastSpy = vi.spyOn(cm, 'setLastIdeSelection');
 
     const body = JSON.stringify({
       absolutePath: '/abs/src/file.ts',
@@ -182,6 +184,92 @@ describe('handleIdeSelectionRequest', () => {
     expect(result.body).toEqual({ success: true });
     expect(broadcastSpy).not.toHaveBeenCalled();
     expect(setPendingSpy).not.toHaveBeenCalled();
+    expect(setLastSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('stores the last IDE_SELECTION and replays it to a webview that connects afterward', () => {
+    const cm = new ConnectionManager();
+
+    const body = JSON.stringify({
+      absolutePath: '/abs/src/file.ts',
+      relativePath: 'src/file.ts',
+      startLine: 10,
+      endLine: 25,
+      selectedText: 'const x = 1;',
+      workingDir: '/abs',
+      isGitignored: false,
+    });
+    // No webview connected yet (e.g. tool window closed).
+    handleIdeSelectionRequest(cm, body);
+
+    // Webview (re)connects — should immediately receive the last selection.
+    const ws = createMockWs();
+    cm.addConnection(ws);
+
+    expect(ws.send).toHaveBeenCalledTimes(1);
+    const sent = JSON.parse((ws.send as ReturnType<typeof vi.fn>).mock.calls[0][0]);
+    expect(sent.type).toBe(MessageType.IDE_SELECTION);
+    expect(sent.payload).toEqual({
+      absolutePath: '/abs/src/file.ts',
+      relativePath: 'src/file.ts',
+      startLine: 10,
+      endLine: 25,
+      selectedText: 'const x = 1;',
+      workingDir: '/abs',
+      isGitignored: false,
+    });
+  });
+
+  it('replays the last IDE_SELECTION to every new connection (persists, not consumed once)', () => {
+    const cm = new ConnectionManager();
+
+    const body = JSON.stringify({
+      absolutePath: '/abs/src/file.ts',
+      relativePath: 'src/file.ts',
+      startLine: 1,
+      endLine: 2,
+      selectedText: null,
+      workingDir: '/abs',
+    });
+    handleIdeSelectionRequest(cm, body);
+
+    const ws1 = createMockWs();
+    cm.addConnection(ws1);
+    const ws2 = createMockWs();
+    cm.addConnection(ws2);
+
+    expect(ws1.send).toHaveBeenCalledTimes(1);
+    expect(ws2.send).toHaveBeenCalledTimes(1);
+  });
+
+  it('restores the last selection on tool-window reopen (broadcast while connected, replay after reconnect)', () => {
+    const cm = new ConnectionManager();
+    const ws1 = createMockWs();
+    const conn1 = cm.addConnection(ws1);
+
+    const body = JSON.stringify({
+      absolutePath: '/abs/src/file.ts',
+      relativePath: 'src/file.ts',
+      startLine: 3,
+      endLine: 4,
+      selectedText: 'sel',
+      workingDir: '/abs',
+    });
+    // While the webview is connected, the selection is broadcast live.
+    handleIdeSelectionRequest(cm, body);
+    expect(ws1.send).toHaveBeenCalledTimes(1);
+
+    // Tool window closed → webview disconnects.
+    cm.removeConnection(conn1);
+
+    // Tool window reopened → fresh webview connects, same file still focused
+    // (no new IDE event). The stored last selection is replayed immediately.
+    const ws2 = createMockWs();
+    cm.addConnection(ws2);
+    expect(ws2.send).toHaveBeenCalledTimes(1);
+    const sent = JSON.parse((ws2.send as ReturnType<typeof vi.fn>).mock.calls[0][0]);
+    expect(sent.type).toBe(MessageType.IDE_SELECTION);
+    expect(sent.payload.absolutePath).toBe('/abs/src/file.ts');
   });
 
   it('normalizes non-number startLine/endLine to null', () => {

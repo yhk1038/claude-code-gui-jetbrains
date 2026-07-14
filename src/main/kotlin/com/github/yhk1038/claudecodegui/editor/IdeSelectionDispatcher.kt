@@ -1,13 +1,16 @@
 package com.github.yhk1038.claudecodegui.editor
 
 import com.github.yhk1038.claudecodegui.actions.EditorContextPayload
+import com.github.yhk1038.claudecodegui.hosting.ToolWindowHost
 import com.github.yhk1038.claudecodegui.services.NodeBackendService
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.util.Alarm
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,9 +27,10 @@ import java.net.URI
  * (the manual Alt+K action that posts to `/internal/editor-context`).
  *
  * ### Gating
- * Events are dispatched only when at least one [ClaudeCodeVirtualFile] tab is open
- * in the project. If no Claude Code tab is open there is no consumer, so the HTTP
- * call is suppressed entirely.
+ * Events are dispatched only when there is a consumer able to show the selection:
+ * either a [ClaudeCodeVirtualFile] editor tab is open, OR the Claude Code tool
+ * window is currently visible. If neither is present the HTTP call is suppressed
+ * entirely. (See [hasSelectionConsumer].)
  *
  * The active file must not itself be a [ClaudeCodeVirtualFile] (the Claude panel
  * is not a real source file).
@@ -50,6 +54,76 @@ object IdeSelectionDispatcher {
      */
     @Volatile
     private var lastDispatched: Triple<String, Int?, Int?> = Triple("", null, null)
+
+    /**
+     * Clear the dedup cache so the next dispatch is never suppressed as a
+     * duplicate of the previously sent key.
+     *
+     * When the webview (the selection-chip consumer) reloads, its on-screen chips
+     * are wiped back to the empty initial state, but this dispatcher still
+     * remembers the last key it sent. Without this reset, focusing the same file
+     * with no selection again yields the identical key `(path, null, null)`, which
+     * the dedup check in [doDispatch] would skip — so the chip would never
+     * reappear after a reload. Call this on the reload boundary to force the next
+     * dispatch through.
+     */
+    fun clearDedupCache() {
+        lastDispatched = Triple("", null, null)
+    }
+
+    /**
+     * Whether [dispatchActiveEditor] should push the given active file. Returns
+     * false when there is no active file (`null`) or when the active file is the
+     * Claude panel's own JCEF virtual file (a [ClaudeCodeVirtualFile], which is
+     * not a real source file).
+     *
+     * Extracted as a pure predicate so the no-op contract is unit-testable
+     * without a platform harness.
+     */
+    fun shouldDispatchActiveEditor(vFile: VirtualFile?): Boolean =
+        vFile != null && vFile !is ClaudeCodeVirtualFile
+
+    /**
+     * Re-query the IDE's current active editor/file and dispatch it immediately,
+     * synchronizing the backend's `lastIdeSelection` to whatever the user is
+     * viewing **now**.
+     *
+     * ### Why this exists
+     * While the tool window is closed, Gate 2 in [scheduleDispatch] suppresses
+     * focus changes (there is no visible consumer). So if the user focuses file A,
+     * closes the tool window, then focuses file B, the backend still holds A. When
+     * the window re-opens the backend would replay the stale A to the freshly
+     * connected webview. Calling this on the open/reload boundary re-reads the
+     * *current* active file (B) and pushes it, so the backend replays the correct
+     * file. This turns "restore the pre-close state" into "sync to the current
+     * IDE state".
+     *
+     * ### Behavior
+     * - No active file, or the active file is a [ClaudeCodeVirtualFile] → no-op
+     *   (see [shouldDispatchActiveEditor]).
+     * - Otherwise: [clearDedupCache] first (the current file's key may equal the
+     *   last key sent before the window closed; without the reset the dedup check
+     *   in [doDispatch] would drop it), then [scheduleDispatch].
+     *
+     * ### Threading
+     * Safe to call off the EDT. The body runs inside
+     * [ApplicationManager]'s `invokeLater` because the FileEditorManager reads and
+     * the [Alarm] used by [scheduleDispatch] must run on the EDT, and this is
+     * invoked from a CEF load callback thread (not the EDT).
+     */
+    fun dispatchActiveEditor(project: Project) {
+        ApplicationManager.getApplication().invokeLater {
+            if (project.isDisposed) return@invokeLater
+            val fem = FileEditorManager.getInstance(project)
+            val editor = fem.selectedTextEditor
+            val vFile = fem.selectedEditor?.file
+            if (!shouldDispatchActiveEditor(vFile)) return@invokeLater
+            // Force the current file through even if its key matches the last one
+            // dispatched before the tool window closed.
+            clearDedupCache()
+            scheduleDispatch(project, editor, vFile!!)
+        }
+    }
 
     /**
      * Per-project [Alarm] instances for debounce. Keys are project hash codes.
@@ -78,6 +152,18 @@ object IdeSelectionDispatcher {
     }
 
     /**
+     * Whether an ide-selection push has a consumer able to display it: either a
+     * Claude Code editor tab is open, or the Claude Code tool window is visible.
+     *
+     * Extracted as a pure predicate so the OR gate is unit-testable without a
+     * platform harness (the two booleans are computed from platform APIs at the
+     * call site). Users who run Claude only in the tool window would otherwise
+     * never receive the context chip.
+     */
+    fun hasSelectionConsumer(hasClaudeEditorTab: Boolean, isToolWindowVisible: Boolean): Boolean =
+        hasClaudeEditorTab || isToolWindowVisible
+
+    /**
      * Schedule a debounced dispatch for the given [editor] / [vFile] within [project].
      *
      * Cancels any pending alarm for the project and schedules a new one to fire
@@ -93,10 +179,15 @@ object IdeSelectionDispatcher {
         // Gate 1: ignore Claude Code panel files.
         if (vFile is ClaudeCodeVirtualFile) return
 
-        // Gate 2: suppress when no Claude Code tab is open (no consumer).
+        // Gate 2: suppress when there is no consumer for the push — neither a
+        // Claude Code editor tab open nor a visible Claude Code tool window.
         val fem = FileEditorManager.getInstance(project)
-        val hasClaudeTab = fem.openFiles.any { it is ClaudeCodeVirtualFile }
-        if (!hasClaudeTab) return
+        val hasClaudeEditorTab = fem.openFiles.any { it is ClaudeCodeVirtualFile }
+        val isToolWindowVisible =
+            ToolWindowManager.getInstance(project)
+                .getToolWindow(ToolWindowHost.TOOL_WINDOW_ID)
+                ?.isVisible == true
+        if (!hasSelectionConsumer(hasClaudeEditorTab, isToolWindowVisible)) return
 
         val alarm = alarmFor(project)
         alarm.cancelAllRequests()

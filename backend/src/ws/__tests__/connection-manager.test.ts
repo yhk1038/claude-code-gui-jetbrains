@@ -243,4 +243,73 @@ describe('ConnectionManager', () => {
       expect(ws.send).not.toHaveBeenCalled();
     });
   });
+
+  // Unlike the one-shot editor-context buffer above, the ide-selection buffer is
+  // a persistent mirror of the currently-focused editor: it is peeked (not
+  // consumed) and replayed to EVERY new connection so a reopened tool window /
+  // reloaded webview restores the file context chip immediately.
+  describe('last IDE selection buffer', () => {
+    it('should return the stashed payload on get', () => {
+      const payload = { absolutePath: '/abs/src/file.ts', relativePath: 'src/file.ts' };
+      cm.setLastIdeSelection(payload);
+      expect(cm.getLastIdeSelection()).toEqual(payload);
+    });
+
+    it('should NOT clear the buffer after get (peek, persists)', () => {
+      const payload = { absolutePath: '/abs/a.ts', relativePath: 'a.ts' };
+      cm.setLastIdeSelection(payload);
+      cm.getLastIdeSelection();
+      expect(cm.getLastIdeSelection()).toEqual(payload);
+    });
+
+    it('should return null when nothing was stashed', () => {
+      expect(cm.getLastIdeSelection()).toBeNull();
+    });
+
+    it('should overwrite an earlier payload with the latest one', () => {
+      cm.setLastIdeSelection({ absolutePath: '/abs/old.ts', relativePath: 'old.ts' });
+      const latest = { absolutePath: '/abs/new.ts', relativePath: 'new.ts' };
+      cm.setLastIdeSelection(latest);
+      expect(cm.getLastIdeSelection()).toEqual(latest);
+    });
+
+    it('should replay a stashed payload to a newly added connection as IDE_SELECTION', () => {
+      const payload = {
+        absolutePath: '/abs/src/file.ts',
+        relativePath: 'src/file.ts',
+        startLine: 10,
+        endLine: 25,
+        selectedText: 'const x = 1;',
+        workingDir: '/abs',
+        isGitignored: false,
+      };
+      cm.setLastIdeSelection(payload);
+
+      const ws = createMockWs();
+      cm.addConnection(ws);
+
+      expect(ws.send).toHaveBeenCalledTimes(1);
+      const sent = JSON.parse((ws.send as ReturnType<typeof vi.fn>).mock.calls[0][0]);
+      expect(sent.type).toBe(MessageType.IDE_SELECTION);
+      expect(sent.payload).toEqual(payload);
+    });
+
+    it('should replay to EVERY new connection (not consumed on first replay)', () => {
+      cm.setLastIdeSelection({ absolutePath: '/abs/a.ts', relativePath: 'a.ts' });
+
+      const ws1 = createMockWs();
+      cm.addConnection(ws1);
+      const ws2 = createMockWs();
+      cm.addConnection(ws2);
+
+      expect(ws1.send).toHaveBeenCalledTimes(1);
+      expect(ws2.send).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not replay anything to a new connection when nothing was stashed', () => {
+      const ws = createMockWs();
+      cm.addConnection(ws);
+      expect(ws.send).not.toHaveBeenCalled();
+    });
+  });
 });

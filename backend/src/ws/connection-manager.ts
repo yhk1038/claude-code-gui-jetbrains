@@ -17,6 +17,14 @@ const PENDING_EDITOR_CONTEXT_TTL_MS = 10_000;
 /** Push message type carrying the IDE editor selection to the webview. */
 export const EDITOR_CONTEXT_MESSAGE = MessageType.EDITOR_CONTEXT;
 
+/**
+ * Push message type carrying the auto-tracked IDE selection to the webview.
+ * Mirrors EDITOR_CONTEXT_MESSAGE but for the passive selection channel. Defined
+ * here (not in ide-selection-route) so addConnection can replay the last
+ * selection on connect — symmetric with how editor-context replays here.
+ */
+export const IDE_SELECTION_MESSAGE = MessageType.IDE_SELECTION;
+
 interface PendingEditorContext {
   payload: Record<string, unknown>;
   expiresAt: number;
@@ -63,6 +71,14 @@ export class ConnectionManager {
   // Editor context awaiting a webview connection. Replayed to the first
   // connection that arrives within PENDING_EDITOR_CONTEXT_TTL_MS, then cleared.
   private pendingEditorContext: PendingEditorContext | null = null;
+  // Last auto-tracked IDE selection. Unlike pendingEditorContext (a one-shot
+  // "Add to Claude" action consumed by the first connection), this is a
+  // persistent mirror of the currently-focused editor: it is peeked (not
+  // consumed) and replayed to EVERY new connection so a reopened tool window /
+  // reloaded webview restores the file context chip immediately, without the
+  // user re-focusing the file. No TTL — kept until superseded by the next
+  // selection, so restoration works no matter how long the panel was closed.
+  private lastIdeSelection: Record<string, unknown> | null = null;
   private nextId = 0;
 
   // ─── Connection lifecycle ───────────────────────────────────────────────────
@@ -83,6 +99,15 @@ export class ConnectionManager {
     const pendingEditorContext = this.consumePendingEditorContext();
     if (pendingEditorContext) {
       this.sendTo(connectionId, EDITOR_CONTEXT_MESSAGE, pendingEditorContext);
+    }
+
+    // Replay the last IDE selection so a reopened tool window / reloaded webview
+    // restores the current file context chip immediately, without the user
+    // re-focusing the file. Peeked (not consumed) so every reconnection is
+    // restored — this is the persistent counterpart to the one-shot replay above.
+    const lastIdeSelection = this.getLastIdeSelection();
+    if (lastIdeSelection) {
+      this.sendTo(connectionId, IDE_SELECTION_MESSAGE, lastIdeSelection);
     }
 
     return connectionId;
@@ -111,6 +136,28 @@ export class ConnectionManager {
     if (!pending) return null;
     if (Date.now() > pending.expiresAt) return null;
     return pending.payload;
+  }
+
+  // ─── Last IDE selection buffer ──────────────────────────────────────────────
+
+  /**
+   * Store the latest auto-tracked IDE selection to replay to future webview
+   * connections. Overwrites any earlier value — only the current selection
+   * matters. Unlike setPendingEditorContext this has no TTL and is not consumed
+   * on replay: it mirrors the currently-focused editor for as long as the panel
+   * stays on that file.
+   */
+  setLastIdeSelection(payload: Record<string, unknown>): void {
+    this.lastIdeSelection = payload;
+  }
+
+  /**
+   * Return the stored last IDE selection without clearing it (peek). Returns
+   * null if no selection has been stored yet. Kept intact so every subsequent
+   * connection (e.g. repeated tool-window reopens) is restored.
+   */
+  getLastIdeSelection(): Record<string, unknown> | null {
+    return this.lastIdeSelection;
   }
 
   setNativeDropStash(panelId: string, entries: NativeDropEntry[]): boolean {

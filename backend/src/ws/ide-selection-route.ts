@@ -1,12 +1,9 @@
-import { ConnectionManager } from './connection-manager';
-import { MessageType } from '../shared';
+import { ConnectionManager, IDE_SELECTION_MESSAGE } from './connection-manager';
 
-/**
- * Push message type carrying the auto-tracked IDE selection to the webview.
- * Mirrors the EDITOR_CONTEXT_MESSAGE pattern in connection-manager.ts but for
- * the passive selection channel (no buffering — next selection event supersedes).
- */
-export const IDE_SELECTION_MESSAGE = MessageType.IDE_SELECTION;
+// IDE_SELECTION_MESSAGE lives in connection-manager (alongside
+// EDITOR_CONTEXT_MESSAGE) so addConnection can replay the last selection on
+// connect — symmetric with the editor-context replay path.
+export { IDE_SELECTION_MESSAGE };
 
 /**
  * Result of handling a POST /internal/ide-selection request. The caller writes
@@ -48,9 +45,13 @@ function normalizeText(value: unknown): string | null {
 /**
  * Parse + validate an ide-selection request body and route it to the webview.
  *
- * Unlike editor-context (which buffers for JCEF cold start), ide-selection is
- * an automatic, high-frequency signal — the next selection change will arrive
- * shortly, so we intentionally drop the payload when no webview is connected.
+ * The payload is always stored as the last IDE selection (a persistent mirror of
+ * the currently-focused editor) and, if a webview is connected, broadcast live as
+ * IDE_SELECTION. When the tool window is later closed and reopened (webview
+ * reload), addConnection replays this stored selection to the fresh connection so
+ * the file context chip is restored immediately, without the user re-focusing the
+ * file. This mirrors editor-context's replay-on-connect, but persists (not
+ * consumed once) since it reflects ongoing editor state rather than a one-shot action.
  *
  * Extracted from the HTTP layer so the validation/routing logic is unit-testable
  * without spinning up a server.
@@ -88,7 +89,10 @@ export function handleIdeSelectionRequest(
     isGitignored: typeof parsed.isGitignored === 'boolean' ? parsed.isGitignored : false,
   };
 
-  // Do NOT buffer: auto-tracked selection fires frequently; next change supersedes.
+  // Always remember the latest selection so a webview that (re)connects later —
+  // e.g. tool window reopened — is replayed this file context on connect.
+  connections.setLastIdeSelection(payload);
+  // Broadcast live to any webview already connected.
   if (connections.getConnectionCount() > 0) {
     connections.broadcastToAll(IDE_SELECTION_MESSAGE, payload);
   }

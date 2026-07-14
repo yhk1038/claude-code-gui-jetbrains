@@ -3,6 +3,7 @@ package com.github.yhk1038.claudecodegui.toolwindow
 import com.github.yhk1038.claudecodegui.actions.OpenClaudeCodeAction
 import com.github.yhk1038.claudecodegui.bridge.NodeProcessManager
 import com.github.yhk1038.claudecodegui.editor.ClaudeCodeVirtualFile
+import com.github.yhk1038.claudecodegui.editor.IdeSelectionDispatcher
 import com.github.yhk1038.claudecodegui.notifications.JcefRuntimeNotifier
 import com.github.yhk1038.claudecodegui.services.ClaudeCodeBrowserService
 import com.github.yhk1038.claudecodegui.services.DiffService
@@ -357,6 +358,20 @@ class ClaudeCodePanel(
                     injectStreamingStateBridge(frame)
                     installImeWorkaround()
                     logger.info("WebView loaded successfully")
+                    // The webview (IDE-selection chip consumer) just reloaded, so
+                    // any previously shown context chips are gone. Re-query the IDE's
+                    // CURRENT active editor file and push it to the backend so its
+                    // lastIdeSelection is synchronized to whatever the user is viewing
+                    // now — not the stale file that was focused just before the tool
+                    // window closed (while closed, Gate 2 in scheduleDispatch
+                    // suppressed focus changes, so the backend can hold an old value).
+                    // dispatchActiveEditor clears the dedup cache first, so the current
+                    // file is sent even if its key matches the last pre-close dispatch.
+                    // The webview subscribes to IDE_SELECTION after onLoadEnd, but the
+                    // backend's addConnection replays lastIdeSelection to the freshly
+                    // connected webview once the subscription is established, so this
+                    // backend-update-on-open is what restores the correct chip.
+                    IdeSelectionDispatcher.dispatchActiveEditor(project)
                     // Grab OS focus ONLY for the active, on-screen tab. The grab itself is
                     // needed — it's what lets the WebView focus its input textarea. The
                     // earlier UNCONDITIONAL grab was the bug: when several tabs realize at

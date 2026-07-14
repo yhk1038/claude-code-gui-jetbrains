@@ -1,6 +1,7 @@
 package com.github.yhk1038.claudecodegui.editor
 
 import com.github.yhk1038.claudecodegui.actions.EditorContextPayload
+import com.intellij.testFramework.LightVirtualFile
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import org.junit.jupiter.api.Assertions.*
@@ -20,6 +21,106 @@ class IdeSelectionDispatcherTest {
     fun `DEBOUNCE_MS should be a positive value within reasonable range`() {
         val ms = IdeSelectionDispatcher.DEBOUNCE_MS
         assertTrue(ms in 50..500, "DEBOUNCE_MS=$ms should be between 50 and 500 ms")
+    }
+
+    /**
+     * The Gate 2 consumer check: an ide-selection push has a consumer when
+     * EITHER a Claude Code editor tab is open OR the Claude Code tool window is
+     * visible. The platform lookups that produce the two booleans live in the
+     * dispatcher's call site; this pure predicate is what decides dispatch.
+     *
+     * Before this fix the gate only considered the editor-tab case, so users who
+     * ran Claude solely in the tool window never got the context chip.
+     */
+    @Nested
+    inner class ConsumerGate {
+
+        @Test
+        fun `dispatches when a Claude Code editor tab is open`() {
+            assertTrue(IdeSelectionDispatcher.hasSelectionConsumer(hasClaudeEditorTab = true, isToolWindowVisible = false))
+        }
+
+        @Test
+        fun `dispatches when the Claude Code tool window is visible`() {
+            assertTrue(IdeSelectionDispatcher.hasSelectionConsumer(hasClaudeEditorTab = false, isToolWindowVisible = true))
+        }
+
+        @Test
+        fun `dispatches when both an editor tab and the tool window are present`() {
+            assertTrue(IdeSelectionDispatcher.hasSelectionConsumer(hasClaudeEditorTab = true, isToolWindowVisible = true))
+        }
+
+        @Test
+        fun `suppresses when neither an editor tab nor the tool window is present`() {
+            assertFalse(IdeSelectionDispatcher.hasSelectionConsumer(hasClaudeEditorTab = false, isToolWindowVisible = false))
+        }
+    }
+
+    /**
+     * The dedup cache reset contract. When the webview (the selection chip
+     * consumer) reloads, its on-screen chips disappear, so the dispatcher's
+     * [IdeSelectionDispatcher.clearDedupCache] must wipe the last-dispatched key
+     * to let the next identical dispatch through (otherwise a same-file focus
+     * with no selection would be deduped away and the chip would never reappear).
+     *
+     * The `lastDispatched` field is private and the only path that mutates it
+     * ([IdeSelectionDispatcher] doDispatch) requires the platform harness, so
+     * here we assert the public reset contract: it runs without throwing and is
+     * safe to call repeatedly (idempotent).
+     */
+    @Nested
+    inner class DedupCacheReset {
+
+        @Test
+        fun `clearDedupCache runs without throwing`() {
+            assertDoesNotThrow { IdeSelectionDispatcher.clearDedupCache() }
+        }
+
+        @Test
+        fun `clearDedupCache is idempotent across repeated calls`() {
+            assertDoesNotThrow {
+                IdeSelectionDispatcher.clearDedupCache()
+                IdeSelectionDispatcher.clearDedupCache()
+                IdeSelectionDispatcher.clearDedupCache()
+            }
+        }
+    }
+
+    /**
+     * The "sync on open" contract for [IdeSelectionDispatcher.dispatchActiveEditor].
+     *
+     * When the tool window opens (webview reload), the dispatcher re-queries the
+     * IDE's current active file and pushes it so the backend's lastIdeSelection is
+     * synchronized to whatever the user is viewing NOW — not the stale file that
+     * was focused just before the window closed. The proceed/no-op decision is the
+     * pure predicate [IdeSelectionDispatcher.shouldDispatchActiveEditor]:
+     *
+     *  - no active file (null)        → no-op
+     *  - the Claude panel's own file  → no-op (not a real source file)
+     *  - a real editor file           → proceed to dispatch
+     *
+     * The platform reads (FileEditorManager) and the Alarm live behind this
+     * predicate, so this is the unit-testable contract without a platform harness.
+     */
+    @Nested
+    inner class DispatchActiveEditorGate {
+
+        @Test
+        fun `no-op when there is no active file`() {
+            assertFalse(IdeSelectionDispatcher.shouldDispatchActiveEditor(null))
+        }
+
+        @Test
+        fun `no-op when the active file is the Claude panel virtual file`() {
+            val claudeFile = ClaudeCodeVirtualFile(tabId = "tab-1")
+            assertFalse(IdeSelectionDispatcher.shouldDispatchActiveEditor(claudeFile))
+        }
+
+        @Test
+        fun `proceeds when the active file is a real editor file`() {
+            val realFile = LightVirtualFile("App.kt", "fun main() {}")
+            assertTrue(IdeSelectionDispatcher.shouldDispatchActiveEditor(realFile))
+        }
     }
 
     @Nested
