@@ -25,8 +25,12 @@ export function safeParseJson<T>(text: string): T | undefined {
  *
  * Falls back to the original string when it is not a parseable date, so the
  * original Claude Code value is never lost. Never throws.
+ *
+ * `locale` defaults to `undefined`, i.e. the host locale — production keeps
+ * following the user's environment. Tests pass an explicit BCP-47 locale so
+ * their assertions do not depend on the machine's system locale (issue #193).
  */
-export function formatGmailDate(value?: string, now: Date = new Date()): string {
+export function formatGmailDate(value?: string, now: Date = new Date(), locale?: string): string {
     if (!value) return '';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
@@ -43,7 +47,7 @@ export function formatGmailDate(value?: string, now: Date = new Date()): string 
     if (!sameMonth) opts.month = 'short';
     if (!sameYear) opts.year = 'numeric';
 
-    return date.toLocaleString(undefined, opts);
+    return date.toLocaleString(locale, opts);
 }
 
 /**
