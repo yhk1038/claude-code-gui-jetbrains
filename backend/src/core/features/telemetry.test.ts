@@ -1,6 +1,24 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { MessageType } from '../../shared';
 
+// config/environment를 hoisted mock으로 대체하고, telemetry가 읽는 API 키만 holder로
+// 주입한다. process.env(_CCG_RYBBIT_API_KEY) 전역 stub을 쓰지 않는 이유: process.env는
+// 워커 프로세스 전역이라 다른 테스트 파일과 공유되고, vitest 병렬 실행 시 이 파일이 읽기
+// 직전에 원복/오염될 수 있다 → RYBBIT_API_KEY 빈 값 → send() 조기 return → flush 후
+// fetch 0회로 산발 실패(#192). holder는 파일-로컬이라 그 전역 경합에서 완전히 벗어난다.
+// (profile은 파일마다 값이 다르므로 loadTelemetry 내 doMock으로 계속 주입한다 — hoisted
+// vi.mock과 비-hoisted vi.doMock을 분리해야 서로 간섭하지 않는다.)
+const envHolder = vi.hoisted(() => ({ apiKey: '' }));
+vi.mock('../../config/environment', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../config/environment')>();
+  return {
+    ...actual,
+    get CCG_RYBBIT_API_KEY() {
+      return envHolder.apiKey;
+    },
+  };
+});
+
 // 동의 상태별 전송 게이팅 검증. profile/settings/version을 주입한 뒤 telemetry 모듈을
 // 동적 import하여(모듈 로드 시 API key를 const로 고정하므로) fetch 호출 여부를 본다.
 // trackEvent/trackError는 fire-and-forget(void)이라 flushTelemetry()로 결정적으로 기다린다.
@@ -38,9 +56,9 @@ async function loadTelemetry(
   fetchImpl?: (input: string, init: { body: string }) => Promise<unknown>,
 ) {
   vi.resetModules();
-  // 빌드 박제 키는 `_` prefix(.env의 _CCG_RYBBIT_API_KEY). environment.ts가
-  // process.env._CCG_RYBBIT_API_KEY를 const로 평가하므로 import 전에 stub한다.
-  vi.stubEnv('_CCG_RYBBIT_API_KEY', apiKey);
+  // hoisted environment mock의 CCG_RYBBIT_API_KEY getter가 반환할 값을 이 파일에 주입한다
+  // (process.env 전역을 건드리지 않음 — 상단 mock 주석 참고).
+  envHolder.apiKey = apiKey;
   vi.doMock('./profile', () => ({
     readProfile: async () => profile,
     ConsentStatus: CONSENT_ENUM,
@@ -60,7 +78,6 @@ async function loadTelemetry(
 
 describe('telemetry consent gating', () => {
   afterEach(async () => {
-    vi.unstubAllEnvs();
     vi.unstubAllGlobals();
     vi.doUnmock('./profile');
     vi.doUnmock('../handlers/getVersion');
@@ -140,7 +157,6 @@ describe('telemetry consent gating', () => {
 
 describe('trackActivity (활동 단일 진입점)', () => {
   afterEach(async () => {
-    vi.unstubAllEnvs();
     vi.unstubAllGlobals();
     vi.doUnmock('./profile');
     vi.doUnmock('../handlers/getVersion');
