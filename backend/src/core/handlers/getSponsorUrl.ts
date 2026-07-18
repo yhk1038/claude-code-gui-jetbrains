@@ -7,7 +7,7 @@ import { MessageType } from '../../shared';
 // Public sponsorship (pricing) page. Mirrors the webview's PRICING_URL constant
 // (config/app.ts) — kept here too because the backend, not the webview, stamps
 // the install id onto the URL so that id never has to cross into the webview.
-const SPONSOR_PRICING_URL = 'https://claude-code-gui.com/pricing';
+const SPONSOR_PRICING_URL = 'https://just-swttch.com/pricing';
 
 /**
  * Build the sponsorship URL the webview opens in the external browser. The

@@ -21,7 +21,7 @@ const LICENSE_FILE = join(LICENSE_DIR, 'license.json');
 // (e.g. CCG_WWW_API_BASE=http://localhost:8080/api); defaults to production.
 function wwwApiBase(): string {
   const override = process.env.CCG_WWW_API_BASE;
-  return override !== undefined && override !== '' ? override : 'https://claude-code-gui.com/api';
+  return override !== undefined && override !== '' ? override : 'https://just-swttch.com/api';
 }
 
 /** Result of a remote license verification (mirrors the www /license/verify contract). */

@@ -1,7 +1,6 @@
 import { ROUTE_META, ICON_COMPONENTS, SETTINGS_SUB_ROUTES, Route } from '@/router/routes';
 import { useRouter } from '@/router';
 import { useUpdateAvailable } from '@/hooks/useUpdateAvailable';
-import { useSponsorMenuUnlock } from '@/hooks/useSponsorMenuUnlock';
 import { isBrowser } from '@/config/environment';
 import { useTranslation } from '@/i18n';
 
@@ -18,9 +17,6 @@ export function SettingsSidebar({ isDrawer = false, open = false, onNavigate }: 
   const { route, navigate } = useRouter();
   const { hasUpdate } = useUpdateAvailable();
   const browser = isBrowser();
-  // Sponsor is hidden by default; unlocked via a double-click on the About
-  // heading (see AboutSettings) while Lemon Squeezy is still in test mode.
-  const { unlocked: sponsorUnlocked } = useSponsorMenuUnlock();
   const { t } = useTranslation('settings');
 
   return (
@@ -36,9 +32,6 @@ export function SettingsSidebar({ isDrawer = false, open = false, onNavigate }: 
       <ul className="space-y-1 px-2">
         {SETTINGS_SUB_ROUTES.map((subRoute) => {
           if (subRoute === Route.SETTINGS_BROWSER && !browser) {
-            return null;
-          }
-          if (subRoute === Route.SETTINGS_SPONSOR && !sponsorUnlocked) {
             return null;
           }
           const meta = ROUTE_META[subRoute];

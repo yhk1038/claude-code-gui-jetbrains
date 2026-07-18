@@ -220,7 +220,7 @@ async function send(
       type,
       event_name: eventName,
       properties: JSON.stringify(merged),
-      hostname: 'jetbrains.claude-code-gui.com',
+      hostname: 'jetbrains.just-swttch.com',
       pathname: '/',
     };
 

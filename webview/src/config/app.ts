@@ -10,7 +10,7 @@ export const APP_NAME = 'Claude Code';
  * visitor's locale (e.g. /privacy → /en/privacy). Registered on the JetBrains
  * Marketplace plugin page as well (required when collecting telemetry).
  */
-export const PRIVACY_POLICY_URL = 'https://claude-code-gui.com/privacy';
+export const PRIVACY_POLICY_URL = 'https://just-swttch.com/privacy';
 
 /**
  * Public sponsorship (pricing) page. Locale-agnostic like the privacy URL — the
@@ -19,4 +19,4 @@ export const PRIVACY_POLICY_URL = 'https://claude-code-gui.com/privacy';
  * checkout can prefill them and the payment can be mapped back to this install;
  * this bare constant is the fallback target when that context is unavailable.
  */
-export const PRICING_URL = 'https://claude-code-gui.com/pricing';
+export const PRICING_URL = 'https://just-swttch.com/pricing';
