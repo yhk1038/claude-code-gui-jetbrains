@@ -71,4 +71,24 @@ describe('parseUsageReport', () => {
     expect(periods).toEqual([]);
     expect(raw).toBe('totally unexpected output');
   });
+
+  // A user with a single active session gets singular nouns ("1 session",
+  // "1 request"); the period regex must accept both forms or the whole breakdown
+  // renders as "No usage breakdown available".
+  it('parses a period whose counts are singular ("1 session")', () => {
+    const raw = [
+      "What's contributing to your limits usage?",
+      '',
+      'Last 24h · 86 requests · 1 session',
+      '  88% of your usage was at >150k context',
+      '',
+      'Last 7d · 1 request · 1 session',
+      '  88% of your usage was at >150k context',
+    ].join('\n');
+    const { periods } = parseUsageReport(raw);
+    expect(periods.map((p) => p.label)).toEqual(['Last 24h', 'Last 7d']);
+    expect(periods[0]).toMatchObject({ requests: 86, sessions: 1 });
+    expect(periods[1]).toMatchObject({ requests: 1, sessions: 1 });
+    expect(periods[0].insights).toContain('88% of your usage was at >150k context');
+  });
 });
