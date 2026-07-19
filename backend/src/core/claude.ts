@@ -9,22 +9,9 @@ import {
 import { readSettingsFile, resolveClaudeConfigDirOverride } from './features/settings';
 import { getStrippableAuthEnvKeys } from './features/claude-settings';
 import { augmentedPath } from './augmented-path';
-import { isWslUncPath, toWslPath } from './wsl-path';
+import { resolveWslCwd } from './wsl-path';
 import { execViaCmdArgv } from './win-exec';
 import { pickWin32Launcher } from './which-launcher';
-
-/**
- * In a WSL backend (running inside the distro, platform === 'linux') the IDE hands us the
- * project root as a Windows UNC path (`//wsl.localhost/Ubuntu/home/...`). That path does not
- * exist inside the distro, so spawning the CLI with it as cwd fails with `spawn ... ENOENT`
- * — the *cwd*, not the binary, is missing. Convert it to the inner Linux path. Issue #57.
- */
-function resolveWslCwd(cwd: SpawnOptions['cwd']): SpawnOptions['cwd'] {
-  if (process.platform === 'linux' && typeof cwd === 'string' && isWslUncPath(cwd)) {
-    return toWslPath(cwd) ?? cwd;
-  }
-  return cwd;
-}
 
 export class Claude {
   private static cliPath: string | null = null;
