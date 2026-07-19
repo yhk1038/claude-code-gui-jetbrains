@@ -11,6 +11,7 @@ import { getStrippableAuthEnvKeys } from './features/claude-settings';
 import { augmentedPath } from './augmented-path';
 import { isWslUncPath, toWslPath } from './wsl-path';
 import { execViaCmdArgv } from './win-exec';
+import { pickWin32Launcher } from './which-launcher';
 
 /**
  * In a WSL backend (running inside the distro, platform === 'linux') the IDE hands us the
@@ -289,7 +290,17 @@ export class Claude {
         env: Claude.env,
         timeout: 5000,
       }, (err, stdout) => {
-        const resolved = err ? null : (stdout?.toString() ?? '').trim().split('\n')[0]?.trim() || null;
+        let resolved: string | null;
+        if (err) {
+          resolved = null;
+        } else if (process.platform === 'win32') {
+          // `where` also lists the extension-less MSYS script (`...\npm\claude`);
+          // pick the launcher cmd.exe actually runs (first PATHEXT match) so
+          // which() agrees with the binary spawn()/exec() resolve through cmd.exe.
+          resolved = pickWin32Launcher(stdout?.toString() ?? '');
+        } else {
+          resolved = (stdout?.toString() ?? '').trim().split('\n')[0]?.trim() || null;
+        }
         if (process.platform === 'win32' && resolved) {
           Claude.resolvedWin32Path = resolved;
         }

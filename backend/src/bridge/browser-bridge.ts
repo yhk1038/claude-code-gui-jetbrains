@@ -1,6 +1,7 @@
 import { execFile, spawn } from 'child_process';
 import type { Bridge } from './bridge-interface';
 import { readSettingsFile } from '../core/features/settings';
+import { Claude } from '../core/claude';
 
 /**
  * Browser-mode bridge for dev environment.
@@ -249,17 +250,11 @@ if ($dialog.ShowDialog() -eq 'OK') {
     const settings = await readSettingsFile();
     const terminalApp = settings['terminalApp'] as string | null;
 
-    const claudePath = await new Promise<string>((resolve) => {
-      if (process.platform === 'win32') {
-        execFile('where', ['claude'], (err, stdout) => {
-          resolve(err ? 'claude' : stdout.trim().split('\n')[0]);
-        });
-      } else {
-        execFile('which', ['claude'], (err, stdout) => {
-          resolve(err ? 'claude' : stdout.trim().split('\n')[0]);
-        });
-      }
-    });
+    // Resolve via Claude.which() (augmented PATH + PATHEXT-correct launcher on
+    // win32) instead of a second, ad-hoc `where claude` — this keeps the
+    // terminal's claude the SAME binary the backend itself resolves. Falls back
+    // to a bare `claude` so the opened shell can still resolve it from its PATH.
+    const claudePath = (await Claude.which()) ?? 'claude';
 
     if (process.platform === 'darwin') {
       const app = terminalApp || 'Terminal';
