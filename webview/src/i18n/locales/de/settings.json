@@ -330,7 +330,14 @@
       "copyFailed": "Kopieren fehlgeschlagen",
       "retryHint": "Klicke nach der Installation unten auf „Wiederholen“ — kein IDE-Neustart nötig.",
       "checking": "Wird überprüft...",
-      "retry": "Wiederholen"
+      "retry": "Wiederholen",
+      "reload": "Neu laden",
+      "pasteIn": "Einfügen in {{shells}}",
+      "or": "oder",
+      "install": "Installieren",
+      "installing": "Wird installiert…",
+      "installed": "Installiert",
+      "installFailed": "Installation fehlgeschlagen"
     },
     "errors": {
       "unknown": "Unbekannter Fehler"

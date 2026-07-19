@@ -330,7 +330,14 @@
       "copyFailed": "复制失败",
       "retryHint": "安装完成后,点击下方的“重试”——无需重启 IDE。",
       "checking": "正在检查...",
-      "retry": "重试"
+      "retry": "重试",
+      "reload": "重新加载",
+      "pasteIn": "粘贴到 {{shells}}",
+      "or": "或",
+      "install": "安装",
+      "installing": "正在安装…",
+      "installed": "已安装",
+      "installFailed": "安装失败"
     },
     "errors": {
       "unknown": "未知错误"

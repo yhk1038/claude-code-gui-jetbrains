@@ -330,7 +330,14 @@
       "copyFailed": "Échec de la copie",
       "retryHint": "Après l'installation, cliquez sur Réessayer ci-dessous — aucun redémarrage de l'IDE n'est nécessaire.",
       "checking": "Vérification...",
-      "retry": "Réessayer"
+      "retry": "Réessayer",
+      "reload": "Recharger",
+      "pasteIn": "Coller dans {{shells}}",
+      "or": "ou",
+      "install": "Installer",
+      "installing": "Installation…",
+      "installed": "Installé",
+      "installFailed": "Échec de l'installation"
     },
     "errors": {
       "unknown": "Erreur inconnue"

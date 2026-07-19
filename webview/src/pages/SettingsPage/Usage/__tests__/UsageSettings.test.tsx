@@ -6,6 +6,16 @@ vi.mock('@/hooks/queries/useAllUsage', () => ({
   useAllUsage: vi.fn(),
 }));
 
+// CcbNotInstalledNotice now pulls INSTALL_CCB via useInstallCcb (BridgeContext +
+// QueryClient); stub it so the render test needs no providers.
+vi.mock('@/hooks/queries/useInstallCcb', () => ({
+  useInstallCcb: () => ({ install: vi.fn(), installing: false }),
+}));
+
+vi.mock('@/hooks/queries/useCcbInstallHint', () => ({
+  useCcbInstallHint: () => ({ command: 'npm install -g claude-code-battery', shells: [] }),
+}));
+
 vi.mock('@/router/routes', () => ({
   ROUTE_META: { SETTINGS_USAGE: { label: 'Usage' } },
   Route: { SETTINGS_USAGE: 'SETTINGS_USAGE' },
