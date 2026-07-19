@@ -85,7 +85,9 @@ export class Command {
         timeout: this.options.timeout ?? DEFAULT_TIMEOUT_MS,
         maxBuffer: this.options.maxBuffer,
       });
-      if (err) throw err;
+      // On failure, carry stdout/stderr on the error so callers can classify by
+      // the command's output (e.g. permission-failure detection for installs).
+      if (err) throw Object.assign(err, { stdout, stderr });
       return { stdout, stderr };
     }
     if ((this.options.shell ?? ShellKind.Direct) === ShellKind.LoginInteractive) {
@@ -140,8 +142,11 @@ export class Command {
           maxBuffer: this.options.maxBuffer,
         },
         (err, stdout, stderr) => {
-          if (err) return reject(err);
-          resolve({ stdout: stdout?.toString() ?? '', stderr: stderr?.toString() ?? '' });
+          const out = stdout?.toString() ?? '';
+          const errOut = stderr?.toString() ?? '';
+          // Same as exec()'s win32 branch: attach output so callers can classify a failure.
+          if (err) return reject(Object.assign(err, { stdout: out, stderr: errOut }));
+          resolve({ stdout: out, stderr: errOut });
         },
       );
     });
