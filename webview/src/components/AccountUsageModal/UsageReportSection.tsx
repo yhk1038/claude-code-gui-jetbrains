@@ -78,8 +78,8 @@ export function UsageReportSection() {
               {(active.requests !== null || active.sessions !== null) && (
                 <div className="text-xs text-text-tertiary">
                   {[
-                    active.requests !== null ? t('usageReport.requests', { value: active.requests.toLocaleString() }) : null,
-                    active.sessions !== null ? t('usageReport.sessions', { value: active.sessions.toLocaleString() }) : null,
+                    active.requests !== null ? t(active.requests === 1 ? 'usageReport.request' : 'usageReport.requests', { value: active.requests.toLocaleString() }) : null,
+                    active.sessions !== null ? t(active.sessions === 1 ? 'usageReport.session' : 'usageReport.sessions', { value: active.sessions.toLocaleString() }) : null,
                   ]
                     .filter(Boolean)
                     .join(' · ')}

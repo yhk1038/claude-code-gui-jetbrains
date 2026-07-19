@@ -36,6 +36,8 @@
     "empty": "No hay desglose de uso disponible.",
     "requests": "{{value}} solicitudes",
     "sessions": "{{value}} sesiones",
+    "request": "{{value}} solicitud",
+    "session": "{{value}} sesión",
     "percentOfUsage": "% del uso"
   },
   "mcpModal": {

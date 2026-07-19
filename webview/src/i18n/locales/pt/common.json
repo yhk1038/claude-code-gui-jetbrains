@@ -36,6 +36,8 @@
     "empty": "Nenhum detalhamento de uso disponível.",
     "requests": "{{value}} solicitações",
     "sessions": "{{value}} sessões",
+    "request": "{{value}} solicitação",
+    "session": "{{value}} sessão",
     "percentOfUsage": "% do uso"
   },
   "mcpModal": {

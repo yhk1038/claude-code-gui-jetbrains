@@ -36,6 +36,8 @@
     "empty": "Нет данных о расходе использования.",
     "requests": "{{value}} запросов",
     "sessions": "{{value}} сессий",
+    "request": "{{value}} запрос",
+    "session": "{{value}} сессия",
     "percentOfUsage": "% от использования"
   },
   "mcpModal": {

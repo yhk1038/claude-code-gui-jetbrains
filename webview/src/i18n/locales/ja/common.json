@@ -36,6 +36,8 @@
     "empty": "使用状況の内訳はありません。",
     "requests": "{{value}} リクエスト",
     "sessions": "{{value}} セッション",
+    "request": "{{value}} リクエスト",
+    "session": "{{value}} セッション",
     "percentOfUsage": "使用量の割合(%)"
   },
   "mcpModal": {

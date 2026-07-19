@@ -36,6 +36,8 @@
     "empty": "Aucune répartition d'utilisation disponible.",
     "requests": "{{value}} requêtes",
     "sessions": "{{value}} sessions",
+    "request": "{{value}} requête",
+    "session": "{{value}} session",
     "percentOfUsage": "% de l'utilisation"
   },
   "mcpModal": {

@@ -36,6 +36,8 @@
     "empty": "لا يتوفر تفصيل للاستخدام.",
     "requests": "{{value}} طلبات",
     "sessions": "{{value}} جلسات",
+    "request": "{{value}} طلب",
+    "session": "{{value}} جلسة",
     "percentOfUsage": "% من الاستخدام"
   },
   "mcpModal": {

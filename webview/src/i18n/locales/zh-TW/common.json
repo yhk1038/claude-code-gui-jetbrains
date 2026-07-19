@@ -36,6 +36,8 @@
     "empty": "尚無用量明細。",
     "requests": "{{value}} 次請求",
     "sessions": "{{value}} 個工作階段",
+    "request": "{{value}} 次請求",
+    "session": "{{value}} 個工作階段",
     "percentOfUsage": "% 的用量"
   },
   "mcpModal": {

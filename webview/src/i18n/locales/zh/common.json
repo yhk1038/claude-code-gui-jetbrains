@@ -36,6 +36,8 @@
     "empty": "暂无用量明细。",
     "requests": "{{value}} 次请求",
     "sessions": "{{value}} 个会话",
+    "request": "{{value}} 次请求",
+    "session": "{{value}} 个会话",
     "percentOfUsage": "% 的用量"
   },
   "mcpModal": {
