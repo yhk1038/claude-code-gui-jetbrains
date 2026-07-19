@@ -81,6 +81,19 @@ describe('Command', () => {
       expect(argv.slice(0, 3)).toEqual(['-l', '-i', '-c']);
       expect(argv[3]).toBe('ccb oauth usage --json');
     });
+
+    it.runIf(!isWin)('unix LoginInteractive: falls back to /bin/sh when SHELL is fish', async () => {
+      const orig = process.env.SHELL;
+      process.env.SHELL = '/usr/bin/fish';
+      try {
+        mockExecFile.mockImplementation(fakeExecFile({ stdout: '{}' }));
+        await new Command('ccb', ['x'], { shell: ShellKind.LoginInteractive }).exec();
+        expect(mockExecFile.mock.calls[0][0]).toBe('/bin/sh');
+      } finally {
+        if (orig === undefined) delete process.env.SHELL;
+        else process.env.SHELL = orig;
+      }
+    });
   });
 
   describe('spawn()', () => {
