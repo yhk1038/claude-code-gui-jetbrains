@@ -58,6 +58,26 @@ describe('installCcbHandler', () => {
     expect(argv).toContain('install -g claude-code-battery');
   });
 
+  it.runIf(process.platform !== 'win32')(
+    'runs the install through a login shell (unix) so npm resolves on GUI-launched backends, matching runCcbUsage',
+    async () => {
+      mockExecFile.mockImplementation(fakeExecFile({ stdout: 'added 1 package' }));
+      const conns = mockConns();
+
+      await installCcbHandler('c1', msg, conns, bridge);
+
+      // A GUI-launched backend inherits a minimal PATH; runCcbUsage already runs
+      // ccb via `$SHELL -l -i -c` so the rc-file PATH exposes it. The install must
+      // resolve npm the same way instead of exec'ing `npm` directly (Direct mode),
+      // which fails with ENOENT where only the login shell's PATH knows npm.
+      const [file, args] = mockExecFile.mock.calls[0] as [string, string[]];
+      const userShell = process.env.SHELL || '/bin/sh';
+      const expectedShell = /\/fish$/.test(userShell) ? '/bin/sh' : userShell;
+      expect(file).toBe(expectedShell);
+      expect(args).toEqual(['-l', '-i', '-c', 'npm install -g claude-code-battery']);
+    },
+  );
+
   it('returns a runnable command on a permission failure and does NOT clear the cache', async () => {
     mockExecFile.mockImplementation(fakeExecFile({
       err: Object.assign(new Error('Command failed'), { code: 1 }),

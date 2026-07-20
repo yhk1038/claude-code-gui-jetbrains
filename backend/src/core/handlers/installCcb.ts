@@ -1,7 +1,7 @@
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
-import { Command } from '../command';
+import { Command, ShellKind } from '../command';
 import { MessageType } from '../../shared';
 import { isPermissionFailure, permissionErrorMessage } from './updateCli';
 import { resetUsageCache } from './getUsage';
@@ -16,7 +16,10 @@ const INSTALL_MAX_BUFFER = 10 * 1024 * 1024;
  * so the user never has to leave the GUI or pick a shell. Runs `npm install -g
  * claude-code-battery` through the Command core: on win32 that resolves via
  * cmd.exe (no PowerShell execution-policy wall — the exact problem the copy-paste
- * notice caused), on unix it runs npm directly.
+ * notice caused); on unix it runs through a login shell (LoginInteractive), the
+ * SAME way runCcbUsage resolves ccb. A GUI-launched backend inherits a minimal
+ * PATH, so exec'ing `npm` directly (Direct) would fail with ENOENT wherever only
+ * the user's rc-file PATH exposes npm — the login shell sources those rc files.
  *
  * On a permission-blocked global location we don't fail silently — we hand back
  * the exact command (with sudo where needed) so the user can run it in a
@@ -36,6 +39,9 @@ export async function installCcbHandler(
     await new Command(command, args, {
       timeout: INSTALL_TIMEOUT_MS,
       maxBuffer: INSTALL_MAX_BUFFER,
+      // unix: resolve npm via the login shell's PATH (win32 ignores this and uses
+      // its cmd.exe argv path). Mirrors runCcbUsage so install and usage agree.
+      shell: ShellKind.LoginInteractive,
     }).exec();
     // Next usage fetch should re-run ccb rather than serve the cached error.
     resetUsageCache();
