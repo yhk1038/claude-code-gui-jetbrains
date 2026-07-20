@@ -16,4 +16,5 @@
 - [Usage breakdown in the account modal](./008-usage_report/en.md) — `/usage`를 사용량 모달로 연결하고, `claude -p "/usage"`의 상세 분석(기간별 요청/세션 수·인사이트·상위 skills/subagents/plugins/MCP)을 커서처럼 UI로 렌더링. 계정 전환에 반응 ([#148](https://github.com/yhk1038/claude-code-gui-jetbrains/issues/148))
 - [Interface Language (UI translations)](./009-interface_language_i18n/en.md) — GUI 전체를 10개 언어로 번역하고, Claude 응답 언어(자유 텍스트)와 분리된 "Interface Language" 설정을 신설. 중국어 간체/번체 분리, 현지어 라벨, 컨트리뷰터용 `add-locale` 스킬 포함 ([#141](https://github.com/yhk1038/claude-code-gui-jetbrains/issues/141), [#160](https://github.com/yhk1038/claude-code-gui-jetbrains/pull/160))
 - [RTL (right-to-left) language support](./010-rtl_support/en.md) — 설정 → General에 "RTL(Right-to-left) 켜기" 토글을 추가해 화면 전체를 오른쪽 기준으로 미러링하고, 인터페이스 언어에 فارسی(페르시아어)·العربية(아랍어)를 추가. 언어를 RTL 언어로 바꾸면 자동으로 켜지되(그 반대도) 이후엔 수동 조작 가능, 코드/터미널 출력/수식은 항상 LTR로 보존 ([#158](https://github.com/yhk1038/claude-code-gui-jetbrains/issues/158))
+- [Context usage in chat](./011-context_command_in_chat/en.md) — `/context` 슬래시 명령을 GUI 채팅에서 정상 실행하고, 터미널 TUI처럼 컬러 격자 기반 컨텍스트 사용량 카드로 렌더링 ([#196](https://github.com/yhk1038/claude-code-gui-jetbrains/issues/196))
 

@@ -761,7 +761,14 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
         if (!incomingContent || !Array.isArray(incomingContent)) return;
         const finalTurnBlocks = incomingContent as AnyContentBlockDto[];
 
-        if (streamingMessageIdRef.current) {
+        // Capture the streaming placeholder id BEFORE calling setMessages. React may
+        // flush the updater callback after this handler returns, and for local slash
+        // commands like /context — where `assistant` and `result` arrive back-to-back
+        // with no partial stream_events — result's endStreaming() nulls
+        // streamingMessageIdRef.current in between. Reading the ref inside the callback
+        // would then match nothing and drop the finished content (#196).
+        const streamingId = streamingMessageIdRef.current;
+        if (streamingId) {
           // Flush any pending deltas before replacing
           if (pendingTextRef.current || pendingThinkingRef.current || pendingInputJsonRef.current) {
             flushPendingDeltas();
@@ -772,7 +779,7 @@ export function useChatStream(options: UseChatStreamOptions): UseChatStreamRetur
           const turnStart = turnStartBlockCountRef.current;
 
           setMessages(prev => prev.map(msg => {
-            if (msg.uuid !== streamingMessageIdRef.current) return msg;
+            if (msg.uuid !== streamingId) return msg;
 
             const existingBlocks: AnyContentBlockDto[] = Array.isArray(msg.message?.content)
               ? [...msg.message!.content]

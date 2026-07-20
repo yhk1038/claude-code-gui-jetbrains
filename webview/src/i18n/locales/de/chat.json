@@ -402,5 +402,9 @@
   },
   "chatPage": {
     "scrollToBottom": "Nach unten scrollen"
+  },
+  "contextUsage": {
+    "heading": "Kontextnutzung",
+    "tokensSummary": "{{used}} / {{total}} tokens ({{percent}}%)"
   }
 }

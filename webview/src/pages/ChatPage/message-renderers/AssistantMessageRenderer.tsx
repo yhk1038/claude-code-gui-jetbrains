@@ -6,6 +6,8 @@ import { ToolRenderer } from './ToolRenderer';
 import { AuthErrorRenderer } from './AuthErrorRenderer';
 import { mergeAdjacentTextBlocks } from './mergeAdjacentTextBlocks';
 import {ThinkingStreamingMessage} from "@/pages/ChatPage/ThinkingStreamingMessage.tsx";
+import { parseContextUsage } from '@/utils/parseContextUsage';
+import { ContextUsageCard } from './components/ContextUsageCard';
 
 interface AssistantMessageRendererProps {
   message: LoadedMessageDto;
@@ -67,6 +69,21 @@ export const AssistantMessageRenderer: React.FC<AssistantMessageRendererProps> =
                       );
                     }
                     if (block.type === ContentBlockType.Text) {
+                      // `/context` reports arrive as markdown; once fully streamed,
+                      // render them as the native TUI usage grid. Streaming/partial
+                      // text or non-context markdown falls back to plain markdown.
+                      const contextUsage = message.isStreaming
+                          ? null
+                          : parseContextUsage(block.text);
+                      if (contextUsage) {
+                        return (
+                            <ContextUsageCard
+                                key={`${message.uuid}-context-${index}`}
+                                data={contextUsage}
+                                rawMarkdown={block.text}
+                            />
+                        );
+                      }
                       return (
                           <StreamingMessage
                               key={`${message.uuid}-text-${index}`}

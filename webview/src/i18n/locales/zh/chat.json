@@ -402,5 +402,9 @@
   },
   "chatPage": {
     "scrollToBottom": "滚动到底部"
+  },
+  "contextUsage": {
+    "heading": "上下文使用情况",
+    "tokensSummary": "{{used}} / {{total}} tokens ({{percent}}%)"
   }
 }

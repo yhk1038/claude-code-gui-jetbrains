@@ -353,6 +353,56 @@ describe('채팅 스트리밍 통합 테스트', () => {
     expect(screen.getByTestId('streaming-id')).toHaveTextContent('none');
   });
 
+  // Regression for #196 (/context returns nothing): local slash commands emit a
+  // complete `assistant` event immediately followed by `result`, with NO partial
+  // stream_events. Both land in the same React batch, so `result`'s endStreaming()
+  // nulls streamingMessageIdRef before the `assistant` handler's setMessages updater
+  // runs. If that updater reads the ref (instead of a value captured up-front), it
+  // matches no message and the finished content is dropped. This asserts the
+  // placeholder is replaced with the assistant content even in that ordering.
+  it('CLI_EVENT: partial 없이 assistant(완성본)+result가 연속 도착해도 placeholder가 교체된다 (#196)', async () => {
+    mockSession.currentSessionId = 'test-session';
+
+    render(
+      <TestWrapper>
+        <TestChatComponent />
+      </TestWrapper>
+    );
+
+    const input = screen.getByTestId('input');
+    const submit = screen.getByTestId('submit');
+
+    // user 메시지 → user + assistant placeholder(스트리밍 중)
+    await act(async () => {
+      fireEvent.change(input, { target: { value: '/context' } });
+      fireEvent.click(submit);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('messages-count')).toHaveTextContent('2');
+    });
+
+    // 같은 배치에서 assistant(완성본) → result 연속 emit (partial stream_event 없음).
+    // result의 endStreaming이 ref를 null로 만든 뒤 assistant의 setMessages가 flush된다.
+    await act(async () => {
+      emitBridgeEvent(MessageType.CLI_EVENT, {
+        type: 'assistant',
+        message: {
+          id: 'asst_ctx_1',
+          role: 'assistant',
+          content: [{ type: 'text', text: '## Context Usage\n\n**Tokens:** 28.2k / 1m (3%)' }],
+        },
+      });
+      emitBridgeEvent(MessageType.CLI_EVENT, { type: 'result', subtype: 'success' });
+    });
+
+    // placeholder가 완성본으로 교체되어 내용이 렌더되어야 한다 (유실 시 빈 문자열).
+    await waitFor(() => {
+      expect(screen.getByTestId('msg-assistant')).toHaveTextContent('Context Usage');
+    });
+    expect(screen.getByTestId('is-streaming')).toHaveTextContent('false');
+  });
+
   it('SERVICE_ERROR 수신: error 상태가 설정된다', async () => {
     mockSession.currentSessionId = 'test-session';
 

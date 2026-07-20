@@ -410,5 +410,9 @@
   },
   "chatPage": {
     "scrollToBottom": "التمرير إلى الأسفل"
+  },
+  "contextUsage": {
+    "heading": "استخدام السياق",
+    "tokensSummary": "{{used}} / {{total}} tokens ({{percent}}%)"
   }
 }

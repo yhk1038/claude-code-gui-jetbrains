@@ -402,5 +402,9 @@
   },
   "chatPage": {
     "scrollToBottom": "پیمایش به پایین"
+  },
+  "contextUsage": {
+    "heading": "استفاده از بافت",
+    "tokensSummary": "{{used}} / {{total}} tokens ({{percent}}%)"
   }
 }
