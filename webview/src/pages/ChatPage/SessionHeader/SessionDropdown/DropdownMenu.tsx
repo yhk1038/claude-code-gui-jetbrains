@@ -4,6 +4,8 @@ import { SearchInput } from '@/components/SessionList/SearchInput';
 import { SessionList } from '@/components/SessionList';
 import { isMobile } from '@/config/environment';
 import { useTranslation } from '@/i18n';
+import type { SessionServiceError } from '@/api/modules/SessionsApi';
+import { MessageType } from '@/shared';
 
 interface Props {
   searchQuery: string;
@@ -16,6 +18,8 @@ interface Props {
   onSelectSession: (sessionId: string) => void;
   onDeleteSession: (sessionId: string) => void;
   onRenameSession: (sessionId: string, title: string) => void;
+  /** Non-fatal reason the backend couldn't list sessions (e.g. WSL host mismatch on win32). */
+  sessionsServiceError?: SessionServiceError | null;
 }
 
 export function DropdownMenu(props: Props) {
@@ -31,6 +35,7 @@ export function DropdownMenu(props: Props) {
     onSelectSession,
     onDeleteSession,
     onRenameSession,
+    sessionsServiceError = null,
   } = props;
 
   return (
@@ -50,7 +55,9 @@ export function DropdownMenu(props: Props) {
         <div className="px-2.5 py-3 text-xs text-text-tertiary text-center">
           {searchQuery.trim()
             ? t('sessionHeader.sessionDropdown.noMatchingSessions')
-            : t('sessionHeader.sessionDropdown.noSessionsYet')}
+            : sessionsServiceError?.type === MessageType.WSL_HOST_MISMATCH
+              ? t('sessionHeader.sessionDropdown.wslHostMismatch')
+              : t('sessionHeader.sessionDropdown.noSessionsYet')}
         </div>
       )}
     </div>

@@ -11,7 +11,7 @@ import { useTranslation } from '@/i18n';
 
 export function SessionDropdown() {
   const { t } = useTranslation('chat');
-  const { currentSession, switchSession, loadSessions } = useSessionContext();
+  const { currentSession, switchSession, loadSessions, sessionsServiceError } = useSessionContext();
   const { focus: focusComposer } = useChatInputFocus();
   const {
     currentSessionId,
@@ -94,6 +94,7 @@ export function SessionDropdown() {
           onSelectSession={handleSelectSession}
           onDeleteSession={handleDeleteSession}
           onRenameSession={renameSession}
+          sessionsServiceError={sessionsServiceError}
         />
       )}
 

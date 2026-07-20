@@ -131,7 +131,8 @@
       "pastConversations": "過去の会話",
       "newChat": "新しいチャット",
       "noMatchingSessions": "一致するセッションがありません",
-      "noSessionsYet": "セッションはまだありません"
+      "noSessionsYet": "セッションはまだありません",
+      "wslHostMismatch": "このプロジェクトは WSL 内にあります。過去の会話を表示するには WSL シェルから開いてください（`ccg` を実行）。"
     },
     "workingDir": {
       "switchDisabledTitle": "セッションがアクティブな間は作業ディレクトリを切り替えられません",

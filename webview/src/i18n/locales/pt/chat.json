@@ -131,7 +131,8 @@
       "pastConversations": "Conversas Anteriores",
       "newChat": "Novo Chat",
       "noMatchingSessions": "Nenhuma sessão correspondente",
-      "noSessionsYet": "Ainda não há sessões"
+      "noSessionsYet": "Ainda não há sessões",
+      "wslHostMismatch": "Este projeto está no WSL. Abra-o pelo seu shell do WSL (execute `ccg`) para ver as conversas anteriores."
     },
     "workingDir": {
       "switchDisabledTitle": "Não é possível trocar o diretório de trabalho enquanto uma sessão está ativa",

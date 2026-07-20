@@ -131,7 +131,8 @@
       "pastConversations": "Прошлые разговоры",
       "newChat": "Новый чат",
       "noMatchingSessions": "Нет подходящих сессий",
-      "noSessionsYet": "Пока нет сессий"
+      "noSessionsYet": "Пока нет сессий",
+      "wslHostMismatch": "Этот проект находится в WSL. Откройте его из оболочки WSL (выполните `ccg`), чтобы увидеть прошлые беседы."
     },
     "workingDir": {
       "switchDisabledTitle": "Нельзя сменить рабочий каталог, пока сессия активна",

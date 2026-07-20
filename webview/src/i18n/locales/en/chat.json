@@ -131,7 +131,8 @@
       "pastConversations": "Past Conversations",
       "newChat": "New Chat",
       "noMatchingSessions": "No matching sessions",
-      "noSessionsYet": "No sessions yet"
+      "noSessionsYet": "No sessions yet",
+      "wslHostMismatch": "This project is in WSL. Open it from your WSL shell (run `ccg`) to see past conversations."
     },
     "workingDir": {
       "switchDisabledTitle": "Cannot switch working directory while a session is active",

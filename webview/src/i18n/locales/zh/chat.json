@@ -131,7 +131,8 @@
       "pastConversations": "历史对话",
       "newChat": "新建对话",
       "noMatchingSessions": "没有匹配的会话",
-      "noSessionsYet": "暂无会话"
+      "noSessionsYet": "暂无会话",
+      "wslHostMismatch": "此项目位于 WSL 中。请从 WSL shell 打开（运行 `ccg`）以查看历史对话。"
     },
     "workingDir": {
       "switchDisabledTitle": "会话进行中无法切换工作目录",

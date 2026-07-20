@@ -131,7 +131,8 @@
       "pastConversations": "المحادثات السابقة",
       "newChat": "محادثة جديدة",
       "noMatchingSessions": "لا توجد جلسات مطابقة",
-      "noSessionsYet": "لا توجد جلسات بعد"
+      "noSessionsYet": "لا توجد جلسات بعد",
+      "wslHostMismatch": "هذا المشروع داخل WSL. افتحه من صدفة WSL (شغّل `ccg`) لعرض المحادثات السابقة."
     },
     "workingDir": {
       "switchDisabledTitle": "لا يمكن تبديل دليل العمل أثناء نشاط الجلسة",

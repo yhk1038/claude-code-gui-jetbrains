@@ -131,7 +131,8 @@
       "pastConversations": "گفتگوهای گذشته",
       "newChat": "گفتگوی جدید",
       "noMatchingSessions": "هیچ نشست مطابقی یافت نشد",
-      "noSessionsYet": "هنوز نشستی وجود ندارد"
+      "noSessionsYet": "هنوز نشستی وجود ندارد",
+      "wslHostMismatch": "این پروژه در WSL است. آن را از پوسته WSL باز کنید (`ccg` را اجرا کنید) تا گفتگوهای گذشته را ببینید."
     },
     "workingDir": {
       "switchDisabledTitle": "در حین فعال بودن یک نشست، نمی‌توان دایرکتوری کاری را تغییر داد",
