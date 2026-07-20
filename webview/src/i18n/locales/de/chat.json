@@ -402,5 +402,14 @@
   },
   "chatPage": {
     "scrollToBottom": "Nach unten scrollen"
+  },
+  "contextUsage": {
+    "heading": "Kontextnutzung",
+    "tokensSummary": "{{used}}/{{total}} tokens ({{percent}}%)",
+    "categoryHeading": "Geschätzte Nutzung nach Kategorie",
+    "viewToggle": {
+      "showOriginal": "Originalantwort anzeigen",
+      "tooltip": "Zwischen rekonstruierter Ansicht und roher CLI-Ausgabe wechseln"
+    }
   }
 }

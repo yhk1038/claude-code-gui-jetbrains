@@ -402,5 +402,14 @@
   },
   "chatPage": {
     "scrollToBottom": "捲動到底部"
+  },
+  "contextUsage": {
+    "heading": "上下文使用情況",
+    "tokensSummary": "{{used}}/{{total}} tokens ({{percent}}%)",
+    "categoryHeading": "依類別估算的用量",
+    "viewToggle": {
+      "showOriginal": "顯示原始回應",
+      "tooltip": "在重構檢視與原始 CLI 輸出之間切換"
+    }
   }
 }

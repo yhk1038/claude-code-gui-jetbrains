@@ -402,5 +402,14 @@
   },
   "chatPage": {
     "scrollToBottom": "맨 아래로 스크롤"
+  },
+  "contextUsage": {
+    "heading": "컨텍스트 사용량",
+    "tokensSummary": "{{used}}/{{total}} tokens ({{percent}}%)",
+    "categoryHeading": "카테고리별 예상 사용량",
+    "viewToggle": {
+      "showOriginal": "원본 응답 보기",
+      "tooltip": "재구성 뷰와 원본 CLI 출력 전환"
+    }
   }
 }
