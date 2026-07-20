@@ -1,86 +1,88 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from '@/i18n';
-import {
-  ContextUsage,
-  extractContextDetailMarkdown,
-  parseTokenValue,
-} from '@/utils/parseContextUsage';
+import { useCliConfig } from '@/contexts/CliConfigContext';
+import type { ModelInfo } from '@/types/slashCommand';
+import { ContextUsage, parseTokenValue } from '@/utils/parseContextUsage';
 import { StreamingMessage } from '@/pages/ChatPage/StreamingMessage';
-import { allocateGridCells, isFreeSpace } from './palette';
+import { allocateGridCells } from './gridAllocation';
+import { assignCategoryColors } from './palette';
 import { ContextUsageGrid } from './ContextUsageGrid';
-import { ContextUsageLegend } from './ContextUsageLegend';
+import { ContextInfoColumn } from './ContextInfoColumn';
+import { ContextDetailSections } from './ContextDetailSections';
+import { ContextViewToggle } from './ContextViewToggle';
+import { resolveContextModelName, formatTokensSummary } from './modelDisplayName';
 
 interface Props {
   data: ContextUsage;
   rawMarkdown: string;
 }
 
-/** Grid resolution: 24 columns × 8 rows ≈ 192 cells, a web-native take on the TUI grid. */
-const TOTAL_CELLS = 192;
+/** Grid resolution: 20 columns × 20 rows = 400 dense cells, echoing the TUI grid. */
+const TOTAL_CELLS = 400;
 
 /**
- * Renders the `/context` report as the native TUI does: a colored usage grid with
- * a category legend, plus the model/token summary. The CLI's detail tables
- * (Custom Agents / Memory Files / Skills) are preserved verbatim below via
- * markdown, so no information from the original report is lost.
+ * Renders the `/context` report as the native terminal TUI does: a dense usage
+ * grid beside the model/token summary and category legend, then the detail
+ * sections (Custom Agents / Memory Files / Skills / MCP Tools) as trees. A toggle
+ * flips the whole card to the verbatim CLI markdown, so nothing is ever hidden.
  */
 export const ContextUsageCard: React.FC<Props> = (props: Props) => {
   const { t } = useTranslation('chat');
   const { data, rawMarkdown } = props;
+  const { controlResponse } = useCliConfig();
+  const [rawMode, setRawMode] = useState(false);
 
-  const totalTokens = useMemo(
-    () => parseTokenValue(data.tokensTotalLabel),
-    [data.tokensTotalLabel],
-  );
+  const models: ModelInfo[] = controlResponse?.response?.response?.models ?? [];
+  const totalTokens = useMemo(() => parseTokenValue(data.tokensTotalLabel), [data.tokensTotalLabel]);
   const allocation = useMemo(
     () => allocateGridCells(data.categories, totalTokens, TOTAL_CELLS),
     [data.categories, totalTokens],
   );
-  const freeCategory = useMemo(
-    () => data.categories.find((c) => isFreeSpace(c.name)) ?? null,
-    [data.categories],
-  );
-  const detailMarkdown = useMemo(
-    () => extractContextDetailMarkdown(rawMarkdown),
-    [rawMarkdown],
+  const coloredCategories = useMemo(() => assignCategoryColors(data.categories), [data.categories]);
+  const displayName = useMemo(
+    () => resolveContextModelName(models, data.model),
+    [models, data.model],
   );
 
   return (
-    <div className="my-2 overflow-hidden rounded-lg border border-border-default bg-surface-raised">
-      <header className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-border-subtle px-4 py-3">
+    <div className="my-2">
+      <header className="flex items-center justify-between gap-3 px-4 py-2">
         <h3 className="text-[0.9375rem] font-semibold text-text-primary">
           {t('contextUsage.heading')}
         </h3>
-        {data.model && (
-          <span className="font-ide-code text-[0.8125rem] text-text-secondary">
-            {data.model}
-          </span>
-        )}
+        <ContextViewToggle
+          rawMode={rawMode}
+          onChange={setRawMode}
+          label={t('contextUsage.viewToggle.showOriginal')}
+          tooltip={t('contextUsage.viewToggle.tooltip')}
+        />
       </header>
 
-      <div className="px-4 pt-3">
-        <p className="font-ide-code text-[0.8125rem] text-text-secondary tabular-nums">
-          {t('contextUsage.tokensSummary', {
-            used: data.tokensUsedLabel || '—',
-            total: data.tokensTotalLabel || '—',
-            percent: data.percentUsed,
-          })}
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 px-4 py-3 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-        <ContextUsageGrid allocation={allocation} />
-        <ContextUsageLegend segments={allocation.segments} freeCategory={freeCategory} />
-      </div>
-
-      {detailMarkdown && (
-        <div className="border-t border-border-subtle px-4 py-2">
+      {rawMode ? (
+        <div className="px-4 py-3">
           <StreamingMessage
-            content={detailMarkdown}
+            content={rawMarkdown}
             isStreaming={false}
             className="text-text-primary text-[0.9375rem] leading-relaxed"
           />
         </div>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-start gap-x-6 gap-y-4 px-4 py-4">
+            <ContextUsageGrid allocation={allocation} />
+            <ContextInfoColumn
+              displayName={displayName}
+              modelId={data.model}
+              tokensSummary={formatTokensSummary(
+                data.tokensUsedLabel,
+                data.tokensTotalLabel,
+                data.percentUsed,
+              )}
+              categories={coloredCategories}
+            />
+          </div>
+          <ContextDetailSections data={data} />
+        </>
       )}
     </div>
   );

@@ -405,6 +405,11 @@
   },
   "contextUsage": {
     "heading": "上下文使用情况",
-    "tokensSummary": "{{used}} / {{total}} tokens ({{percent}}%)"
+    "tokensSummary": "{{used}}/{{total}} tokens ({{percent}}%)",
+    "categoryHeading": "按类别估算的用量",
+    "viewToggle": {
+      "showOriginal": "显示原始响应",
+      "tooltip": "在重构视图与原始 CLI 输出之间切换"
+    }
   }
 }

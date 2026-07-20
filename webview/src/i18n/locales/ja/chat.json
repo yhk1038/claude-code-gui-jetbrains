@@ -405,6 +405,11 @@
   },
   "contextUsage": {
     "heading": "コンテキスト使用状況",
-    "tokensSummary": "{{used}} / {{total}} tokens ({{percent}}%)"
+    "tokensSummary": "{{used}}/{{total}} tokens ({{percent}}%)",
+    "categoryHeading": "カテゴリー別の推定使用量",
+    "viewToggle": {
+      "showOriginal": "元の応答を表示",
+      "tooltip": "再構成ビューと元の CLI 出力を切り替える"
+    }
   }
 }

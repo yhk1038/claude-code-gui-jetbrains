@@ -413,6 +413,11 @@
   },
   "contextUsage": {
     "heading": "استخدام السياق",
-    "tokensSummary": "{{used}} / {{total}} tokens ({{percent}}%)"
+    "tokensSummary": "{{used}}/{{total}} tokens ({{percent}}%)",
+    "categoryHeading": "الاستخدام التقديري حسب الفئة",
+    "viewToggle": {
+      "showOriginal": "عرض الرد الأصلي",
+      "tooltip": "التبديل بين العرض المُعاد بناؤه ومخرجات CLI الأصلية"
+    }
   }
 }

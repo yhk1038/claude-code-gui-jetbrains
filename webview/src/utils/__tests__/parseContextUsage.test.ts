@@ -134,6 +134,112 @@ describe('parseContextUsage', () => {
   });
 });
 
+const SAMPLE_WITH_MCP = `## Context Usage
+
+**Model:** claude-opus-4-8[1m]
+**Tokens:** 58.3k / 1m (6%)
+
+### Estimated usage by category
+
+| Category | Tokens | Percentage |
+|----------|--------|------------|
+| System prompt | 2.4k | 0.2% |
+| MCP tools (deferred) | 3.1k | 0.3% |
+| Free space | 941.7k | 94.2% |
+
+### Custom Agents
+
+| Agent Type | Source | Tokens |
+|------------|--------|--------|
+| oh-my-claudecode:analyst | Plugin | 40 |
+| oh-my-claudecode:writer | Plugin | 42 |
+
+### Skills
+
+| Skill | Source | Tokens |
+|-------|--------|--------|
+| email-writing | User | ~50 |
+| deploy | Project | ~130 |
+| oh-my-claudecode:analyze | Plugin (oh-my-claudecode) | < 20 |
+
+### MCP Tools
+
+| Tool | Server | Tokens |
+|------|--------|--------|
+| mcp__claude_ai_Gmail__create_draft | claude_ai_Gmail | 1.5k |
+| mcp__claude_ai_Gmail__list_threads | claude_ai_Gmail | 900 |
+| mcp__workspace__search | workspace-mcp | 700 |
+`;
+
+describe('parseContextUsage detail sections', () => {
+  it('parses Custom Agents / Memory Files / Skills from the base sample', () => {
+    const result = parseContextUsage(SAMPLE);
+    if (!result) throw new Error('expected a parse result');
+
+    expect(result.customAgents).toEqual([
+      { name: 'architect', source: 'project', tokensLabel: '1.7k' },
+    ]);
+    expect(result.memoryFiles).toEqual([
+      { type: 'User', path: '~/.claude/CLAUDE.md', tokensLabel: '37.8k' },
+    ]);
+    expect(result.skills).toEqual([
+      { name: 'deploy', source: 'project', tokensLabel: '5.2k' },
+    ]);
+  });
+
+  it('returns an empty MCP array when the section is absent', () => {
+    const result = parseContextUsage(SAMPLE);
+    expect(result?.mcpTools).toEqual([]);
+  });
+
+  it('leaves detail arrays empty when only the category table is present', () => {
+    const md = `## Context Usage
+
+### Estimated usage by category
+
+| Category | Tokens | Percentage |
+|----------|--------|------------|
+| System prompt | 2.4k | 0.2% |
+| Free space | 900k | 99.8% |
+`;
+    const result = parseContextUsage(md);
+    if (!result) throw new Error('expected a parse result');
+    expect(result.customAgents).toEqual([]);
+    expect(result.memoryFiles).toEqual([]);
+    expect(result.skills).toEqual([]);
+    expect(result.mcpTools).toEqual([]);
+  });
+
+  it('parses MCP Tools with Server + verbatim token labels', () => {
+    const result = parseContextUsage(SAMPLE_WITH_MCP);
+    if (!result) throw new Error('expected a parse result');
+
+    expect(result.mcpTools).toEqual([
+      { tool: 'mcp__claude_ai_Gmail__create_draft', server: 'claude_ai_Gmail', tokensLabel: '1.5k' },
+      { tool: 'mcp__claude_ai_Gmail__list_threads', server: 'claude_ai_Gmail', tokensLabel: '900' },
+      { tool: 'mcp__workspace__search', server: 'workspace-mcp', tokensLabel: '700' },
+    ]);
+  });
+
+  it('includes the "MCP tools (deferred)" category row in order', () => {
+    const result = parseContextUsage(SAMPLE_WITH_MCP);
+    const names = result?.categories.map((c) => c.name);
+    expect(names).toEqual(['System prompt', 'MCP tools (deferred)', 'Free space']);
+  });
+
+  it('preserves verbatim approximate/threshold token labels in Skills', () => {
+    const result = parseContextUsage(SAMPLE_WITH_MCP);
+    if (!result) throw new Error('expected a parse result');
+    expect(result.skills.map((s) => s.tokensLabel)).toEqual(['~50', '~130', '< 20']);
+    // Source order is preserved exactly as the CLI printed it.
+    expect(result.skills.map((s) => s.source)).toEqual([
+      'User',
+      'Project',
+      'Plugin (oh-my-claudecode)',
+    ]);
+  });
+});
+
 describe('extractContextDetailMarkdown', () => {
   it('returns the detail sections after the category table', () => {
     const detail = extractContextDetailMarkdown(SAMPLE);

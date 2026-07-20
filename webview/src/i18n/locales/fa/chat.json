@@ -405,6 +405,11 @@
   },
   "contextUsage": {
     "heading": "استفاده از بافت",
-    "tokensSummary": "{{used}} / {{total}} tokens ({{percent}}%)"
+    "tokensSummary": "{{used}}/{{total}} tokens ({{percent}}%)",
+    "categoryHeading": "مصرف تخمینی بر اساس دسته",
+    "viewToggle": {
+      "showOriginal": "نمایش پاسخ اصلی",
+      "tooltip": "جابجایی بین نمای بازسازی‌شده و خروجی خام CLI"
+    }
   }
 }

@@ -405,6 +405,11 @@
   },
   "contextUsage": {
     "heading": "Uso del contexto",
-    "tokensSummary": "{{used}} / {{total}} tokens ({{percent}}%)"
+    "tokensSummary": "{{used}}/{{total}} tokens ({{percent}}%)",
+    "categoryHeading": "Uso estimado por categoría",
+    "viewToggle": {
+      "showOriginal": "Mostrar respuesta original",
+      "tooltip": "Alternar entre la vista reconstruida y la salida original de la CLI"
+    }
   }
 }

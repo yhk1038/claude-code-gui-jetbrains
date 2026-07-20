@@ -409,6 +409,11 @@
   },
   "contextUsage": {
     "heading": "Использование контекста",
-    "tokensSummary": "{{used}} / {{total}} tokens ({{percent}}%)"
+    "tokensSummary": "{{used}}/{{total}} tokens ({{percent}}%)",
+    "categoryHeading": "Оценка использования по категориям",
+    "viewToggle": {
+      "showOriginal": "Показать исходный ответ",
+      "tooltip": "Переключение между реконструированным видом и исходным выводом CLI"
+    }
   }
 }
