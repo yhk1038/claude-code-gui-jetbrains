@@ -7,6 +7,7 @@
   "empty": {
     "noMatches": "沒有符合的工作階段",
     "noSessions": "尚無工作階段",
-    "noWebSessions": "尚無網頁工作階段"
+    "noWebSessions": "尚無網頁工作階段",
+    "wslHostMismatch": "此專案位於 WSL 中。請從 WSL shell 開啟（執行 `ccg`）以檢視歷史對話。"
   }
 }

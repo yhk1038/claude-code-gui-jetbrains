@@ -57,32 +57,53 @@ describe('SessionsApi', () => {
       expect(mockBridge.request).toHaveBeenCalledWith(MessageType.GET_SESSIONS, {
         workingDir: '/test/path',
       });
-      expect(result).toHaveLength(2);
-      expect(result[0]).toBeInstanceOf(SessionMetaDto);
-      expect(result[0].id).toBe('session-1');
-      expect(result[0].title).toBe('Hello world');
-      expect(result[0].createdAt).toEqual(new Date('2026-02-02T10:00:00Z'));
-      expect(result[0].updatedAt).toEqual(new Date('2026-02-02T11:00:00Z'));
-      expect(result[0].messageCount).toBe(5);
-      expect(result[0].isSidechain).toBe(false);
-      expect(result[0].projectPath).toBe('/project/path');
-      expect(result[0].gitBranch).toBe('main');
+      expect(result.sessions).toHaveLength(2);
+      expect(result.sessions[0]).toBeInstanceOf(SessionMetaDto);
+      expect(result.sessions[0].id).toBe('session-1');
+      expect(result.sessions[0].title).toBe('Hello world');
+      expect(result.sessions[0].createdAt).toEqual(new Date('2026-02-02T10:00:00Z'));
+      expect(result.sessions[0].updatedAt).toEqual(new Date('2026-02-02T11:00:00Z'));
+      expect(result.sessions[0].messageCount).toBe(5);
+      expect(result.sessions[0].isSidechain).toBe(false);
+      expect(result.sessions[0].projectPath).toBe('/project/path');
+      expect(result.sessions[0].gitBranch).toBe('main');
+      expect(result.serviceError).toBeUndefined();
     });
 
-    it('should return empty array when no sessions exist', async () => {
+    it('should return empty sessions when no sessions exist', async () => {
       mockBridge.request.mockResolvedValueOnce({ sessions: [] });
 
       const result = await api.index();
 
-      expect(result).toEqual([]);
+      expect(result.sessions).toEqual([]);
+      expect(result.serviceError).toBeUndefined();
     });
 
-    it('should return empty array when response is invalid', async () => {
+    it('should return empty sessions when response is invalid', async () => {
       mockBridge.request.mockResolvedValueOnce(null);
 
       const result = await api.index();
 
-      expect(result).toEqual([]);
+      expect(result.sessions).toEqual([]);
+      expect(result.serviceError).toBeUndefined();
+    });
+
+    it('should surface a WSL_HOST_MISMATCH serviceError from the backend', async () => {
+      mockBridge.request.mockResolvedValueOnce({
+        sessions: [],
+        serviceError: {
+          type: MessageType.WSL_HOST_MISMATCH,
+          reason: 'This project is inside WSL. Open the GUI from your WSL shell (run `ccg`).',
+        },
+      });
+
+      const result = await api.index();
+
+      expect(result.sessions).toEqual([]);
+      expect(result.serviceError).toEqual({
+        type: MessageType.WSL_HOST_MISMATCH,
+        reason: expect.stringContaining('WSL'),
+      });
     });
 
     it('should map sessionId to id and truncate title to 50 chars', async () => {
@@ -103,9 +124,9 @@ describe('SessionsApi', () => {
 
       const result = await api.index();
 
-      expect(result[0].id).toBe('test-id');
-      expect(result[0].title).toHaveLength(50);
-      expect(result[0].title).toBe(mockResponse.sessions[0].title.substring(0, 50));
+      expect(result.sessions[0].id).toBe('test-id');
+      expect(result.sessions[0].title).toHaveLength(50);
+      expect(result.sessions[0].title).toBe(mockResponse.sessions[0].title.substring(0, 50));
     });
 
     it('should use default title when title is empty', async () => {
@@ -126,7 +147,7 @@ describe('SessionsApi', () => {
 
       const result = await api.index();
 
-      expect(result[0].title).toBe('No title');
+      expect(result.sessions[0].title).toBe('No title');
     });
 
     it('should fall back updatedAt to createdAt when lastTimestamp is null', async () => {
@@ -147,7 +168,7 @@ describe('SessionsApi', () => {
 
       const result = await api.index();
 
-      expect(result[0].updatedAt).toEqual(new Date('2026-02-01T09:00:00Z'));
+      expect(result.sessions[0].updatedAt).toEqual(new Date('2026-02-01T09:00:00Z'));
     });
   });
 
