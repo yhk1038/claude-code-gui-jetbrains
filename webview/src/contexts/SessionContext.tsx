@@ -198,6 +198,10 @@ export function SessionProvider({ children }: SessionProviderProps) {
       console.log('[SessionContext] Loaded CLI sessions:', sessions);
     } catch (error) {
       console.error('[SessionContext] Failed to load sessions:', error);
+      // A transient failure must not keep showing a serviceError from a
+      // previous, unrelated successful load (e.g. stale WSL host-mismatch
+      // guidance after switching to a normal project).
+      setSessionsServiceError(null);
     } finally {
       setIsLoading(false);
     }

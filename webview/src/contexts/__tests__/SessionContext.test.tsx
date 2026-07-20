@@ -199,6 +199,37 @@ describe('SessionContext', () => {
     });
   });
 
+  it('loadSessions - a rejected reload resets a stale sessionsServiceError from a previous successful load', async () => {
+    const serviceError = { type: MessageType.WSL_HOST_MISMATCH, reason: 'inside WSL' };
+    mockSessionsIndex.mockResolvedValueOnce({ sessions: [], serviceError });
+
+    let capturedCtx: ReturnType<typeof useSessionContext> | null = null;
+
+    render(
+      <SessionProvider>
+        <TestConsumer onMount={(ctx) => { capturedCtx = ctx; }} />
+      </SessionProvider>
+    );
+
+    await act(async () => {
+      await capturedCtx?.loadSessions();
+    });
+
+    await waitFor(() => {
+      expect(capturedCtx?.sessionsServiceError).toEqual(serviceError);
+    });
+
+    mockSessionsIndex.mockRejectedValueOnce(new Error('transient bridge error'));
+
+    await act(async () => {
+      await capturedCtx?.loadSessions();
+    });
+
+    await waitFor(() => {
+      expect(capturedCtx?.sessionsServiceError).toBeNull();
+    });
+  });
+
   it('loadSessions - 미연결 시 API 호출 안 함', async () => {
     mockIsConnected = false;
 
