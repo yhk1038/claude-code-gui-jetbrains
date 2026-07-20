@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
-import { useRouter } from '@/router';
-import { Route } from '@/router/routes';
+import { useNavigateToLogin } from '@/hooks';
 import { useAuthContext } from '@/contexts';
 import { useTranslation } from '@/i18n';
 
@@ -24,7 +23,7 @@ interface Props {
 export function LoginCta(props: Props) {
   const { className = '' } = props;
   const { t } = useTranslation('chat');
-  const { navigate } = useRouter();
+  const navigateToLogin = useNavigateToLogin();
   const { loggedIn, refetch } = useAuthContext();
   const [isRechecking, setIsRechecking] = useState(false);
 
@@ -41,7 +40,7 @@ export function LoginCta(props: Props) {
       }
       return;
     }
-    navigate(Route.SWITCH_ACCOUNT);
+    navigateToLogin();
   };
 
   return (

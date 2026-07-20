@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { ArrowLeftIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
+import { ROUTE_META, Label, Route } from '@/router/routes';
 import { useRouter } from '@/router';
-import { Route, ROUTE_META, Label } from '@/router/routes';
+import { useLoginReturn } from '@/hooks';
 import { getBridge, LOGIN_REQUEST_TIMEOUT_MS } from '@/api/bridge/Bridge';
 import { getAdapter } from '@/adapters';
 import { useSessionContext } from '@/contexts/SessionContext';
@@ -18,7 +19,12 @@ type LoginMethod = 'claude-ai' | 'console';
 
 export function SwitchAccountPage(props: Props) {
   const { className } = props;
-  const { navigate } = useRouter();
+  // Back button / browser back: plain history.back — the login page was PUSHed, so
+  // this returns to the session the user came from. (#178)
+  const { goBack } = useRouter();
+  // After a SUCCESSFUL login, go FORWARD (push) to the ?fallback= origin, else a new
+  // session. Not history.back — completing login is a forward step, not a cancel.
+  const returnHome = useLoginReturn();
   const { t } = useTranslation('switchAccount');
   const meta = ROUTE_META[Route.SWITCH_ACCOUNT];
 
@@ -61,12 +67,11 @@ export function SwitchAccountPage(props: Props) {
         } catch (err) {
           console.error('[SwitchAccount] Failed to capture account:', err);
         }
-        // Re-query auth status before navigating so the chat login gate
-        // (useLoginGate) sees the fresh logged-in state. Without this, navigate
-        // happens while AuthContext.loggedIn is still the stale `false`, and the
-        // gate bounces the user right back to this login screen (#99).
+        // Re-query auth status before returning so the account UI reflects the
+        // fresh logged-in state immediately (header avatar updates, the
+        // AuthErrorBanner clears) rather than lagging on the stale `false`.
         await refetch();
-        navigate(Route.NEW_SESSION);
+        returnHome();
       } else {
         setError(result?.error ?? t('errors.loginFailed'));
       }
@@ -116,7 +121,7 @@ export function SwitchAccountPage(props: Props) {
     <div className={`flex flex-col h-full bg-surface-base ${className ?? ''}`}>
       <header className="flex items-center gap-2 px-2 py-1 border-b border-border-default">
         <button
-          onClick={() => navigate(Route.NEW_SESSION)}
+          onClick={goBack}
           className="p-1 rounded text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors"
           title={Label.BACK}
         >

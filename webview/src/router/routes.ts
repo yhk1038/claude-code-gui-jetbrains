@@ -281,6 +281,37 @@ export function withWorkingDir(path: string, workingDir?: string | null): string
   return `${path}${sep}workingDir=${encodeURIComponent(dir)}`;
 }
 
+/** Query param carrying where to return after a login completes. */
+export const FALLBACK_PARAM = 'fallback';
+
+/**
+ * Build the login (switch-account) path, remembering `currentPathAndSearch` as a
+ * `fallback` query param so a completed login — or a back action — can return the
+ * user exactly where they were. Callers navigate to this with a PUSH so the back
+ * stack stays intact (#178).
+ *
+ * Never stacks login-on-login: if the user is already on the switch-account page,
+ * the base path is returned unchanged (the existing fallback already points home).
+ */
+export function loginPathWithFallback(currentPathAndSearch: string): string {
+  const base = withWorkingDir(routeToPath(Route.SWITCH_ACCOUNT));
+  if (currentPathAndSearch.startsWith(routeToPath(Route.SWITCH_ACCOUNT))) return base;
+  const sep = base.includes('?') ? '&' : '?';
+  return `${base}${sep}${FALLBACK_PARAM}=${encodeURIComponent(currentPathAndSearch)}`;
+}
+
+/**
+ * Read the return destination from a login page's `?fallback=` query. Returns null
+ * when absent, or when it would loop back to the login page itself (so callers fall
+ * back to a safe default like a new session).
+ */
+export function fallbackFromSearch(search: string): string | null {
+  const fb = new URLSearchParams(search).get(FALLBACK_PARAM);
+  if (!fb) return null;
+  if (fb.startsWith(routeToPath(Route.SWITCH_ACCOUNT))) return null;
+  return fb;
+}
+
 /**
  * 설정 관련 라우트인지 확인
  */

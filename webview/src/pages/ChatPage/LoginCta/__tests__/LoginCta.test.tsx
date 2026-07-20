@@ -1,15 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { Route } from '@/router/routes';
 
-const { mockNavigate, mockRefetch, authState } = vi.hoisted(() => ({
-  mockNavigate: vi.fn(),
+const { mockNavigateToLogin, mockRefetch, authState } = vi.hoisted(() => ({
+  mockNavigateToLogin: vi.fn(),
   mockRefetch: vi.fn(),
   authState: { loggedIn: null as boolean | null },
 }));
 
-vi.mock('@/router', () => ({
-  useRouter: () => ({ navigate: mockNavigate }),
+vi.mock('@/hooks', () => ({
+  useNavigateToLogin: () => mockNavigateToLogin,
 }));
 
 vi.mock('@/contexts', () => ({
@@ -20,7 +19,7 @@ import { LoginCta } from '../index';
 
 describe('LoginCta', () => {
   beforeEach(() => {
-    mockNavigate.mockReset();
+    mockNavigateToLogin.mockReset();
     mockRefetch.mockReset();
     mockRefetch.mockResolvedValue(undefined);
     authState.loggedIn = null;
@@ -38,7 +37,7 @@ describe('LoginCta', () => {
     it('navigates to the login page when clicked', () => {
       render(<LoginCta />);
       fireEvent.click(screen.getByRole('button', { name: /re-sign/i }));
-      expect(mockNavigate).toHaveBeenCalledWith(Route.SWITCH_ACCOUNT);
+      expect(mockNavigateToLogin).toHaveBeenCalled();
       expect(mockRefetch).not.toHaveBeenCalled();
     });
   });
@@ -48,7 +47,7 @@ describe('LoginCta', () => {
       authState.loggedIn = null;
       render(<LoginCta />);
       fireEvent.click(screen.getByRole('button', { name: /re-sign/i }));
-      expect(mockNavigate).toHaveBeenCalledWith(Route.SWITCH_ACCOUNT);
+      expect(mockNavigateToLogin).toHaveBeenCalled();
     });
   });
 
@@ -65,7 +64,7 @@ describe('LoginCta', () => {
       render(<LoginCta />);
       fireEvent.click(screen.getByRole('button', { name: /signed/i }));
       expect(mockRefetch).toHaveBeenCalled();
-      expect(mockNavigate).not.toHaveBeenCalled();
+      expect(mockNavigateToLogin).not.toHaveBeenCalled();
     });
 
     it('shows a spinner while the silent re-check is in flight', async () => {

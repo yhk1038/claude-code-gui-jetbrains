@@ -227,6 +227,10 @@
     "signed": "Angemeldet",
     "reSign": "Erneut anmelden"
   },
+  "authError": {
+    "banner": "Du bist bei Claude Code nicht angemeldet.",
+    "login": "Anmelden"
+  },
   "diffCard": {
     "operation": {
       "create": "Erstellen",

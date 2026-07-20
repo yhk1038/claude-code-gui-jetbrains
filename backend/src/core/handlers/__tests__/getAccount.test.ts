@@ -57,7 +57,48 @@ describe('getAccountHandler', () => {
     }));
   });
 
-  it('should send ACK with status error when stdout is empty', async () => {
+  it('should resolve a definitive logged-out state (status ok, loggedIn false) when the CLI prints valid JSON', async () => {
+    const connections = createMockConnections();
+    const message: IPCMessage = { type: MessageType.GET_ACCOUNT, payload: {}, timestamp: 0, requestId: 'req-1' };
+
+    // Logged-in account resolves cleanly with loggedIn:false — the CLI is authoritative.
+    mockExec.mockResolvedValue({
+      stdout: JSON.stringify({ loggedIn: false, authMethod: 'none' }),
+      stderr: '',
+    });
+
+    await getAccountHandler('conn-1', message, connections, mockBridge);
+
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
+      requestId: 'req-1',
+      status: 'ok',
+      account: { loggedIn: false, authMethod: 'none' },
+    }));
+  });
+
+  it('should recover a logged-out state from a non-zero exit that still carries JSON stdout', async () => {
+    const connections = createMockConnections();
+    const message: IPCMessage = { type: MessageType.GET_ACCOUNT, payload: {}, timestamp: 0, requestId: 'req-1' };
+
+    // Real CLI behaviour: `auth status` on a logged-out account exits 1 but prints
+    // `{"loggedIn":false}`. runExecFile attaches that stdout to the rejected error.
+    const err = Object.assign(new Error('Command failed'), {
+      code: 1,
+      stdout: JSON.stringify({ loggedIn: false, authMethod: 'none' }),
+      stderr: '',
+    });
+    mockExec.mockRejectedValue(err);
+
+    await getAccountHandler('conn-1', message, connections, mockBridge);
+
+    expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
+      requestId: 'req-1',
+      status: 'ok',
+      account: { loggedIn: false, authMethod: 'none' },
+    }));
+  });
+
+  it('should send ACK with status error (undetermined) when the CLI prints no parseable output', async () => {
     const connections = createMockConnections();
     const message: IPCMessage = { type: MessageType.GET_ACCOUNT, payload: {}, timestamp: 0, requestId: 'req-1' };
 
@@ -71,14 +112,15 @@ describe('getAccountHandler', () => {
     expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
       requestId: 'req-1',
       status: 'error',
-      error: 'Claude Code credentials not found. Please log in with Claude Code CLI first.',
+      error: 'Could not determine Claude Code login status (auth status check failed).',
     }));
   });
 
-  it('should send ACK with status error when Claude.execAuthed throws', async () => {
+  it('should send ACK with status error (undetermined) when execAuthed fails with no stdout (timeout/spawn error)', async () => {
     const connections = createMockConnections();
     const message: IPCMessage = { type: MessageType.GET_ACCOUNT, payload: {}, timestamp: 0, requestId: 'req-1' };
 
+    // Timeout / spawn error: rejected with no parseable stdout → undetermined, NOT a logout.
     mockExec.mockRejectedValue(new Error('spawn error'));
 
     await getAccountHandler('conn-1', message, connections, mockBridge);
@@ -86,7 +128,7 @@ describe('getAccountHandler', () => {
     expect(connections.sendTo).toHaveBeenCalledWith('conn-1', MessageType.ACK, expect.objectContaining({
       requestId: 'req-1',
       status: 'error',
-      error: 'Claude Code credentials not found. Please log in with Claude Code CLI first.',
+      error: 'Could not determine Claude Code login status (auth status check failed).',
     }));
   });
 

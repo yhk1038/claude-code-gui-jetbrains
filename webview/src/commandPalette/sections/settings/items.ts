@@ -2,11 +2,14 @@ import { getAdapter } from '@/adapters';
 import { i18n } from '@/i18n';
 import { StaticItem } from '../../types';
 import { enKeyword } from '../../enKeyword';
-import { Route, routeToPath, withWorkingDir } from '@/router/routes';
+import { loginPathWithFallback } from '@/router/routes';
 
-/** Navigate to the account switch page. Shared by "Switch account" and /login. */
+/** Navigate to the account switch page. Shared by "Switch account" and /login.
+ * Remembers the current location as `?fallback=` (via loginPathWithFallback) and
+ * PUSHes, so login → back returns to where the user was. (#178) */
 const openSwitchAccount = async () => {
-  window.history.pushState({}, '', withWorkingDir(routeToPath(Route.SWITCH_ACCOUNT)));
+  const current = `${window.location.pathname}${window.location.search}`;
+  window.history.pushState({}, '', loginPathWithFallback(current));
   window.dispatchEvent(new PopStateEvent('popstate'));
 };
 

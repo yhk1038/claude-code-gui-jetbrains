@@ -227,6 +227,10 @@
     "signed": "Conectado",
     "reSign": "Reconectar"
   },
+  "authError": {
+    "banner": "Você não está conectado ao Claude Code.",
+    "login": "Entrar"
+  },
   "diffCard": {
     "operation": {
       "create": "Criar",

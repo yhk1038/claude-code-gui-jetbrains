@@ -38,10 +38,12 @@ describe('AuthContext', () => {
     await waitFor(() => expect(result.current.loggedIn).toBe(true));
   });
 
-  it('reports loggedIn=false when credentials are not found (status error)', async () => {
-    mockSend.mockResolvedValue({ status: 'error', error: 'Claude Code credentials not found.' });
+  it('stays null (undetermined) when the auth status check fails (status error) — never asserts logout (#178)', async () => {
+    mockSend.mockResolvedValue({ status: 'error', error: 'auth status check failed' });
     const { result } = renderHook(() => useAuthContext(), { wrapper });
-    await waitFor(() => expect(result.current.loggedIn).toBe(false));
+    // give the effect a chance to run and throw
+    await new Promise((r) => setTimeout(r, 20));
+    expect(result.current.loggedIn).toBeNull();
   });
 
   it('reports loggedIn=false when the account explicitly says loggedIn=false', async () => {
@@ -59,7 +61,7 @@ describe('AuthContext', () => {
   });
 
   it('refetch re-queries and updates the state (login completed elsewhere)', async () => {
-    mockSend.mockResolvedValueOnce({ status: 'error', error: 'not found' });
+    mockSend.mockResolvedValueOnce({ status: 'ok', account: { loggedIn: false } });
     const { result } = renderHook(() => useAuthContext(), { wrapper });
     await waitFor(() => expect(result.current.loggedIn).toBe(false));
 

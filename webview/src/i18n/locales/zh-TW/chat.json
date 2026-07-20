@@ -227,6 +227,10 @@
     "signed": "已登入",
     "reSign": "重新登入"
   },
+  "authError": {
+    "banner": "尚未登入 Claude Code。",
+    "login": "登入"
+  },
   "diffCard": {
     "operation": {
       "create": "建立",

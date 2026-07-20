@@ -214,11 +214,21 @@ export class Claude {
           ...options?.env,
         },
       }, (err, stdout, stderr) => {
+        const out = stdout?.toString() ?? '';
+        const errText = stderr?.toString() ?? '';
         if (err) {
-          reject(err);
+          // Preserve captured output on the rejected error so callers can tell a
+          // clean non-zero exit that still printed valid data (e.g. `auth status`
+          // on a logged-out account: exit 1 + `{"loggedIn":false}`) apart from a
+          // real failure (timeout / spawn error) that has no parseable stdout.
+          // Mirrors util.promisify(execFile), which attaches stdout/stderr to err.
+          const execErr = err as Error & { stdout?: string; stderr?: string };
+          execErr.stdout = out;
+          execErr.stderr = errText;
+          reject(execErr);
           return;
         }
-        resolve({ stdout: stdout?.toString() ?? '', stderr: stderr?.toString() ?? '' });
+        resolve({ stdout: out, stderr: errText });
       });
     });
   }
@@ -258,7 +268,14 @@ export class Claude {
         ...options?.env,
       },
     });
-    if (err) throw err;
+    if (err) {
+      // Keep the captured output on the error so a clean non-zero exit that still
+      // printed valid data stays recoverable, matching runExecFile's contract.
+      const execErr = err as Error & { stdout?: string; stderr?: string };
+      execErr.stdout = stdout;
+      execErr.stderr = stderr;
+      throw execErr;
+    }
     return { stdout, stderr };
   }
 

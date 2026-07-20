@@ -59,8 +59,9 @@ describe('useAccountQuery', () => {
     expect(accountCalls.length).toBe(0);
   });
 
-  it('resolves a received status="error" to logged-out data (account: null), not a query error', async () => {
-    mockSend.mockResolvedValue({ status: 'error', error: 'credentials not found' });
+  it('resolves status="ok" with loggedIn:false to a definitive logged-out state (not a query error)', async () => {
+    const account = { loggedIn: false, authMethod: 'none' };
+    mockSend.mockResolvedValue({ status: 'ok', account });
     const client = createTestQueryClient();
     const wrapper = makeQueryWrapper(client);
 
@@ -76,7 +77,33 @@ describe('useAccountQuery', () => {
 
     await waitFor(() => expect(data).toBeDefined());
     expect(isError).toBe(false);
-    expect(data).toEqual({ loggedIn: false, account: null });
+    expect(data).toEqual({ loggedIn: false, account });
+  });
+
+  it('treats status="error" (undetermined) as a query error, keeping the last known state (#178)', async () => {
+    // A prior success establishes a known state...
+    mockSend.mockResolvedValueOnce({ status: 'ok', account: { loggedIn: true } });
+    const client = createTestQueryClient();
+    const wrapper = makeQueryWrapper(client);
+
+    let data: AccountQueryResult | undefined;
+    let isError = false;
+    function Probe() {
+      const query = useAccountQuery();
+      data = query.data;
+      isError = query.isError;
+      return null;
+    }
+    render(<Probe />, { wrapper });
+    await waitFor(() => expect(data?.loggedIn).toBe(true));
+
+    // ...an undetermined `status='error'` must throw so the known state is preserved,
+    // never flipping the user to logged-out.
+    mockSend.mockResolvedValueOnce({ status: 'error', error: 'auth status check failed' });
+    await client.invalidateQueries({ queryKey: [MessageType.GET_ACCOUNT] });
+
+    await waitFor(() => expect(isError).toBe(true));
+    expect(data?.loggedIn).toBe(true);
   });
 
   it('keeps the prior success in cache when the transport rejects', async () => {

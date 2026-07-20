@@ -227,6 +227,10 @@
     "signed": "Sesión iniciada",
     "reSign": "Volver a iniciar sesión"
   },
+  "authError": {
+    "banner": "No has iniciado sesión en Claude Code.",
+    "login": "Iniciar sesión"
+  },
   "diffCard": {
     "operation": {
       "create": "Crear",

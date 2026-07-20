@@ -227,6 +227,10 @@
     "signed": "로그인됨",
     "reSign": "다시 로그인"
   },
+  "authError": {
+    "banner": "Claude Code에 로그인되어 있지 않습니다.",
+    "login": "로그인"
+  },
   "diffCard": {
     "operation": {
       "create": "생성",

@@ -227,6 +227,10 @@
     "signed": "Signed",
     "reSign": "Re-Sign"
   },
+  "authError": {
+    "banner": "You're signed out of Claude Code.",
+    "login": "Sign in"
+  },
   "diffCard": {
     "operation": {
       "create": "Create",

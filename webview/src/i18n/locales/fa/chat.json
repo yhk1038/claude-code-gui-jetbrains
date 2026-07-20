@@ -227,6 +227,10 @@
     "signed": "وارد شده",
     "reSign": "ورود مجدد"
   },
+  "authError": {
+    "banner": "به Claude Code وارد نشده‌اید.",
+    "login": "ورود"
+  },
   "diffCard": {
     "operation": {
       "create": "ایجاد",

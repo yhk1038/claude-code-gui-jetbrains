@@ -17,7 +17,7 @@ export interface AccountData {
 }
 
 /** Resolved account state. `account` is null when the backend definitively
- * answered "not logged in" (status='error', e.g. credentials not found). */
+ * answered "not logged in" (status='ok' with `loggedIn:false`). */
 export interface AccountQueryResult {
   loggedIn: boolean;
   account: AccountData | null;
@@ -35,13 +35,16 @@ interface RawAccountResponse {
  * read `[MessageType.GET_ACCOUNT]` share one in-flight request and one cache
  * entry, so the previously-duplicated GET_ACCOUNT fan-out collapses to one call.
  *
- * Two distinct failure modes are kept apart, matching the prior hand-rolled
- * AuthContext behaviour:
- * - A transport/CLI failure *rejects* (throws). react-query then keeps the last
- *   successful `data` in cache, so a transient error never flips a known state;
- *   with no prior data the consumer reads `undefined` → undetermined.
- * - A received `status='error'` is a definitive "not logged in" answer and
- *   resolves to `{ loggedIn: false, account: null }`.
+ * Two distinct failure modes are kept apart — this is the core of the
+ * "reauthenticate repeatedly" fix (#178):
+ * - A DETERMINED state resolves. The backend sends `status='ok'` only when
+ *   `claude auth status` produced trustworthy JSON, so `loggedIn` (true OR false)
+ *   is authoritative. A definitive logout resolves to `{ loggedIn: false }`.
+ * - An UNDETERMINED state (`status='error'`: timeout / spawn error / unparseable
+ *   output) *throws*. react-query then keeps the last successful `data` in cache,
+ *   so a failed status check never flips a known login state to false and never
+ *   bounces the user to the login page; with no prior data the consumer reads
+ *   `undefined` → undetermined.
  */
 export function useAccountQuery(): UseQueryResult<AccountQueryResult, Error> {
   const { isConnected, send } = useBridgeContext();
@@ -66,7 +69,9 @@ export function useAccountQuery(): UseQueryResult<AccountQueryResult, Error> {
       if (result?.status === 'ok' && result.account) {
         return { loggedIn: result.account.loggedIn === true, account: result.account };
       }
-      return { loggedIn: false, account: null };
+      // status !== 'ok' → undetermined (transient). Throw so react-query keeps the
+      // last known state instead of asserting a logout. (#178)
+      throw new Error(result?.error ?? 'auth status undetermined');
     },
   });
 }

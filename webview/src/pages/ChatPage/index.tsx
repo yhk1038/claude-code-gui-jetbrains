@@ -9,6 +9,7 @@ import { AcceptPlanPanel } from './AcceptPlanPanel';
 import { BannerArea } from './BannerArea';
 import { UpdateBanner } from './UpdateBanner';
 import { ConnectionLostBanner } from './ConnectionLostBanner';
+import { AuthErrorBanner } from './AuthErrorBanner';
 import { BrowserPermissionBanner } from './BrowserPermissionBanner';
 import { BackgroundTasksPanel } from './BackgroundTasksPanel';
 import { McpModal } from '@/components/McpModal';
@@ -18,7 +19,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useChatInputFocus } from '../../contexts/ChatInputFocusContext';
 import { useChatStreamContext } from '../../contexts/ChatStreamContext';
 import { useSessionContext } from '../../contexts/SessionContext';
-import { useAwaitingNotifications, useLoginGate } from '../../hooks';
+import { useAwaitingNotifications } from '../../hooks';
 import { usePendingAskUserQuestion } from '../../hooks/usePendingAskUserQuestion';
 import { usePendingPermissions } from '../../hooks/usePendingPermissions';
 import { usePendingPlanApproval } from '../../hooks/usePendingPlanApproval';
@@ -33,8 +34,9 @@ import { useTranslation } from '@/i18n';
 
 export function ChatPage() {
   const { t } = useTranslation('chat');
-  // Redirect logged-out users to the login screen before they hit a failing chat.
-  useLoginGate();
+  // NOTE: no auth "gate" here. A failed/undetermined `auth status` must NOT bounce
+  // the user to login (that caused #178's repeated reauth). A definitive logout
+  // surfaces as the AuthErrorBanner below; only a real chat 401 auto-redirects.
 
   // pre-fetch: ChatPage 마운트 시 query를 활성화해 모달이 즉시 표시되도록
   useMcpServers();
@@ -304,6 +306,7 @@ export function ChatPage() {
       <BannerArea>
         <UpdateBanner />
         <ConnectionLostBanner />
+        <AuthErrorBanner />
         <BrowserPermissionBanner />
       </BannerArea>
 

@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { Route } from '@/router/routes';
 import { MessageType } from '@/shared';
 
-const { mockNavigate, mockRequest, mockRefetch, mockSubscribe, mockSendRaw, mockOpenUrl } = vi.hoisted(() => ({
-  mockNavigate: vi.fn(),
+const { mockReturnHome, mockGoBack, mockRequest, mockRefetch, mockSubscribe, mockSendRaw, mockOpenUrl } = vi.hoisted(() => ({
+  mockReturnHome: vi.fn(),
+  mockGoBack: vi.fn(),
   mockRequest: vi.fn(),
   mockRefetch: vi.fn(),
   mockSubscribe: vi.fn((_type: string, _handler: (m: unknown) => void) => () => {}),
@@ -12,7 +12,8 @@ const { mockNavigate, mockRequest, mockRefetch, mockSubscribe, mockSendRaw, mock
   mockOpenUrl: vi.fn(),
 }));
 
-vi.mock('@/router', () => ({ useRouter: () => ({ navigate: mockNavigate }) }));
+vi.mock('@/router', () => ({ useRouter: () => ({ goBack: mockGoBack }) }));
+vi.mock('@/hooks', () => ({ useLoginReturn: () => mockReturnHome }));
 vi.mock('@/api/bridge/Bridge', () => ({
   getBridge: () => ({ request: mockRequest, subscribe: mockSubscribe, sendRaw: mockSendRaw }),
   LOGIN_REQUEST_TIMEOUT_MS: 300000,
@@ -41,7 +42,8 @@ function captureHandlers() {
 
 describe('SwitchAccountPage', () => {
   beforeEach(() => {
-    mockNavigate.mockReset();
+    mockReturnHome.mockReset();
+    mockGoBack.mockReset();
     mockRequest.mockReset();
     mockRefetch.mockReset();
     mockSendRaw.mockReset();
@@ -51,33 +53,40 @@ describe('SwitchAccountPage', () => {
     mockSubscribe.mockReturnValue(() => {});
   });
 
-  // Regression for issue #99 (cause B): after a login completes, the chat login
-  // gate reads AuthContext.loggedIn. If we navigate before re-querying auth
-  // status, loggedIn is still the stale `false` and the gate bounces the user
-  // straight back to the login screen. refetch() must run (and resolve) before
-  // navigate() so the gate sees the fresh logged-in state.
-  it('refetches auth state before navigating to chat after a successful login (#99)', async () => {
+  // Regression for issue #99 (cause B): after a login completes, the account UI
+  // (header avatar, the AuthErrorBanner) reads AuthContext.loggedIn. If we return
+  // to chat before re-querying auth status, loggedIn is still the stale `false`.
+  // refetch() must run (and resolve) before returnHome() so the fresh logged-in
+  // state is reflected.
+  it('refetches auth state before returning home after a successful login (#99)', async () => {
     mockRequest.mockResolvedValue({ status: 'ok' });
     mockRefetch.mockResolvedValue(undefined);
 
     render(<SwitchAccountPage />);
     fireEvent.click(screen.getByText('Claude.ai Subscription'));
 
-    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith(Route.NEW_SESSION));
+    await waitFor(() => expect(mockReturnHome).toHaveBeenCalled());
     expect(mockRefetch).toHaveBeenCalledTimes(1);
     expect(mockRefetch.mock.invocationCallOrder[0]).toBeLessThan(
-      mockNavigate.mock.invocationCallOrder[0],
+      mockReturnHome.mock.invocationCallOrder[0],
     );
   });
 
-  it('does not navigate or refetch when login fails', async () => {
+  it('goes back (history.back) when the back button is clicked — not a fallback nav', () => {
+    render(<SwitchAccountPage />);
+    fireEvent.click(screen.getByTitle('Back'));
+    expect(mockGoBack).toHaveBeenCalledTimes(1);
+    expect(mockReturnHome).not.toHaveBeenCalled();
+  });
+
+  it('does not return home or refetch when login fails', async () => {
     mockRequest.mockResolvedValue({ status: 'error', error: 'Login failed' });
 
     render(<SwitchAccountPage />);
     fireEvent.click(screen.getByText('Claude.ai Subscription'));
 
     await waitFor(() => screen.getByText('Login failed'));
-    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(mockReturnHome).not.toHaveBeenCalled();
     expect(mockRefetch).not.toHaveBeenCalled();
   });
 
@@ -117,9 +126,9 @@ describe('SwitchAccountPage', () => {
       expect.objectContaining({ type: MessageType.SUBMIT_LOGIN_CODE, payload: { code: 'my-code' } }),
     );
 
-    // Completing the login navigates as usual.
+    // Completing the login returns home as usual.
     resolveLogin({ status: 'ok' });
-    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith(Route.NEW_SESSION));
+    await waitFor(() => expect(mockReturnHome).toHaveBeenCalled());
   });
 
   // Issue #57 core fix: the backend no longer opens the OAuth URL itself (that

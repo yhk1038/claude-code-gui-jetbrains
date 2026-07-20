@@ -231,6 +231,10 @@
     "signed": "تم تسجيل الدخول",
     "reSign": "إعادة تسجيل الدخول"
   },
+  "authError": {
+    "banner": "لم تسجّل الدخول إلى Claude Code.",
+    "login": "تسجيل الدخول"
+  },
   "diffCard": {
     "operation": {
       "create": "إنشاء",
