@@ -6,33 +6,52 @@
 
 ## What's new
 
-Typing `/context` used to show nothing in the chat — the response was lost
-somewhere between arrival and render (issue #196). Now the command works, and
-you get the **context usage card**: a visual breakdown of your token budget,
-exactly like the terminal TUI you'd see from `claude -p "/context"`.
+Typing `/context` used to show **nothing** in the chat — the response was
+silently dropped (issue #196). Now it works, and the reply is rendered as a
+**context usage card** that mirrors the native `claude` terminal output as
+closely as possible: the same grid, the same category breakdown, the same
+trees — right inside the GUI.
 
 ## What you see
 
-When you type `/context` and press send, the chat displays:
+When you send `/context`, the card shows:
 
-- **Summary line**: model name, budget used (e.g., "28.2k / 1m tokens (3%)")
-- **Category grid**: a color-coded breakdown by category — System prompt, System tools, Custom agents, Memory files, Skills, Messages, Free space — each bar colored by token depth
-- **Color legend**: token count and percentage for each category
-- **Detailed tables** (if present): Custom Agents, Memory, Skills, as before
+- **Header**: the model display name (e.g. `Opus 4.8 (1M context)`) with the
+  model id beneath it, and a token summary (`28.2k/1m tokens (3%)`).
+- **Usage grid**: the context window drawn as a matrix of unicode cells —
+  `⛁` filled cells colored per category, `⛶` empty cells for free space —
+  aligned exactly like the terminal.
+- **Category breakdown**: inline `⛁ System prompt: 2.6k tokens (0.3%)` lines
+  under an *Estimated usage by category* heading, in the CLI's own order.
+- **Detail sections as trees**: MCP Tools, Custom Agents, Memory Files and
+  Skills — each with its path subtitle (`· /mcp`, `· .claude/agents/`,
+  `· /memory`, `· /skills`) and grouped by source, with token costs in muted
+  text.
+- **MCP Tools** are grouped per server, collapsed by default, each server
+  showing its tool count; expand to see every tool with its token cost.
 
-Each cell shows its category on hover, and the grid scans much faster than reading raw text.
+### Show the original response
+
+A **Show original response** toggle in the card header switches to the
+untouched CLI Markdown. That keeps the raw output one click away, and means
+the card degrades gracefully if the upstream format ever changes.
 
 ## How it works
 
-- `/context` opens a local command handler (not sent to the CLI), which runs the
-  official `claude --no-session-persistence -p "/context"` in the backend.
-- The raw response (Markdown text with a table) is streamed to the UI. A small
-  bug — incomplete response rendering when a command finishes abruptly — was
-  fixed so the full output arrives.
-- The UI parses the Markdown table and renders it as a color-coded grid. If
-  parsing fails for any reason, the original Markdown falls back as-is.
-- The card respects your theme (light / dark) and adapts to different window
-  widths.
+- `/context` is a client-side command that the Claude Code CLI renders itself.
+  We run the CLI in stream-json mode and forward `/context` as a normal
+  message — no private protocol, no separate invocation. The CLI answers with
+  a complete Markdown response (tables for each section).
+- Unlike a normal turn, such local commands emit the `assistant` result with
+  **no partial streaming events**, which exposed a render race that dropped
+  the content. That was fixed by capturing the streaming target before React
+  flushed the update.
+- The card **parses that Markdown in the webview** and reconstructs the native
+  TUI layout. The backend and transport are never edited — the raw Markdown is
+  delivered as-is (original-data preservation), and the "Show original
+  response" view renders exactly what the CLI sent. If parsing ever fails, the
+  card falls back to plain Markdown.
 
-This ties `/context` into the GUI's own context awareness, matching the CLI
-tool's openness — a step towards full CLI-equivalent functionality.
+This keeps `/context` fully CLI-equivalent: what you'd see in the terminal,
+you now see in the GUI — reconstructed from the CLI's own output, not from any
+official SDK or undocumented protocol.
