@@ -146,20 +146,15 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
-            <h3>0.24.1 - Rendering fixes</h3>
+            <h3>0.25.0 - IDE selector and chat UX polish</h3>
             <ul>
-                <li>Fixed random stale-paint ghosts/artifacts that could appear in the chat window (#171, reported by @deniskrizanovic)</li>
-                <li>Polished code block token rendering</li>
-            </ul>
-            <h3>0.24.0 - i18n & RTL now available 🎉</h3>
-            <ul>
-                <li>Add language Internationalization (i18n): Settings -> General > Interface Language (#160)</li>
-                <li>language added: 简体中文, 繁體中文, Persian, Arabic</li>
-                <li>RTL (Right to Left) support (#164, reported by @emadmrz)</li>
-                <li>Improved token display animation in Thinking Stream</li>
-                <li>Context gauge now reflects the model's real context window instead of a fixed fallback</li>
-                <li>More reliable backend startup — the MCP SDK no longer blocks Node.js boot (#162, reported by @pledwig-creativestyle)</li>
-                <li>Preserve a user-provided ANTHROPIC_API_KEY when launching the Claude CLI (#163)</li>
+                <li>Tool window mode now shows an IDE selection chip and keeps it in sync when reopened</li>
+                <li>/context now renders as a native-TUI context-usage card and works in an empty window (#196, reported by @deniskrizanovic)</li>
+                <li>No longer bounces back to the login screen on transient auth-status failures (#178, reported by @noss-creator)</li>
+                <li>Slash commands now show their descriptions, plus fixes for model-change and panel UX (#177)</li>
+                <li>"Open Claude Code" now reuses the already-open chat tab instead of spawning a new one</li>
+                <li>Stop button now follows the mode color like the send button</li>
+                <li>Windows/WSL stability improvements (#197)</li>
             </ul>
         """.trimIndent()
     }
