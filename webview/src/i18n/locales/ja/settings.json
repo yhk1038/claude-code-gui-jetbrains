@@ -330,7 +330,14 @@
       "copyFailed": "コピーに失敗しました",
       "retryHint": "インストール後、下の「再試行」をクリックしてください。IDEの再起動は不要です。",
       "checking": "確認中...",
-      "retry": "再試行"
+      "retry": "再試行",
+      "reload": "再読み込み",
+      "pasteIn": "{{shells}} に貼り付け",
+      "or": "または",
+      "install": "インストール",
+      "installing": "インストール中…",
+      "installed": "インストール完了",
+      "installFailed": "インストールに失敗しました"
     },
     "errors": {
       "unknown": "不明なエラー"

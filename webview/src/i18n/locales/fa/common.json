@@ -36,6 +36,8 @@
     "empty": "تفکیک مصرفی در دسترس نیست.",
     "requests": "{{value}} درخواست",
     "sessions": "{{value}} نشست",
+    "request": "{{value}} درخواست",
+    "session": "{{value}} نشست",
     "percentOfUsage": "٪ از مصرف"
   },
   "mcpModal": {

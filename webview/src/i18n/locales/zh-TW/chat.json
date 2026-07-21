@@ -131,7 +131,8 @@
       "pastConversations": "歷史對話",
       "newChat": "新對話",
       "noMatchingSessions": "沒有相符的工作階段",
-      "noSessionsYet": "尚無工作階段"
+      "noSessionsYet": "尚無工作階段",
+      "wslHostMismatch": "此專案位於 WSL 中。請從 WSL shell 開啟（執行 `ccg`）以檢視歷史對話。"
     },
     "workingDir": {
       "switchDisabledTitle": "工作階段進行中無法切換工作目錄",

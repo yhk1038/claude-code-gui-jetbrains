@@ -3,6 +3,7 @@ import { render, act, waitFor } from '@testing-library/react';
 import React from 'react';
 import { SessionProvider, useSessionContext } from '../SessionContext';
 import type { SessionMetaDto } from '../../dto/session/SessionDto';
+import { MessageType } from '@/shared';
 
 // Mock contexts
 const mockSubscribe = vi.fn(() => vi.fn());
@@ -126,14 +127,14 @@ describe('SessionContext', () => {
     mockPathname = '/';
     mockIsConnected = true;
     mockWorkingDirectory = '/test/workspace';
-    mockSessionsIndex.mockResolvedValue([]);
+    mockSessionsIndex.mockResolvedValue({ sessions: [] });
     mockSessionsLoad.mockResolvedValue(undefined);
     mockSessionsDestroy.mockResolvedValue(undefined);
     mockSessionsCreate.mockResolvedValue(undefined);
   });
 
   it('loadSessions - API 호출 후 sessions 상태 업데이트', async () => {
-    mockSessionsIndex.mockResolvedValue(mockSessionDtos);
+    mockSessionsIndex.mockResolvedValue({ sessions: mockSessionDtos });
 
     let capturedCtx: ReturnType<typeof useSessionContext> | null = null;
 
@@ -153,6 +154,79 @@ describe('SessionContext', () => {
       expect(capturedCtx?.sessions[0].id).toBe('session-1');
       expect(capturedCtx?.sessions[0].title).toBe('Chat 1');
       expect(capturedCtx?.sessions[1].id).toBe('session-2');
+    });
+  });
+
+  it('loadSessions - exposes serviceError as sessionsServiceError state', async () => {
+    const serviceError = { type: MessageType.WSL_HOST_MISMATCH, reason: 'inside WSL' };
+    mockSessionsIndex.mockResolvedValue({ sessions: [], serviceError });
+
+    let capturedCtx: ReturnType<typeof useSessionContext> | null = null;
+
+    render(
+      <SessionProvider>
+        <TestConsumer onMount={(ctx) => { capturedCtx = ctx; }} />
+      </SessionProvider>
+    );
+
+    await act(async () => {
+      await capturedCtx?.loadSessions();
+    });
+
+    await waitFor(() => {
+      expect(capturedCtx?.sessionsServiceError).toEqual(serviceError);
+      expect(capturedCtx?.sessions).toHaveLength(0);
+    });
+  });
+
+  it('loadSessions - sessionsServiceError is null when no serviceError is returned', async () => {
+    mockSessionsIndex.mockResolvedValue({ sessions: mockSessionDtos });
+
+    let capturedCtx: ReturnType<typeof useSessionContext> | null = null;
+
+    render(
+      <SessionProvider>
+        <TestConsumer onMount={(ctx) => { capturedCtx = ctx; }} />
+      </SessionProvider>
+    );
+
+    await act(async () => {
+      await capturedCtx?.loadSessions();
+    });
+
+    await waitFor(() => {
+      expect(capturedCtx?.sessionsServiceError).toBeNull();
+    });
+  });
+
+  it('loadSessions - a rejected reload resets a stale sessionsServiceError from a previous successful load', async () => {
+    const serviceError = { type: MessageType.WSL_HOST_MISMATCH, reason: 'inside WSL' };
+    mockSessionsIndex.mockResolvedValueOnce({ sessions: [], serviceError });
+
+    let capturedCtx: ReturnType<typeof useSessionContext> | null = null;
+
+    render(
+      <SessionProvider>
+        <TestConsumer onMount={(ctx) => { capturedCtx = ctx; }} />
+      </SessionProvider>
+    );
+
+    await act(async () => {
+      await capturedCtx?.loadSessions();
+    });
+
+    await waitFor(() => {
+      expect(capturedCtx?.sessionsServiceError).toEqual(serviceError);
+    });
+
+    mockSessionsIndex.mockRejectedValueOnce(new Error('transient bridge error'));
+
+    await act(async () => {
+      await capturedCtx?.loadSessions();
+    });
+
+    await waitFor(() => {
+      expect(capturedCtx?.sessionsServiceError).toBeNull();
     });
   });
 
@@ -176,7 +250,7 @@ describe('SessionContext', () => {
   });
 
   it('switchSession - 성공 시 navigate 호출', async () => {
-    mockSessionsIndex.mockResolvedValue(mockSessionDtos);
+    mockSessionsIndex.mockResolvedValue({ sessions: mockSessionDtos });
 
     let capturedCtx: ReturnType<typeof useSessionContext> | null = null;
 
@@ -205,7 +279,7 @@ describe('SessionContext', () => {
   });
 
   it('switchSession - 존재하지 않는 세션 ID로 호출 시 무시', async () => {
-    mockSessionsIndex.mockResolvedValue(mockSessionDtos);
+    mockSessionsIndex.mockResolvedValue({ sessions: mockSessionDtos });
 
     let capturedCtx: ReturnType<typeof useSessionContext> | null = null;
 
@@ -228,7 +302,7 @@ describe('SessionContext', () => {
   });
 
   it('deleteSession - 성공 시 sessions에서 제거', async () => {
-    mockSessionsIndex.mockResolvedValue(mockSessionDtos);
+    mockSessionsIndex.mockResolvedValue({ sessions: mockSessionDtos });
 
     let capturedCtx: ReturnType<typeof useSessionContext> | null = null;
 
@@ -256,7 +330,7 @@ describe('SessionContext', () => {
   it('deleteSession - 현재 세션 삭제 시 currentSessionId null로 초기화', async () => {
     // Start with current session already set via URL (SSOT)
     mockPathname = '/sessions/session-1';
-    mockSessionsIndex.mockResolvedValue(mockSessionDtos);
+    mockSessionsIndex.mockResolvedValue({ sessions: mockSessionDtos });
 
     let capturedCtx: ReturnType<typeof useSessionContext> | null = null;
 
@@ -312,7 +386,7 @@ describe('SessionContext', () => {
     });
 
     it('switchSession 호출 시 inputMode가 기본값으로 리셋됨', async () => {
-      mockSessionsIndex.mockResolvedValue(mockSessionDtos);
+      mockSessionsIndex.mockResolvedValue({ sessions: mockSessionDtos });
 
       let capturedCtx: ReturnType<typeof useSessionContext> | null = null;
 

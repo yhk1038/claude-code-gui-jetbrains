@@ -7,6 +7,7 @@
   "empty": {
     "noMatches": "Nenhuma sessão correspondente",
     "noSessions": "Ainda não há sessões",
-    "noWebSessions": "Nenhuma sessão web"
+    "noWebSessions": "Nenhuma sessão web",
+    "wslHostMismatch": "Este projeto está no WSL. Abra-o pelo seu shell do WSL (execute `ccg`) para ver as conversas anteriores."
   }
 }

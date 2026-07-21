@@ -87,3 +87,21 @@ export function toWslPath(windowsPath: string | undefined | null): string | null
   // Fallback: normalize separators.
   return windowsPath.replace(/\\/g, '/');
 }
+
+/**
+ * Translate a spawn/exec cwd to the path the child will actually see, for a WSL
+ * backend. In a WSL backend (running inside the distro, platform === 'linux') the
+ * IDE hands the project root as a Windows UNC path (`//wsl.localhost/Ubuntu/...`),
+ * which does not exist inside the distro — spawning with it as cwd fails with
+ * `spawn ... ENOENT` (the *cwd*, not the binary, is missing). Convert it to the
+ * inner Linux path. A no-op off-linux or for non-UNC paths. Issue #57.
+ *
+ * Accepts string | URL | undefined so it drops straight into a child_process
+ * `cwd` option; a URL (or any non-string) is returned unchanged.
+ */
+export function resolveWslCwd(cwd: string | URL | undefined): string | URL | undefined {
+  if (process.platform === 'linux' && typeof cwd === 'string' && isWslUncPath(cwd)) {
+    return toWslPath(cwd) ?? cwd;
+  }
+  return cwd;
+}

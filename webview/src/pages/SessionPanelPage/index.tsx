@@ -7,6 +7,7 @@ import { SearchInput } from '@/components/SessionList/SearchInput';
 import { SessionListScaleProvider, SessionListScale } from '@/components/SessionList/scale';
 import { getAdapter } from '@/adapters';
 import { useTranslation } from '@/i18n';
+import { MessageType } from '@/shared';
 import { ScopeTabs, SessionScope } from './ScopeTabs';
 
 /**
@@ -19,7 +20,7 @@ import { ScopeTabs, SessionScope } from './ScopeTabs';
  */
 export function SessionPanelPage() {
   const { t } = useTranslation('sessionPanel');
-  const { openNewTab, loadSessions } = useSessionContext();
+  const { openNewTab, loadSessions, sessionsServiceError } = useSessionContext();
   const {
     currentSessionId,
     searchQuery,
@@ -85,7 +86,11 @@ export function SessionPanelPage() {
             />
           ) : (
             <div className="flex-1 px-3 py-3 text-sm text-text-tertiary text-center">
-              {searchQuery.trim() ? t('empty.noMatches') : t('empty.noSessions')}
+              {sessionsServiceError?.type === MessageType.WSL_HOST_MISMATCH
+                ? t('empty.wslHostMismatch')
+                : searchQuery.trim()
+                  ? t('empty.noMatches')
+                  : t('empty.noSessions')}
             </div>
           )
         ) : (

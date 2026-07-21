@@ -6,6 +6,7 @@ import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
 import { MessageType } from '../../shared';
+import { resolveWslCwd } from '../wsl-path';
 
 const execFileAsync = promisify(execFile);
 
@@ -133,7 +134,15 @@ export async function listProjectFilesHandler(
   _bridge: Bridge,
 ): Promise<void> {
   const query = (message.payload?.query as string) ?? '';
-  const workingDir = (message.payload?.workingDir as string) ?? process.cwd();
+  const rawWorkingDir = (message.payload?.workingDir as string) ?? process.cwd();
+  // In JetBrains mode a WSL project's backend runs inside the distro
+  // (process.platform === 'linux'), but the IDE hands the project root over the
+  // wire as a Windows UNC path (`//wsl.localhost/<distro>/...`) that doesn't exist
+  // inside the distro. Left as-is, git/fs.readdir hit ENOENT and the `@` mention
+  // dropdown silently shows an empty list. Convert it to the inner Linux path —
+  // the same resolveWslCwd fix claude.ts/command.ts already apply. A no-op
+  // off-linux or for non-UNC paths. Issue #195.
+  const workingDir = (resolveWslCwd(rawWorkingDir) as string) ?? rawWorkingDir;
   const limit = (message.payload?.limit as number) ?? 20;
 
   try {

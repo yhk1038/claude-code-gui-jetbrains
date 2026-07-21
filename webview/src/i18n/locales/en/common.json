@@ -36,6 +36,8 @@
     "empty": "No usage breakdown available.",
     "requests": "{{value}} requests",
     "sessions": "{{value}} sessions",
+    "request": "{{value}} request",
+    "session": "{{value}} session",
     "percentOfUsage": "% of usage"
   },
   "mcpModal": {

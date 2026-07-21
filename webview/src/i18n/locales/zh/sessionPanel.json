@@ -7,6 +7,7 @@
   "empty": {
     "noMatches": "没有匹配的会话",
     "noSessions": "暂无会话",
-    "noWebSessions": "暂无网页会话"
+    "noWebSessions": "暂无网页会话",
+    "wslHostMismatch": "此项目位于 WSL 中。请从 WSL shell 打开（运行 `ccg`）以查看历史对话。"
   }
 }

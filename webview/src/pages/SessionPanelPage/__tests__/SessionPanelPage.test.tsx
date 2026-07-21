@@ -1,41 +1,32 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SessionPanelPage } from '../index';
+import { MessageType } from '@/shared';
 
-const { mockOpenNewTab, mockOpenSession, mockLoadSessions, mockUseSessionList } = vi.hoisted(() => {
-  const session = {
-    id: 's1',
-    title: 'My Session',
-    createdAt: new Date('2026-06-15T10:00:00Z'),
-    updatedAt: new Date('2026-06-15T11:00:00Z'),
-    messageCount: 3,
-    isSidechain: false,
-  };
-  return {
-    mockOpenNewTab: vi.fn(),
-    mockOpenSession: vi.fn().mockResolvedValue(undefined),
-    mockLoadSessions: vi.fn(),
-    mockUseSessionList: vi.fn(() => ({
-      currentSessionId: null,
-      searchQuery: '',
-      setSearchQuery: vi.fn(),
-      filteredSessions: [session],
-      groupedSessions: {
-        today: [session],
-        yesterday: [],
-        pastWeek: [],
-        pastMonth: [],
-        pastYear: [],
-      },
-      handleDeleteSession: vi.fn(),
-      renameSession: vi.fn(),
-      confirmDialog: null,
-    })),
-  };
-});
+const { session, groupedOne, emptyGroups, mockOpenNewTab, mockOpenSession, mockLoadSessions, mockUseSessionList, mockUseSessionContext } =
+  vi.hoisted(() => {
+    const session = {
+      id: 's1',
+      title: 'My Session',
+      createdAt: new Date('2026-06-15T10:00:00Z'),
+      updatedAt: new Date('2026-06-15T11:00:00Z'),
+      messageCount: 3,
+      isSidechain: false,
+    };
+    return {
+      session,
+      groupedOne: { today: [session], yesterday: [], pastWeek: [], pastMonth: [], pastYear: [] },
+      emptyGroups: { today: [], yesterday: [], pastWeek: [], pastMonth: [], pastYear: [] },
+      mockOpenNewTab: vi.fn(),
+      mockOpenSession: vi.fn(),
+      mockLoadSessions: vi.fn(),
+      mockUseSessionList: vi.fn(),
+      mockUseSessionContext: vi.fn(),
+    };
+  });
 
 vi.mock('@/contexts/SessionContext', () => ({
-  useSessionContext: () => ({ openNewTab: mockOpenNewTab, loadSessions: mockLoadSessions }),
+  useSessionContext: mockUseSessionContext,
 }));
 
 vi.mock('@/adapters', () => ({
@@ -46,12 +37,30 @@ vi.mock('@/components/SessionList/useSessionList', () => ({
   useSessionList: mockUseSessionList,
 }));
 
+function listResult(overrides = {}) {
+  return {
+    currentSessionId: null,
+    searchQuery: '',
+    setSearchQuery: vi.fn(),
+    filteredSessions: [session],
+    groupedSessions: groupedOne,
+    handleDeleteSession: vi.fn(),
+    renameSession: vi.fn(),
+    confirmDialog: null,
+    ...overrides,
+  };
+}
+
 describe('SessionPanelPage', () => {
   beforeEach(() => {
-    mockOpenNewTab.mockClear();
-    mockOpenSession.mockClear();
-    mockLoadSessions.mockClear();
-    mockUseSessionList.mockClear();
+    vi.clearAllMocks();
+    mockOpenSession.mockResolvedValue(undefined);
+    mockUseSessionContext.mockReturnValue({
+      openNewTab: mockOpenNewTab,
+      loadSessions: mockLoadSessions,
+      sessionsServiceError: null,
+    });
+    mockUseSessionList.mockReturnValue(listResult());
   });
 
   it('renders the session title', () => {
@@ -94,5 +103,25 @@ describe('SessionPanelPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Web' }));
     expect(screen.getByText('No web sessions')).toBeDefined();
     expect(screen.queryByText('My Session')).toBeNull();
+  });
+
+  it('shows "No sessions yet" for an empty local list with no service error', () => {
+    mockUseSessionList.mockReturnValue(listResult({ filteredSessions: [], groupedSessions: emptyGroups }));
+    render(<SessionPanelPage />);
+    expect(screen.getByText('No sessions yet')).toBeDefined();
+  });
+
+  it('shows WSL guidance instead of "No sessions yet" when the backend reports a host mismatch', () => {
+    mockUseSessionContext.mockReturnValue({
+      openNewTab: mockOpenNewTab,
+      loadSessions: mockLoadSessions,
+      sessionsServiceError: { type: MessageType.WSL_HOST_MISMATCH, reason: 'inside WSL' },
+    });
+    mockUseSessionList.mockReturnValue(listResult({ filteredSessions: [], groupedSessions: emptyGroups }));
+
+    render(<SessionPanelPage />);
+
+    expect(screen.getByText(/WSL/)).toBeDefined();
+    expect(screen.queryByText('No sessions yet')).toBeNull();
   });
 });

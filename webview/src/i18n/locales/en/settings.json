@@ -330,7 +330,14 @@
       "copyFailed": "Copy failed",
       "retryHint": "After installing, click Retry below — no IDE restart needed.",
       "checking": "Checking...",
-      "retry": "Retry"
+      "retry": "Retry",
+      "reload": "Reload",
+      "pasteIn": "Paste in {{shells}}",
+      "or": "or",
+      "install": "Install",
+      "installing": "Installing…",
+      "installed": "Installed",
+      "installFailed": "Install failed"
     },
     "errors": {
       "unknown": "Unknown error"

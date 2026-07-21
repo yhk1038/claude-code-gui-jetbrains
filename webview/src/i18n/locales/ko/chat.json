@@ -131,7 +131,8 @@
       "pastConversations": "지난 대화",
       "newChat": "새 채팅",
       "noMatchingSessions": "일치하는 세션이 없습니다",
-      "noSessionsYet": "아직 세션이 없습니다"
+      "noSessionsYet": "아직 세션이 없습니다",
+      "wslHostMismatch": "이 프로젝트는 WSL 안에 있습니다. 지난 대화를 보려면 WSL 셸에서 여세요(`ccg` 실행)."
     },
     "workingDir": {
       "switchDisabledTitle": "세션이 활성 상태인 동안에는 작업 디렉터리를 전환할 수 없습니다",

@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, useMemo, u
 import { useNavigate, useLocation } from 'react-router-dom';
 import { SessionState } from '../types';
 import { SessionMetaDto } from '../dto';
+import type { SessionServiceError } from '../api/modules/SessionsApi';
 import { useBridgeContext } from './BridgeContext';
 import { useApi } from './ApiContext';
 import { useWorkingDir } from './WorkingDirContext';
@@ -20,6 +21,8 @@ interface SessionContextValue {
   currentSessionId: string | null;
   currentSession: SessionMetaDto | null;
   sessions: SessionMetaDto[];
+  /** Non-fatal reason the backend couldn't list sessions (e.g. WSL host mismatch on win32). */
+  sessionsServiceError: SessionServiceError | null;
   sessionState: SessionState;
   isLoading: boolean;
   workingDirectory: string | null;
@@ -83,6 +86,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
   const currentSessionId = parseSessionIdFromPath(bg?.pathname ?? location.pathname);
 
   const [sessions, setSessions] = useState<SessionMetaDto[]>([]);
+  const [sessionsServiceError, setSessionsServiceError] = useState<SessionServiceError | null>(null);
   const [sessionState, setSessionState] = useState<SessionState>(SessionState.Idle);
   const [isLoading, setIsLoading] = useState(false);
   const newlyCreatedSessionIds = useRef(new Set<string>());
@@ -181,19 +185,23 @@ export function SessionProvider({ children }: SessionProviderProps) {
       setIsLoading(true);
       console.log('[SessionContext] Loading sessions from:', workingDirectory);
 
-      const sessions = await api.sessions.index(workingDirectory).then((sessions) => {
-        return sessions
-          .filter(s => !s.isSidechain)
-          .sort((a, b) => {
-            const aTime = a.updatedAt?.getTime() ?? 0;
-            const bTime = b.updatedAt?.getTime() ?? 0;
-            return bTime - aTime;
-          });
-      });
+      const result = await api.sessions.index(workingDirectory);
+      const sessions = result.sessions
+        .filter(s => !s.isSidechain)
+        .sort((a, b) => {
+          const aTime = a.updatedAt?.getTime() ?? 0;
+          const bTime = b.updatedAt?.getTime() ?? 0;
+          return bTime - aTime;
+        });
       setSessions(sessions);
+      setSessionsServiceError(result.serviceError ?? null);
       console.log('[SessionContext] Loaded CLI sessions:', sessions);
     } catch (error) {
       console.error('[SessionContext] Failed to load sessions:', error);
+      // A transient failure must not keep showing a serviceError from a
+      // previous, unrelated successful load (e.g. stale WSL host-mismatch
+      // guidance after switching to a normal project).
+      setSessionsServiceError(null);
     } finally {
       setIsLoading(false);
     }
@@ -342,6 +350,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
     currentSessionId,
     currentSession,
     sessions,
+    sessionsServiceError,
     sessionState,
     isLoading,
     workingDirectory,

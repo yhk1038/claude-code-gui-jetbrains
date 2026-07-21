@@ -46,8 +46,11 @@ export interface UsageReport {
   raw: string;
 }
 
-// "Last 24h · 605 requests · 8 sessions" — the middle dot is U+00B7.
-const PERIOD_RE = /^Last\s+(.+?)\s+·\s+([\d,]+)\s+requests\s+·\s+([\d,]+)\s+sessions/;
+// "Last 24h · 605 requests · 8 sessions" — the middle dot is U+00B7. The nouns
+// are singular for a count of 1 ("1 request", "1 session"), so `requests?` /
+// `sessions?` accept both; without this, a user with a single session parses to
+// zero periods and the whole breakdown shows "No usage breakdown available".
+const PERIOD_RE = /^Last\s+(.+?)\s+·\s+([\d,]+)\s+requests?\s+·\s+([\d,]+)\s+sessions?/;
 // "Top skills: /worktree 4%, /code-review 2%"
 const TOP_RE = /^Top\s+(.+?):\s*(.+)$/;
 // "general-purpose 16%" — name may contain spaces (e.g. "claude.ai Notion"),

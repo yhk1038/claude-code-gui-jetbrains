@@ -330,7 +330,14 @@
       "copyFailed": "복사 실패",
       "retryHint": "설치 후 아래 재시도를 클릭하세요 — IDE 재시작이 필요 없습니다.",
       "checking": "확인 중...",
-      "retry": "재시도"
+      "retry": "재시도",
+      "reload": "새로고침",
+      "pasteIn": "{{shells}}에 붙여넣기",
+      "or": "또는",
+      "install": "설치",
+      "installing": "설치 중…",
+      "installed": "설치됨",
+      "installFailed": "설치 실패"
     },
     "errors": {
       "unknown": "알 수 없는 오류"

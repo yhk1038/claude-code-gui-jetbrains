@@ -330,7 +330,14 @@
       "copyFailed": "Falha ao copiar",
       "retryHint": "Após instalar, clique em Tentar novamente abaixo — não é necessário reiniciar o IDE.",
       "checking": "Verificando...",
-      "retry": "Tentar novamente"
+      "retry": "Tentar novamente",
+      "reload": "Recarregar",
+      "pasteIn": "Cole em {{shells}}",
+      "or": "ou",
+      "install": "Instalar",
+      "installing": "Instalando…",
+      "installed": "Instalado",
+      "installFailed": "Falha na instalação"
     },
     "errors": {
       "unknown": "Erro desconhecido"

@@ -9,21 +9,9 @@ import {
 import { readSettingsFile, resolveClaudeConfigDirOverride } from './features/settings';
 import { getStrippableAuthEnvKeys } from './features/claude-settings';
 import { augmentedPath } from './augmented-path';
-import { isWslUncPath, toWslPath } from './wsl-path';
+import { resolveWslCwd } from './wsl-path';
 import { execViaCmdArgv } from './win-exec';
-
-/**
- * In a WSL backend (running inside the distro, platform === 'linux') the IDE hands us the
- * project root as a Windows UNC path (`//wsl.localhost/Ubuntu/home/...`). That path does not
- * exist inside the distro, so spawning the CLI with it as cwd fails with `spawn ... ENOENT`
- * — the *cwd*, not the binary, is missing. Convert it to the inner Linux path. Issue #57.
- */
-function resolveWslCwd(cwd: SpawnOptions['cwd']): SpawnOptions['cwd'] {
-  if (process.platform === 'linux' && typeof cwd === 'string' && isWslUncPath(cwd)) {
-    return toWslPath(cwd) ?? cwd;
-  }
-  return cwd;
-}
+import { pickWin32Launcher } from './which-launcher';
 
 export class Claude {
   private static cliPath: string | null = null;
@@ -289,7 +277,17 @@ export class Claude {
         env: Claude.env,
         timeout: 5000,
       }, (err, stdout) => {
-        const resolved = err ? null : (stdout?.toString() ?? '').trim().split('\n')[0]?.trim() || null;
+        let resolved: string | null;
+        if (err) {
+          resolved = null;
+        } else if (process.platform === 'win32') {
+          // `where` also lists the extension-less MSYS script (`...\npm\claude`);
+          // pick the launcher cmd.exe actually runs (first PATHEXT match) so
+          // which() agrees with the binary spawn()/exec() resolve through cmd.exe.
+          resolved = pickWin32Launcher(stdout?.toString() ?? '');
+        } else {
+          resolved = (stdout?.toString() ?? '').trim().split('\n')[0]?.trim() || null;
+        }
         if (process.platform === 'win32' && resolved) {
           Claude.resolvedWin32Path = resolved;
         }

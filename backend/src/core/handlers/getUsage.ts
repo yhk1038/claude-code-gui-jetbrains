@@ -1,4 +1,4 @@
-import { execFile } from 'child_process';
+import { Command, ShellKind } from '../command';
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
@@ -87,32 +87,6 @@ export function classifyError(raw: string, code?: number | string): UsageErrorIn
   return { kind: 'unknown', message: cleaned || raw };
 }
 
-function execFileAsync(cmd: string, args: string[], opts: { timeout: number; env?: NodeJS.ProcessEnv }): Promise<{ stdout: string; stderr: string }> {
-  return new Promise((resolve, reject) => {
-    execFile(cmd, args, opts, (err, stdout, stderr) => {
-      if (err) return reject(err);
-      resolve({ stdout: stdout?.toString() ?? '', stderr: stderr?.toString() ?? '' });
-    });
-  });
-}
-
-export function shellInvocation(command: string): { shell: string; args: string[] } {
-  if (process.platform === 'win32') {
-    return {
-      shell: process.env.ComSpec || 'cmd.exe',
-      args: ['/c', command],
-    };
-  }
-  const userShell = process.env.SHELL || '/bin/sh';
-  // fish does not support the `-i` flag; fall back to a POSIX-compatible shell
-  const isFish = /\/fish$/.test(userShell);
-  const shell = isFish ? '/bin/sh' : userShell;
-  return {
-    shell,
-    args: ['-l', '-i', '-c', command],
-  };
-}
-
 const CACHE_TTL_MS = 90_000;
 let cachedUsage: CcbUsageResponse | null = null;
 let cachedAt = 0;
@@ -147,11 +121,13 @@ async function persistUsageToRegistry(usage: CcbUsageResponse): Promise<void> {
 }
 
 export async function runCcbUsage(): Promise<CcbUsageResponse> {
-  const { shell, args } = shellInvocation('ccb oauth usage --json');
-  // Pass the augmented PATH (Claude.env) so ccb is discoverable on Windows
-  // even when the backend's original PATH does not include the npm global bin dir.
-  // Claude.exec already benefits from this; runCcbUsage must too. (issue: M3)
-  const { stdout } = await execFileAsync(shell, args, { timeout: 15000, env: Claude.env });
+  // The Command core resolves the platform shell (win32 cmd.exe argv; unix login
+  // shell so ccb sees the rc-file PATH) and layers on the augmented PATH, so ccb
+  // is discoverable even when the backend's inherited PATH lacks the npm global bin.
+  const { stdout } = await new Command('ccb', ['oauth', 'usage', '--json'], {
+    timeout: 15000,
+    shell: ShellKind.LoginInteractive,
+  }).exec();
   // Interactive login shells (`-l -i`) source startup files like .bashrc, which on
   // Linux often emit control sequences such as printf "\e[?2004l" (disable bracketed
   // paste) to stdout before our output. trim() cannot strip the ESC char, so extract

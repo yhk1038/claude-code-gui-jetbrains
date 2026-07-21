@@ -36,6 +36,8 @@
     "empty": "Keine Nutzungsaufschlüsselung verfügbar.",
     "requests": "{{value}} Anfragen",
     "sessions": "{{value}} Sitzungen",
+    "request": "{{value}} Anfrage",
+    "session": "{{value}} Sitzung",
     "percentOfUsage": "% der Nutzung"
   },
   "mcpModal": {

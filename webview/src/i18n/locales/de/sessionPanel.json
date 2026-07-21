@@ -7,6 +7,7 @@
   "empty": {
     "noMatches": "Keine passenden Sitzungen",
     "noSessions": "Noch keine Sitzungen",
-    "noWebSessions": "Keine Web-Sitzungen"
+    "noWebSessions": "Keine Web-Sitzungen",
+    "wslHostMismatch": "Dieses Projekt liegt in WSL. Öffne es aus deiner WSL-Shell (`ccg` ausführen), um frühere Unterhaltungen zu sehen."
   }
 }

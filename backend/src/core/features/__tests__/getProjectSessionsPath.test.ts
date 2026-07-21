@@ -71,4 +71,36 @@ describe('getProjectSessionsPath', () => {
       expect(normalizeProjectPath('/home//user')).toBe('-home--user');
     });
   });
+
+  // A WSL backend (platform=linux) is handed the project as a Windows UNC path
+  // (//wsl.localhost/Ubuntu/home/...), but the claude CLI ran inside the distro and
+  // named the sessions dir from the INNER Linux path. Without converting first, the
+  // encoded dir name (--wsl-localhost-...) never matches the CLI's (-home-...), so the
+  // GUI shows "No sessions yet" despite valid files on disk (#175).
+  describe('WSL UNC path on a linux (distro) backend (#175)', () => {
+    const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform');
+    const originalCfg = process.env.CLAUDE_CONFIG_DIR;
+
+    afterEach(() => {
+      if (originalPlatform) Object.defineProperty(process, 'platform', originalPlatform);
+      if (originalCfg === undefined) delete process.env.CLAUDE_CONFIG_DIR;
+      else process.env.CLAUDE_CONFIG_DIR = originalCfg;
+    });
+
+    it('converts a WSL UNC workingDir to the inner Linux path before encoding, matching the CLI', async () => {
+      delete process.env.CLAUDE_CONFIG_DIR;
+      Object.defineProperty(process, 'platform', { value: 'linux' });
+      const result = await getProjectSessionsPath('//wsl.localhost/Ubuntu/home/yhk/ccg-test');
+      // Must match what the claude CLI wrote (/home/yhk/ccg-test -> -home-yhk-ccg-test),
+      // NOT the raw UNC encoding (--wsl-localhost-Ubuntu-home-yhk-ccg-test).
+      expect(result).toBe(join(homedir(), '.claude', 'projects', '-home-yhk-ccg-test'));
+    });
+
+    it('leaves a normal Linux workingDir unchanged', async () => {
+      delete process.env.CLAUDE_CONFIG_DIR;
+      Object.defineProperty(process, 'platform', { value: 'linux' });
+      const result = await getProjectSessionsPath('/home/yhk/ccg-test');
+      expect(result).toBe(join(homedir(), '.claude', 'projects', '-home-yhk-ccg-test'));
+    });
+  });
 });

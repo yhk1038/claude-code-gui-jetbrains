@@ -36,6 +36,8 @@
     "empty": "표시할 사용량 분석 데이터가 없습니다.",
     "requests": "요청 {{value}}건",
     "sessions": "세션 {{value}}개",
+    "request": "요청 {{value}}건",
+    "session": "세션 {{value}}개",
     "percentOfUsage": "% 사용량"
   },
   "mcpModal": {

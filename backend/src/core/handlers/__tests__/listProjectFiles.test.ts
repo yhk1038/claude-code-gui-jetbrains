@@ -1,8 +1,12 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
-import { fetchFilesAndDirs } from '../listProjectFiles';
+import { fetchFilesAndDirs, listProjectFilesHandler } from '../listProjectFiles';
+import type { ConnectionManager } from '../../../ws/connection-manager';
+import type { Bridge } from '../../../bridge/bridge-interface';
+import type { IPCMessage } from '../../types';
+import { MessageType } from '../../../shared';
 
 // Helper: create a directory tree under a temp root
 // Structure:
@@ -176,5 +180,80 @@ describe('fetchFilesAndDirs (non-git directory)', () => {
 
     expect(files).toHaveLength(0);
     expect(dirs).toHaveLength(0);
+  });
+});
+
+// A WSL project opened in JetBrains runs the backend inside the distro
+// (process.platform === 'linux'), yet the IDE hands the project root over the
+// wire as a Windows UNC path (`//wsl.localhost/<distro>/...`) that does not exist
+// inside the distro. The handler must translate it to the inner Linux path (the
+// same resolveWslCwd conversion claude.ts/command.ts already apply) or the `@`
+// mention dropdown silently returns an empty list. Issue #195.
+//
+// These tests build a real temp tree and address it through a synthetic UNC path,
+// so they only make sense on a POSIX filesystem — skip on win32.
+const describeWsl = process.platform === 'win32' ? describe.skip : describe;
+
+describeWsl('listProjectFilesHandler (WSL UNC workingDir)', () => {
+  const originalPlatform = process.platform;
+
+  function setPlatform(platform: NodeJS.Platform): void {
+    Object.defineProperty(process, 'platform', { value: platform, configurable: true });
+  }
+
+  function mockConns(): ConnectionManager {
+    return { sendTo: vi.fn() } as unknown as ConnectionManager;
+  }
+
+  function lastSend(conns: ConnectionManager): [string, string, Record<string, unknown>] {
+    const calls = (conns.sendTo as ReturnType<typeof vi.fn>).mock.calls;
+    return calls[calls.length - 1] as [string, string, Record<string, unknown>];
+  }
+
+  function msg(workingDir: string, query: string): IPCMessage {
+    return {
+      type: MessageType.LIST_PROJECT_FILES,
+      payload: { workingDir, query, limit: 20 },
+      timestamp: 0,
+      requestId: 'req-1',
+    };
+  }
+
+  // Wrap an absolute Linux temp path as the UNC path the IDE would hand over:
+  //   /var/folders/x/proj  ->  //wsl.localhost/Ubuntu/var/folders/x/proj
+  function toUnc(linuxAbsPath: string): string {
+    return `//wsl.localhost/Ubuntu${linuxAbsPath}`;
+  }
+
+  afterEach(() => setPlatform(originalPlatform));
+
+  it('on linux, resolves a WSL UNC workingDir to the inner Linux path before listing', async () => {
+    setPlatform('linux');
+    const root = makeTmpDir();
+    fs.writeFileSync(path.join(root, 'hello-mention.ts'), '');
+
+    const conns = mockConns();
+    await listProjectFilesHandler('c1', msg(toUnc(root), 'hello-mention'), conns, {} as Bridge);
+
+    const [connId, type, payload] = lastSend(conns);
+    expect(connId).toBe('c1');
+    expect(type).toBe(MessageType.ACK);
+    expect(payload.requestId).toBe('req-1');
+    const files = payload.files as Array<{ relativePath: string; type: string }>;
+    expect(files.map((f) => f.relativePath)).toContain('hello-mention.ts');
+  });
+
+  it('on linux, a plain Linux workingDir is listed unchanged', async () => {
+    setPlatform('linux');
+    const root = makeTmpDir();
+    fs.writeFileSync(path.join(root, 'plain-file.ts'), '');
+
+    const conns = mockConns();
+    await listProjectFilesHandler('c1', msg(root, 'plain-file'), conns, {} as Bridge);
+
+    const [, type, payload] = lastSend(conns);
+    expect(type).toBe(MessageType.ACK);
+    const files = payload.files as Array<{ relativePath: string; type: string }>;
+    expect(files.map((f) => f.relativePath)).toContain('plain-file.ts');
   });
 });

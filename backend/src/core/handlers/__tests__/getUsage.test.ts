@@ -5,7 +5,7 @@ vi.mock('child_process', () => ({
 }));
 
 import { execFile } from 'child_process';
-import { getUsageHandler, resetUsageCache, shellInvocation } from '../getUsage';
+import { getUsageHandler, resetUsageCache } from '../getUsage';
 
 const mockExecFile = vi.mocked(execFile);
 import type { ConnectionManager } from '../../../ws/connection-manager';
@@ -67,7 +67,7 @@ describe('getUsageHandler', () => {
     await getUsageHandler('conn-1', message, connections, mockBridge);
 
     const expectedShellArgs = process.platform === 'win32'
-      ? ['/c', 'ccb oauth usage --json']
+      ? ['/d', '/s', '/c', 'ccb', 'oauth', 'usage', '--json']
       : ['-l', '-i', '-c', 'ccb oauth usage --json'];
     expect(mockExecFile).toHaveBeenCalledWith(
       expect.any(String),
@@ -299,86 +299,6 @@ describe('getUsageHandler', () => {
       requestId: 'req-1',
       status: 'ok',
       usage: SAMPLE_USAGE,
-    });
-  });
-
-  describe('shellInvocation', () => {
-    const originalPlatform = process.platform;
-    const originalShell = process.env.SHELL;
-    const originalComSpec = process.env.ComSpec;
-
-    afterEach(() => {
-      Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
-      if (originalShell === undefined) {
-        delete process.env.SHELL;
-      } else {
-        process.env.SHELL = originalShell;
-      }
-      if (originalComSpec === undefined) {
-        delete process.env.ComSpec;
-      } else {
-        process.env.ComSpec = originalComSpec;
-      }
-    });
-
-    it('falls back to /bin/sh when SHELL is /usr/bin/fish', () => {
-      Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
-      process.env.SHELL = '/usr/bin/fish';
-
-      const result = shellInvocation('ccb oauth usage --json');
-
-      expect(result.shell).toBe('/bin/sh');
-      expect(result.args).toEqual(['-l', '-i', '-c', 'ccb oauth usage --json']);
-    });
-
-    it('falls back to /bin/sh when SHELL is /opt/homebrew/bin/fish', () => {
-      Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
-      process.env.SHELL = '/opt/homebrew/bin/fish';
-
-      const result = shellInvocation('ccb oauth usage --json');
-
-      expect(result.shell).toBe('/bin/sh');
-      expect(result.args).toEqual(['-l', '-i', '-c', 'ccb oauth usage --json']);
-    });
-
-    it('uses SHELL as-is when SHELL is /bin/zsh', () => {
-      Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
-      process.env.SHELL = '/bin/zsh';
-
-      const result = shellInvocation('ccb oauth usage --json');
-
-      expect(result.shell).toBe('/bin/zsh');
-      expect(result.args).toEqual(['-l', '-i', '-c', 'ccb oauth usage --json']);
-    });
-
-    it('uses SHELL as-is when SHELL is /bin/bash', () => {
-      Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
-      process.env.SHELL = '/bin/bash';
-
-      const result = shellInvocation('ccb oauth usage --json');
-
-      expect(result.shell).toBe('/bin/bash');
-      expect(result.args).toEqual(['-l', '-i', '-c', 'ccb oauth usage --json']);
-    });
-
-    it('uses ComSpec (or cmd.exe) on Windows', () => {
-      Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
-      process.env.ComSpec = 'C:\\Windows\\System32\\cmd.exe';
-
-      const result = shellInvocation('ccb oauth usage --json');
-
-      expect(result.shell).toBe('C:\\Windows\\System32\\cmd.exe');
-      expect(result.args).toEqual(['/c', 'ccb oauth usage --json']);
-    });
-
-    it('falls back to cmd.exe when ComSpec is unset on Windows', () => {
-      Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
-      delete process.env.ComSpec;
-
-      const result = shellInvocation('ccb oauth usage --json');
-
-      expect(result.shell).toBe('cmd.exe');
-      expect(result.args).toEqual(['/c', 'ccb oauth usage --json']);
     });
   });
 

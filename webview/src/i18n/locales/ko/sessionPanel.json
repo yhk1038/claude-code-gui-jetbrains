@@ -7,6 +7,7 @@
   "empty": {
     "noMatches": "일치하는 세션이 없습니다",
     "noSessions": "아직 세션이 없습니다",
-    "noWebSessions": "웹 세션이 없습니다"
+    "noWebSessions": "웹 세션이 없습니다",
+    "wslHostMismatch": "이 프로젝트는 WSL 안에 있습니다. 지난 대화를 보려면 WSL 셸에서 여세요(`ccg` 실행)."
   }
 }

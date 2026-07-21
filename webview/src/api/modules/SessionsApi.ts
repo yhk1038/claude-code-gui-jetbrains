@@ -4,6 +4,23 @@ import { SessionMetaDto } from '../../dto';
 import type { ApiConfig } from '../ClaudeCodeApi';
 import { MessageType } from '@/shared';
 
+/**
+ * A non-fatal reason the backend could not list sessions for this working dir.
+ * Currently only WSL_HOST_MISMATCH: a Windows-native backend was handed a WSL
+ * UNC project path, so the session files live under a Linux home it can't map.
+ * The panel renders guidance from this instead of a bare "No sessions yet". (#175)
+ */
+export interface SessionServiceError {
+  type: MessageType;
+  reason: string;
+}
+
+/** Result of listing sessions: the sessions plus an optional non-fatal notice. */
+export interface SessionListResult {
+  sessions: SessionMetaDto[];
+  serviceError?: SessionServiceError;
+}
+
 interface GetSessionsResponse {
   sessions: {
     sessionId: string;
@@ -15,6 +32,7 @@ interface GetSessionsResponse {
     projectPath?: string;
     gitBranch?: string;
   }[];
+  serviceError?: SessionServiceError;
 }
 
 /**
@@ -34,7 +52,7 @@ export class SessionsApi {
    * List all sessions
    * GET /sessions
    */
-  async index(workingDir?: string): Promise<SessionMetaDto[]> {
+  async index(workingDir?: string): Promise<SessionListResult> {
     const dir = workingDir ?? this.getConfig().workingDir;
     const response = await this.bridge.request<GetSessionsResponse>(
       MessageType.GET_SESSIONS,
@@ -42,10 +60,13 @@ export class SessionsApi {
     );
 
     if (!response?.sessions || !Array.isArray(response.sessions)) {
-      return [];
+      return { sessions: [] };
     }
 
-    return plainToInstance(SessionMetaDto, response.sessions);
+    const sessions = plainToInstance(SessionMetaDto, response.sessions);
+    return response.serviceError
+      ? { sessions, serviceError: response.serviceError }
+      : { sessions };
   }
 
   /**
