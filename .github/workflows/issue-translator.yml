@@ -1,0 +1,32 @@
+name: Issue Translator
+
+# Automatically translates non-English issues and comments (e.g. Chinese) into
+# English and posts the translation as a reply comment. The original content is
+# left untouched. Runs entirely on GitHub Actions with the built-in GITHUB_TOKEN
+# (no API key, no external server required).
+#
+# Powered by dromara/issues-translate-action.
+
+on:
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+
+permissions:
+  # Needed so the action can post the translation as a comment.
+  issues: write
+  pull-requests: write
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Translate to English
+        uses: dromara/issues-translate-action@v2.7
+        with:
+          # Keep the original issue title as-is; only add a translated comment.
+          # Set to true only if a bot account with edit permission is configured.
+          IS_MODIFY_TITLE: false
+          # Prefix line shown above the auto-generated translation.
+          CUSTOM_BOT_NOTE: "Bot detected the issue body's language is not English, translating it automatically."
