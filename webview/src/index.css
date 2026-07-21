@@ -83,6 +83,13 @@
    Semantic Color Tokens — Light (default :root)
    ============================================ */
 :root {
+  /* Tell the UA to paint its built-in widgets (scrollbars, form controls,
+     spellcheck underlines) with the light palette. Without this the browser
+     defaults to light regardless of our tokens — harmless on macOS overlay
+     scrollbars, but on Windows/Linux Chromium & JCEF the classic scrollbar is
+     always drawn, so it renders light-on-dark in dark mode (issue #200). */
+  color-scheme: light;
+
   /* Surface
      Solid tokens carry an `-rgb` channel source (space-separated R G B) so
      Tailwind utilities can apply `/NN` opacity modifiers. The legacy hex name
@@ -219,6 +226,11 @@
    Semantic Color Tokens — Dark
    ============================================ */
 .dark {
+  /* Dark counterpart of the :root declaration — makes the UA render scrollbars
+     and other built-in widgets with the dark palette, fixing the light
+     scrollbar seen on Windows/Linux Chromium & JCEF in dark mode (issue #200). */
+  color-scheme: dark;
+
   --surface-base-rgb:    26 26 26;
   --surface-base:        rgb(var(--surface-base-rgb));
   --surface-raised-rgb:  30 30 33;
