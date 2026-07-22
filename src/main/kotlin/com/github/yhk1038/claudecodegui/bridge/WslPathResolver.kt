@@ -120,8 +120,13 @@ object WslPathResolver {
      * - The leading `wsl.exe` is resolved on the Windows PATH (System32).
      * - Everything after `--` runs inside the distro, so `bash`/`node` are the distro's.
      * - [env] entries become `export K=V` inside the login shell, so they reach `node` as
-     *   process env vars (no WSLENV needed). `exec` replaces the bash process so signals
-     *   from the IDE reach `node` directly.
+     *   process env vars. `exec` replaces the bash process so signals from the IDE reach
+     *   `node` directly. SECURITY: put only NON-secret values in [env] — a `bash -lic
+     *   "export K=V …"` snippet is passed on the wsl.exe argv, which is world-readable via
+     *   `ps` / /proc/<pid>/cmdline on a multi-user host. Secrets (the auth token, the
+     *   pairing code) must instead be handed to WSL out-of-band via `WSLENV` + the wsl.exe
+     *   process environment, where /proc/<pid>/environ is owner-only. See the WSL branch of
+     *   NodeProcessManager.start().
      * - [scriptLinuxPath] must already be a WSL-visible path (use [toWslPath] on the
      *   Windows extraction path). [nodeExec] defaults to `node` (resolved on the distro's
      *   login + interactive shell PATH).
