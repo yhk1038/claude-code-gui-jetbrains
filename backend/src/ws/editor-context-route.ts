@@ -73,11 +73,17 @@ export function handleEditorContextRequest(
     workingDir: typeof parsed.workingDir === 'string' ? parsed.workingDir : '',
   };
 
+  // What the launcher (Kotlin) should reveal on this Alt+K, decided from the
+  // most-recently-focused live panel: focus a JCEF tab, do nothing for a browser
+  // tab, or open a fresh tab when nothing is focused. Computed before routing (it
+  // only reads state) so the HTTP caller gets it in the same round-trip.
+  const revealTarget = connections.getRevealTarget();
+
   if (connections.getConnectionCount() > 0) {
     connections.routeToFocusedOrBroadcast(EDITOR_CONTEXT_MESSAGE, payload);
   } else {
     connections.setPendingEditorContext(payload);
   }
 
-  return { status: 200, body: { success: true } };
+  return { status: 200, body: { success: true, revealTarget } };
 }

@@ -13,10 +13,14 @@ import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.net.HttpURLConnection
 import java.net.URI
 
@@ -165,16 +169,18 @@ class SendSelectionToClaudeAction : AnAction() {
         val backendKey = project.basePath ?: workingDir ?: ""
         backend.ensureStarted(backendKey, transientPanelId, NoopRpcHandler)
 
-        // Focus an already-open Claude Code tab, or open one if none — host-aware,
-        // so tool-window mode focuses the existing panel instead of spawning a new
-        // editor tab (issue #180). Must run on the EDT.
-        focusOrOpenClaudeTab(project)
-
+        // Send the mention, THEN reveal based on the backend's answer. The mention
+        // routes to the last-focused panel (browser or JCEF); the response's
+        // revealTarget tells us what to reveal in the IDE — focus that JCEF tab, do
+        // nothing for a browser tab, or open a fresh tab when nothing is focused
+        // (ConnectionManager.getRevealTarget). Reveal used to be unconditional,
+        // which popped an IDE tab even when the active Claude was a browser tab.
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val port = backend.awaitPort(backendKey)
                 // /internal routes require the stable token (Phase 1 defense-in-depth).
-                postJson(port, "/internal/editor-context", payload, backend.authToken(backendKey))
+                val response = postJson(port, "/internal/editor-context", payload, backend.authToken(backendKey))
+                revealFromResponse(project, response)
             } catch (ex: Exception) {
                 logger.warn("Failed to send editor context to backend", ex)
             } finally {
@@ -183,19 +189,39 @@ class SendSelectionToClaudeAction : AnAction() {
         }
     }
 
-    private fun focusOrOpenClaudeTab(project: Project) {
+    /**
+     * Reveal in the IDE according to the backend's revealTarget, on the EDT:
+     *   - jcef    → focus/open that exact panel (panelId == tabId after unification);
+     *               host-aware, so a hidden tool-window panel is reopened and focused.
+     *   - browser → do nothing; the active Claude is a browser tab (the mention
+     *               already routed there via routeToFocusedOrBroadcast).
+     *   - none    → nothing was focused/alive, so open a fresh tab (host-aware).
+     */
+    private fun revealFromResponse(project: Project, response: String?) {
+        var kind = "none"
+        var panelId: String? = null
+        if (response != null) {
+            try {
+                val revealTarget = Json.parseToJsonElement(response).jsonObject["revealTarget"]?.jsonObject
+                if (revealTarget != null) {
+                    kind = revealTarget["kind"]?.jsonPrimitive?.content ?: "none"
+                    panelId = revealTarget["panelId"]?.jsonPrimitive?.contentOrNull
+                }
+            } catch (ex: Exception) {
+                logger.warn("Failed to parse editor-context revealTarget; opening host default", ex)
+            }
+        }
+        val targetPanelId = panelId
         ApplicationManager.getApplication().invokeLater {
-            // Reuse the host-aware open-or-focus. This previously scanned
-            // FileEditorManager.openFiles, which only sees EDITOR tabs — in
-            // tool-window mode the Claude panel is not an open file, so it always
-            // fell through to spawning a brand-new editor tab (issue #180).
-            // ChatHostRouter.planOpen (inside openOrFocus) handles both hosts and
-            // focuses the already-open panel, including an uninitialized-session one.
-            OpenClaudeCodeAction.openOrFocus(project)
+            when {
+                kind == "jcef" && targetPanelId != null -> OpenClaudeCodeAction.openTab(project, targetPanelId)
+                kind == "browser" -> Unit // active Claude is a browser tab — leave the IDE alone
+                else -> OpenClaudeCodeAction.openOrFocus(project)
+            }
         }
     }
 
-    private fun postJson(port: Int, path: String, payload: JsonObject, authToken: String?) {
+    private fun postJson(port: Int, path: String, payload: JsonObject, authToken: String?): String? {
         val url = URI("http://127.0.0.1:$port$path").toURL()
         val conn = url.openConnection() as HttpURLConnection
         try {
@@ -208,9 +234,10 @@ class SendSelectionToClaudeAction : AnAction() {
             // on the /internal routes (mirrors backend HTTP_AUTH_HEADER). Never logged.
             if (!authToken.isNullOrEmpty()) conn.setRequestProperty("x-ccg-token", authToken)
             conn.outputStream.use { it.write(payload.toString().toByteArray(Charsets.UTF_8)) }
-            // Fire-and-forget: read the response code only to flush the request.
             val code = conn.responseCode
             logger.info("POST $path returned HTTP $code")
+            // Return the JSON body on success so the caller can act on revealTarget.
+            return if (code in 200..299) conn.inputStream.bufferedReader().use { it.readText() } else null
         } finally {
             conn.disconnect()
         }

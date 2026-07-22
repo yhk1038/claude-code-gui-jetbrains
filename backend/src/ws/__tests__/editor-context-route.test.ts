@@ -61,7 +61,7 @@ describe('handleEditorContextRequest', () => {
     const result = handleEditorContextRequest(cm, body);
 
     expect(result.status).toBe(200);
-    expect(result.body).toEqual({ success: true });
+    expect(result.body).toEqual({ success: true, revealTarget: { kind: 'none' } });
     expect(ws.send).toHaveBeenCalledTimes(1);
     const sent = JSON.parse((ws.send as ReturnType<typeof vi.fn>).mock.calls[0][0]);
     expect(sent.type).toBe(MessageType.EDITOR_CONTEXT);
@@ -71,6 +71,22 @@ describe('handleEditorContextRequest', () => {
       startLine: 10,
       endLine: 25,
       workingDir: '/abs',
+    });
+  });
+
+  it('reports the focused JCEF panel as the reveal target', () => {
+    const cm = new ConnectionManager();
+    cm.addConnection(createMockWs(), ClientEnv.JETBRAINS, 'panel-1');
+    cm.setLastFocusedPanelId('panel-1');
+
+    const result = handleEditorContextRequest(
+      cm,
+      JSON.stringify({ absolutePath: '/abs/f.ts', relativePath: 'f.ts' }),
+    );
+
+    expect(result.body).toEqual({
+      success: true,
+      revealTarget: { kind: 'jcef', panelId: 'panel-1' },
     });
   });
 
@@ -88,7 +104,7 @@ describe('handleEditorContextRequest', () => {
     const result = handleEditorContextRequest(cm, body);
 
     expect(result.status).toBe(200);
-    expect(result.body).toEqual({ success: true });
+    expect(result.body).toEqual({ success: true, revealTarget: { kind: 'none' } });
     expect(setPending).toHaveBeenCalledTimes(1);
     expect(setPending).toHaveBeenCalledWith({
       absolutePath: '/abs/src/file.ts',

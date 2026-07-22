@@ -313,13 +313,14 @@ describe('ConnectionManager', () => {
     });
   });
 
-  // The last-focused panel is the routing target for panel-scoped pushes
-  // (editor-context / ide-selection). Keyed by the stable panelId reported via
-  // PANEL_FOCUSED, it mirrors lastIdeSelection: no TTL, kept until superseded —
-  // but additionally cleared when the focused panel's connection is removed so
-  // routeToFocusedOrBroadcast never targets a dead connection.
+  // Panel-scoped pushes (editor-context / ide-selection) route to the TOP of a
+  // focus-history STACK reported via PANEL_FOCUSED. Dead panels are pruned on push
+  // and on removeConnection, so the top is always live and the panel focused
+  // before a dead one resurfaces. getLastFocusedPanelId therefore requires a live
+  // connection for the id (a focus for a panel with no connection is pruned away).
   describe('last focused panel routing', () => {
-    it('should round-trip setLastFocusedPanelId / getLastFocusedPanelId', () => {
+    it('should round-trip setLastFocusedPanelId / getLastFocusedPanelId (live panel)', () => {
+      cm.addConnection(createMockWs(), ClientEnv.JETBRAINS, 'panel-1');
       cm.setLastFocusedPanelId('panel-1');
       expect(cm.getLastFocusedPanelId()).toBe('panel-1');
     });
@@ -328,10 +329,39 @@ describe('ConnectionManager', () => {
       expect(cm.getLastFocusedPanelId()).toBeNull();
     });
 
-    it('should overwrite an earlier focused panel with the latest one', () => {
+    it('should surface the most-recently focused live panel (stack top)', () => {
+      cm.addConnection(createMockWs(), ClientEnv.JETBRAINS, 'panel-1');
+      cm.addConnection(createMockWs(), ClientEnv.JETBRAINS, 'panel-2');
       cm.setLastFocusedPanelId('panel-1');
       cm.setLastFocusedPanelId('panel-2');
       expect(cm.getLastFocusedPanelId()).toBe('panel-2');
+    });
+
+    it('surfaces the previously-focused live panel after the top panel dies', () => {
+      cm.addConnection(createMockWs(), ClientEnv.JETBRAINS, 'panel-1');
+      const c2 = cm.addConnection(createMockWs(), ClientEnv.JETBRAINS, 'panel-2');
+      cm.setLastFocusedPanelId('panel-1');
+      cm.setLastFocusedPanelId('panel-2'); // top = panel-2
+      cm.removeConnection(c2); // panel-2 dies → pruned
+      expect(cm.getLastFocusedPanelId()).toBe('panel-1'); // predecessor resurfaces
+    });
+
+    describe('getRevealTarget', () => {
+      it('returns jcef + panelId when the top focused panel is a JCEF connection', () => {
+        cm.addConnection(createMockWs(), ClientEnv.JETBRAINS, 'panel-1');
+        cm.setLastFocusedPanelId('panel-1');
+        expect(cm.getRevealTarget()).toEqual({ kind: 'jcef', panelId: 'panel-1' });
+      });
+
+      it('returns browser when the top focused panel is a browser connection', () => {
+        cm.addConnection(createMockWs(), ClientEnv.BROWSER, 'panel-b');
+        cm.setLastFocusedPanelId('panel-b');
+        expect(cm.getRevealTarget()).toEqual({ kind: 'browser' });
+      });
+
+      it('returns none when nothing is focused/live', () => {
+        expect(cm.getRevealTarget()).toEqual({ kind: 'none' });
+      });
     });
 
     it('should clear lastFocusedPanelId when the focused panel connection is removed', () => {
