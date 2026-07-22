@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { JetBrainsBridge, parseProjectRoots } from '../jetbrains-bridge';
+import { JetBrainsBridge, parseProjectRoots, redactRpcLog } from '../jetbrains-bridge';
 import { MessageType } from '../../shared';
 import * as settings from '../../core/features/settings';
 
@@ -170,5 +170,44 @@ describe('JetBrainsBridge connect-time hostMode push', () => {
     const msg = sentMessage(ws);
     expect(msg?.method).toBe(MessageType.HOST_MODE_CHANGED);
     expect(msg?.params).toEqual({ hostMode: 'tool-window' });
+  });
+});
+
+describe('redactRpcLog', () => {
+  const req = (method: string, params: Record<string, unknown>) =>
+    ({ jsonrpc: '2.0' as const, id: 'rpc-7', method, params });
+
+  it('masks the pairing code carried in an OPEN_URL url', () => {
+    const url =
+      'http://localhost:33741/sessions/abc?workingDir=%2F%2Fwsl.localhost%2FUbuntu&pair=23C0UmxnhcediFn6MRYLr_a-I9kDBtxt';
+    const out = redactRpcLog(req('OPEN_URL', { url }));
+    expect(out).not.toContain('23C0UmxnhcediFn6MRYLr_a-I9kDBtxt');
+    expect(out).toContain('pair=<redacted>');
+  });
+
+  it('masks a pairing code that is the first query param', () => {
+    const out = redactRpcLog(req('OPEN_URL', { url: 'https://x.trycloudflare.com/?pair=SECRET123' }));
+    expect(out).not.toContain('SECRET123');
+    expect(out).toContain('pair=<redacted>');
+  });
+
+  it('defensively masks a token query param too', () => {
+    const out = redactRpcLog(req('OPEN_URL', { url: 'http://h/p?token=deadbeefcafe' }));
+    expect(out).not.toContain('deadbeefcafe');
+    expect(out).toContain('token=<redacted>');
+  });
+
+  it('preserves non-secret fields (method, id, workingDir)', () => {
+    const out = redactRpcLog(
+      req('OPEN_URL', { url: 'http://localhost:33741/s?workingDir=%2Fhome%2Fu&pair=abc' }),
+    );
+    expect(out).toContain('"method":"OPEN_URL"');
+    expect(out).toContain('"id":"rpc-7"');
+    expect(out).toContain('workingDir=%2Fhome%2Fu');
+  });
+
+  it('leaves a request without secrets structurally intact', () => {
+    const r = req('GET_IDE_ROOT', { workingDir: '//wsl.localhost/Ubuntu/home/yhk/proj' });
+    expect(redactRpcLog(r)).toBe(JSON.stringify(r));
   });
 });

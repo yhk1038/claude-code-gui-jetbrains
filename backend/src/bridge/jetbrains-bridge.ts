@@ -167,7 +167,7 @@ export class JetBrainsBridge implements Bridge {
         params,
       };
 
-      console.error('[node-backend]', `[DEBUG:bridge.request] sending: ${JSON.stringify(request)}`);
+      console.error('[node-backend]', `[DEBUG:bridge.request] sending: ${redactRpcLog(request)}`);
       client.send(JSON.stringify(request) + '\n');
     });
   }
@@ -287,4 +287,18 @@ export function parseProjectRoots(params: Record<string, unknown> | undefined): 
   const roots = params?.['roots'];
   if (!Array.isArray(roots)) return [];
   return roots.filter((r): r is string => typeof r === 'string' && r.length > 0);
+}
+
+/**
+ * Serialize a JSON-RPC request for the debug log with bootstrap credentials
+ * masked. A single-use pairing code rides inside OPEN_URL's `params.url` as
+ * `?pair=<code>` — the credential the webview redeems for the stable control-channel
+ * token. Logging it verbatim would let anyone who can read the process logs
+ * (idea.log / stdout) redeem it first and hijack the token — the same class of
+ * secret leak that #208 closes for argv, via the log channel instead. Mirrors the
+ * Kotlin-side `pair=<redacted>` masking in ClaudeCodePanel's URL log. `token` is
+ * masked too as defense in depth.
+ */
+export function redactRpcLog(request: JsonRpcRequest): string {
+  return JSON.stringify(request).replace(/([?&](?:pair|token)=)[^"&\\]+/gi, '$1<redacted>');
 }
