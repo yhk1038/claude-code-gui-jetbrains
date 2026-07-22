@@ -1035,9 +1035,17 @@ class ClaudeCodePanel(
             workingDir = project.basePath,
             panelId = panelId,
             isBright = com.intellij.ui.JBColor.isBright(),
+            // Deliver the single-use pairing code to the webview out-of-band via the load
+            // URL. The webview reads it once, strips it from the address bar, and redeems
+            // it at POST /pair for the stable auth token (which it then attaches as the
+            // `ccg-auth` subprotocol) — the token itself is NEVER placed in the URL.
+            // NEVER logged — buildWebViewUrl is not passed to any logger below.
+            pairCode = backendService.initialPairCode(project.basePath ?: ""),
         )
-        System.err.println("[ClaudeCodePanel] Loading URL: $url")
-        logger.info("Loading WebView from Node.js backend: $url")
+        // Redact the pairing code (and any token) from any log — they are secrets.
+        val loggedUrl = redactUrlSecrets(url)
+        System.err.println("[ClaudeCodePanel] Loading URL: $loggedUrl")
+        logger.info("Loading WebView from Node.js backend: $loggedUrl")
 
         javax.swing.SwingUtilities.invokeLater {
             val b = browser!!
@@ -1479,6 +1487,12 @@ class ClaudeCodePanel(
  *   - `theme`      — `light` | `dark`, derived from the IDE LAF ([isBright]).
  *                    Consumed by the FOUC guard in webview/index.html to paint
  *                    the right surface color before CSS/React load.
+ *   - `pair`       — single-use initial pairing code (omitted when null/blank).
+ *                    Out-of-band delivery of the code the webview redeems once (POST
+ *                    /pair) for the auth token, which it then attaches to its ws
+ *                    connections as the `ccg-auth` subprotocol. The auth token itself
+ *                    is NEVER placed in a URL. MUST still be redacted (see
+ *                    [redactUrlSecrets]) before the URL is ever logged.
  */
 internal fun buildWebViewUrl(
     port: Int,
@@ -1486,15 +1500,28 @@ internal fun buildWebViewUrl(
     workingDir: String?,
     panelId: String,
     isBright: Boolean,
+    pairCode: String? = null,
 ): String {
     val workingDirParam = workingDir?.let {
         "workingDir=${java.net.URLEncoder.encode(it, "UTF-8")}"
     }
     val panelParam = "panelId=${java.net.URLEncoder.encode(panelId, "UTF-8")}"
     val themeParam = "theme=${if (isBright) "light" else "dark"}"
-    val query = listOfNotNull(workingDirParam, panelParam, themeParam).joinToString("&")
+    val pairParam = pairCode?.takeIf { it.isNotBlank() }?.let {
+        "pair=${java.net.URLEncoder.encode(it, "UTF-8")}"
+    }
+    val query = listOfNotNull(workingDirParam, panelParam, themeParam, pairParam).joinToString("&")
     return "http://localhost:$port$pathSegment?$query"
 }
+
+/**
+ * Replace the value of a `token=` or `pair=` query param with `<redacted>` so a
+ * WebView URL can be logged without leaking the auth token or the single-use pairing
+ * code. Matches `?token=`/`&token=` and `?pair=`/`&pair=` up to the next `&` (or end
+ * of string). Pure string transform, unit-testable.
+ */
+internal fun redactUrlSecrets(url: String): String =
+    url.replace(Regex("([?&](?:token|pair)=)[^&]*"), "$1<redacted>")
 
 internal fun resolveFileUriPath(raw: String): String? {
     return runCatching {

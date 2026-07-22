@@ -68,6 +68,7 @@ import { tunnelStartHandler } from './tunnelStart';
 import { tunnelStopHandler } from './tunnelStop';
 import { getTunnelStatusHandler } from './getTunnelStatus';
 import { getTunnelPrereqsHandler } from './getTunnelPrereqs';
+import { issueTunnelPairingHandler } from './issueTunnelPairing';
 import { installCloudflaredHandler } from './installCloudflared';
 import { sleepGuardEnableHandler } from './sleepGuardEnable';
 import { sleepGuardDisableHandler } from './sleepGuardDisable';
@@ -304,6 +305,9 @@ export async function handleMessage(
       break;
     case MessageType.GET_TUNNEL_PREREQS:
       await getTunnelPrereqsHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.ISSUE_TUNNEL_PAIRING:
+      await issueTunnelPairingHandler(connectionId, message, connections, bridge);
       break;
     case MessageType.INSTALL_CLOUDFLARED:
       await installCloudflaredHandler(connectionId, message, connections, bridge);

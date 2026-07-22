@@ -114,4 +114,112 @@ class BuildWebViewUrlTest {
             assertTrue(url.startsWith("http://localhost:9/sessions/abc?"), "got: $url")
         }
     }
+
+    @Nested
+    inner class PairParam {
+        @Test
+        fun `omits pair param when pairCode is null`() {
+            val url = buildWebViewUrl(
+                port = 1,
+                pathSegment = "/sessions/new",
+                workingDir = null,
+                panelId = "p1",
+                isBright = true,
+                pairCode = null,
+            )
+            assertFalse(url.contains("pair="), "got: $url")
+        }
+
+        @Test
+        fun `omits pair param when pairCode is blank`() {
+            val url = buildWebViewUrl(
+                port = 1,
+                pathSegment = "/sessions/new",
+                workingDir = null,
+                panelId = "p1",
+                isBright = true,
+                pairCode = "  ",
+            )
+            assertFalse(url.contains("pair="), "got: $url")
+        }
+
+        @Test
+        fun `never emits a token param even when a pair code is present`() {
+            val url = buildWebViewUrl(
+                port = 9,
+                pathSegment = "/sessions/new",
+                workingDir = "/tmp",
+                panelId = "p1",
+                isBright = false,
+                pairCode = "abc123",
+            )
+            assertFalse(url.contains("token="), "the auth token must never appear in the URL: $url")
+        }
+
+        @Test
+        fun `appends pair as the last param after theme`() {
+            val url = buildWebViewUrl(
+                port = 9,
+                pathSegment = "/sessions/new",
+                workingDir = "/tmp",
+                panelId = "p1",
+                isBright = false,
+                pairCode = "abc123",
+            )
+            assertEquals(
+                "http://localhost:9/sessions/new?workingDir=%2Ftmp&panelId=p1&theme=dark&pair=abc123",
+                url,
+            )
+        }
+
+        @Test
+        fun `url-encodes the pair code`() {
+            val url = buildWebViewUrl(
+                port = 9,
+                pathSegment = "/sessions/new",
+                workingDir = null,
+                panelId = "p1",
+                isBright = false,
+                pairCode = "a+b/c=",
+            )
+            assertTrue(url.contains("pair=a%2Bb%2Fc%3D"), "got: $url")
+        }
+    }
+
+    @Nested
+    inner class RedactUrlSecrets {
+        @Test
+        fun `redacts pair value when present`() {
+            val redacted = redactUrlSecrets(
+                "http://localhost:9/sessions/new?workingDir=%2Ftmp&panelId=p1&theme=dark&pair=deadbeef",
+            )
+            assertEquals(
+                "http://localhost:9/sessions/new?workingDir=%2Ftmp&panelId=p1&theme=dark&pair=<redacted>",
+                redacted,
+            )
+        }
+
+        @Test
+        fun `redacts token value when present`() {
+            val redacted = redactUrlSecrets(
+                "http://localhost:9/sessions/new?workingDir=%2Ftmp&panelId=p1&theme=dark&token=deadbeef",
+            )
+            assertEquals(
+                "http://localhost:9/sessions/new?workingDir=%2Ftmp&panelId=p1&theme=dark&token=<redacted>",
+                redacted,
+            )
+        }
+
+        @Test
+        fun `redacts pair when it is the first query param`() {
+            val redacted = redactUrlSecrets("http://localhost:9/?pair=secret&foo=bar")
+            assertEquals("http://localhost:9/?pair=<redacted>&foo=bar", redacted)
+        }
+
+        @Test
+        fun `leaves urls without a secret untouched`() {
+            val url = "http://localhost:9/sessions/new?workingDir=%2Ftmp&panelId=p1&theme=dark"
+            assertEquals(url, redactUrlSecrets(url))
+        }
+    }
 }

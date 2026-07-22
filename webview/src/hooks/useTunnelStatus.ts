@@ -1,12 +1,24 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useBridge } from './useBridge';
 import type { TunnelErrorCode } from './tunnelError';
+import { buildRemotePairUrl } from './buildRemotePairUrl';
 import { MessageType } from '@/shared';
 
 interface TunnelStatus {
   tunnelEnabled: boolean;
   tunnelUrl: string | null;
   tunnelLoading: boolean;
+  /**
+   * The QR pairing URL for the running tunnel, or null until issued. Built as
+   * `<tunnel>/<current session path>?...&pair=<code>` so the scanning device opens
+   * the same session the user is viewing. Carries a short-lived single-use pairing
+   * code — NEVER the auth token. Rotated by issuePairing().
+   */
+  pairUrl: string | null;
+  /** True while a fresh pairing code is being issued. */
+  pairLoading: boolean;
+  /** Issue (or rotate) a fresh single-use pairing code and refresh pairUrl. */
+  issuePairing: () => Promise<void>;
   /** null until the prerequisite probe returns; false means cloudflared is missing. */
   cloudflaredAvailable: boolean | null;
   /** true when the user toggled on but cloudflared must be installed first. */
@@ -37,6 +49,29 @@ export function useTunnelStatus(): TunnelStatus {
   const [sleepLoading, setSleepLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<TunnelErrorCode | null>(null);
+  const [pairUrl, setPairUrl] = useState<string | null>(null);
+  const [pairLoading, setPairLoading] = useState(false);
+
+  // Issue (or rotate) a single-use pairing code and refresh the QR pairing URL.
+  // Only valid while the tunnel is running; errors are swallowed (the QR simply
+  // stays absent) so a transient failure never breaks the modal.
+  const issuePairing = useCallback(async () => {
+    setPairLoading(true);
+    try {
+      const res = await send(MessageType.ISSUE_TUNNEL_PAIRING, {});
+      const p = res.payload ?? res;
+      if (p.status === 'ok' && typeof p.pairUrl === 'string') {
+        // The backend returns `<tunnelOrigin>/?pair=<code>` (root path). Rebuild it
+        // onto the desktop's current session location so the scanning device opens
+        // the SAME session, not the project list. Token is never carried.
+        setPairUrl(buildRemotePairUrl(p.pairUrl, window.location.href));
+      }
+    } catch {
+      // leave pairUrl as-is; the modal shows a regenerate affordance
+    } finally {
+      setPairLoading(false);
+    }
+  }, [send]);
 
   // Start the tunnel unconditionally (caller has ensured cloudflared exists).
   const startTunnelNow = useCallback(async () => {
@@ -77,9 +112,12 @@ export function useTunnelStatus(): TunnelStatus {
   useEffect(() => {
     const unsubTunnel = subscribe(MessageType.TUNNEL_STATUS, (msg) => {
       const p = msg.payload as Record<string, unknown>;
-      setTunnelEnabled(p.enabled as boolean);
+      const enabled = p.enabled as boolean;
+      setTunnelEnabled(enabled);
       setTunnelUrl(p.url as string | null);
       setTunnelLoading(false);
+      // A stopped tunnel invalidates any pairing URL (the code is dead anyway).
+      if (!enabled) setPairUrl(null);
       if (p.error) {
         setError(p.error as string);
         setErrorCode((p.errorCode as TunnelErrorCode) ?? 'unknown');
@@ -165,6 +203,9 @@ export function useTunnelStatus(): TunnelStatus {
     tunnelEnabled,
     tunnelUrl,
     tunnelLoading,
+    pairUrl,
+    pairLoading,
+    issuePairing,
     cloudflaredAvailable,
     awaitingInstallConsent,
     installing,

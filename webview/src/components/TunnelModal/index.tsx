@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef, useMemo } from 'react';
-import { XMarkIcon, ClipboardDocumentIcon, ClipboardDocumentCheckIcon } from '@heroicons/react/24/outline';
+import { useEffect, useState, useRef } from 'react';
+import { XMarkIcon, ClipboardDocumentIcon, ClipboardDocumentCheckIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { QRCodeSVG } from 'qrcode.react';
 import { ToggleSwitch } from '@/components/ToggleSwitch';
 import { Portal } from '@/components/Portal';
@@ -18,6 +18,9 @@ export function TunnelModal(props: Props) {
     tunnelEnabled,
     tunnelUrl,
     tunnelLoading,
+    pairUrl,
+    pairLoading,
+    issuePairing,
     cloudflaredAvailable,
     awaitingInstallConsent,
     installing,
@@ -36,15 +39,14 @@ export function TunnelModal(props: Props) {
   const [elapsedSec, setElapsedSec] = useState(0);
   const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const fullTunnelUrl = useMemo(() => {
-    if (!tunnelUrl) return '';
-    const params = new URLSearchParams(window.location.search);
-    params.delete('env');
-    const search = params.toString() ? `?${params.toString()}` : '';
-    const pathname = window.location.pathname || '';
-    const hash = window.location.hash || '';
-    return `${tunnelUrl}${pathname}${search}${hash}`;
-  }, [tunnelUrl]);
+  // Once the tunnel is up, request a fresh single-use pairing code so the QR
+  // encodes `<tunnel>/?pair=<code>` (never the auth token). Re-issue happens via
+  // the regenerate button when the short-lived code expires.
+  useEffect(() => {
+    if (tunnelEnabled && tunnelUrl && !pairUrl && !pairLoading) {
+      issuePairing();
+    }
+  }, [tunnelEnabled, tunnelUrl, pairUrl, pairLoading, issuePairing]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -73,8 +75,8 @@ export function TunnelModal(props: Props) {
   }, [tunnelLoading, installing]);
 
   const handleCopy = () => {
-    if (!fullTunnelUrl) return;
-    navigator.clipboard.writeText(fullTunnelUrl).then(() => {
+    if (!pairUrl) return;
+    navigator.clipboard.writeText(pairUrl).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
@@ -142,11 +144,13 @@ export function TunnelModal(props: Props) {
             </div>
           )}
 
-          {/* URL + QR */}
-          {tunnelEnabled && fullTunnelUrl && (
+          {/* Pairing URL + QR — encodes a short-lived single-use pairing code
+              (?pair=), never the auth token. */}
+          {tunnelEnabled && pairUrl && (
             <div className="space-y-3">
+              <p className="text-xs text-text-tertiary">{t('tunnelModal.pairingHint')}</p>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-[0.8461rem] text-text-secondary flex-1 truncate">{fullTunnelUrl}</span>
+                <span className="font-mono text-[0.8461rem] text-text-secondary flex-1 truncate">{pairUrl}</span>
                 <button onClick={handleCopy} className="flex-shrink-0">
                   {copied
                     ? <ClipboardDocumentCheckIcon className="w-3 h-3 text-state-success-fg" />
@@ -156,9 +160,17 @@ export function TunnelModal(props: Props) {
               </div>
               <div className="flex justify-start">
                 <div className="bg-white p-3 rounded-lg">
-                  <QRCodeSVG value={fullTunnelUrl} size={100} bgColor="#ffffff" fgColor="#000000" />
+                  <QRCodeSVG value={pairUrl} size={100} bgColor="#ffffff" fgColor="#000000" />
                 </div>
               </div>
+              <button
+                onClick={() => issuePairing()}
+                disabled={pairLoading}
+                className="flex items-center gap-1.5 text-xs text-text-tertiary hover:text-text-secondary transition-colors disabled:opacity-50"
+              >
+                <ArrowPathIcon className={`w-3 h-3 ${pairLoading ? 'animate-spin' : ''}`} />
+                <span>{t('tunnelModal.regeneratePairing')}</span>
+              </button>
             </div>
           )}
 

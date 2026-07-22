@@ -73,6 +73,31 @@ class NodeProcessManager(
      * Null only in unit tests that never reach the extraction step.
      */
     private val resourcesReady: Deferred<ExtractedResources>? = null,
+    /**
+     * Stable control-channel auth token. Injected into the backend process as the
+     * `CCG_AUTH_TOKEN` env var so the backend's [authToken] picks it up and requires
+     * it on every /ws, /rpc, /logs upgrade and /internal POST routes. The SAME token
+     * is used by this backend's [RpcWebSocketClient] (/rpc subprotocol) and the
+     * IDE→backend /internal POSTs, so a single value gates the whole control channel.
+     * The token is NEVER placed in a URL — the JCEF webview obtains it by redeeming
+     * the single-use `?pair=` code (see [initialPairCode]). Derived from a persisted
+     * per-user secret by [com.github.yhk1038.claudecodegui.services.NodeBackendService],
+     * so it is STABLE across restarts (an already-loaded webview reconnects with the
+     * same value even after a backend respawn). NEVER logged. Empty only in unit
+     * tests that don't reach a real spawn.
+     */
+    private val authToken: String = "",
+    /**
+     * Fresh single-use INITIAL pairing code for this spawn. Injected into the backend
+     * process as the `CCG_INITIAL_PAIR_CODE` env var so the backend seeds its pairing
+     * store with it at startup; the JCEF webview then redeems it once (POST /pair) for
+     * [authToken]. This keeps the auth token out of every URL — the URL carries only
+     * `?pair=<code>`. Regenerated per spawn by the owning
+     * [com.github.yhk1038.claudecodegui.services.NodeBackendService] BackendInstance.
+     * NEVER logged (redacted from the WSL command log below). Empty only in unit tests
+     * that don't reach a real spawn.
+     */
+    private val initialPairCode: String = "",
 ) : Disposable {
 
     private val logger = Logger.getInstance(NodeProcessManager::class.java)
@@ -235,6 +260,14 @@ class NodeProcessManager(
                         put("JETBRAINS_MODE", "true")
                         put("CCG_CLIENT_INFO", clientInfo)
                         put("PORT", requestedPort.toString())
+                        // Stable control-channel auth token (see [authToken]). Required
+                        // by the backend on /ws, /rpc, /logs, /internal routes. Redacted from
+                        // the command log below.
+                        if (authToken.isNotEmpty()) put("CCG_AUTH_TOKEN", authToken)
+                        // Fresh single-use initial pairing code (see [initialPairCode]). The
+                        // backend seeds its pairing store with it; the webview redeems it via
+                        // `?pair=`. Redacted from the command log below.
+                        if (initialPairCode.isNotEmpty()) put("CCG_INITIAL_PAIR_CODE", initialPairCode)
                         webviewDir?.let { wv ->
                             WslPathResolver.toWslPath(wv.absolutePath)?.let { put("WEBVIEW_DIR", it) }
                         }
@@ -243,7 +276,20 @@ class NodeProcessManager(
                         // are pruned at extraction time by PluginResourceExtractor (#149).
                     }
                     val cmd = WslPathResolver.buildWslNodeCommand(wslDistro, wslCwd, wslEnv, linuxBackend)
-                    logger.info("Starting WSL backend (distro=$wslDistro, cwd=$wslCwd): ${cmd.joinToString(" ")}")
+                    // The WSL command embeds env as `export K=V`, so the token and pairing
+                    // code would appear in the joined command — redact both before logging
+                    // (never log the token or the pairing code).
+                    val redactedCmd = cmd.map { part ->
+                        var redacted = part
+                        if (authToken.isNotEmpty() && redacted.contains("CCG_AUTH_TOKEN=")) {
+                            redacted = redacted.replace(authToken, "<redacted>")
+                        }
+                        if (initialPairCode.isNotEmpty() && redacted.contains("CCG_INITIAL_PAIR_CODE=")) {
+                            redacted = redacted.replace(initialPairCode, "<redacted>")
+                        }
+                        redacted
+                    }
+                    logger.info("Starting WSL backend (distro=$wslDistro, cwd=$wslCwd): ${redactedCmd.joinToString(" ")}")
                     pb = ProcessBuilder(cmd).redirectErrorStream(false)
                 } else {
                     val env = buildMap {
@@ -270,6 +316,14 @@ class NodeProcessManager(
                         // and reports the real port via its PORT:{n} stdout line. Lets one
                         // backend per IDE project root coexist without a fixed-port clash (#57).
                         put("PORT", requestedPort.toString())
+                        // Stable control-channel auth token (see [authToken]). The backend
+                        // requires it on /ws, /rpc, /logs and the /internal routes. Set via the
+                        // env map (never logged — the native branch does not log the env).
+                        if (authToken.isNotEmpty()) put("CCG_AUTH_TOKEN", authToken)
+                        // Fresh single-use initial pairing code (see [initialPairCode]). The
+                        // backend seeds its pairing store with it so the webview can redeem it
+                        // (via `?pair=`) for the token. Set via the env map (never logged).
+                        if (initialPairCode.isNotEmpty()) put("CCG_INITIAL_PAIR_CODE", initialPairCode)
                         // PROJECT_DIR removed — workingDir is passed via WebSocket message
                     }
                     pb = ProcessBuilder(nodePath!!, backendFile.absolutePath)

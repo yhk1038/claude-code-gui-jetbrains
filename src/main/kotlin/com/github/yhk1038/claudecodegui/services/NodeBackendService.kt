@@ -86,6 +86,29 @@ class NodeBackendService : Disposable {
         private var nodeProcessManager: NodeProcessManager? = null
         private var rpcClient: RpcWebSocketClient? = null
 
+        /**
+         * Stable control-channel auth token for THIS root's backend. Derived from a
+         * persisted per-user secret (see [stableAuthToken]), so it is the SAME value on
+         * every launch and every respawn — the backend restarts frequently, and an
+         * already-loaded webview (which redeemed the token once via a pairing code) must
+         * still authenticate against the respawned backend without re-pairing. The
+         * launcher OWNS this token: it is handed to the node spawn (CCG_AUTH_TOKEN env),
+         * this backend's [RpcWebSocketClient] (`ccg-auth` /rpc subprotocol), and the
+         * IDE to backend /internal POSTs. It is NEVER placed in any URL and NEVER logged.
+         */
+        val authToken: String = stableAuthToken
+
+        /**
+         * Fresh single-use INITIAL pairing code for THIS root's backend, regenerated on
+         * every spawn ([start]). Injected into the node process (CCG_INITIAL_PAIR_CODE)
+         * so the backend seeds its pairing store with it, and embedded as `?pair=` in the
+         * JCEF load URL so the webview redeems it once (POST /pair) for [authToken]. This
+         * keeps the auth token out of every URL. NEVER logged.
+         */
+        @Volatile
+        var initialPairCode: String = ""
+            private set
+
         @Volatile
         var portDeferred = CompletableDeferred<Int>()
             private set
@@ -205,6 +228,11 @@ class NodeBackendService : Disposable {
             // A WSL project root (UNC basePath) runs its backend inside the distro so
             // node/claude execute as Linux natives (issue #57); a native root runs locally.
             val wsl = WslPathResolver.parseUncPath(basePath)
+            // Fresh single-use pairing code for this (re)spawn. Seeded into the node
+            // process (CCG_INITIAL_PAIR_CODE) and embedded as `?pair=` in the JCEF URL,
+            // so the webview redeems it for the stable token instead of the token ever
+            // appearing in a URL. Regenerated per spawn; the value is never logged.
+            initialPairCode = generateInitialPairCode()
             val manager = NodeProcessManager(
                 scope,
                 // Reuse the last bound port on respawn (0 only on first start) so a WebView
@@ -221,6 +249,12 @@ class NodeBackendService : Disposable {
                 // Shared extraction gate: the manager awaits this instead of extracting its
                 // own temp dir, so all backend generations share one live dir (#149).
                 resourcesReady = resourcesReady,
+                // Stable control-channel token — injected into the node process as
+                // CCG_AUTH_TOKEN so it requires the token on every /ws, /rpc, /logs upgrade.
+                authToken = authToken,
+                // Fresh single-use pairing code — injected as CCG_INITIAL_PAIR_CODE so the
+                // backend seeds its pairing store; the webview redeems it via `?pair=`.
+                initialPairCode = initialPairCode,
             )
             nodeProcessManager = manager
             manager.start()
@@ -260,6 +294,9 @@ class NodeBackendService : Disposable {
                 // for synchronous host routing (issue #7). The method literal mirrors the
                 // shared MessageType enum on the TS side.
                 onNotification = ::handleRpcNotification,
+                // Same per-launch token the node process was spawned with — attached as
+                // the `ccg-auth` subprotocol so the /rpc upgrade passes Phase 1 auth.
+                authToken = authToken,
             )
             rpcClient = client
             client.connect(port)
@@ -352,6 +389,25 @@ class NodeBackendService : Disposable {
             ?: error("No backend registered for project root: $projectBasePath")).awaitPort()
 
     /**
+     * The stable control-channel auth token of the backend serving [projectBasePath],
+     * or null when no backend is registered for that root. Used by this backend's
+     * [RpcWebSocketClient] (`ccg-auth` /rpc subprotocol) and the IDE to backend
+     * /internal POSTs (`x-ccg-token` header) so they authenticate against the same
+     * token the backend was spawned with. It is NEVER placed in a URL — the webview
+     * obtains it by redeeming [initialPairCode]. Never logged by callers.
+     */
+    fun authToken(projectBasePath: String): String? = backends[projectBasePath]?.authToken
+
+    /**
+     * The fresh single-use initial pairing code of the backend serving
+     * [projectBasePath], or null when no backend is registered for that root. The JCEF
+     * load URL embeds this as `?pair=`; the webview redeems it once at POST /pair for
+     * the stable auth token, keeping the token out of every URL. Regenerated on each
+     * spawn. Never logged by callers.
+     */
+    fun initialPairCode(projectBasePath: String): String? = backends[projectBasePath]?.initialPairCode
+
+    /**
      * Most recent backend stderr for [projectBasePath], or null when none. Used to
      * attach a concrete cause to a start failure/timeout error panel. See issue #97.
      */
@@ -428,7 +484,113 @@ class NodeBackendService : Disposable {
     }
 
     companion object {
+        private val companionLogger = Logger.getInstance(NodeBackendService::class.java)
+
         fun getInstance(): NodeBackendService =
             ApplicationManager.getApplication().getService(NodeBackendService::class.java)
+
+        /**
+         * Stable control-channel auth token for this user: `HMAC-SHA256(secret,
+         * "ccg-auth")` as 64 lowercase hex chars, where `secret` is a persisted random
+         * value (see [loadOrCreateAuthSecret]). Because the secret survives on disk, the
+         * derived token is the SAME on every launch and every backend respawn — which is
+         * exactly what lets an already-loaded webview reconnect to a restarted backend
+         * without re-pairing. The launcher owns this token and injects it into the node
+         * process via CCG_AUTH_TOKEN. Computed once per process (lazy). NEVER logged.
+         */
+        val stableAuthToken: String by lazy { deriveAuthToken(loadOrCreateAuthSecret()) }
+
+        /**
+         * On-disk location of the per-user auth secret. Mirrors the plugin config dir
+         * (SettingsManager persists `~/.claude-code-gui/settings.js`), so we keep the
+         * secret alongside it at `~/.claude-code-gui/auth-secret`. The TOKEN itself is
+         * derived from this secret and never written to disk.
+         */
+        private fun authSecretPath(): java.nio.file.Path =
+            java.nio.file.Path.of(System.getProperty("user.home"), ".claude-code-gui", "auth-secret")
+
+        /**
+         * Read the persisted secret, or create it (0600) on first use. Stored as a
+         * lowercase-hex string so it is shell-safe and byte-for-byte interoperable with
+         * the ccg CLI's openssl-based HMAC (both HMAC over the hex string). Returns the
+         * secret's UTF-8 bytes. Any I/O failure falls back to a fresh in-memory secret
+         * for this process (a per-process token, rather than crashing). NEVER logged.
+         */
+        private fun loadOrCreateAuthSecret(): ByteArray {
+            val path = authSecretPath()
+            try {
+                if (java.nio.file.Files.exists(path)) {
+                    val existing = java.nio.file.Files.readAllBytes(path)
+                        .toString(Charsets.UTF_8).trim()
+                    if (existing.isNotEmpty()) return existing.toByteArray(Charsets.UTF_8)
+                }
+            } catch (e: Exception) {
+                companionLogger.warn("Could not read auth secret; regenerating")
+            }
+            val raw = ByteArray(32)
+            java.security.SecureRandom().nextBytes(raw)
+            val hex = raw.joinToString("") { "%02x".format(it) }
+            try {
+                java.nio.file.Files.createDirectories(path.parent)
+                java.nio.file.Files.write(path, hex.toByteArray(Charsets.UTF_8))
+                restrictToOwner(path)
+            } catch (e: Exception) {
+                companionLogger.warn("Could not persist auth secret; using an in-memory secret this session")
+            }
+            return hex.toByteArray(Charsets.UTF_8)
+        }
+
+        /**
+         * Best-effort 0600 on the secret file. Uses POSIX permissions where supported;
+         * on Windows / non-POSIX filesystems POSIX perms are unavailable, so fall back to
+         * the owner-only File flags and never fail. Public JDK APIs only (Plugin Verifier
+         * stays clean).
+         */
+        private fun restrictToOwner(path: java.nio.file.Path) {
+            try {
+                java.nio.file.Files.setPosixFilePermissions(
+                    path,
+                    java.nio.file.attribute.PosixFilePermissions.fromString("rw-------"),
+                )
+                return
+            } catch (_: UnsupportedOperationException) {
+                // Non-POSIX filesystem (e.g. Windows) — fall through to the File API.
+            } catch (_: Exception) {
+                return
+            }
+            try {
+                val f = path.toFile()
+                f.setReadable(false, false); f.setReadable(true, true)
+                f.setWritable(false, false); f.setWritable(true, true)
+            } catch (_: Exception) {
+                // best-effort only
+            }
+        }
+
+        /**
+         * Derive the stable token: `HMAC-SHA256(secret, "ccg-auth")` as 64 lowercase hex
+         * chars. Uses only public JDK crypto (javax.crypto.Mac "HmacSHA256") — no
+         * Internal/impl platform API, so the marketplace Plugin Verifier stays clean.
+         */
+        private fun deriveAuthToken(secret: ByteArray): String {
+            val mac = javax.crypto.Mac.getInstance("HmacSHA256")
+            mac.init(javax.crypto.spec.SecretKeySpec(secret, "HmacSHA256"))
+            val out = mac.doFinal("ccg-auth".toByteArray(Charsets.UTF_8))
+            return out.joinToString("") { "%02x".format(it) }
+        }
+
+        /**
+         * Generate a fresh single-use INITIAL pairing code: 24 cryptographically secure
+         * random bytes (192 bits) rendered as URL-safe base64 without padding (~32
+         * chars). Matches the backend's pairing-code entropy/shape. The launcher seeds
+         * this into the node process (CCG_INITIAL_PAIR_CODE) AND embeds it as `?pair=` in
+         * the webview URL; the webview redeems it once for the stable token, so the token
+         * never appears in a URL. Public JDK APIs only (SecureRandom, Base64). NEVER logged.
+         */
+        private fun generateInitialPairCode(): String {
+            val bytes = ByteArray(24)
+            java.security.SecureRandom().nextBytes(bytes)
+            return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
+        }
     }
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { ClipboardDocumentIcon, ClipboardDocumentCheckIcon } from '@heroicons/react/24/outline';
+import { ClipboardDocumentIcon, ClipboardDocumentCheckIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { ToggleSwitch } from '@/components/ToggleSwitch';
 import { TunnelStatusNotice } from '@/components/TunnelStatusNotice';
 import { SettingSection, SettingRow } from '../common';
@@ -13,6 +13,9 @@ export function TunnelSettings() {
     tunnelEnabled,
     tunnelUrl,
     tunnelLoading,
+    pairUrl,
+    pairLoading,
+    issuePairing,
     cloudflaredAvailable,
     awaitingInstallConsent,
     installing,
@@ -31,6 +34,14 @@ export function TunnelSettings() {
   const [elapsedSec, setElapsedSec] = useState(0);
   const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Request a fresh single-use pairing code once the tunnel is up so the QR
+  // encodes `<tunnel>/?pair=<code>` (never the auth token).
+  useEffect(() => {
+    if (tunnelEnabled && tunnelUrl && !pairUrl && !pairLoading) {
+      issuePairing();
+    }
+  }, [tunnelEnabled, tunnelUrl, pairUrl, pairLoading, issuePairing]);
+
   useEffect(() => {
     if (tunnelLoading || installing) {
       setElapsedSec(0);
@@ -47,8 +58,8 @@ export function TunnelSettings() {
   }, [tunnelLoading, installing]);
 
   const handleCopy = () => {
-    if (!tunnelUrl) return;
-    navigator.clipboard.writeText(tunnelUrl).then(() => {
+    if (!pairUrl) return;
+    navigator.clipboard.writeText(pairUrl).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
@@ -99,10 +110,11 @@ export function TunnelSettings() {
           </div>
         )}
 
-        {tunnelEnabled && tunnelUrl && (
+        {tunnelEnabled && pairUrl && (
           <div className="py-4 border-b border-border-default">
+            <p className="text-xs text-text-tertiary mb-3">{t('tunnel.connection.pairingHint')}</p>
             <div className="flex items-center gap-2 mb-4">
-              <span className="font-mono text-[0.8461rem] text-text-secondary flex-1 truncate">{tunnelUrl}</span>
+              <span className="font-mono text-[0.8461rem] text-text-secondary flex-1 truncate">{pairUrl}</span>
               <button onClick={handleCopy} className="flex-shrink-0">
                 {copied
                   ? <ClipboardDocumentCheckIcon className="w-3 h-3 text-state-success-fg" />
@@ -112,9 +124,17 @@ export function TunnelSettings() {
             </div>
             <div className="flex justify-start">
               <div className="bg-white p-3 rounded-lg">
-                <QRCodeSVG value={tunnelUrl} size={100} bgColor="#ffffff" fgColor="#000000" />
+                <QRCodeSVG value={pairUrl} size={100} bgColor="#ffffff" fgColor="#000000" />
               </div>
             </div>
+            <button
+              onClick={() => issuePairing()}
+              disabled={pairLoading}
+              className="mt-3 flex items-center gap-1.5 text-xs text-text-tertiary hover:text-text-secondary transition-colors disabled:opacity-50"
+            >
+              <ArrowPathIcon className={`w-3 h-3 ${pairLoading ? 'animate-spin' : ''}`} />
+              <span>{t('tunnel.connection.regeneratePairing')}</span>
+            </button>
           </div>
         )}
       </SettingSection>

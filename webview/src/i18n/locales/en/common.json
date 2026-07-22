@@ -3,6 +3,16 @@
     "confirm": "Confirm",
     "cancel": "Cancel"
   },
+  "pairing": {
+    "title": "Pairing expired",
+    "expiredDetail": "This one-time link has expired or was already used. Rescan the QR code from the host to link this device again.",
+    "lockedDetail": "Too many attempts. Wait a moment, then rescan a fresh QR code from the host.",
+    "networkDetail": "Couldn’t reach the host to complete pairing. Check your connection, then rescan the QR code from the host."
+  },
+  "forbidden": {
+    "title": "403 · Forbidden",
+    "detail": "This device isn’t paired. Open the Remote Control panel on the host and scan its QR code to connect."
+  },
   "contextChip": {
     "removeContext": "Remove context"
   },
@@ -133,7 +143,9 @@
     "connecting": "Connecting…",
     "typicalTime": "Typically ~1 min (install: ~3 min)",
     "preventSleep": "Prevent Sleep",
-    "keepAwake": "Keep awake while tunnel is active"
+    "keepAwake": "Keep awake while tunnel is active",
+    "pairingHint": "Scan to link a device. The QR carries a one-time code that expires shortly — regenerate it if it stops working.",
+    "regeneratePairing": "Regenerate code"
   },
   "tunnelStatusNotice": {
     "tryAgain": "Try again",

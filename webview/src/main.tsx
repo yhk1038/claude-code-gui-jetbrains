@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import './i18n/config'; // initialize i18next before the first render
+import { initAuthToken } from './api/bridge/authToken';
 import { initLogForwarder } from './api/logging';
 import { installGlobalErrorHooks } from './api/errorReporting';
 import { StrictMode } from 'react';
@@ -7,6 +8,12 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
 import {isMobile} from "@/config/environment.ts";
+
+// Capture the per-launch pairing code from `?pair=` BEFORE anything opens a
+// backend WebSocket or React Router mutates the URL. Resolves any already-known
+// token and strips the pairing param from the address bar; the actual /pair
+// exchange happens lazily when the first WebSocket connects.
+initAuthToken();
 
 // 가능한 한 빨리 초기화하여 초기 로그도 캡처
 initLogForwarder();

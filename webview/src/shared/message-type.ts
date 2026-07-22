@@ -209,6 +209,13 @@ export enum MessageType {
   GET_TUNNEL_PREREQS = 'GET_TUNNEL_PREREQS',
   /** Install the cloudflared binary. */
   INSTALL_CLOUDFLARED = 'INSTALL_CLOUDFLARED',
+  /**
+   * inbound webview→backend. Issue a fresh single-use, short-lived pairing code
+   * for the running tunnel and return the QR pairing URL
+   * (`https://<sub>.trycloudflare.com/?pair=<code>`). Carries only the code —
+   * never the auth token. Re-callable to rotate an expired code.
+   */
+  ISSUE_TUNNEL_PAIRING = 'ISSUE_TUNNEL_PAIRING',
 
   // -- Sleep guard (keep-awake) --
   /** Enable the system sleep guard. */

@@ -64,11 +64,16 @@ cmd_run() {
       ;;
     already_latest)
       printf '%s\n' "$(t running_already "$current_ver")"
+      # Backend already running: open the plain URL (no pairing code). Its initial
+      # pairing code was already consumed/expired by the first load, and sending a
+      # stale code would just fail its single-use redeem (and count toward lockout).
+      # The webview reuses the auth token it persisted for this origin on first pair.
       _open_browser "$(_webview_url "$(pwd)")"
       return 0
       ;;
     use_existing)
       printf '%s\n' "$(t running_already "$current_ver")" >&2
+      # Backend already running: open the plain URL (see already_latest above).
       _open_browser "$(_webview_url "$(pwd)")"
       return 0
       ;;
@@ -86,6 +91,8 @@ cmd_run() {
           ;;
         *)
           printf '%s\n' "$(t update_declined "$current_ver")"
+          # Kept the running backend: open the plain URL (no pairing code — the
+          # webview reuses the token it persisted for this origin on first pair).
           _open_browser "$(_webview_url "$(pwd)")"
           ;;
       esac

@@ -11,6 +11,13 @@ import java.util.concurrent.CompletionStage
 import java.util.concurrent.CompletableFuture
 
 /**
+ * The Sec-WebSocket-Protocol marker paired with the per-launch auth token on the
+ * control channel. Mirrors the backend's AUTH_SUBPROTOCOL (ws-server.ts) and the
+ * webview's AUTH_SUBPROTOCOL (webview authToken.ts) — one wire value everywhere.
+ */
+internal const val AUTH_SUBPROTOCOL = "ccg-auth"
+
+/**
  * WebSocket client that connects to the Node.js backend's /rpc endpoint.
  * Receives JSON-RPC requests from the backend and dispatches them to
  * the provided RpcHandler (which routes to the correct project's panel).
@@ -38,6 +45,14 @@ class RpcWebSocketClient(
      * so the dispatch stays unit-testable and the client has no upward dependency.
      */
     private val onNotification: ((String, JsonObject) -> Unit)? = null,
+    /**
+     * Stable control-channel auth token. The backend requires it on the /rpc upgrade
+     * (Phase 1), carried in the Sec-WebSocket-Protocol header alongside the `ccg-auth`
+     * marker — the same value the node process was spawned with (CCG_AUTH_TOKEN) and
+     * the value the JCEF webview obtains by redeeming its pairing code. NEVER logged.
+     * Empty only in unit tests that don't open a real socket.
+     */
+    private val authToken: String = "",
 ) : Disposable {
 
     private val logger = Logger.getInstance(RpcWebSocketClient::class.java)
@@ -89,7 +104,16 @@ class RpcWebSocketClient(
 
         logger.info("Connecting to RPC WebSocket: $uri")
 
-        client.newWebSocketBuilder()
+        // Carry the per-launch auth token as the `ccg-auth` subprotocol so the
+        // backend's upgrade handler accepts the /rpc control channel. The header
+        // becomes `Sec-WebSocket-Protocol: ccg-auth, <token>`; the backend echoes
+        // back only the `ccg-auth` marker. When the token is empty (tests) we skip
+        // the subprotocol entirely.
+        val builder = client.newWebSocketBuilder()
+        if (authToken.isNotEmpty()) {
+            builder.subprotocols(AUTH_SUBPROTOCOL, authToken)
+        }
+        builder
             .buildAsync(uri, RpcWebSocketListener(port))
             .thenAccept { ws ->
                 webSocket = ws
