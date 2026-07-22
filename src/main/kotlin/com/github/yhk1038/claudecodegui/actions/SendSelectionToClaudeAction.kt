@@ -8,7 +8,6 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
@@ -20,7 +19,6 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import java.net.HttpURLConnection
 import java.net.URI
-import java.util.UUID
 
 /**
  * Pure, platform-independent logic for building the editor-context payload.
@@ -167,8 +165,9 @@ class SendSelectionToClaudeAction : AnAction() {
         val backendKey = project.basePath ?: workingDir ?: ""
         backend.ensureStarted(backendKey, transientPanelId, NoopRpcHandler)
 
-        // Reuse the most recent Claude Code tab, or open a new one. FileEditorManager
-        // focuses the tab when it is already open. Must run on the EDT.
+        // Focus an already-open Claude Code tab, or open one if none — host-aware,
+        // so tool-window mode focuses the existing panel instead of spawning a new
+        // editor tab (issue #180). Must run on the EDT.
         focusOrOpenClaudeTab(project)
 
         CoroutineScope(Dispatchers.IO).launch {
@@ -186,17 +185,13 @@ class SendSelectionToClaudeAction : AnAction() {
 
     private fun focusOrOpenClaudeTab(project: Project) {
         ApplicationManager.getApplication().invokeLater {
-            val fileEditorManager = FileEditorManager.getInstance(project)
-            // Find a Claude Code tab that is actually open, regardless of whether its
-            // session has been created yet. EditorTabStateService tracks session ids,
-            // which an uninitialized tab (no first message sent) does not have — relying
-            // on it would spuriously open a brand-new tab instead of focusing the open one.
-            val existingTab = fileEditorManager.openFiles.firstOrNull { it is ClaudeCodeVirtualFile }
-            if (existingTab != null) {
-                fileEditorManager.openFile(existingTab, true)
-            } else {
-                OpenClaudeCodeAction.openTab(project, UUID.randomUUID().toString())
-            }
+            // Reuse the host-aware open-or-focus. This previously scanned
+            // FileEditorManager.openFiles, which only sees EDITOR tabs — in
+            // tool-window mode the Claude panel is not an open file, so it always
+            // fell through to spawning a brand-new editor tab (issue #180).
+            // ChatHostRouter.planOpen (inside openOrFocus) handles both hosts and
+            // focuses the already-open panel, including an uninitialized-session one.
+            OpenClaudeCodeAction.openOrFocus(project)
         }
     }
 
