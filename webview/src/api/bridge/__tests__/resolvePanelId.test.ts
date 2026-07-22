@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { resolvePanelId } from '../resolvePanelId';
 
-// ---------------------------------------------------------------------------
-// resolvePanelId resolves a stable per-tab panelId with this precedence:
-//   1. URL query `panelId` (JCEF embeds it — unchanged behavior)
-//   2. a value persisted in sessionStorage (survives reloads, unique per tab)
-//   3. a freshly generated crypto.randomUUID(), persisted for reload parity
-// sessionStorage here is the deterministic mock installed by src/__tests__/setup.ts.
-// ---------------------------------------------------------------------------
+// resolvePanelId identifies THIS webview panel for panel-scoped routing. Its
+// behavior differs by environment, so isJetBrains is mocked per describe block.
+const isJetBrainsMock = vi.hoisted(() => vi.fn());
+vi.mock('../../../config/environment', () => ({
+  isJetBrains: isJetBrainsMock,
+}));
+
+import { resolvePanelId, _resetPanelIdCache } from '../resolvePanelId';
 
 // crypto.randomUUID() is typed as a UUID template-literal, so mock values must
 // be UUID-shaped (five dash-separated segments) to type-check.
@@ -15,12 +15,11 @@ const GEN_UUID_1 = '11111111-1111-1111-1111-111111111111';
 const GEN_UUID_2 = '22222222-2222-2222-2222-222222222222';
 
 function setSearch(search: string): void {
-  // jsdom updates window.location.search via the history API without a reload.
   window.history.pushState({}, '', search);
 }
 
 beforeEach(() => {
-  sessionStorage.clear();
+  _resetPanelIdCache();
   setSearch('/');
 });
 
@@ -30,52 +29,68 @@ afterEach(() => {
 });
 
 describe('resolvePanelId', () => {
-  it('returns the URL query panelId when present (JCEF) without persisting it', () => {
-    setSearch('/?panelId=jcef-uuid');
-    const uuidSpy = vi.spyOn(crypto, 'randomUUID');
+  describe('JCEF (Kotlin embeds ?panelId=)', () => {
+    beforeEach(() => isJetBrainsMock.mockReturnValue(true));
 
-    expect(resolvePanelId()).toBe('jcef-uuid');
-    // JCEF path must not generate or persist anything.
-    expect(uuidSpy).not.toHaveBeenCalled();
-    expect(sessionStorage.length).toBe(0);
+    it('returns the URL query panelId and does not generate one', () => {
+      setSearch('/?panelId=jcef-uuid');
+      const uuidSpy = vi.spyOn(crypto, 'randomUUID');
+
+      expect(resolvePanelId()).toBe('jcef-uuid');
+      expect(uuidSpy).not.toHaveBeenCalled();
+    });
+
+    it('falls back to a generated id if the URL param is somehow absent', () => {
+      vi.spyOn(crypto, 'randomUUID').mockReturnValue(GEN_UUID_1);
+      expect(resolvePanelId()).toBe(GEN_UUID_1);
+    });
   });
 
-  it('generates and persists a uuid in sessionStorage when there is no URL param', () => {
-    vi.spyOn(crypto, 'randomUUID').mockReturnValue(GEN_UUID_1);
+  describe('browser (window.open copies URL + sessionStorage)', () => {
+    beforeEach(() => isJetBrainsMock.mockReturnValue(false));
 
-    const id = resolvePanelId();
+    it('IGNORES an inherited URL panelId and mints its OWN in-memory id', () => {
+      // A new tab opened via window.open carries the opener's ?panelId=; it must
+      // NOT be reused, or two tabs would collide in the backend's 1:1 index.
+      setSearch('/?panelId=copied-from-opener');
+      vi.spyOn(crypto, 'randomUUID').mockReturnValue(GEN_UUID_1);
 
-    expect(id).toBe(GEN_UUID_1);
-    // Persisted so a reload reuses it.
-    expect(sessionStorage.length).toBe(1);
-  });
+      expect(resolvePanelId()).toBe(GEN_UUID_1);
+    });
 
-  it('returns the SAME persisted value on a second call (reload parity), regenerating only once', () => {
-    const uuidSpy = vi
-      .spyOn(crypto, 'randomUUID')
-      .mockReturnValueOnce(GEN_UUID_1)
-      .mockReturnValueOnce(GEN_UUID_2);
+    it('returns the SAME id on repeated calls within one page load, generating once', () => {
+      const uuidSpy = vi
+        .spyOn(crypto, 'randomUUID')
+        .mockReturnValueOnce(GEN_UUID_1)
+        .mockReturnValueOnce(GEN_UUID_2);
 
-    const first = resolvePanelId();
-    const second = resolvePanelId();
+      const first = resolvePanelId();
+      const second = resolvePanelId();
 
-    expect(first).toBe(GEN_UUID_1);
-    // Second call reads the stored value rather than minting GEN_UUID_2.
-    expect(second).toBe(GEN_UUID_1);
-    expect(uuidSpy).toHaveBeenCalledTimes(1);
-  });
+      expect(first).toBe(GEN_UUID_1);
+      expect(second).toBe(GEN_UUID_1);
+      expect(uuidSpy).toHaveBeenCalledTimes(1);
+    });
 
-  it('resolves a different value than the URL-param path when no param is present', () => {
-    setSearch('/?panelId=jcef-uuid');
-    const fromUrl = resolvePanelId();
+    it('does NOT persist to sessionStorage (it would be copied into a new tab)', () => {
+      vi.spyOn(crypto, 'randomUUID').mockReturnValue(GEN_UUID_1);
+      resolvePanelId();
+      expect(sessionStorage.length).toBe(0);
+    });
 
-    setSearch('/');
-    sessionStorage.clear();
-    vi.spyOn(crypto, 'randomUUID').mockReturnValue(GEN_UUID_1);
-    const generated = resolvePanelId();
+    it('a fresh JS context (a new tab) mints a DIFFERENT id', () => {
+      vi.spyOn(crypto, 'randomUUID')
+        .mockReturnValueOnce(GEN_UUID_1)
+        .mockReturnValueOnce(GEN_UUID_2);
 
-    expect(fromUrl).toBe('jcef-uuid');
-    expect(generated).toBe(GEN_UUID_1);
-    expect(generated).not.toBe(fromUrl);
+      const tab1 = resolvePanelId();
+      // A new tab = a new JS context = reset module-level state.
+      _resetPanelIdCache();
+      const tab2 = resolvePanelId();
+
+      expect(tab1).toBe(GEN_UUID_1);
+      expect(tab2).toBe(GEN_UUID_2);
+      expect(tab1).not.toBe(tab2);
+    });
   });
 });

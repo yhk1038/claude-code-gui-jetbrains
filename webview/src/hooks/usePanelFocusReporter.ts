@@ -33,8 +33,17 @@ export function usePanelFocusReporter(): void {
       }
     };
 
+    // A single reporter fired by every "this panel became active" signal. JCEF
+    // opens each editor tab as its own browser, but several panels can share ONE
+    // IDE window, so window 'focus' does NOT fire when the user switches between
+    // two already-visible panels — it would leave lastFocused stuck on the
+    // last-OPENED tab. focusin (an input/element gained focus) and pointerdown (a
+    // click anywhere in the panel) catch that intra-window switch, so the file
+    // badge follows the panel the user actually interacted with.
     const onFocus = () => report();
     window.addEventListener('focus', onFocus);
+    document.addEventListener('focusin', onFocus);
+    document.addEventListener('pointerdown', onFocus);
 
     // Re-assert focus on (re)connect while focused so a panel that opened
     // already-focused before the socket was ready still registers, and a
@@ -48,6 +57,8 @@ export function usePanelFocusReporter(): void {
 
     return () => {
       window.removeEventListener('focus', onFocus);
+      document.removeEventListener('focusin', onFocus);
+      document.removeEventListener('pointerdown', onFocus);
       unsubscribe();
     };
   }, []);

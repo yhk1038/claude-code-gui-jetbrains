@@ -100,4 +100,32 @@ describe('usePanelFocusReporter', () => {
 
     expect(sendRawMock).toHaveBeenCalledTimes(2);
   });
+
+  it('reports on focusin — catches an intra-window panel switch that window "focus" misses', () => {
+    // Several JCEF panels share one IDE window, so switching to an already-visible
+    // panel (e.g. focusing its input) fires focusin but NOT window 'focus'.
+    vi.spyOn(document, 'hasFocus').mockReturnValue(false);
+    renderHook(() => usePanelFocusReporter());
+    expect(sendRawMock).not.toHaveBeenCalled();
+
+    document.dispatchEvent(new Event('focusin'));
+
+    expect(sendRawMock).toHaveBeenCalledTimes(1);
+    expect(sendRawMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: MessageType.PANEL_FOCUSED,
+        payload: { panelId: 'panel-xyz' },
+      }),
+    );
+  });
+
+  it('reports on pointerdown — a click anywhere in the panel marks it the active one', () => {
+    vi.spyOn(document, 'hasFocus').mockReturnValue(false);
+    renderHook(() => usePanelFocusReporter());
+    expect(sendRawMock).not.toHaveBeenCalled();
+
+    document.dispatchEvent(new Event('pointerdown'));
+
+    expect(sendRawMock).toHaveBeenCalledTimes(1);
+  });
 });
