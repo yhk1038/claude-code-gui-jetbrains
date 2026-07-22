@@ -233,6 +233,10 @@ export enum MessageType {
   /** Flush buffered native-drop entries for the active drag. */
   NATIVE_DROP_FLUSH = 'NATIVE_DROP_FLUSH',
 
+  // -- Panel focus routing --
+  /** The webview reports its IDE panel (JCEF tab) gained window focus, carrying { panelId }, so the backend routes panel-scoped pushes (editor-context / ide-selection) to only the last-focused panel instead of every open Claude panel. inbound webview→backend */
+  PANEL_FOCUSED = 'PANEL_FOCUSED',
+
   // -- Client diagnostics --
   /** Report client (webview) environment info to the backend. */
   CLIENT_INFO = 'CLIENT_INFO',

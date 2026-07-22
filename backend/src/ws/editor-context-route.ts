@@ -33,9 +33,11 @@ function normalizeLine(value: unknown): number | null {
 /**
  * Parse + validate an editor-context request body and route it to the webview.
  *
- * If a webview is connected, the payload is broadcast immediately as
- * EDITOR_CONTEXT. Otherwise it is stashed (the action may fire during JCEF cold
- * start) and replayed to the first connection that arrives within the TTL.
+ * If a webview is connected, the payload is routed to the last-focused panel's
+ * webview (falling back to a broadcast when no focus is known yet or the focused
+ * panel has no live connection) as EDITOR_CONTEXT. Otherwise it is stashed (the
+ * action may fire during JCEF cold start) and replayed to the first connection
+ * that arrives within the TTL.
  *
  * Extracted from the HTTP layer so the validation/routing logic is unit-testable
  * without spinning up a server.
@@ -72,7 +74,7 @@ export function handleEditorContextRequest(
   };
 
   if (connections.getConnectionCount() > 0) {
-    connections.broadcastToAll(EDITOR_CONTEXT_MESSAGE, payload);
+    connections.routeToFocusedOrBroadcast(EDITOR_CONTEXT_MESSAGE, payload);
   } else {
     connections.setPendingEditorContext(payload);
   }

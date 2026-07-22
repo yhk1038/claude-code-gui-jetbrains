@@ -312,4 +312,91 @@ describe('ConnectionManager', () => {
       expect(ws.send).not.toHaveBeenCalled();
     });
   });
+
+  // The last-focused panel is the routing target for panel-scoped pushes
+  // (editor-context / ide-selection). Keyed by the stable panelId reported via
+  // PANEL_FOCUSED, it mirrors lastIdeSelection: no TTL, kept until superseded —
+  // but additionally cleared when the focused panel's connection is removed so
+  // routeToFocusedOrBroadcast never targets a dead connection.
+  describe('last focused panel routing', () => {
+    it('should round-trip setLastFocusedPanelId / getLastFocusedPanelId', () => {
+      cm.setLastFocusedPanelId('panel-1');
+      expect(cm.getLastFocusedPanelId()).toBe('panel-1');
+    });
+
+    it('should return null when no panel has reported focus yet', () => {
+      expect(cm.getLastFocusedPanelId()).toBeNull();
+    });
+
+    it('should overwrite an earlier focused panel with the latest one', () => {
+      cm.setLastFocusedPanelId('panel-1');
+      cm.setLastFocusedPanelId('panel-2');
+      expect(cm.getLastFocusedPanelId()).toBe('panel-2');
+    });
+
+    it('should clear lastFocusedPanelId when the focused panel connection is removed', () => {
+      const ws = createMockWs();
+      const connId = cm.addConnection(ws, ClientEnv.BROWSER, 'panel-1');
+      cm.setLastFocusedPanelId('panel-1');
+
+      cm.removeConnection(connId);
+
+      expect(cm.getLastFocusedPanelId()).toBeNull();
+    });
+
+    it('should keep lastFocusedPanelId when a DIFFERENT panel connection is removed', () => {
+      const wsFocused = createMockWs();
+      cm.addConnection(wsFocused, ClientEnv.BROWSER, 'panel-1');
+      const wsOther = createMockWs();
+      const otherId = cm.addConnection(wsOther, ClientEnv.BROWSER, 'panel-2');
+      cm.setLastFocusedPanelId('panel-1');
+
+      cm.removeConnection(otherId);
+
+      expect(cm.getLastFocusedPanelId()).toBe('panel-1');
+    });
+
+    it('should send ONLY to the focused panel connection when it is live', () => {
+      const wsFocused = createMockWs();
+      cm.addConnection(wsFocused, ClientEnv.BROWSER, 'panel-1');
+      const wsOther = createMockWs();
+      cm.addConnection(wsOther, ClientEnv.BROWSER, 'panel-2');
+      cm.setLastFocusedPanelId('panel-1');
+
+      cm.routeToFocusedOrBroadcast('TEST_EVENT', { data: 'hi' });
+
+      expect(wsFocused.send).toHaveBeenCalledTimes(1);
+      expect(wsOther.send).not.toHaveBeenCalled();
+      const sent = JSON.parse((wsFocused.send as ReturnType<typeof vi.fn>).mock.calls[0][0]);
+      expect(sent.type).toBe('TEST_EVENT');
+      expect(sent.payload).toEqual({ data: 'hi' });
+    });
+
+    it('should fall back to broadcast when no panel focus is known', () => {
+      const ws1 = createMockWs();
+      cm.addConnection(ws1, ClientEnv.BROWSER, 'panel-1');
+      const ws2 = createMockWs();
+      cm.addConnection(ws2, ClientEnv.BROWSER, 'panel-2');
+      // lastFocusedPanelId is null (cold start)
+
+      cm.routeToFocusedOrBroadcast('TEST_EVENT', { data: 'hi' });
+
+      expect(ws1.send).toHaveBeenCalledTimes(1);
+      expect(ws2.send).toHaveBeenCalledTimes(1);
+    });
+
+    it('should fall back to broadcast when the focused panel has no live connection', () => {
+      const ws1 = createMockWs();
+      cm.addConnection(ws1, ClientEnv.BROWSER, 'panel-1');
+      const ws2 = createMockWs();
+      cm.addConnection(ws2, ClientEnv.BROWSER, 'panel-2');
+      // Focus points at a panel that never opened a connection (e.g. stale id).
+      cm.setLastFocusedPanelId('ghost-panel');
+
+      cm.routeToFocusedOrBroadcast('TEST_EVENT', { data: 'hi' });
+
+      expect(ws1.send).toHaveBeenCalledTimes(1);
+      expect(ws2.send).toHaveBeenCalledTimes(1);
+    });
+  });
 });
