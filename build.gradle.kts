@@ -146,6 +146,14 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
+            <h3>0.25.1 - Editor context follows the panel you're focused on</h3>
+            <ul>
+                <li>Editor context — the Alt+K mention and the file badge — now goes to the Claude Code panel you last focused, even with multiple tabs or panels open (reported in #199 by @volador123 and #205 by @BigPineappleDe)</li>
+                <li>Alt+K in tool-window mode no longer opens a new tab every time; it focuses the panel that's already open (reported in #180 by @JaydenPeng)</li>
+                <li>Opening a session in a new editor tab or the system browser now reuses your paired session instead of failing to connect</li>
+                <li>Remote Control security hardening (#204, #208)</li>
+                <li>Scrollbars now follow the dark theme (#203)</li>
+            </ul>
             <h3>0.25.0 - IDE selector and chat UX polish</h3>
             <ul>
                 <li>Tool window mode now shows an IDE selection chip and keeps it in sync when reopened</li>
