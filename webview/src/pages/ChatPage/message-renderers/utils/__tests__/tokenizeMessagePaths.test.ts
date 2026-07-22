@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { tokenizeMessagePaths, pathFromToken, resolveFilePath } from '../tokenizeMessagePaths';
+import { tokenizeMessagePaths, pathFromToken, lineFromToken, resolveFilePath } from '../tokenizeMessagePaths';
 
 describe('resolveFilePath', () => {
   it('상대경로를 워킹디렉토리와 결합해 절대경로로 만든다', () => {
@@ -10,6 +10,10 @@ describe('resolveFilePath', () => {
   });
   it('이미 절대경로면 그대로 둔다', () => {
     expect(resolveFilePath('/etc/hosts', '/abs/project')).toBe('/etc/hosts');
+  });
+  it('Windows 드라이브 절대경로(C:/…, C:\\…)는 그대로 둔다', () => {
+    expect(resolveFilePath('C:/proj/file.ts', '/abs/project')).toBe('C:/proj/file.ts');
+    expect(resolveFilePath('C:\\proj\\file.ts', '/abs/project')).toBe('C:\\proj\\file.ts');
   });
   it('워킹디렉토리가 없으면 상대경로를 그대로 반환한다', () => {
     expect(resolveFilePath('src/file.ts', null)).toBe('src/file.ts');
@@ -125,5 +129,23 @@ describe('pathFromToken', () => {
 
   it('@ 없는 토큰도 처리한다', () => {
     expect(pathFromToken('src/file.ts')).toBe('src/file.ts');
+  });
+});
+
+describe('lineFromToken', () => {
+  it('#L10에서 라인 번호를 반환한다', () => {
+    expect(lineFromToken('@src/file.ts#L10')).toBe(10);
+  });
+
+  it('#L10-L25 범위에서는 시작 라인을 반환한다', () => {
+    expect(lineFromToken('@src/file.ts#L10-L25')).toBe(10);
+  });
+
+  it('라인 앵커가 없으면 undefined를 반환한다', () => {
+    expect(lineFromToken('@src/file.ts')).toBeUndefined();
+  });
+
+  it('폴더 토큰은 undefined를 반환한다', () => {
+    expect(lineFromToken('@src/utils/')).toBeUndefined();
   });
 });

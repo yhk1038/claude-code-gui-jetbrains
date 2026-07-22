@@ -24,11 +24,18 @@ describe('MessagePathChip', () => {
     expect(screen.getByText('@src/file.ts')).toBeInTheDocument();
   });
 
-  it('파일 토큰 클릭 시 워킹디렉토리와 결합한 절대경로로 openFile을 호출한다', () => {
+  it('파일 토큰 클릭 시 절대경로와 #L 라인을 함께 openFile에 전달한다', () => {
     render(<MessagePathChip token="@src/file.ts#L10-L25" />);
     fireEvent.click(screen.getByText('@src/file.ts#L10-L25'));
     expect(mockOpenFile).toHaveBeenCalledTimes(1);
-    expect(mockOpenFile).toHaveBeenCalledWith('/abs/project/src/file.ts');
+    expect(mockOpenFile).toHaveBeenCalledWith('/abs/project/src/file.ts', 10);
+  });
+
+  it('#L 라인 앵커가 없는 토큰은 line 인자 없이 openFile을 호출한다', () => {
+    render(<MessagePathChip token="@src/file.ts" />);
+    fireEvent.click(screen.getByText('@src/file.ts'));
+    expect(mockOpenFile).toHaveBeenCalledTimes(1);
+    expect(mockOpenFile).toHaveBeenCalledWith('/abs/project/src/file.ts', undefined);
   });
 
   it('파일 토큰은 role=button 으로 클릭 가능하다', () => {

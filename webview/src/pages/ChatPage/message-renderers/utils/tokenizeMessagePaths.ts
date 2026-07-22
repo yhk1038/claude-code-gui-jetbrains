@@ -60,6 +60,14 @@ export function tokenizeMessagePaths(text: string): MessageSegment[] {
 }
 
 /**
+ * Trailing GitHub-style line anchor (`#L10` or a `#L10-L25` range) on a path
+ * token or link href. Capture group 1 is the (1-based) start line. Shared by
+ * the `@`-mention helpers and the assistant markdown-link parser so the
+ * recognized syntax lives in one place.
+ */
+export const LINE_ANCHOR = /#L(\d+)(?:-L\d+)?$/;
+
+/**
  * Normalize an `@`-path token into the path to open in the IDE.
  *
  * Strips the leading `@` and any trailing line range (`#L10` or `#L10-L25`).
@@ -72,7 +80,20 @@ export function tokenizeMessagePaths(text: string): MessageSegment[] {
 export function pathFromToken(token: string): string {
   return token
     .replace(/^@/, '')
-    .replace(/#L\d+(?:-L\d+)?$/, '');
+    .replace(LINE_ANCHOR, '');
+}
+
+/**
+ * The 1-based line from an `@`-token's trailing `#L10`/`#L10-L25` (the range's
+ * start line), or `undefined` when the token carries no line anchor. Forwarded
+ * to `openFile` so the mention navigates to the line, not just the file.
+ *
+ * @example lineFromToken('@src/file.ts#L10-L25') // 10
+ * @example lineFromToken('@src/file.ts')         // undefined
+ */
+export function lineFromToken(token: string): number | undefined {
+  const match = LINE_ANCHOR.exec(token);
+  return match ? Number(match[1]) : undefined;
 }
 
 /**
@@ -89,11 +110,12 @@ export function isFolderToken(token: string): boolean {
  * path, and the backend forwards the path verbatim, so the webview must combine
  * the relative mention with the working directory here.
  *
- * Already-absolute paths (leading `/`) pass through unchanged. When the working
- * directory is unknown the relative path is returned as-is (best effort).
+ * Already-absolute paths pass through unchanged — POSIX (leading `/`) or
+ * Windows drive-rooted (`C:/…`, `C:\…`), matching `joinProjectPath`. When the
+ * working directory is unknown the relative path is returned as-is (best effort).
  */
 export function resolveFilePath(relativePath: string, workingDir: string | null | undefined): string {
-  if (relativePath.startsWith('/')) return relativePath;
+  if (relativePath.startsWith('/') || /^[A-Za-z]:[\\/]/.test(relativePath)) return relativePath;
   if (!workingDir) return relativePath;
-  return `${workingDir.replace(/\/+$/, '')}/${relativePath}`;
+  return `${workingDir.replace(/[\\/]+$/, '')}/${relativePath}`;
 }

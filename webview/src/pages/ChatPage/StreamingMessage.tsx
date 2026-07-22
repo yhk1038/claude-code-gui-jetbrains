@@ -4,37 +4,15 @@ import {math} from '../../utils/mathPlugin';
 import {isInsideCodeBlock, isMarkdownComplete} from '../../utils/markdownParser';
 import './streaming.css';
 import {ToolWrapper} from "@/pages/ChatPage/message-renderers/ToolRenderers/common";
+import {useWorkingDirOrNull} from '@/contexts/WorkingDirContext';
+import {MARKDOWN_COMPONENTS} from '@/pages/ChatPage/message-renderers/components/MarkdownFileLink';
+import {normalizeMarkdownLinkUrls} from '@/pages/ChatPage/message-renderers/utils/markdownFileLink';
 
 interface StreamingMessageProps {
     content: string;
     isStreaming: boolean;
     className?: string;
     message?: import('../../types').LoadedMessageDto;
-}
-
-/**
- * Normalize bare relative URLs in markdown links so rehype-harden doesn't block them.
- * e.g., [file.tsx](src/file.tsx) → [file.tsx](./src/file.tsx)
- */
-function normalizeRelativeUrls(markdown: string): string {
-    // Match markdown links: [text](url)
-    // But NOT image links: ![text](url)
-    return markdown.replace(
-        /(?<!!)\[([^\]]*)\]\(([^)]+)\)/g,
-        (match, text, url) => {
-            // Skip if already has protocol, starts with /, ./, ../, or #
-            if (
-                /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(url) || // has protocol
-                url.startsWith('/') ||
-                url.startsWith('./') ||
-                url.startsWith('../') ||
-                url.startsWith('#')
-            ) {
-                return match;
-            }
-            return `[${text}](./${url})`;
-        }
-    );
 }
 
 export const StreamingMessage: React.FC<StreamingMessageProps> = ({
@@ -44,6 +22,12 @@ export const StreamingMessage: React.FC<StreamingMessageProps> = ({
     message,
 }) => {
     const [shouldAnimate, setShouldAnimate] = useState(isStreaming);
+
+    // useWorkingDirOrNull (not useWorkingDir): StreamingMessage is broadly reused
+    // and rendered without a WorkingDirProvider in some places (and in tests),
+    // where useWorkingDir throws. Used to resolve relative link URLs to absolute
+    // project paths; absolute links work regardless.
+    const workingDirectory = useWorkingDirOrNull()?.workingDirectory ?? null;
 
     // Handle streaming animation
     useEffect(() => {
@@ -69,13 +53,14 @@ export const StreamingMessage: React.FC<StreamingMessageProps> = ({
                         parseIncompleteMarkdown={isStreaming}
                         isAnimating={isStreaming}
                         shikiTheme={['github-dark', 'github-light']}
+                        components={MARKDOWN_COMPONENTS}
                         controls={{
                             code: true,
                             table: true,
                         }}
                         plugins={{ math }}
                     >
-                        {normalizeRelativeUrls(content)}
+                        {normalizeMarkdownLinkUrls(content, workingDirectory)}
                     </Streamdown>
                 </div>
 

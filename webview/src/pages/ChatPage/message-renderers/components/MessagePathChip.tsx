@@ -1,7 +1,7 @@
 import React from 'react';
 import { getAdapter } from '../../../../adapters';
 import { useWorkingDir } from '@/contexts/WorkingDirContext';
-import { pathFromToken, isFolderToken, resolveFilePath } from '../utils/tokenizeMessagePaths';
+import { pathFromToken, lineFromToken, isFolderToken, resolveFilePath } from '../utils/tokenizeMessagePaths';
 
 interface Props {
   token: string;
@@ -26,7 +26,7 @@ export const MessagePathChip = (props: Props) => {
     event.stopPropagation();
     const filePath = resolveFilePath(pathFromToken(token), workingDirectory);
     getAdapter()
-      .openFile(filePath)
+      .openFile(filePath, lineFromToken(token))
       .catch((err) => {
         console.error('[MessagePathChip] Failed to open file:', err);
       });
