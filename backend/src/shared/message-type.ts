@@ -216,6 +216,14 @@ export enum MessageType {
    * never the auth token. Re-callable to rotate an expired code.
    */
   ISSUE_TUNNEL_PAIRING = 'ISSUE_TUNNEL_PAIRING',
+  /**
+   * inbound webview→backend. Issue a fresh single-use pairing code for opening
+   * the current session in the SYSTEM BROWSER (a separate storage partition from
+   * JCEF, so it cannot reuse the JCEF token). Returns { code }; the webview builds
+   * the localhost `?pair=` URL itself. Carries only the code — never the auth
+   * token. Unlike ISSUE_TUNNEL_PAIRING this does NOT require a running tunnel.
+   */
+  ISSUE_LOCAL_PAIRING = 'ISSUE_LOCAL_PAIRING',
 
   // -- Sleep guard (keep-awake) --
   /** Enable the system sleep guard. */

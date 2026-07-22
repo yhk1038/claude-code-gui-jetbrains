@@ -17,17 +17,22 @@
 // legacy `?token=` URL param is gone (URLs leak via logs/history/Referer).
 //
 // Resolution priority (see design doc ignore/plans/control-channel-auth.md):
-//   1. sessionStorage (per-tab) — a token that ACTUALLY authenticated is stored
-//      here (persistValidatedToken, called on WebSocket `open`) so a full page
-//      RELOAD survives. The `?pair=` code is single-use and stripped from the
-//      URL, so a reload would otherwise lose the in-memory token (and cannot
-//      re-redeem the consumed code), locking the legitimate user out (backend
-//      401) in production, where there is no dev fallback. We store only AFTER a
-//      successful connect (validate-then-store) so a wrong/stale token never
-//      sticks and poisons the tab into an endless 401 reconnect loop.
-//      sessionStorage is per-tab and cleared on tab close (unlike localStorage).
-//      An attacker never had a valid token to store here, so this does not weaken
-//      the gate.
+//   1. localStorage (shared across same-origin panels) — a token that ACTUALLY
+//      authenticated is stored here (persistValidatedToken, called on WebSocket
+//      `open`). localStorage is chosen over sessionStorage DELIBERATELY: JCEF
+//      opens each editor tab as its own browser context with ISOLATED
+//      sessionStorage, so a per-tab store forces every new tab to re-pair — but
+//      the initial `?pair=` code is single-use and already consumed by the first
+//      tab, so a second tab re-redeeming it gets 401 → the "403 Forbidden" block.
+//      localStorage is SHARED across the panels of one origin, so a host that
+//      authenticated once is reused by every tab (auth is scoped to the HOST, not
+//      the tab), and a full page RELOAD also survives (the consumed `?pair=` code
+//      cannot be re-redeemed). Trade-off: the token now persists on disk until
+//      superseded — acceptable because it is per-launch, so a backend restart
+//      invalidates it. We store only AFTER a successful connect
+//      (validate-then-store) so a wrong/stale token never sticks and poisons a
+//      tab into an endless 401 reconnect loop. An attacker never had a valid
+//      token to store here, so this does not weaken the gate.
 //   2. Dev fallback (Vite dev only, import.meta.env.DEV): the VITE_CCG_DEV_TOKEN
 //      env, else a hard-coded shared DEV-ONLY default that matches the backend's
 //      DEV_INSECURE_AUTH_TOKEN so `bb`/`ww` work with zero manual env.
@@ -38,8 +43,8 @@
 //      before opening a WebSocket. If no code and no token, the backend rejects
 //      the connection (401), the correct secure-by-default outcome.
 //
-// The token is NEVER read from localStorage and NEVER injected into statically
-// served HTML — an attacker reaching the port could otherwise GET / and read it.
+// The token is NEVER injected into statically served HTML — an attacker reaching
+// the port could otherwise GET / and read it.
 
 /**
  * The subprotocol marker paired with the token. Mirrors the backend's
@@ -55,29 +60,31 @@ export const AUTH_SUBPROTOCOL = 'ccg-auth';
  */
 const DEV_INSECURE_AUTH_TOKEN = 'ccg-dev-insecure-token';
 
-// sessionStorage key under which the validated token is persisted so a page
-// reload survives after the single-use `?pair=` code has been stripped/consumed.
-const SESSION_TOKEN_KEY = 'ccg-auth-token';
+// localStorage key under which the validated token is persisted so it is shared
+// across same-origin JCEF panels and survives a reload (after the single-use
+// `?pair=` code has been stripped/consumed).
+const TOKEN_STORAGE_KEY = 'ccg-auth-token';
 
 // In-memory module singleton. Resolved once, then reused for every connection.
 let cachedToken: string | null = null;
 
-/** Read the persisted token from sessionStorage, tolerating storage being unavailable. */
+/** Read the persisted token from localStorage, tolerating storage being unavailable. */
 function readStoredToken(): string | null {
   try {
-    return window.sessionStorage.getItem(SESSION_TOKEN_KEY) || null;
+    return window.localStorage.getItem(TOKEN_STORAGE_KEY) || null;
   } catch {
     return null;
   }
 }
 
-/** Persist the token to sessionStorage so a reload survives. Best-effort. */
+/** Persist the token to localStorage (shared across same-origin panels) so a reload
+ * and any newly-opened panel reuse it. Best-effort. */
 function storeToken(token: string): void {
   if (!token) return;
   try {
-    window.sessionStorage.setItem(SESSION_TOKEN_KEY, token);
+    window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
   } catch {
-    // sessionStorage can be unavailable (private mode, exotic embeddings); the
+    // localStorage can be unavailable (private mode, exotic embeddings); the
     // in-memory cache still serves this page load, only reload-persistence is lost.
   }
 }
@@ -155,10 +162,11 @@ function isLoopbackHost(): boolean {
 }
 
 function resolveToken(): string {
-  // 1. sessionStorage — a token that SUCCESSFULLY connected on a previous load of
-  //    THIS tab (persisted by persistValidatedToken on WS open). Lets a full page
-  //    reload reconnect without re-redeeming a pairing code (the `?pair=` code is
-  //    single-use and already consumed/stripped on the first load).
+  // 1. localStorage — a token that SUCCESSFULLY connected on a previous load
+  //    (persisted by persistValidatedToken on WS open). Shared across same-origin
+  //    JCEF panels, so a newly-opened tab AND a full page reload reconnect without
+  //    re-redeeming a pairing code (the `?pair=` code is single-use and already
+  //    consumed/stripped by the first panel).
   const fromSession = readStoredToken();
   if (fromSession) return fromSession;
 
@@ -248,7 +256,7 @@ function redeemPairCode(code: string): Promise<string> {
  * opened token-less. Returns '' when no token can be resolved.
  */
 export async function ensureAuthTokenReady(): Promise<string> {
-  // A synchronously-known token (a validated sessionStorage token, or the dev
+  // A synchronously-known token (a validated localStorage token, or the dev
   // fallback) always wins — no pairing round-trip needed.
   const sync = getAuthToken();
   if (sync) return sync;
@@ -272,7 +280,7 @@ export async function ensureAuthTokenReady(): Promise<string> {
  *   reconnecting, never forbidden;
  * - a remote client WITH a `?pair=` code = pairing in flight (or, if it failed,
  *   handled by the pairing-failed notice) → not "forbidden" here;
- * - a remote client with a previously-validated token (sessionStorage) → connects.
+ * - a remote client with a previously-validated token (localStorage) → connects.
  */
 export function isRemoteBlocked(): boolean {
   return !isLoopbackHost() && !getAuthToken() && !hasPairCode();
@@ -289,7 +297,7 @@ export function initAuthToken(): void {
 }
 
 /**
- * Persist the currently-resolved token to sessionStorage. Call this ONLY after a
+ * Persist the currently-resolved token to localStorage. Call this ONLY after a
  * connection has actually authenticated (WebSocket `open`), so a wrong/stale
  * token is never stored — that would poison the tab into an endless 401 reconnect
  * loop across reloads. A validated token, by contrast, must survive a reload so
@@ -339,7 +347,7 @@ export function _resetAuthTokenCache(): void {
   pairingState = 'idle';
   pairingFailureReason = null;
   try {
-    window.sessionStorage.removeItem(SESSION_TOKEN_KEY);
+    window.localStorage.removeItem(TOKEN_STORAGE_KEY);
   } catch {
     // ignore — storage may be unavailable in the test/host environment
   }
