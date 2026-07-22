@@ -101,13 +101,16 @@ _ccg_read_or_create_secret() {
 }
 
 # Derive the stable auth token: HMAC-SHA256(secret, "ccg-auth") as lowercase hex.
-# Prefer openssl (portable output parsed to the trailing hex field); fall back to
-# node's crypto. The secret is passed to node via env (never as an argv token).
+# The secret is passed to node ONLY via env (CCG_HMAC_SECRET), never as an argv
+# token: on a multi-user host, argv is world-readable via `ps` / /proc/<pid>/cmdline,
+# so `openssl dgst -hmac "$secret"` would leak the persistent master secret and let
+# another local user recompute the token — defeating the 0600 on the secret file.
+# `/proc/<pid>/environ` is owner-only, so env is safe. openssl has no argv-free way
+# to pass an HMAC key, so we do not use it here; node is always present because the
+# very next step spawns the backend with it.
 _ccg_derive_token() {
   local secret=$1
-  if command -v openssl >/dev/null 2>&1; then
-    printf '%s' 'ccg-auth' | openssl dgst -sha256 -hmac "$secret" 2>/dev/null | awk '{print $NF}'
-  elif command -v node >/dev/null 2>&1; then
+  if command -v node >/dev/null 2>&1; then
     CCG_HMAC_SECRET="$secret" node -e 'process.stdout.write(require("crypto").createHmac("sha256", process.env.CCG_HMAC_SECRET).update("ccg-auth").digest("hex"))'
   else
     printf ''

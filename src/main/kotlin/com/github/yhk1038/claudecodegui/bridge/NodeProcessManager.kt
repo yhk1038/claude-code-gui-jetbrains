@@ -250,47 +250,59 @@ class NodeProcessManager(
                 if (wslDistro != null) {
                     // WSL project root: launch the backend inside the distro via wsl.exe.
                     // backend.mjs / webview were extracted to a Windows temp dir; WSL sees
-                    // them through /mnt/<drive>/... so convert the paths. Backend env is
-                    // passed inside the command (env K=V — see buildWslNodeCommand); the
-                    // process environment is left intact so wsl.exe resolves on the Windows
-                    // PATH. NOTE: not verifiable on our dev host — see issue #57 (S4b).
+                    // them through /mnt/<drive>/... so convert the paths.
+                    //
+                    // Env split by sensitivity:
+                    // - NON-secret values (mode, port, paths) go through buildWslNodeCommand
+                    //   as `export K=V` inside the `bash -lic` snippet.
+                    // - SECRETS (the auth token, the pairing code) must NOT be put on the
+                    //   argv: the whole `bash -lic "export … "` snippet is a wsl.exe argument,
+                    //   which any local user can read via `ps` / /proc/<pid>/cmdline and use to
+                    //   drive /ws into a bypassPermissions session. Hand them to WSL via WSLENV
+                    //   + the wsl.exe process environment instead — /proc/<pid>/environ is
+                    //   owner-only, so env is safe. wsl.exe injects WSLENV-listed vars into the
+                    //   Linux process, and `exec node` inherits them.
+                    // The rest of the process environment is left intact so wsl.exe resolves on
+                    // the Windows PATH. NOTE: not verifiable on our dev host — see issue #57 (S4b).
                     val linuxBackend = WslPathResolver.toWslPath(backendFile.absolutePath)
                         ?: backendFile.absolutePath
                     val wslEnv = buildMap {
                         put("JETBRAINS_MODE", "true")
                         put("CCG_CLIENT_INFO", clientInfo)
                         put("PORT", requestedPort.toString())
-                        // Stable control-channel auth token (see [authToken]). Required
-                        // by the backend on /ws, /rpc, /logs, /internal routes. Redacted from
-                        // the command log below.
-                        if (authToken.isNotEmpty()) put("CCG_AUTH_TOKEN", authToken)
-                        // Fresh single-use initial pairing code (see [initialPairCode]). The
-                        // backend seeds its pairing store with it; the webview redeems it via
-                        // `?pair=`. Redacted from the command log below.
-                        if (initialPairCode.isNotEmpty()) put("CCG_INITIAL_PAIR_CODE", initialPairCode)
                         webviewDir?.let { wv ->
                             WslPathResolver.toWslPath(wv.absolutePath)?.let { put("WEBVIEW_DIR", it) }
                         }
+                        // NOTE: CCG_AUTH_TOKEN / CCG_INITIAL_PAIR_CODE are intentionally NOT
+                        // here — they are secrets and are passed via WSLENV below, never on argv.
                         // No CLEANUP_TEMP_* env: resources are version-scoped and shared,
                         // extracted once and never deleted on exit. Stale other-version dirs
                         // are pruned at extraction time by PluginResourceExtractor (#149).
                     }
                     val cmd = WslPathResolver.buildWslNodeCommand(wslDistro, wslCwd, wslEnv, linuxBackend)
-                    // The WSL command embeds env as `export K=V`, so the token and pairing
-                    // code would appear in the joined command — redact both before logging
-                    // (never log the token or the pairing code).
-                    val redactedCmd = cmd.map { part ->
-                        var redacted = part
-                        if (authToken.isNotEmpty() && redacted.contains("CCG_AUTH_TOKEN=")) {
-                            redacted = redacted.replace(authToken, "<redacted>")
-                        }
-                        if (initialPairCode.isNotEmpty() && redacted.contains("CCG_INITIAL_PAIR_CODE=")) {
-                            redacted = redacted.replace(initialPairCode, "<redacted>")
-                        }
-                        redacted
-                    }
-                    logger.info("Starting WSL backend (distro=$wslDistro, cwd=$wslCwd): ${redactedCmd.joinToString(" ")}")
+                    // cmd no longer carries any secret (token/pairing code moved to WSLENV), so
+                    // it is safe to log verbatim.
+                    logger.info("Starting WSL backend (distro=$wslDistro, cwd=$wslCwd): ${cmd.joinToString(" ")}")
                     pb = ProcessBuilder(cmd).redirectErrorStream(false)
+                    // Pass secrets out-of-band: set them in the wsl.exe process environment and
+                    // list them in WSLENV so wsl.exe forwards them into the distro's process env
+                    // (never on the argv). `/u` = share Win→WSL only, no path translation.
+                    // Append to any pre-existing WSLENV rather than clobbering the user's.
+                    val passthrough = mutableListOf<String>()
+                    if (authToken.isNotEmpty()) {
+                        pb.environment()["CCG_AUTH_TOKEN"] = authToken
+                        passthrough += "CCG_AUTH_TOKEN/u"
+                    }
+                    if (initialPairCode.isNotEmpty()) {
+                        pb.environment()["CCG_INITIAL_PAIR_CODE"] = initialPairCode
+                        passthrough += "CCG_INITIAL_PAIR_CODE/u"
+                    }
+                    if (passthrough.isNotEmpty()) {
+                        val existingWslEnv = pb.environment()["WSLENV"]
+                        pb.environment()["WSLENV"] =
+                            if (existingWslEnv.isNullOrBlank()) passthrough.joinToString(":")
+                            else existingWslEnv + ":" + passthrough.joinToString(":")
+                    }
                 } else {
                     val env = buildMap {
                         putAll(EnvironmentUtil.getEnvironmentMap())
