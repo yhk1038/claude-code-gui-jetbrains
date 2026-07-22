@@ -12,16 +12,7 @@ class OpenClaudeCodeAction : AnAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        // "Open" reveals the chat: focus an already-open tab if there is one,
-        // and only mint a fresh tab id when none is open. Spawning extra tabs is
-        // the New Tab action's job — see ChatHostRouter.planOpen (issue #180).
-        val state = EditorTabStateService.getInstance(project)
-        val tabId = ChatHostRouter.planOpen(
-            state.getOpenTabIds(),
-            state.getActiveTabId(),
-            UUID.randomUUID().toString(),
-        )
-        openTab(project, tabId)
+        openOrFocus(project)
     }
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
@@ -31,6 +22,25 @@ class OpenClaudeCodeAction : AnAction() {
     }
 
     companion object {
+        /**
+         * Reveal the chat: focus an already-open Claude tab if there is one, and
+         * only mint a fresh tab when none is open. Host-aware via
+         * [ChatHostRouter.planOpen], so it works in BOTH editor-tab and tool-window
+         * modes — the tool window keeps no [com.intellij.openapi.fileEditor.FileEditorManager]
+         * open file, so callers must NOT scan openFiles to decide (that spuriously
+         * spawns a new tab in tool-window mode). Spawning extra tabs is the New Tab
+         * action's job (issue #180).
+         */
+        fun openOrFocus(project: Project) {
+            val state = EditorTabStateService.getInstance(project)
+            val tabId = ChatHostRouter.planOpen(
+                state.getOpenTabIds(),
+                state.getActiveTabId(),
+                UUID.randomUUID().toString(),
+            )
+            openTab(project, tabId)
+        }
+
         /**
          * Open (or focus) a Claude Code editor tab identified by [tabId].
          * [tabId] is a tab identifier, NOT a Claude conversation session ID.

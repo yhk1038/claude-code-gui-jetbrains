@@ -34,16 +34,16 @@ describe('authToken', () => {
   });
 
   it('attaches the resolved token as the ["ccg-auth", token] subprotocol array', () => {
-    window.sessionStorage.setItem('ccg-auth-token', 'secret123');
+    window.localStorage.setItem('ccg-auth-token', 'secret123');
     expect(authSubprotocols()).toEqual([AUTH_SUBPROTOCOL, 'secret123']);
     expect(AUTH_SUBPROTOCOL).toBe('ccg-auth');
   });
 
   it('caches the token so it is only resolved once', () => {
-    window.sessionStorage.setItem('ccg-auth-token', 'first');
+    window.localStorage.setItem('ccg-auth-token', 'first');
     expect(getAuthToken()).toBe('first');
     // Even if storage changes later, the cached value is reused.
-    window.sessionStorage.setItem('ccg-auth-token', 'second');
+    window.localStorage.setItem('ccg-auth-token', 'second');
     expect(getAuthToken()).toBe('first');
   });
 
@@ -54,11 +54,11 @@ describe('authToken', () => {
     vi.stubEnv('DEV', false);
     _resetAuthTokenCache();
     setUrl('/?token=ignored');
-    // Production build, no sessionStorage token: the param is not read.
+    // Production build, no localStorage token: the param is not read.
     expect(getAuthToken()).toBe('');
     expect(authSubprotocols()).toEqual([AUTH_SUBPROTOCOL]);
     // Nothing was persisted from the URL either.
-    expect(window.sessionStorage.getItem('ccg-auth-token')).toBeNull();
+    expect(window.localStorage.getItem('ccg-auth-token')).toBeNull();
   });
 
   describe('dev fallback (import.meta.env.DEV)', () => {
@@ -112,36 +112,36 @@ describe('authToken', () => {
 
   // ── Reload persistence (validate-then-store): the `?pair=` code is single-use
   //    and stripped from the URL, so a full page reload must recover a VALIDATED
-  //    token from sessionStorage or the legit user is locked out (backend 401)
+  //    token from localStorage or the legit user is locked out (backend 401)
   //    in production. Only a token that actually connected is stored, so a wrong
   //    token never sticks and poisons the tab into an endless 401 loop. ────────
-  describe('reload persistence (sessionStorage, validate-then-store)', () => {
+  describe('reload persistence (localStorage, validate-then-store)', () => {
     it('does NOT persist a resolved token until a connection succeeds', () => {
       // In dev getAuthToken resolves the dev token, but nothing is stored until
       // persistValidatedToken() is called on a successful WS open.
       expect(getAuthToken()).toBe(DEV_INSECURE_AUTH_TOKEN);
-      expect(window.sessionStorage.getItem('ccg-auth-token')).toBeNull();
+      expect(window.localStorage.getItem('ccg-auth-token')).toBeNull();
     });
 
     it('persistValidatedToken() stores the resolved token (called on WS open)', () => {
       expect(getAuthToken()).toBe(DEV_INSECURE_AUTH_TOKEN);
       persistValidatedToken();
-      expect(window.sessionStorage.getItem('ccg-auth-token')).toBe(DEV_INSECURE_AUTH_TOKEN);
+      expect(window.localStorage.getItem('ccg-auth-token')).toBe(DEV_INSECURE_AUTH_TOKEN);
     });
 
-    it('recovers a validated token from sessionStorage after a reload (prod, no dev fallback)', () => {
+    it('recovers a validated token from localStorage after a reload (prod, no dev fallback)', () => {
       // State right after a reload: production build (no dev fallback), the
       // single-use pairing code already consumed, but a previously-validated
-      // token survived in sessionStorage.
+      // token survived in localStorage.
       vi.stubEnv('DEV', false);
-      window.sessionStorage.setItem('ccg-auth-token', 'survived');
+      window.localStorage.setItem('ccg-auth-token', 'survived');
       setUrl('/panel');
       expect(getAuthToken()).toBe('survived');
     });
 
-    it('a validated sessionStorage token takes precedence over the dev fallback', () => {
-      // sessionStorage is precedence (1); the dev fallback is (2).
-      window.sessionStorage.setItem('ccg-auth-token', 'stored');
+    it('a validated localStorage token takes precedence over the dev fallback', () => {
+      // localStorage is precedence (1); the dev fallback is (2).
+      window.localStorage.setItem('ccg-auth-token', 'stored');
       expect(getAuthToken()).toBe('stored');
     });
   });
@@ -195,11 +195,11 @@ describe('authToken', () => {
       expect(getPairingStatus().state).toBe('paired');
     });
 
-    it('redeems the pair code on a fresh local first-load (empty sessionStorage)', async () => {
+    it('redeems the pair code on a fresh local first-load (empty localStorage)', async () => {
       // The launcher embeds `?pair=<code>` for the LOCAL webview too. With an
-      // empty sessionStorage and a production build, ensureAuthTokenReady must
+      // empty localStorage and a production build, ensureAuthTokenReady must
       // redeem the code and return the token (no ?token= shortcut exists).
-      expect(window.sessionStorage.getItem('ccg-auth-token')).toBeNull();
+      expect(window.localStorage.getItem('ccg-auth-token')).toBeNull();
       setUrl('/?pair=local-first-load');
       const fetchFn = mockFetchOnce(() => jsonResponse(200, { token: 'local-token' }));
 
@@ -250,13 +250,28 @@ describe('authToken', () => {
       expect(getPairingStatus()).toEqual({ state: 'failed', reason: 'network' });
     });
 
-    it('a validated sessionStorage token wins over any ?pair= (no pairing round-trip)', async () => {
-      window.sessionStorage.setItem('ccg-auth-token', 'stored-token');
+    it('a validated localStorage token wins over any ?pair= (no pairing round-trip)', async () => {
+      window.localStorage.setItem('ccg-auth-token', 'stored-token');
       setUrl('/?pair=ignored');
       const fetchFn = mockFetchOnce(() => jsonResponse(200, { token: 'should-not-be-used' }));
 
       const token = await ensureAuthTokenReady();
       expect(token).toBe('stored-token');
+      expect(fetchFn).not.toHaveBeenCalled();
+    });
+
+    it('a second panel reuses the shared localStorage token even when its URL carries the already-consumed initial pair code (no 403)', async () => {
+      // localStorage is shared across JCEF panels of the same origin. Panel 1
+      // paired on first launch and persisted the token; Panel 2 (a new editor
+      // tab) opens with the SAME, now-spent initial ?pair= code in its URL. It
+      // must reuse the shared token and NEVER re-redeem the consumed code —
+      // re-redeeming would 401 and surface the "403 · Forbidden" block screen.
+      window.localStorage.setItem('ccg-auth-token', 'host-token');
+      setUrl('/?pair=already-consumed');
+      const fetchFn = mockFetchOnce(() => jsonResponse(401, { error: 'invalid' }));
+
+      const token = await ensureAuthTokenReady();
+      expect(token).toBe('host-token');
       expect(fetchFn).not.toHaveBeenCalled();
     });
 

@@ -70,7 +70,8 @@ describe('installCcbHandler', () => {
       // ccb via `$SHELL -l -i -c` so the rc-file PATH exposes it. The install must
       // resolve npm the same way instead of exec'ing `npm` directly (Direct mode),
       // which fails with ENOENT where only the login shell's PATH knows npm.
-      const [file, args] = mockExecFile.mock.calls[0] as [string, string[]];
+      const file = mockExecFile.mock.calls[0][0] as string;
+      const args = mockExecFile.mock.calls[0][1] as string[];
       const userShell = process.env.SHELL || '/bin/sh';
       const expectedShell = /\/fish$/.test(userShell) ? '/bin/sh' : userShell;
       expect(file).toBe(expectedShell);

@@ -79,6 +79,15 @@ export class ConnectionManager {
   // user re-focusing the file. No TTL — kept until superseded by the next
   // selection, so restoration works no matter how long the panel was closed.
   private lastIdeSelection: Record<string, unknown> | null = null;
+  // Focus-history stack of panelIds (most-recent last), reported via PANEL_FOCUSED.
+  // Panel-scoped pushes (editor-context / ide-selection) route to the top — the
+  // panel the user is actually looking at — and Alt+K reveal (getRevealTarget)
+  // reads the top's env. DEAD panels are pruned on every push and on
+  // removeConnection, so the top is always live and "the panel focused before the
+  // one that just died" falls out naturally: its predecessor becomes the new top.
+  // Keyed by the stable panelId (session-agnostic, covers uninitialized tabs).
+  // panelIds need not be unique in the stack; pushes de-dupe only to keep it tidy.
+  private lastFocusedPanelIdStack: string[] = [];
   private nextId = 0;
 
   // ─── Connection lifecycle ───────────────────────────────────────────────────
@@ -160,6 +169,76 @@ export class ConnectionManager {
     return this.lastIdeSelection;
   }
 
+  // ─── Last focused panel ─────────────────────────────────────────────────────
+
+  /** Prune panelIds whose connection is gone — keeps only live panels in the stack. */
+  private pruneDeadFocus(): void {
+    this.lastFocusedPanelIdStack = this.lastFocusedPanelIdStack.filter((id) =>
+      this.panelIdIndex.has(id),
+    );
+  }
+
+  /**
+   * Record the panelId whose webview just gained focus (PANEL_FOCUSED) as the new
+   * top of the focus stack. Prunes dead panels and de-dupes this id first, so the
+   * stack stays live and ordered most-recent-last without unbounded growth.
+   */
+  setLastFocusedPanelId(panelId: string): void {
+    this.lastFocusedPanelIdStack = this.lastFocusedPanelIdStack.filter(
+      (id) => id !== panelId && this.panelIdIndex.has(id),
+    );
+    this.lastFocusedPanelIdStack.push(panelId);
+  }
+
+  /**
+   * The most-recently-focused LIVE panelId (top of the stack), or null if none.
+   * Prunes dead panels first, so a panel that died since it was focused is skipped
+   * and its still-live predecessor surfaces as the new top.
+   */
+  getLastFocusedPanelId(): string | null {
+    this.pruneDeadFocus();
+    const stack = this.lastFocusedPanelIdStack;
+    return stack.length > 0 ? stack[stack.length - 1] : null;
+  }
+
+  /**
+   * Decide what Kotlin should reveal on Alt+K, from the most-recently-focused LIVE
+   * panel's env:
+   *   - JCEF panel  → { kind: 'jcef', panelId } — focus/open that exact tab
+   *   - browser tab → { kind: 'browser' } — Kotlin does nothing (the mention still
+   *     routes to the browser via routeToFocusedOrBroadcast)
+   *   - none live   → { kind: 'none' } — Kotlin opens a fresh tab
+   */
+  getRevealTarget(): { kind: 'jcef'; panelId: string } | { kind: 'browser' } | { kind: 'none' } {
+    const panelId = this.getLastFocusedPanelId();
+    if (!panelId) return { kind: 'none' };
+    const connectionId = this.panelIdIndex.get(panelId);
+    const env = connectionId ? this.clientMap.get(connectionId)?.env : undefined;
+    if (env === ClientEnv.JETBRAINS) return { kind: 'jcef', panelId };
+    if (env === ClientEnv.BROWSER) return { kind: 'browser' };
+    return { kind: 'none' };
+  }
+
+  /**
+   * Route a panel-scoped push (editor-context / ide-selection) to the LAST-FOCUSED
+   * panel's webview when that panel still has a live connection; otherwise fall
+   * back to broadcasting to every connection. The fallback preserves the pre-focus
+   * behavior and is the safe default whenever no panel focus is known yet (cold
+   * start) or the focused panel's webview has since disconnected — so a payload is
+   * never silently dropped. Keyed by panelId, so it is session-agnostic.
+   */
+  routeToFocusedOrBroadcast(type: string, payload: Record<string, unknown> = {}): void {
+    const panelId = this.getLastFocusedPanelId();
+    if (panelId) {
+      const connectionId = this.panelIdIndex.get(panelId);
+      if (connectionId && this.connectionMap.has(connectionId)) {
+        this.sendTo(connectionId, type, payload);
+        return;
+      }
+    }
+    this.broadcastToAll(type, payload);
+  }
+
   setNativeDropStash(panelId: string, entries: NativeDropEntry[]): boolean {
     const connectionId = this.panelIdIndex.get(panelId);
     if (!connectionId) return false;
@@ -189,7 +268,13 @@ export class ConnectionManager {
   removeConnection(connectionId: string): void {
     this.unsubscribe(connectionId);
     const record = this.clientMap.get(connectionId);
-    if (record?.panelId) this.panelIdIndex.delete(record.panelId);
+    if (record?.panelId) {
+      this.panelIdIndex.delete(record.panelId);
+      // The panel's connection is gone; prune it (and any other now-stale ids)
+      // from the focus stack so the top surfaces the next live panel — this is
+      // exactly what makes "focus the panel focused before the dead one" work.
+      this.pruneDeadFocus();
+    }
     this.connectionMap.delete(connectionId);
     this.clientMap.delete(connectionId);
     console.error('[node-backend]', `Connection removed: ${connectionId}`);
@@ -424,6 +509,7 @@ export class ConnectionManager {
     this.connectionMap.clear();
     this.clientMap.clear();
     this.panelIdIndex.clear();
+    this.lastFocusedPanelIdStack = [];
 
     console.error(
       '[node-backend]',

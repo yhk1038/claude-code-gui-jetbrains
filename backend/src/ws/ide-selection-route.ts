@@ -92,9 +92,11 @@ export function handleIdeSelectionRequest(
   // Always remember the latest selection so a webview that (re)connects later —
   // e.g. tool window reopened — is replayed this file context on connect.
   connections.setLastIdeSelection(payload);
-  // Broadcast live to any webview already connected.
+  // Push live to any webview already connected: to the last-focused panel only
+  // when it has a live connection, else fall back to broadcasting (safe default
+  // when no panel focus is known yet or the focused panel disconnected).
   if (connections.getConnectionCount() > 0) {
-    connections.broadcastToAll(IDE_SELECTION_MESSAGE, payload);
+    connections.routeToFocusedOrBroadcast(IDE_SELECTION_MESSAGE, payload);
   }
 
   return { status: 200, body: { success: true } };

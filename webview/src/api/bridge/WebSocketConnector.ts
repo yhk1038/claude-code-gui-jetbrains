@@ -10,6 +10,7 @@ import {
   persistValidatedToken,
   isRemoteBlocked,
 } from './authToken';
+import { resolvePanelId } from './resolvePanelId';
 import { MessageType } from '@/shared';
 
 export class WebSocketConnector implements Connector {
@@ -88,10 +89,11 @@ export class WebSocketConnector implements Connector {
   ): void {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const env = detectRuntime();
-    // panelId (Kotlin IDE panel UUID) is embedded in the page URL by ClaudeCodePanel.
-    // Forwarding it on the /ws query lets the backend route panel-scoped events
-    // (e.g. NATIVE_DROP) back to the exact webview the user dropped onto.
-    const panelId = new URLSearchParams(window.location.search).get('panelId');
+    // panelId identifies this webview's panel so the backend can route
+    // panel-scoped events (e.g. NATIVE_DROP, editor-context) back to the exact
+    // webview. In JCEF it comes from the URL (`?panelId=UUID`, embedded by
+    // ClaudeCodePanel); in the browser resolvePanelId mints a stable per-tab id.
+    const panelId = resolvePanelId();
     const panelParam = panelId ? `&panelId=${encodeURIComponent(panelId)}` : '';
     const wsUrl = `${protocol}//${window.location.host}/ws?env=${env}${panelParam}`;
     console.log('[WebSocketConnector] Connecting to:', wsUrl);

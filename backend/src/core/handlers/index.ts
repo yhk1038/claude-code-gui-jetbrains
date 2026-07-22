@@ -69,6 +69,7 @@ import { tunnelStopHandler } from './tunnelStop';
 import { getTunnelStatusHandler } from './getTunnelStatus';
 import { getTunnelPrereqsHandler } from './getTunnelPrereqs';
 import { issueTunnelPairingHandler } from './issueTunnelPairing';
+import { issueLocalPairingHandler } from './issueLocalPairing';
 import { installCloudflaredHandler } from './installCloudflared';
 import { sleepGuardEnableHandler } from './sleepGuardEnable';
 import { sleepGuardDisableHandler } from './sleepGuardDisable';
@@ -80,6 +81,7 @@ import { listSystemSoundsHandler } from './listSystemSounds';
 import { playSystemSoundHandler } from './playSystemSound';
 import { clientInfoHandler } from './clientInfo';
 import { clientErrorHandler } from './clientError';
+import { panelFocusedHandler } from './panelFocused';
 import { getMcpServersHandler } from './getMcpServersHandler';
 import { getMcpServerToolsHandler } from './getMcpServerToolsHandler';
 import {
@@ -309,6 +311,9 @@ export async function handleMessage(
     case MessageType.ISSUE_TUNNEL_PAIRING:
       await issueTunnelPairingHandler(connectionId, message, connections, bridge);
       break;
+    case MessageType.ISSUE_LOCAL_PAIRING:
+      await issueLocalPairingHandler(connectionId, message, connections, bridge);
+      break;
     case MessageType.INSTALL_CLOUDFLARED:
       await installCloudflaredHandler(connectionId, message, connections, bridge);
       break;
@@ -341,6 +346,9 @@ export async function handleMessage(
       break;
     case MessageType.CLIENT_ERROR:
       clientErrorHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.PANEL_FOCUSED:
+      panelFocusedHandler(connectionId, message, connections, bridge);
       break;
     case MessageType.GET_MCP_SERVERS:
       await getMcpServersHandler(connectionId, message, connections, bridge);

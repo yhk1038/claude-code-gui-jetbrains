@@ -143,7 +143,11 @@ class ClaudeCodePanel(
             holder?.onStreamingStateChanged = value
         }
 
-    private val panelId = UUID.randomUUID().toString()
+    // panelId IS the tabId — one identity across Kotlin (tabId) and the backend
+    // (panelId), so backend-side lastFocused routing maps straight back to a Kotlin
+    // panel with no separate mapping layer. JCEF only; a browser tab mints its own
+    // panelId in resolvePanelId.
+    private val panelId = tabId
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val backendService = NodeBackendService.getInstance()
