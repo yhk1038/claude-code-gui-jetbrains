@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { validateOrigin, isNonLoopbackBind } from '../ws-server';
+import {
+  validateOrigin,
+  isNonLoopbackBind,
+  extractAuthToken,
+  validateAuthToken,
+  AUTH_SUBPROTOCOL,
+} from '../ws-server';
 
 // These tests exercise the REAL exported validateOrigin (not a replica), so the
 // security contract can never silently drift from the source implementation.
@@ -82,6 +88,60 @@ describe('ws-server security', () => {
 
     it('should keep allowing loopback origins', () => {
       expect(validateOrigin('http://localhost:19836', '192.168.0.5:19836', true)).toBe(true);
+    });
+  });
+
+  describe('extractAuthToken() — Sec-WebSocket-Protocol parsing', () => {
+    it('returns undefined for a missing header', () => {
+      expect(extractAuthToken(undefined)).toBeUndefined();
+    });
+
+    it('returns undefined for an empty header', () => {
+      expect(extractAuthToken('')).toBeUndefined();
+    });
+
+    it('extracts the token paired with the ccg-auth marker (with space)', () => {
+      expect(extractAuthToken(`${AUTH_SUBPROTOCOL}, my-secret-token`)).toBe('my-secret-token');
+    });
+
+    it('extracts the token paired with the ccg-auth marker (no space)', () => {
+      expect(extractAuthToken(`${AUTH_SUBPROTOCOL},my-secret-token`)).toBe('my-secret-token');
+    });
+
+    it('returns undefined when only the marker is present (no token)', () => {
+      expect(extractAuthToken(AUTH_SUBPROTOCOL)).toBeUndefined();
+    });
+
+    it('returns undefined when the marker is absent (bare token, no marker)', () => {
+      expect(extractAuthToken('my-secret-token')).toBeUndefined();
+    });
+  });
+
+  describe('validateAuthToken() — timing-safe comparison', () => {
+    const expected = 'a'.repeat(64);
+
+    it('accepts the correct token behind the marker', () => {
+      expect(validateAuthToken(`${AUTH_SUBPROTOCOL}, ${expected}`, expected)).toBe(true);
+    });
+
+    it('rejects a wrong token of equal length', () => {
+      expect(validateAuthToken(`${AUTH_SUBPROTOCOL}, ${'b'.repeat(64)}`, expected)).toBe(false);
+    });
+
+    it('rejects a token of different length without throwing', () => {
+      expect(validateAuthToken(`${AUTH_SUBPROTOCOL}, short`, expected)).toBe(false);
+    });
+
+    it('rejects a missing token (marker only)', () => {
+      expect(validateAuthToken(AUTH_SUBPROTOCOL, expected)).toBe(false);
+    });
+
+    it('rejects a missing header', () => {
+      expect(validateAuthToken(undefined, expected)).toBe(false);
+    });
+
+    it('rejects when the marker is absent', () => {
+      expect(validateAuthToken(expected, expected)).toBe(false);
     });
   });
 

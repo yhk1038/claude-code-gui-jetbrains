@@ -10,20 +10,30 @@ readonly _CCG_RESTART_EXIT_CODE=75
 # Minimum seconds between successive restarts (crash-loop guard).
 readonly _CCG_RESTART_MIN_INTERVAL=2
 
-# _spawn_one_iteration <cache_dir> <first_run> [bind]
+# _spawn_one_iteration <cache_dir> <first_run> <bind> <auth_token> <pair_code>
 #   Spawns node backend.mjs once. Blocks until node exits.
 #   Outputs log lines (including PORT:n handshake) to stdout.
 #   Browser is opened only when first_run=1.
 #   <bind> (default loopback) is passed to node as CCG_BIND (bind address).
+#   <auth_token> is the STABLE control-channel token: exported to node as
+#     CCG_AUTH_TOKEN. Derived from the persisted secret, so it is identical across
+#     respawns AND across separate `ccg run` invocations. NEVER placed in a URL.
+#   <pair_code> is the fresh single-use pairing code: exported to node as
+#     CCG_INITIAL_PAIR_CODE (the backend seeds its pairing store with it) and
+#     appended to the browser URL as ?pair=<code>. The webview redeems it once for
+#     the token. Reused across respawns within one launch (the already-open webview
+#     already holds the token and reconnects with it).
 #   Returns node's exit code.
 _spawn_one_iteration() {
   local cache_dir=$1
   local first_run=$2
   local bind=${3:-127.0.0.1}
+  local auth_token=${4:-}
+  local pair_code=${5:-}
   local backend="$cache_dir/backend.mjs"
   local webview="$cache_dir/webview"
   local cwd_url
-  cwd_url=$(_webview_url "$(pwd)")
+  cwd_url=$(_webview_url "$(pwd)" "$pair_code")
 
   # Unique fifo path. Pre-clean any stale leftover with the same name.
   local fifo
@@ -34,7 +44,11 @@ _spawn_one_iteration() {
   # Start node directly (no wrapping subshell) so $! is node's actual PID.
   # </dev/null detaches stdin: the backend cannot swallow Ctrl+C as 0x03.
   # PORT/CCG_BIND select the backend's listen port/host (default 19836/loopback).
-  PORT="${CCG_PORT:-19836}" CCG_BIND="$bind" WEBVIEW_DIR="$webview" node "$backend" </dev/null >"$fifo" 2>&1 &
+  # CCG_AUTH_TOKEN is the stable control-channel token the backend requires on
+  # /ws, /rpc, /logs and the /internal routes (backend authToken picks it up).
+  # CCG_INITIAL_PAIR_CODE seeds the backend's pairing store so the webview can
+  # redeem the `?pair=` code for the token on first load.
+  PORT="${CCG_PORT:-19836}" CCG_BIND="$bind" CCG_AUTH_TOKEN="$auth_token" CCG_INITIAL_PAIR_CODE="$pair_code" WEBVIEW_DIR="$webview" node "$backend" </dev/null >"$fifo" 2>&1 &
   local pid=$!
 
   # Background reader: forward log lines, detect PORT:n, print URL + open browser.
@@ -89,12 +103,21 @@ _spawn_backend_and_open_browser() {
   local first_run=1
   local last_start rc
 
+  # STABLE auth token derived from the persisted secret — identical across respawns
+  # AND across separate `ccg run` invocations. Plus a FRESH single-use pairing code
+  # for THIS launch, reused across respawns (exit 75): the already-open webview has
+  # already redeemed it for the token and reconnects with the token, so the seeded
+  # code only matters for the initial first_run browser load.
+  local auth_token pair_code
+  auth_token=$(_ccg_auth_token)
+  pair_code=$(_ccg_new_pair_code)
+
   while true; do
     last_start=$(date +%s)
     rc=0
 
     # Capture exit code without triggering set -e on nonzero returns.
-    _spawn_one_iteration "$cache_dir" "$first_run" "$bind" || rc=$?
+    _spawn_one_iteration "$cache_dir" "$first_run" "$bind" "$auth_token" "$pair_code" || rc=$?
 
     if [[ "$rc" -ne "$_CCG_RESTART_EXIT_CODE" ]]; then
       # Normal exit or unrelated error — propagate the exit code.

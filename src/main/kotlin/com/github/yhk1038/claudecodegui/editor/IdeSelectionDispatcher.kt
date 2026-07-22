@@ -244,7 +244,8 @@ object IdeSelectionDispatcher {
         ioScope.launch {
             try {
                 val port = backend.awaitPort(backendKey)
-                postIdeSelection(port, payload.toString())
+                // /internal routes require the stable token (Phase 1 defense-in-depth).
+                postIdeSelection(port, payload.toString(), backend.authToken(backendKey))
             } catch (ex: Exception) {
                 logger.debug("ide-selection dispatch failed (no backend yet or error): ${ex.message}")
             }
@@ -256,8 +257,11 @@ object IdeSelectionDispatcher {
      *
      * Runs on [ioScope] (never the EDT). Short timeouts are intentional — this is
      * a passive channel and must not block the IDE if the backend is slow.
+     *
+     * [authToken] is the backend's stable control-channel token; sent in the
+     * `x-ccg-token` header the backend requires on the /internal routes (never logged).
      */
-    private fun postIdeSelection(port: Int, jsonBody: String) {
+    private fun postIdeSelection(port: Int, jsonBody: String, authToken: String?) {
         val url = URI("http://127.0.0.1:$port/internal/ide-selection").toURL()
         val conn = url.openConnection() as HttpURLConnection
         try {
@@ -266,6 +270,9 @@ object IdeSelectionDispatcher {
             conn.requestMethod = "POST"
             conn.doOutput = true
             conn.setRequestProperty("Content-Type", "application/json")
+            // Custom header (mirrors backend HTTP_AUTH_HEADER) — chosen over
+            // Authorization to avoid clashing with Claude's own auth / proxy rewrites.
+            if (!authToken.isNullOrEmpty()) conn.setRequestProperty("x-ccg-token", authToken)
             conn.outputStream.use { it.write(jsonBody.toByteArray(Charsets.UTF_8)) }
             val code = conn.responseCode
             logger.debug("POST /internal/ide-selection returned HTTP $code")

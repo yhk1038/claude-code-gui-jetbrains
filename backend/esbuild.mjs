@@ -34,6 +34,14 @@ const common = {
   external: [],
   define: {
     '__PLUGIN_VERSION__': JSON.stringify(pkg.version),
+    // The esbuild bundle (backend.mjs) is by definition the shipped, production
+    // artifact — dev runs `src/server.ts` through tsx (`pnpm dev`) and never the
+    // bundle. Bake NODE_ENV=production so isDev()/isProd() are reliable at
+    // runtime even though the launchers (Kotlin spawn, ccg foreground.sh) clear
+    // or omit NODE_ENV. This is what lets the per-launch auth token default to a
+    // RANDOM secret in production (never the shared dev token) when
+    // CCG_AUTH_TOKEN is somehow unset — see backend/src/config/environment.ts.
+    'process.env.NODE_ENV': JSON.stringify('production'),
     // Keys defined in the root .env, injected at build time — never committed
     // as source constants.
     ...injectedDefine,

@@ -1,7 +1,9 @@
 import { createServer, type Server, type IncomingMessage, type ServerResponse } from 'http';
 import { readFile } from 'fs/promises';
 import { join, extname, resolve, sep } from 'path';
+import { timingSafeEqual } from 'crypto';
 import { WebSocketServer, type WebSocket } from 'ws';
+import { authToken } from '../config/environment';
 import { ConnectionManager } from './connection-manager';
 import { handleEditorContextRequest } from './editor-context-route';
 import { handleIdeSelectionRequest } from './ide-selection-route';
@@ -11,6 +13,7 @@ import { ClientEnv, MessageType } from '../shared';
 import { getPluginVersion } from '../core/handlers/getVersion';
 import { cancelLogin } from '../core/handlers/login';
 import { reportBackendError, trackActivity } from '../core/features/telemetry';
+import { tunnelPairing } from '../core/features/tunnel-pairing';
 import { LogWebSocketServer } from '../logging/log-ws';
 
 const ALLOWED_WS_ORIGINS = new Set([
@@ -70,6 +73,80 @@ export function validateOrigin(
   } catch {
     return false;
   }
+}
+
+// ── 제어 채널 토큰 인증 ─────────────────────────────────────
+// RFC 6455 WebSocket에는 내장 인증이 없다. 브라우저 WebSocket이 handshake에 붙일
+// 수 있는 유일한 헤더인 Sec-WebSocket-Protocol(서브프로토콜)에 토큰을 실어 보낸다.
+// 클라이언트는 `new WebSocket(url, ['ccg-auth', token])`로 접속하므로 헤더는
+// `ccg-auth, <token>` 형태의 콤마 구분 목록이 된다. 쿼리스트링(`?token=`)은
+// 로그·히스토리·Referer로 유출될 수 있어 채택하지 않는다(표준 하드닝).
+export const AUTH_SUBPROTOCOL = 'ccg-auth';
+
+// /internal/* HTTP POST 푸시(에디터 컨텍스트/셀렉션)는 loopback 전용이나 방어심화로
+// 동일 토큰을 요구한다. 커스텀 헤더를 쓴다 — Claude 자체 인증(Authorization)과
+// 혼동을 피하고, 프록시가 Authorization을 건드릴 여지를 없애기 위해서다.
+//
+// IMPORTANT: this header carries the AUTH/bearer token (the per-launch auth
+// token), NOT a CSRF token. It is a secret credential that authenticates the
+// caller — treat it as such (never log it, compare it constant-time). Do not
+// mistake it for a CSRF/double-submit cookie token or handle it more loosely.
+export const HTTP_AUTH_HEADER = 'x-ccg-token';
+
+// POST /pair 의 페어링 코드 전달 헤더(대안: JSON 바디 { code }). 원격 기기는 아직
+// 토큰이 없으므로(닭-달걀) 이 엔드포인트는 토큰 없이 접근 가능하며, 페어링 코드
+// 자체가 자격증명이다. 헤더 이름은 node가 소문자로 정규화한다.
+export const PAIR_CODE_HEADER = 'x-ccg-pair-code';
+
+/** Constant-time token compare that never throws on length mismatch. */
+function timingSafeTokenEqual(provided: string | undefined, expected: string): boolean {
+  if (!provided) return false;
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  // timingSafeEqual throws on differing lengths — guard first. The early length
+  // check is not itself constant-time, but token length is not secret.
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
+
+/**
+ * Extract the auth token from a Sec-WebSocket-Protocol header value.
+ *
+ * The header is a comma-separated list; a valid request pairs the `ccg-auth`
+ * marker with the secret token, e.g. `"ccg-auth, <token>"`. Returns the token
+ * paired with the marker, or undefined when the marker or token is absent.
+ */
+export function extractAuthToken(protocolHeader: string | undefined): string | undefined {
+  if (!protocolHeader) return undefined;
+  const parts = protocolHeader
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (!parts.includes(AUTH_SUBPROTOCOL)) return undefined;
+  const token = parts.find((p) => p !== AUTH_SUBPROTOCOL);
+  return token || undefined;
+}
+
+/**
+ * Validate the token carried in a Sec-WebSocket-Protocol header against the
+ * expected per-launch token, using a constant-time comparison.
+ */
+export function validateAuthToken(
+  protocolHeader: string | undefined,
+  expected: string,
+): boolean {
+  return timingSafeTokenEqual(extractAuthToken(protocolHeader), expected);
+}
+
+/**
+ * handleProtocols for the ws WebSocketServers: always negotiate back the
+ * `ccg-auth` marker (never the secret token), so the browser's
+ * WebSocket.protocol resolves cleanly and the token is never reflected in the
+ * handshake response. The token itself was already validated in the upgrade
+ * handler before handleUpgrade runs.
+ */
+export function selectAuthSubprotocol(protocols: Set<string>): string | false {
+  return protocols.has(AUTH_SUBPROTOCOL) ? AUTH_SUBPROTOCOL : false;
 }
 
 export type BridgeMap = Record<ClientEnv, Bridge>;
@@ -201,9 +278,11 @@ export function startWebSocketServer(
     // the historical allowlist-only behavior (DNS-rebinding stays closed).
     const allowSameOrigin = isNonLoopbackBind(host);
 
-    // wss와 connections는 한 번만 생성
-    const wss = new WebSocketServer({ noServer: true });
-    const rpcWss = new WebSocketServer({ noServer: true });
+    // wss와 connections는 한 번만 생성. handleProtocols는 협상되는 서브프로토콜을
+    // 항상 `ccg-auth` 마커로 고정한다 — 클라이언트가 순서를 바꿔 보내더라도 비밀
+    // 토큰이 handshake 응답에 반영되지 않도록 방어한다.
+    const wss = new WebSocketServer({ noServer: true, handleProtocols: selectAuthSubprotocol });
+    const rpcWss = new WebSocketServer({ noServer: true, handleProtocols: selectAuthSubprotocol });
 
     // WebSocket 연결 핸들러 — 한 번만 등록
     wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
@@ -258,10 +337,74 @@ export function startWebSocketServer(
       async (req: IncomingMessage, res: ServerResponse) => {
         const urlPath = (req.url ?? '/').split('?')[0];
 
+        // /version is a harmless read used as a port-readiness/health probe by the
+        // bootstrap (Kotlin/foreground.sh) BEFORE any token is available. Leave it
+        // UNAUTHENTICATED so readiness probes keep working; it exposes no secrets
+        // and mutates nothing.
         if (urlPath === '/version') {
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ version: getPluginVersion() }));
           return;
+        }
+
+        // POST /pair — short-lived one-time pairing exchange for the Remote-Control
+        // tunnel. The remote device has NO auth token yet; the single-use pairing
+        // code (delivered out-of-band via the QR the operator shows) IS its
+        // credential, so this endpoint is intentionally reachable WITHOUT the auth
+        // token. A valid, unexpired, unconsumed code → 200 { token }; invalid or
+        // expired → 401; rate-limited/locked → 429.
+        //
+        // Design choice (documented): returning the token to anyone holding a live
+        // code IS the intended handshake. The protection is the code's 192-bit
+        // entropy + short TTL + single-use + lockout, NOT URL/endpoint secrecy.
+        // The route is always-on and gated purely on "is there a live issued
+        // code": with no code issued (tunnel off) every attempt fails as 'invalid'.
+        // The code and token are never logged.
+        if (req.method === 'POST' && urlPath === '/pair') {
+          const headerCode = req.headers[PAIR_CODE_HEADER];
+          let code = Array.isArray(headerCode) ? headerCode[0] : headerCode;
+          if (!code) {
+            try {
+              const rawBody = await readRequestBody(req);
+              if (rawBody) {
+                const parsed = JSON.parse(rawBody) as { code?: unknown };
+                if (typeof parsed.code === 'string') code = parsed.code;
+              }
+            } catch {
+              // Missing/invalid body → treated as an invalid code below.
+            }
+          }
+          const result = tunnelPairing.redeem(code ?? '');
+          if (result.ok) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ token: result.token }));
+          } else if (result.reason === 'locked') {
+            console.error('[node-backend]', 'Pairing attempt rejected: rate-limited (locked)');
+            res.writeHead(429, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Too many attempts' }));
+          } else {
+            console.error('[node-backend]', `Pairing attempt rejected: ${result.reason}`);
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Invalid or expired pairing code' }));
+          }
+          return;
+        }
+
+        // /internal/* are loopback-only IDE→backend mutation pushes. Defense-in-depth:
+        // require the per-launch token via the `x-ccg-token` HTTP header (Bearer-style
+        // custom header — chosen over Authorization to avoid clashing with Claude's own
+        // auth and proxy rewrites). Missing/invalid → 401. Static file serving and
+        // /version stay unauthenticated (webview bootstrap must load before it has a token).
+        // TODO(phase 2): Kotlin's editor-context / ide-selection POSTs must send this header.
+        if (urlPath.startsWith('/internal/')) {
+          const httpToken = req.headers[HTTP_AUTH_HEADER];
+          const provided = Array.isArray(httpToken) ? httpToken[0] : httpToken;
+          if (!timingSafeTokenEqual(provided, authToken)) {
+            console.error('[node-backend]', `Rejected ${req.method} ${urlPath}: missing or invalid auth token`);
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Unauthorized' }));
+            return;
+          }
         }
 
         // IDE → backend editor selection push. Kotlin POSTs the active editor
@@ -314,11 +457,25 @@ export function startWebSocketServer(
     httpServer.on('upgrade', (request, socket, head) => {
       const url = request.url;
 
-      // Origin 검증 — /ws, /logs 공통
+      // Origin 검증 — /ws, /rpc, /logs 공통. Origin은 인증이 아니라 CSWSH 방어
+      // 하드닝 레이어로 그대로 유지한다(약화 금지). 실제 인증은 아래 토큰이 담당.
       const origin = request.headers.origin;
       if (!validateOrigin(origin, request.headers.host, allowSameOrigin)) {
         console.error('[node-backend]', `WebSocket connection rejected: disallowed origin "${origin}"`);
         socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+
+      // 토큰 검증 — /ws, /rpc, /logs 공통. Sec-WebSocket-Protocol 헤더에서
+      // `ccg-auth` 마커와 짝지어진 토큰을 constant-time 비교한다. 누락/불일치는
+      // 401로 소켓 종료. 토큰 값은 절대 로그로 남기지 않는다(성공/실패만).
+      // TODO(phase 2): webview 연결 빌더가 `new WebSocket(url, ['ccg-auth', token])`로
+      //   이 토큰을 부착해야 정상 UX가 복구된다. CLI/Kotlin은 토큰을 env로 전파.
+      const protocolHeader = request.headers['sec-websocket-protocol'];
+      if (!validateAuthToken(protocolHeader, authToken)) {
+        console.error('[node-backend]', 'WebSocket connection rejected: missing or invalid auth token');
+        socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
         socket.destroy();
         return;
       }

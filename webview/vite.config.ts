@@ -44,6 +44,16 @@ export default defineConfig(({ mode }) => {
         target: `ws://localhost:${backendPort}`,
         ws: true,
       },
+      // HTTP 엔드포인트도 백엔드로 프록시 — 없으면 vite가 404를 돌려준다.
+      // /pair: 페어링 코드↔토큰 교환(원격/터널 접속의 유일한 인증 경로). 이게
+      // 프록시되지 않으면 dev 터널에서 올바른 코드조차 404로 실패한다.
+      // /version: 백엔드 헬스/버전 조회.
+      '/pair': {
+        target: `http://localhost:${backendPort}`,
+      },
+      '/version': {
+        target: `http://localhost:${backendPort}`,
+      },
     },
   },
   build: {

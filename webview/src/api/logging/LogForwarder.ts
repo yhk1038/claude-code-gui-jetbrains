@@ -1,4 +1,5 @@
 import { MessageType } from '@/shared';
+import { authSubprotocols, ensureAuthTokenReady, isRemoteBlocked } from '../bridge/authToken';
 
 enum LogLevel {
   LOG = 'log',
@@ -58,23 +59,39 @@ class LogForwarder {
   }
 
   private connect(): void {
+    // Never open a doomed/forbidden logs socket (unpaired remote device). Logging
+    // is best-effort — silently stay disconnected.
+    if (this.disposed || isRemoteBlocked()) return;
+
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/logs`;
 
-    const ws = new WebSocket(wsUrl);
-    ws.onopen = () => {
-      this.ws = ws;
-      this.flush();
-    };
-    ws.onclose = () => {
-      this.ws = null;
-      if (!this.disposed) {
+    // The /logs control channel requires the same per-launch auth token, carried
+    // as the `ccg-auth` subprotocol. The token may only be available after the
+    // async pairing exchange, so resolve it first — and never construct a socket
+    // with an empty token ('' subprotocol is invalid and throws).
+    void ensureAuthTokenReady().then((token) => {
+      if (this.disposed || isRemoteBlocked()) return;
+      if (!token) {
+        // No token yet (pairing pending/failed) — retry later, best-effort.
         this.reconnectTimer = setTimeout(() => this.connect(), RECONNECT_DELAY_MS);
+        return;
       }
-    };
-    ws.onerror = () => {
-      // onclose가 자동으로 호출됨
-    };
+      const ws = new WebSocket(wsUrl, authSubprotocols());
+      ws.onopen = () => {
+        this.ws = ws;
+        this.flush();
+      };
+      ws.onclose = () => {
+        this.ws = null;
+        if (!this.disposed && !isRemoteBlocked()) {
+          this.reconnectTimer = setTimeout(() => this.connect(), RECONNECT_DELAY_MS);
+        }
+      };
+      ws.onerror = () => {
+        // onclose가 자동으로 호출됨
+      };
+    });
   }
 
   private interceptConsole(): void {

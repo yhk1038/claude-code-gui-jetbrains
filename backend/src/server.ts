@@ -8,6 +8,7 @@ import { initSettingsWatcher, stopSettingsWatcher } from './core/features/settin
 import { ensureProfile } from './core/features/profile';
 import { trackEvent, reportBackendError } from './core/features/telemetry';
 import { restoreTunnelState } from './core/features/tunnel-manager';
+import { tunnelPairing } from './core/features/tunnel-pairing';
 import { restoreSleepGuardState } from './core/features/sleep-guard';
 import { isJetBrainsMode, serverPort, serverHost, webviewDir } from './config/environment';
 import { initLogger, getLogger } from './logging';
@@ -224,6 +225,18 @@ async function main() {
     `(mode: ${isJetBrainsMode ? 'JetBrains' : 'browser'})`,
     webviewDir ? `(webviewDir: ${webviewDir})` : '',
   );
+
+  // Seed the launcher-provided INITIAL LOCAL pairing code. The launcher (Kotlin
+  // plugin / ccg CLI) owns the stable auth token and, on each launch, mints a
+  // single-use pairing code that it (a) passes here via CCG_INITIAL_PAIR_CODE and
+  // (b) embeds as `?pair=` in the local webview URL. Seeding it lets the local
+  // webview redeem it at /pair for the token on first load — the token is thus
+  // NEVER placed in any URL. Guarded on presence; the code value is NEVER logged.
+  const initialPairCode = process.env.CCG_INITIAL_PAIR_CODE?.trim();
+  if (initialPairCode) {
+    tunnelPairing.seedCode(initialPairCode);
+    console.error('[node-backend]', 'Seeded initial local pairing code');
+  }
 
   // Restore tunnel/sleep state from previous session
   restoreTunnelState();

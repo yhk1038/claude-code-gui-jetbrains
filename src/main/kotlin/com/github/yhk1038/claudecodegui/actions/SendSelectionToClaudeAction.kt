@@ -174,7 +174,8 @@ class SendSelectionToClaudeAction : AnAction() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val port = backend.awaitPort(backendKey)
-                postJson(port, "/internal/editor-context", payload)
+                // /internal routes require the stable token (Phase 1 defense-in-depth).
+                postJson(port, "/internal/editor-context", payload, backend.authToken(backendKey))
             } catch (ex: Exception) {
                 logger.warn("Failed to send editor context to backend", ex)
             } finally {
@@ -199,7 +200,7 @@ class SendSelectionToClaudeAction : AnAction() {
         }
     }
 
-    private fun postJson(port: Int, path: String, payload: JsonObject) {
+    private fun postJson(port: Int, path: String, payload: JsonObject, authToken: String?) {
         val url = URI("http://127.0.0.1:$port$path").toURL()
         val conn = url.openConnection() as HttpURLConnection
         try {
@@ -208,6 +209,9 @@ class SendSelectionToClaudeAction : AnAction() {
             conn.requestMethod = "POST"
             conn.doOutput = true
             conn.setRequestProperty("Content-Type", "application/json")
+            // Stable control-channel token in the custom header the backend requires
+            // on the /internal routes (mirrors backend HTTP_AUTH_HEADER). Never logged.
+            if (!authToken.isNullOrEmpty()) conn.setRequestProperty("x-ccg-token", authToken)
             conn.outputStream.use { it.write(payload.toString().toByteArray(Charsets.UTF_8)) }
             // Fire-and-forget: read the response code only to flush the request.
             val code = conn.responseCode

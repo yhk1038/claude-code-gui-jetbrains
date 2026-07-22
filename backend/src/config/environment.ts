@@ -1,4 +1,5 @@
 import { existsSync } from 'fs';
+import { randomBytes } from 'crypto';
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -35,6 +36,32 @@ export const serverPort = parseInt(process.env.PORT ?? String(DEFAULT_PORT), 10)
 // ws-server가 strict same-origin 완화를 함께 켠다(ws-server.ts::startWebSocketServer).
 const DEFAULT_HOST = '127.0.0.1';
 export const serverHost = process.env.CCG_BIND?.trim() || DEFAULT_HOST;
+
+// ── 제어 채널 인증 토큰 ───────────────────────────────────
+// /ws · /rpc · /logs 제어 채널과 /internal/* 푸시를 인증하는 인증 토큰.
+// 인증이 없으면 포트에 닿는 임의 클라이언트가 bypass 권한으로 Claude 세션을
+// 시작할 수 있어 RCE가 된다(제보 배경).
+//
+// 소유권(중요): 이제 토큰은 **런처(Kotlin 플러그인 / ccg CLI)가 소유하는 STABLE
+// per-machine 토큰**이다. 런처가 디스크에 영속화한 비밀(→ HMAC 파생)로 안정적인
+// 토큰을 만들어 CCG_AUTH_TOKEN env로 백엔드에 주입한다. 백엔드는 그 값을 그대로
+// 소비할 뿐, 비밀을 디스크에서 읽거나 생성하지 않는다(디스크-비밀 로직은 런처의 몫).
+// 프로덕션(JetBrains/ccg)에서는 런처가 항상 CCG_AUTH_TOKEN을 주입하므로 아래
+// randomBytes 분기는 어떤 부트스트랩도 토큰을 주지 못했을 때의 안전 폴백일 뿐이다.
+// serverHost와 동일하게 모듈 로드 시 1회 평가되는 상수라 프로세스 수명 내내 같은
+// 값이 쓰인다. 주의: 이 값은 절대 로그로 출력하지 않는다.
+//
+// dev 편의(footgun 없이): 로컬 Vite 개발에서는 부트스트랩(Kotlin/foreground.sh)이
+// 없어 CCG_AUTH_TOKEN이 주입되지 않는다. 이때 dev에 한해 고정 dev 토큰을 기본값으로
+// 써서 webview(import.meta.env.VITE_CCG_DEV_TOKEN 미설정 시 동일 상수)와 짝이 맞게
+// 한다. 이 고정값은 의도적으로 안전하지 않은 개발 전용 값이며, 프로덕션(dev 신호 없음)
+// 에서는 절대 쓰이지 않고 랜덤 토큰으로 폴백한다. dev 신호는 isDev()(NODE_ENV)로 판정
+// 하며, 배포 번들(backend.mjs)은 esbuild가 NODE_ENV='production'을 박제하므로
+// 프로덕션에서 isDev()는 확실히 false다(backend/esbuild.mjs 참조). webview 연결 빌더가
+// 이 토큰을 Sec-WebSocket-Protocol 헤더(`['ccg-auth', token]`)로 부착한다.
+const DEV_INSECURE_AUTH_TOKEN = 'ccg-dev-insecure-token';
+export const authToken = process.env.CCG_AUTH_TOKEN?.trim()
+  || (isDev() ? DEV_INSECURE_AUTH_TOKEN : randomBytes(32).toString('hex'));
 
 // ── 재기동 신호 ─────────────────────────────────────────
 // "플러그인 재기동"의 통일 신호. 프론트엔드 실행환경(브라우저 환경/JetBrains)이나

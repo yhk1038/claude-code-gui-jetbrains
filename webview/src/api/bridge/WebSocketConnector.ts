@@ -2,6 +2,14 @@
 
 import type { Connector, RawMessageHandler, ConnectionChangeHandler } from './Connector';
 import { detectRuntime } from '../../config/environment';
+import {
+  authSubprotocols,
+  ensureAuthTokenReady,
+  hasPairCode,
+  getPairingStatus,
+  persistValidatedToken,
+  isRemoteBlocked,
+} from './authToken';
 import { MessageType } from '@/shared';
 
 export class WebSocketConnector implements Connector {
@@ -33,6 +41,51 @@ export class WebSocketConnector implements Connector {
     if (this.isConnecting || this.disposed) return;
     this.isConnecting = true;
 
+    // Token acquisition may be ASYNC on the pairing path: a `?pair=` code (the
+    // sole production delivery, for both local and remote clients) must be
+    // exchanged for the real token at POST /pair before we can open the control
+    // channel. Await it so no socket is ever opened token-less. When a validated
+    // token is already cached (sessionStorage) or in dev, this resolves
+    // synchronously-fast.
+    ensureAuthTokenReady()
+      .then((token) => {
+        if (this.disposed) {
+          this.isConnecting = false;
+          return;
+        }
+        // Remote pairing failed (code expired/locked/unreachable): don't open a
+        // doomed socket and don't spin a silent 401 reconnect loop — the UI
+        // surfaces a "rescan the QR" state driven by the pairing status.
+        if (!token && hasPairCode() && getPairingStatus().state === 'failed') {
+          this.isConnecting = false;
+          onFirstError?.(new Error('Remote pairing failed'));
+          onFirstError = undefined;
+          onFirstConnect = undefined;
+          return;
+        }
+        // Unpaired remote device (tunnel URL, no ?pair= code, no stored token):
+        // definitively forbidden. Don't hammer /ws with 401s — the ForbiddenNotice
+        // shows a hard "403" block instead.
+        if (!token && isRemoteBlocked()) {
+          this.isConnecting = false;
+          onFirstError?.(new Error('Forbidden: unpaired remote device'));
+          onFirstError = undefined;
+          onFirstConnect = undefined;
+          return;
+        }
+        this.openSocket(onFirstConnect, onFirstError);
+      })
+      .catch(() => {
+        // ensureAuthTokenReady never rejects, but guard defensively.
+        this.isConnecting = false;
+        this.scheduleReconnect();
+      });
+  }
+
+  private openSocket(
+    onFirstConnect?: (value: void) => void,
+    onFirstError?: (reason: Error) => void
+  ): void {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const env = detectRuntime();
     // panelId (Kotlin IDE panel UUID) is embedded in the page URL by ClaudeCodePanel.
@@ -43,13 +96,20 @@ export class WebSocketConnector implements Connector {
     const wsUrl = `${protocol}//${window.location.host}/ws?env=${env}${panelParam}`;
     console.log('[WebSocketConnector] Connecting to:', wsUrl);
 
-    const ws = new WebSocket(wsUrl);
+    // Carry the per-launch auth token as the `ccg-auth` subprotocol so the
+    // backend's upgrade handler accepts the control channel (Phase 1 requires it).
+    const ws = new WebSocket(wsUrl, authSubprotocols());
     this.ws = ws;
 
     ws.onopen = () => {
       console.log('[WebSocketConnector] Connected');
       this.isConnecting = false;
       this.connected = true;
+      // The handshake passed the backend's token gate, so this token is valid —
+      // persist it (validate-then-store) so a page reload reconnects without
+      // re-redeeming a pairing code (the ?pair= code is single-use / already
+      // consumed). A wrong token never reaches here.
+      persistValidatedToken();
       this.notifyConnectionChange(true);
       // 텔레메트리 client 식별용으로 브라우저 UA를 백엔드에 알린다(standalone 모드 의미).
       // JetBrains 모드는 CCG_CLIENT_INFO env가 우선하므로 무해하다.
@@ -87,12 +147,7 @@ export class WebSocketConnector implements Connector {
       this.notifyConnectionChange(false);
 
       // 자동 재연결 (disposed 되지 않은 경우만)
-      if (!this.disposed) {
-        this.reconnectTimeout = setTimeout(() => {
-          console.log('[WebSocketConnector] Attempting to reconnect...');
-          this.connectInternal();
-        }, 2000);
-      }
+      this.scheduleReconnect();
     };
 
     ws.onerror = (error) => {
@@ -104,6 +159,27 @@ export class WebSocketConnector implements Connector {
         onFirstConnect = undefined;
       }
     };
+  }
+
+  /**
+   * Schedule a delayed reconnect unless disposed or the remote pairing failed
+   * unrecoverably (an expired/locked code can only be fixed by rescanning the
+   * QR, i.e. a fresh page load — retrying token-less would just 401-loop).
+   */
+  private scheduleReconnect(): void {
+    if (this.disposed) return;
+    if (hasPairCode() && getPairingStatus().state === 'failed') {
+      console.log('[WebSocketConnector] Remote pairing failed — not reconnecting; rescan the QR.');
+      return;
+    }
+    if (isRemoteBlocked()) {
+      console.log('[WebSocketConnector] Unpaired remote device — not reconnecting (403).');
+      return;
+    }
+    this.reconnectTimeout = setTimeout(() => {
+      console.log('[WebSocketConnector] Attempting to reconnect...');
+      this.connectInternal();
+    }, 2000);
   }
 
   disconnect(): void {

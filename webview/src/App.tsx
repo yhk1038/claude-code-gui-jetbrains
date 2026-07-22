@@ -5,6 +5,9 @@ import { AppProviders } from './contexts';
 import { I18nLocaleSync } from './i18n/I18nLocaleSync';
 import { ChatPage, SettingsPage, SettingsOverlay, SwitchAccountPage, ProjectSelectorPage, SessionPanelPage } from './pages';
 import { AccountUsageModal } from './components/AccountUsageModal';
+import { ForbiddenNotice } from './components/ForbiddenNotice';
+import { isRemoteBlocked } from './api/bridge/authToken';
+import { usePairingStatus } from './hooks/usePairingStatus';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { OPEN_ACCOUNT_USAGE_EVENT } from './commandPalette/sections/model/AccountUsageItem';
@@ -49,6 +52,10 @@ function AppContent() {
       {isAccountUsageOpen && (
         <AccountUsageModal onClose={() => setIsAccountUsageOpen(false)} />
       )}
+
+      {/* Remote-device pairing failure (expired/locked/unreachable ?pair= code):
+          shows "rescan the QR" instead of a silent 401 reconnect loop. Renders
+          nothing in normal local use. */}
       <Toaster
         position="top-center"
         containerStyle={{ top: 40 }}
@@ -74,6 +81,20 @@ function AppContent() {
 }
 
 function App() {
+  // Access is blocked when EITHER the device is an unpaired remote (a tunnel URL
+  // with no `?pair=` code) OR a pairing attempt did not succeed for any reason
+  // (expired / wrong / rate-limited / unreachable). usePairingStatus makes this
+  // reactive so a pairing that fails after mount flips us to the block. A LOCAL
+  // transient disconnect is NEVER blocked (isRemoteBlocked stays false).
+  const { state: pairingState } = usePairingStatus();
+  const blocked = isRemoteBlocked() || pairingState === 'failed';
+
+  // Render ONLY the hard "403" block on an EMPTY template — do NOT mount the app
+  // providers, router, or chat UI (nothing to connect, nothing leaking behind).
+  if (blocked) {
+    return <ForbiddenNotice />;
+  }
+
   return (
     <ErrorBoundary>
       <AppProviders>
