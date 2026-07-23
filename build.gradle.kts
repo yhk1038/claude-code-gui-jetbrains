@@ -146,6 +146,10 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
+            <h3>0.25.2 - Clickable file references in chat</h3>
+            <ul>
+                <li>File references in chat messages — like src/app.ts:42 — are now clickable and jump straight to that line in your IDE (#210 by @wast-bast, requested in #183 by @kingfen-wu)</li>
+            </ul>
             <h3>0.25.1 - Editor context follows the panel you're focused on</h3>
             <ul>
                 <li>Editor context — the Alt+K mention and the file badge — now goes to the Claude Code panel you last focused, even with multiple tabs or panels open (reported in #199 by @volador123 and #205 by @BigPineappleDe)</li>
