@@ -76,6 +76,12 @@ export enum MessageType {
   /** Persist the user's telemetry consent decision. */
   SET_TELEMETRY_CONSENT = 'SET_TELEMETRY_CONSENT',
 
+  // -- Announcements --
+  /** Fetch the current locale's announcement list plus dismissedIds. Backend fetches (cached) from the remote delivery endpoint and returns the raw response. inbound webview→backend */
+  GET_ANNOUNCEMENTS = 'GET_ANNOUNCEMENTS',
+  /** Persist a `{ id }` dismissal to profile.json and return the updated dismissedIds. inbound webview→backend */
+  DISMISS_ANNOUNCEMENT = 'DISMISS_ANNOUNCEMENT',
+
   // -- Sponsor / license --
   /** Build the sponsorship (pricing) URL with the install id + account context prefilled, for the webview to open in the external browser. The install id stays backend-side (never exposed to the webview). inbound webview→backend */
   GET_SPONSOR_URL = 'GET_SPONSOR_URL',
