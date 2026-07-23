@@ -53,6 +53,7 @@ import { loginHandler } from './login';
 import { submitLoginCodeHandler } from './submitLoginCode';
 import { openUrlHandler } from './openUrl';
 import { getAvailableTerminalsHandler } from './getAvailableTerminals';
+import { getAvailableEditorsHandler } from './getAvailableEditors';
 import { getDetectedCliPathHandler } from './getDetectedCliPath';
 import { getDetectedNodePathHandler } from './getDetectedNodePath';
 import { pickFilesHandler } from './pickFiles';
@@ -145,7 +146,7 @@ export async function handleMessage(
       await renameSessionHandler(connectionId, message, connections, bridge);
       break;
     case MessageType.GET_SETTINGS:
-      await getSettingsHandler(connectionId, message, connections, bridge);
+      await getSettingsHandler(connectionId, message, connections, bridge, bridges);
       break;
     case MessageType.SAVE_SETTINGS:
       await saveSettingsHandler(connectionId, message, connections, bridge);
@@ -263,6 +264,9 @@ export async function handleMessage(
       break;
     case MessageType.GET_AVAILABLE_TERMINALS:
       await getAvailableTerminalsHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.GET_AVAILABLE_EDITORS:
+      await getAvailableEditorsHandler(connectionId, message, connections, bridge);
       break;
     case MessageType.GET_DETECTED_CLI_PATH:
       await getDetectedCliPathHandler(connectionId, message, connections, bridge);

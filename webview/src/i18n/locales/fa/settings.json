@@ -27,6 +27,16 @@
     "projectDisabledTooltip": "برای استفاده از تنظیمات پروژه، یک پروژه را باز کنید"
   },
   "general": {
+    "openFilesWith": {
+      "label": "Open files with",
+      "description": "Which program opens a file reference clicked in chat.",
+      "jetbrainsDescription": "Files open in your connected IDE.",
+      "jetbrainsFallback": "Connected IDE",
+      "systemDefault": "System default",
+      "custom": "Custom…",
+      "customPlaceholder": "App name or path",
+      "detecting": "Detecting…"
+    },
     "language": {
       "label": "زبان",
       "description": "زبان ترجیحی Claude برای پاسخ‌دهی",

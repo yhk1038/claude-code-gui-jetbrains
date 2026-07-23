@@ -12,6 +12,9 @@ export class BrowserBridge implements Bridge {
   // line/column are accepted for interface parity but can't be honored by the OS
   // opener (xdg-open/open/explorer) — line focus is a JetBrains-mode feature.
   async openFile(path: string, _line?: number, _column?: number): Promise<void> {
+    const settings = await readSettingsFile();
+    const openFilesWith = settings['openFilesWith'] as string | null;
+
     return new Promise<void>((resolve) => {
       const cb = (err: Error | null) => {
         if (err) {
@@ -19,6 +22,23 @@ export class BrowserBridge implements Bridge {
         }
         resolve();
       };
+
+      if (openFilesWith) {
+        // A user-configured editor is set — launch it directly with the file path,
+        // mirroring how openTerminal() launches a user-configured terminal app.
+        if (process.platform === 'darwin') {
+          execFile('open', ['-a', openFilesWith, path], cb);
+        } else if (process.platform === 'win32') {
+          spawn(openFilesWith, [path], {
+            stdio: 'ignore',
+            detached: true,
+          }).unref();
+          resolve();
+        } else {
+          execFile(openFilesWith, [path], cb);
+        }
+        return;
+      }
 
       if (process.platform === 'darwin') {
         execFile('open', [path], cb);

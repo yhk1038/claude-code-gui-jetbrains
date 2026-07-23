@@ -130,6 +130,22 @@ describe('settings', () => {
       expect(result.error).toContain('terminalApp must be a string or null');
     });
 
+    it('should accept null openFilesWith', async () => {
+      const result = await saveSettingToFile('openFilesWith', null);
+      expect(result.status).toBe('ok');
+    });
+
+    it('should accept string openFilesWith', async () => {
+      const result = await saveSettingToFile('openFilesWith', 'Cursor');
+      expect(result.status).toBe('ok');
+    });
+
+    it('should reject non-string non-null openFilesWith', async () => {
+      const result = await saveSettingToFile('openFilesWith', 42);
+      expect(result.status).toBe('error');
+      expect(result.error).toContain('openFilesWith must be a string or null');
+    });
+
     it('should accept null nodePath', async () => {
       const result = await saveSettingToFile('nodePath', null);
       expect(result.status).toBe('ok');
@@ -218,6 +234,7 @@ describe('settings', () => {
         debugMode: false,
         logLevel: 'info',
         terminalApp: null,
+        openFilesWith: null,
         hostMode: 'editor-tab',
         openSettingsAs: 'overlay',
         chatPagination: true,
@@ -291,6 +308,7 @@ export default {
         debugMode: false,
         logLevel: 'info',
         terminalApp: null,
+        openFilesWith: null,
         hostMode: 'editor-tab',
         openSettingsAs: 'overlay',
         chatPagination: true,

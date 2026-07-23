@@ -27,6 +27,16 @@
     "projectDisabledTooltip": "プロジェクト設定を使用するにはプロジェクトを開いてください"
   },
   "general": {
+    "openFilesWith": {
+      "label": "Open files with",
+      "description": "Which program opens a file reference clicked in chat.",
+      "jetbrainsDescription": "Files open in your connected IDE.",
+      "jetbrainsFallback": "Connected IDE",
+      "systemDefault": "System default",
+      "custom": "Custom…",
+      "customPlaceholder": "App name or path",
+      "detecting": "Detecting…"
+    },
     "language": {
       "label": "言語",
       "description": "Claudeが応答に使用する言語",
