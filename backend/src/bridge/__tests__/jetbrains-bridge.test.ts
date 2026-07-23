@@ -47,6 +47,33 @@ describe('parseProjectRoots', () => {
   });
 });
 
+describe('JetBrainsBridge.isConnected', () => {
+  it('is false with no RPC client, true once an open client connects', () => {
+    const bridge = new JetBrainsBridge();
+    expect(bridge.isConnected()).toBe(false);
+
+    const ws = createMockWs();
+    bridge.addRpcClient(ws as never);
+    expect(bridge.isConnected()).toBe(true);
+  });
+
+  it('is false again after the only client disconnects', () => {
+    const bridge = new JetBrainsBridge();
+    const ws = createMockWs();
+    bridge.addRpcClient(ws as never);
+    ws.emitClose();
+    expect(bridge.isConnected()).toBe(false);
+  });
+
+  it('ignores a client whose socket is not open', () => {
+    const bridge = new JetBrainsBridge();
+    const ws = createMockWs();
+    ws.readyState = 3; // CLOSED
+    bridge.addRpcClient(ws as never);
+    expect(bridge.isConnected()).toBe(false);
+  });
+});
+
 describe('JetBrainsBridge cross-IDE routing', () => {
   it('routes a request to the IDE that owns the path', async () => {
     const bridge = new JetBrainsBridge();

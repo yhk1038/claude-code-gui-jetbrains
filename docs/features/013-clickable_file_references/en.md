@@ -50,6 +50,10 @@ turned into a broken link:
   `openFile(path, line, column)` — the same bridge the editor-context and
   `@`-mention features already use, so no new backend protocol is involved. Line
   and column are 1-based; the IDE opens at the top when no line is given.
+- When you open the chat in a **browser tab from an IDE session**, clicking a
+  reference still opens the file in that **IDE** (at its line/column), not in the
+  OS default app — the backend routes the open to the connected IDE whenever one
+  is attached. A standalone browser with no IDE falls back to the OS opener.
 - Plain-text references are linkified in a webview-only preprocessing step that
   masks code spans, existing links, and URLs before scanning, then hands the
   result to the same Markdown-link renderer — so both kinds of reference share

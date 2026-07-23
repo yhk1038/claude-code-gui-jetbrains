@@ -128,6 +128,15 @@ export class JetBrainsBridge implements Bridge {
   }
 
   /**
+   * Whether at least one IDE host RPC client is currently connected and open.
+   * Lets the handler layer route a browser client's `openFile` to the IDE when
+   * one is attached (jump-to-line in the editor) instead of the OS opener.
+   */
+  isConnected(): boolean {
+    return [...this.rpcClients].some((ws) => ws.readyState === 1);
+  }
+
+  /**
    * Pick the RPC client for an outgoing request. When several IDE hosts share
    * this backend, [routingPath] (a file path or workingDir) selects the client
    * whose registered project root best matches. Falls back to the first open

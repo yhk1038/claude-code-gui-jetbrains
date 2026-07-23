@@ -1,13 +1,14 @@
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
-import { MessageType } from '../../shared';
+import { ClientEnv, MessageType } from '../../shared';
 
 export async function openFileHandler(
   connectionId: string,
   message: IPCMessage,
   connections: ConnectionManager,
   bridge: Bridge,
+  bridges: Record<ClientEnv, Bridge>,
 ): Promise<void> {
   const filePath = message.payload?.filePath as string;
   // Validate at runtime rather than asserting: a non-number line/column (a caller
@@ -18,10 +19,34 @@ export async function openFileHandler(
   const column = typeof rawColumn === 'number' ? rawColumn : undefined;
   if (filePath) {
     try {
-      await bridge.openFile(filePath, line, column);
+      await resolveOpenFileBridge(connectionId, connections, bridge, bridges).openFile(
+        filePath,
+        line,
+        column,
+      );
     } catch (err) {
       console.error('[node-backend]', 'Failed to open file:', err);
     }
   }
   connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
+}
+
+/**
+ * Choose which bridge opens the file. A browser client normally uses the browser
+ * bridge (the OS opener, which can't focus a line and launches the OS default
+ * app). But when this backend also has a live IDE (Kotlin RPC) connection — e.g.
+ * a browser tab opened from an IDE session — route the open to the IDE so the
+ * file opens in the editor at its line/column. Standalone/dev browsers with no
+ * IDE attached fall back to the browser bridge unchanged, and a JCEF client
+ * already resolves to the JetBrains bridge.
+ */
+function resolveOpenFileBridge(
+  connectionId: string,
+  connections: ConnectionManager,
+  bridge: Bridge,
+  bridges: Record<ClientEnv, Bridge>,
+): Bridge {
+  if (connections.getClientEnv(connectionId) !== ClientEnv.BROWSER) return bridge;
+  const jetbrains = bridges[ClientEnv.JETBRAINS];
+  return jetbrains?.isConnected?.() ? jetbrains : bridge;
 }
