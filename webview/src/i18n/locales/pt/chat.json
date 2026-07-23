@@ -1,4 +1,5 @@
 {
+  "fileOpenFailed": "Não foi possível abrir {{path}}",
   "inputBanner": {
     "close": "Fechar"
   },

@@ -37,4 +37,12 @@ export interface Bridge {
    * above the IDE project they are inside.
    */
   getIdeRoot(workingDir?: string): Promise<string | null>;
+  /**
+   * Whether a live IDE host is currently attached to this bridge. Only the
+   * JetBrains bridge tracks IDE (Kotlin RPC) clients; the browser bridge has no
+   * host and omits this. Used to route a browser client's `openFile` to the IDE
+   * when one is connected, so the file opens in the editor at its line/column
+   * instead of the OS default app.
+   */
+  isConnected?(): boolean;
 }

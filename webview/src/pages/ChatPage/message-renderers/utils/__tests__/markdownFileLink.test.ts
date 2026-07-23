@@ -19,6 +19,14 @@ describe('parseMarkdownFileLink', () => {
     expect(parseMarkdownFileLink('/abs/f.ts#L10-L25')).toEqual({ path: '/abs/f.ts', line: 10 });
   });
 
+  it('parses a #L10C5 column anchor', () => {
+    expect(parseMarkdownFileLink('/abs/f.ts#L10C5')).toEqual({ path: '/abs/f.ts', line: 10, column: 5 });
+  });
+
+  it('takes the start line and column from a #L10C5-L20C15 range', () => {
+    expect(parseMarkdownFileLink('/abs/f.ts#L10C5-L20C15')).toEqual({ path: '/abs/f.ts', line: 10, column: 5 });
+  });
+
   it('strips a leading ./ from a relative path', () => {
     expect(parseMarkdownFileLink('./src/f.ts#L5')).toEqual({ path: 'src/f.ts', line: 5 });
   });
@@ -110,6 +118,10 @@ describe('toLocalFileHref', () => {
 describe('resolveMarkdownFileLink', () => {
   it('leaves an absolute path unchanged (working dir irrelevant)', () => {
     expect(resolveMarkdownFileLink('/abs/f.ts#L5', '/wd')).toEqual({ path: '/abs/f.ts', line: 5 });
+  });
+
+  it('carries a line and column through resolution', () => {
+    expect(resolveMarkdownFileLink('./src/f.ts#L3C8', '/wd')).toEqual({ path: '/wd/src/f.ts', line: 3, column: 8 });
   });
 
   it('joins a ./ relative path against the working dir', () => {

@@ -123,6 +123,11 @@ describe('pathFromToken', () => {
     expect(pathFromToken('@src/file.ts#L10')).toBe('src/file.ts');
   });
 
+  it('컬럼 앵커(#L..C..)까지 제거한다', () => {
+    expect(pathFromToken('@src/file.ts#L10C5')).toBe('src/file.ts');
+    expect(pathFromToken('@src/file.ts#L10C5-L20C15')).toBe('src/file.ts');
+  });
+
   it('폴더의 trailing slash를 보존한다', () => {
     expect(pathFromToken('@src/utils/')).toBe('src/utils/');
   });
@@ -139,6 +144,10 @@ describe('lineFromToken', () => {
 
   it('#L10-L25 범위에서는 시작 라인을 반환한다', () => {
     expect(lineFromToken('@src/file.ts#L10-L25')).toBe(10);
+  });
+
+  it('#L10C5 컬럼 앵커에서도 라인 번호를 반환한다', () => {
+    expect(lineFromToken('@src/file.ts#L10C5')).toBe(10);
   });
 
   it('라인 앵커가 없으면 undefined를 반환한다', () => {

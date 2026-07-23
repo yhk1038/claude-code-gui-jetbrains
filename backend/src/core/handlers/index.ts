@@ -1,7 +1,7 @@
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
-import { MessageType } from '../../shared';
+import { ClientEnv, MessageType } from '../../shared';
 import { Claude } from '../claude';
 import { sendMessageHandler } from './sendMessage';
 import { stopGenerationHandler } from './stopGeneration';
@@ -100,6 +100,7 @@ export async function handleMessage(
   message: IPCMessage,
   connections: ConnectionManager,
   bridge: Bridge,
+  bridges: Record<ClientEnv, Bridge>,
 ): Promise<void> {
   console.error('[node-backend]', `Received: ${message.type}`);
 
@@ -189,7 +190,7 @@ export async function handleMessage(
       await getAllUsageHandler(connectionId, message, connections, bridge);
       break;
     case MessageType.OPEN_FILE:
-      await openFileHandler(connectionId, message, connections, bridge);
+      await openFileHandler(connectionId, message, connections, bridge, bridges);
       break;
     case MessageType.OPEN_DIFF:
       await openDiffHandler(connectionId, message, connections, bridge);

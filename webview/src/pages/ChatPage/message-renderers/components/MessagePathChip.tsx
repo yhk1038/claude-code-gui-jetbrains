@@ -1,6 +1,8 @@
 import React from 'react';
+import toast from 'react-hot-toast';
 import { getAdapter } from '../../../../adapters';
 import { useWorkingDir } from '@/contexts/WorkingDirContext';
+import { i18n } from '@/i18n';
 import { pathFromToken, lineFromToken, isFolderToken, resolveFilePath } from '../utils/tokenizeMessagePaths';
 
 interface Props {
@@ -29,6 +31,7 @@ export const MessagePathChip = (props: Props) => {
       .openFile(filePath, lineFromToken(token))
       .catch((err) => {
         console.error('[MessagePathChip] Failed to open file:', err);
+        toast.error(i18n.t('chat:fileOpenFailed', { path: filePath }));
       });
   };
 

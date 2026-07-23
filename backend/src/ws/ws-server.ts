@@ -156,6 +156,7 @@ export type MessageHandler = (
   message: IPCMessage,
   connections: ConnectionManager,
   bridge: Bridge,
+  bridges: BridgeMap,
 ) => Promise<void> | void;
 
 interface WebSocketServerHandle {
@@ -315,7 +316,7 @@ export function startWebSocketServer(
         // Single backend error boundary for the handler layer: any handler that throws
         // (or rejects) flows here, and reportBackendError is the ONLY place that reports it.
         // Individual handlers must NOT call trackError themselves — they rethrow to here.
-        Promise.resolve(handleMessage(connectionId, parsed, connections, bridge)).catch((err) => {
+        Promise.resolve(handleMessage(connectionId, parsed, connections, bridge, bridges)).catch((err) => {
           console.error('[node-backend]', `Unhandled error in handleMessage (${parsed.type}):`, err);
           reportBackendError(err instanceof Error ? err : new Error(String(err)), {
             layer: 'handler',
