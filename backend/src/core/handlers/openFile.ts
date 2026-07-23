@@ -1,3 +1,4 @@
+import { existsSync } from 'fs';
 import type { ConnectionManager } from '../../ws/connection-manager';
 import type { Bridge } from '../../bridge/bridge-interface';
 import type { IPCMessage } from '../types';
@@ -17,7 +18,17 @@ export async function openFileHandler(
   const rawColumn = message.payload?.column;
   const line = typeof rawLine === 'number' ? rawLine : undefined;
   const column = typeof rawColumn === 'number' ? rawColumn : undefined;
+
   if (filePath) {
+    // Fail fast with feedback when the target does not exist: a clicked reference
+    // to a path that isn't on disk (e.g. a made-up `src/app.ts:1`) otherwise opens
+    // nothing silently. The backend owns file I/O and shares the machine with the
+    // IDE/OS opener, so this existence check is authoritative for the webview.
+    if (!existsSync(filePath)) {
+      console.error('[node-backend]', 'Open file: not found:', filePath);
+      ackOpenFile(connections, connectionId, message, { ok: false, reason: 'not-found' });
+      return;
+    }
     try {
       await resolveOpenFileBridge(connectionId, connections, bridge, bridges).openFile(
         filePath,
@@ -26,9 +37,21 @@ export async function openFileHandler(
       );
     } catch (err) {
       console.error('[node-backend]', 'Failed to open file:', err);
+      ackOpenFile(connections, connectionId, message, { ok: false, reason: 'open-failed' });
+      return;
     }
   }
-  connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId });
+  ackOpenFile(connections, connectionId, message, { ok: true });
+}
+
+/** ACK an OPEN_FILE request, carrying success so the webview can surface a failure. */
+function ackOpenFile(
+  connections: ConnectionManager,
+  connectionId: string,
+  message: IPCMessage,
+  result: { ok: boolean; reason?: string },
+): void {
+  connections.sendTo(connectionId, MessageType.ACK, { requestId: message.requestId, ...result });
 }
 
 /**

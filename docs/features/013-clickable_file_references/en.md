@@ -32,6 +32,10 @@ Two kinds of references become clickable:
 Relative paths are resolved against the project's working directory, so
 `./src/x.ts` and `src/x.ts` both open the right file.
 
+If a clicked reference points at a path that isn't on disk (a stale or made-up
+path), the open no longer fails silently — a short toast tells you the file
+couldn't be opened.
+
 ## What is deliberately left alone
 
 Plain-text detection is intentionally conservative, so ordinary prose is never

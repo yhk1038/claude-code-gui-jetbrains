@@ -1,6 +1,7 @@
 import { MessageType, ClientEnv } from '../shared';
 import type { IdeAdapter } from './IdeAdapter';
 import { getBridge } from '../api/bridge/Bridge';
+import { assertFileOpened } from './openFileResult';
 
 /**
  * JetBrains IDE Adapter
@@ -31,7 +32,8 @@ export class JetBrainsAdapter implements IdeAdapter {
   }
 
   async openFile(filePath: string, line?: number, column?: number): Promise<void> {
-    await getBridge().request(MessageType.OPEN_FILE, { filePath, line, column });
+    const res = await getBridge().request(MessageType.OPEN_FILE, { filePath, line, column });
+    assertFileOpened(res, filePath);
     console.log('[JetBrainsAdapter] Sent OPEN_FILE via WebSocket bridge:', filePath, line ?? '');
   }
 

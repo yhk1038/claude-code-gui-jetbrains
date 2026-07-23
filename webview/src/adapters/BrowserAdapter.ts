@@ -1,6 +1,7 @@
 import { MessageType, ClientEnv } from '../shared';
 import type { IdeAdapter } from './IdeAdapter';
 import { getBridge } from '../api/bridge/Bridge';
+import { assertFileOpened } from './openFileResult';
 
 /**
  * Browser Adapter
@@ -56,12 +57,9 @@ export class BrowserAdapter implements IdeAdapter {
   }
 
   async openFile(filePath: string, line?: number, column?: number): Promise<void> {
-    try {
-      await getBridge().request(MessageType.OPEN_FILE, { filePath, line, column });
-      console.log('[BrowserAdapter] Sent OPEN_FILE request:', filePath, line ?? '');
-    } catch (error) {
-      console.error('[BrowserAdapter] Failed to open file:', filePath, error);
-    }
+    const res = await getBridge().request(MessageType.OPEN_FILE, { filePath, line, column });
+    assertFileOpened(res, filePath);
+    console.log('[BrowserAdapter] Sent OPEN_FILE request:', filePath, line ?? '');
   }
 
   async openTerminal(workingDir: string): Promise<void> {

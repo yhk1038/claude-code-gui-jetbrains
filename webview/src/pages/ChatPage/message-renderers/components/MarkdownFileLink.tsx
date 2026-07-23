@@ -1,6 +1,8 @@
 import React, { ReactNode } from 'react';
+import toast from 'react-hot-toast';
 import { getAdapter } from '@/adapters';
 import { useWorkingDirOrNull } from '@/contexts/WorkingDirContext';
+import { i18n } from '@/i18n';
 import { resolveMarkdownFileLink } from '../utils/markdownFileLink';
 
 // Streamdown's default link classes, re-applied because a custom component fully
@@ -27,6 +29,7 @@ export const MarkdownFileLink: React.FC<{ href?: string; children?: ReactNode }>
         .openFile(link.path, link.line, link.column)
         .catch((err) => {
           console.error('[MarkdownFileLink] Failed to open file link:', err);
+          toast.error(i18n.t('chat:fileOpenFailed', { path: link.path }));
         });
     };
     return (

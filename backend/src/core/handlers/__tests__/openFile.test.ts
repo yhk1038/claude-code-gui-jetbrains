@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { existsSync } from 'fs';
 import { openFileHandler } from '../openFile';
 import { ConnectionManager } from '../../../ws/connection-manager';
 import { ClientEnv, MessageType } from '../../../shared';
 import type { Bridge } from '../../../bridge/bridge-interface';
 import type { IPCMessage } from '../../types';
+
+vi.mock('fs', () => ({ existsSync: vi.fn(() => true) }));
+const mockExistsSync = vi.mocked(existsSync);
 
 function createMockWs() {
   return { readyState: 1, send: vi.fn(), on: vi.fn(), close: vi.fn() } as any;
@@ -30,6 +34,7 @@ describe('openFileHandler — browser client routes to the IDE when one is attac
 
   beforeEach(() => {
     connections = new ConnectionManager();
+    mockExistsSync.mockReturnValue(true);
   });
 
   it('routes a browser client to the IDE bridge when an IDE is connected', async () => {
@@ -67,6 +72,24 @@ describe('openFileHandler — browser client routes to the IDE when one is attac
 
     expect(jetbrains.openFile).toHaveBeenCalledWith('/abs/src/x.ts', 42, 5);
     expect(browser.openFile).not.toHaveBeenCalled();
+  });
+
+  it('does not open and acks ok:false when the file does not exist', async () => {
+    mockExistsSync.mockReturnValue(false);
+    const browser = createBrowserBridge();
+    const jetbrains = createJetBrainsBridge(true);
+    const bridges = { [ClientEnv.BROWSER]: browser, [ClientEnv.JETBRAINS]: jetbrains };
+    const ws = createMockWs();
+    const connId = connections.addConnection(ws, ClientEnv.BROWSER);
+
+    await openFileHandler(connId, openFileMessage(), connections, browser, bridges);
+
+    expect(browser.openFile).not.toHaveBeenCalled();
+    expect(jetbrains.openFile).not.toHaveBeenCalled();
+    const ack = String(ws.send.mock.calls[0][0]);
+    expect(ack).toContain(MessageType.ACK);
+    expect(ack).toContain('"ok":false');
+    expect(ack).toContain('not-found');
   });
 
   it('acknowledges the request', async () => {
