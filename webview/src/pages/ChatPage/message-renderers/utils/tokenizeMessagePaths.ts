@@ -60,12 +60,13 @@ export function tokenizeMessagePaths(text: string): MessageSegment[] {
 }
 
 /**
- * Trailing GitHub-style line anchor (`#L10` or a `#L10-L25` range) on a path
- * token or link href. Capture group 1 is the (1-based) start line. Shared by
- * the `@`-mention helpers and the assistant markdown-link parser so the
- * recognized syntax lives in one place.
+ * Trailing GitHub-style line anchor on a path token or link href: `#L10`,
+ * `#L10-L25`, or with a column, `#L10C5` / `#L10C5-L20C15`. Capture group 1 is
+ * the (1-based) start line and group 2 the (1-based) start column, if present.
+ * Shared by the `@`-mention helpers and the assistant markdown-link parser so
+ * the recognized syntax lives in one place.
  */
-export const LINE_ANCHOR = /#L(\d+)(?:-L\d+)?$/;
+export const LINE_ANCHOR = /#L(\d+)(?:C(\d+))?(?:-L\d+(?:C\d+)?)?$/;
 
 /**
  * Normalize an `@`-path token into the path to open in the IDE.

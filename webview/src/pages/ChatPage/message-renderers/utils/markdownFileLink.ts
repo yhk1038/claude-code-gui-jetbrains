@@ -1,13 +1,16 @@
 import { LINE_ANCHOR, resolveFilePath } from './tokenizeMessagePaths';
+import { linkifyPlainTextFileRefs } from './plainTextFileRefs';
 
 /**
  * A local file reference parsed out of an assistant markdown link href.
  * `path` has its `#L` anchor removed and is percent-decoded; `line` is the
- * 1-based line the caret should move to (undefined → open at the file top).
+ * 1-based line the caret should move to (undefined → open at the file top) and
+ * `column` its 1-based column from a `#L10C5` anchor (undefined → column 1).
  */
 export interface MarkdownFileLink {
   path: string;
   line?: number;
+  column?: number;
 }
 
 /** True for a Windows drive-rooted path (`C:/…` or `C:\…`), matching `joinProjectPath`. */
@@ -33,6 +36,7 @@ export function parseMarkdownFileLink(href: string): MarkdownFileLink | null {
 
   const match = LINE_ANCHOR.exec(href);
   const line = match ? Number(match[1]) : undefined;
+  const column = match && match[2] ? Number(match[2]) : undefined;
 
   let path = href.replace(LINE_ANCHOR, '').replace(/^\.\//, '');
   // A Windows drive path travels as `/C:/…` (leading slash so rehype-sanitize
@@ -44,7 +48,7 @@ export function parseMarkdownFileLink(href: string): MarkdownFileLink | null {
     // Malformed percent-escape — keep the raw path rather than throw.
   }
 
-  return { path, line };
+  return { path, line, column };
 }
 
 /**
@@ -108,6 +112,7 @@ export function resolveMarkdownFileLink(
   return {
     path: normalizeDotSegments(resolveFilePath(parsed.path, workingDir)),
     line: parsed.line,
+    column: parsed.column,
   };
 }
 
@@ -145,4 +150,15 @@ export function normalizeMarkdownLinkUrls(markdown: string, workingDir: string |
   );
 
   return rewritten.replace(/\u0000(\d+)\u0000/g, (_, index) => codeSpans[Number(index)]);
+}
+
+/**
+ * Preprocess assistant markdown for the file-link renderer: first turn bare
+ * plain-text source references (`src/app.ts:42`) into markdown links, then
+ * resolve every local link URL to a sanitize-safe absolute path. The single
+ * entry point used by the streaming message renderers so both the plain-text
+ * and explicit-link paths always run together, in order.
+ */
+export function prepareAssistantMarkdown(markdown: string, workingDir: string | null | undefined): string {
+  return normalizeMarkdownLinkUrls(linkifyPlainTextFileRefs(markdown), workingDir);
 }

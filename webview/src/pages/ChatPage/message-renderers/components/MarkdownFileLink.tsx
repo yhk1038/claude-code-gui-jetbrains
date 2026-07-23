@@ -24,7 +24,7 @@ export const MarkdownFileLink: React.FC<{ href?: string; children?: ReactNode }>
       event.preventDefault();
       event.stopPropagation();
       getAdapter()
-        .openFile(link.path, link.line)
+        .openFile(link.path, link.line, link.column)
         .catch((err) => {
           console.error('[MarkdownFileLink] Failed to open file link:', err);
         });

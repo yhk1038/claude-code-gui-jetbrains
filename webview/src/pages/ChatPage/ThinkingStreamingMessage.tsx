@@ -10,7 +10,7 @@ import {useTranslation} from '@/i18n';
 import {useAnimatedThinkingTokens} from '../../hooks/useAnimatedThinkingTokens';
 import {useWorkingDirOrNull} from '@/contexts/WorkingDirContext';
 import {MARKDOWN_COMPONENTS} from '@/pages/ChatPage/message-renderers/components/MarkdownFileLink';
-import {normalizeMarkdownLinkUrls} from '@/pages/ChatPage/message-renderers/utils/markdownFileLink';
+import {prepareAssistantMarkdown} from '@/pages/ChatPage/message-renderers/utils/markdownFileLink';
 
 interface ThinkingStreamingMessageProps {
     thinking: string;
@@ -93,7 +93,7 @@ export const ThinkingStreamingMessage: React.FC<ThinkingStreamingMessageProps> =
                             }}
                             plugins={{ math }}
                         >
-                            {normalizeMarkdownLinkUrls(thinking, workingDirectory)}
+                            {prepareAssistantMarkdown(thinking, workingDirectory)}
                         </Streamdown>
                     </div>
                 </div>

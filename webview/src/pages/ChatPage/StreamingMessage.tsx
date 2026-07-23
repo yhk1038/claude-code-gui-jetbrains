@@ -6,7 +6,7 @@ import './streaming.css';
 import {ToolWrapper} from "@/pages/ChatPage/message-renderers/ToolRenderers/common";
 import {useWorkingDirOrNull} from '@/contexts/WorkingDirContext';
 import {MARKDOWN_COMPONENTS} from '@/pages/ChatPage/message-renderers/components/MarkdownFileLink';
-import {normalizeMarkdownLinkUrls} from '@/pages/ChatPage/message-renderers/utils/markdownFileLink';
+import {prepareAssistantMarkdown} from '@/pages/ChatPage/message-renderers/utils/markdownFileLink';
 
 interface StreamingMessageProps {
     content: string;
@@ -60,7 +60,7 @@ export const StreamingMessage: React.FC<StreamingMessageProps> = ({
                         }}
                         plugins={{ math }}
                     >
-                        {normalizeMarkdownLinkUrls(content, workingDirectory)}
+                        {prepareAssistantMarkdown(content, workingDirectory)}
                     </Streamdown>
                 </div>
 
