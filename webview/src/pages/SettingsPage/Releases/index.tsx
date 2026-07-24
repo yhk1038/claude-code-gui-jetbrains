@@ -36,16 +36,36 @@ function isSafeUrl(value: string): boolean {
   return /^https?:\/\//i.test(value) || value.startsWith('#') || value.startsWith('/');
 }
 
+/**
+ * Fallback when DOMParser is unavailable/failing (some JCEF builds) or produces
+ * no <body>. The old fallback stripped every tag, which collapsed the whole
+ * changelog into one run-on paragraph (the `\n`s between tags render as spaces
+ * in HTML). Here we first turn block boundaries into newlines and list items
+ * into bullets, strip the remaining tags, escape the text, then re-emit the
+ * newlines as <br> — so the release notes keep their line structure even
+ * without a working DOM parser.
+ */
+export function stripToTextWithBreaks(html: string): string {
+  const withBreaks = html
+    .replace(/<li[^>]*>/gi, '• ') // list marker at item start
+    .replace(/<\/(p|div|li|h[1-6]|ul|ol|tr|blockquote|pre)\s*>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  const temp = document.createElement('div');
+  temp.textContent = withBreaks; // escape any stray < > &
+  return temp.innerHTML.replace(/\n/g, '<br>');
+}
+
 function sanitizeReleaseHtml(html: string): string {
   try {
     const doc = new DOMParser().parseFromString(html, 'text/html');
+    if (!doc?.body) return stripToTextWithBreaks(html);
     walkBottomUp(doc.body);
     return doc.body.innerHTML;
   } catch {
-    // DOMParser unavailable (e.g. certain JCEF versions) — strip all HTML as fallback
-    const temp = document.createElement('div');
-    temp.textContent = html.replace(/<[^>]*>/g, '');
-    return temp.innerHTML;
+    return stripToTextWithBreaks(html);
   }
 }
 
@@ -189,10 +209,21 @@ function ReleaseAccordion(props: ReleaseAccordionProps) {
         <div className="px-4 pb-4 ps-10">
           {body ? (
             <div
-              className="text-sm text-text-secondary prose prose-invert prose-sm max-w-none
-                [&_ul]:list-disc [&_ul]:ps-4 [&_li]:my-0.5
-                [&_h1]:text-text-primary [&_h2]:text-text-primary [&_h3]:text-text-secondary
-                [&_a]:text-text-link [&_a:hover]:text-text-link"
+              // No @tailwindcss/typography plugin is installed, so `prose` would be
+              // a dead class — every block element's spacing/markers are set
+              // explicitly here instead (Tailwind preflight resets h*/ul/ol/p).
+              className="text-sm text-text-secondary max-w-none
+                [&_h1]:mt-3 [&_h1]:mb-1 [&_h1]:text-base [&_h1]:font-semibold [&_h1]:text-text-primary
+                [&_h2]:mt-3 [&_h2]:mb-1 [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-text-primary
+                [&_h3]:mt-3 [&_h3]:mb-1 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-text-primary
+                [&_h1:first-child]:mt-0 [&_h2:first-child]:mt-0 [&_h3:first-child]:mt-0
+                [&_p]:my-2
+                [&_ul]:my-2 [&_ul]:list-disc [&_ul]:ps-5
+                [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:ps-5
+                [&_li]:my-1
+                [&_a]:text-text-link [&_a:hover]:underline
+                [&_strong]:font-semibold [&_strong]:text-text-primary
+                [&_code]:text-xs [&_code]:bg-surface-overlay [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded"
               dangerouslySetInnerHTML={{ __html: body }}
             />
           ) : (
