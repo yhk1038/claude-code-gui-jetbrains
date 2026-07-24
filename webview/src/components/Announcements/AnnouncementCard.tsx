@@ -5,6 +5,7 @@ import { IconName, ICON_COMPONENTS } from '@/router';
 import type { Announcement } from '@/shared';
 import { RestrictedMarkdown } from './RestrictedMarkdown';
 import { useAnnouncementActionDispatch } from './useAnnouncementActionDispatch';
+import { isSafeImageUrl } from './urlSafety';
 
 /**
  * Maps `announcement.icon` (an open-ended server string) to a bundled Heroicon
@@ -40,7 +41,7 @@ export function AnnouncementCard(props: Props) {
     <div className="flex gap-3 rounded-lg border border-border-subtle bg-surface-raised p-3 text-[0.8461rem]">
       <Icon className="h-5 w-5 flex-shrink-0 text-text-secondary" aria-hidden="true" />
       <div className="min-w-0 flex-1">
-        {announcement.imageUrl && (
+        {announcement.imageUrl && isSafeImageUrl(announcement.imageUrl) && (
           <img src={announcement.imageUrl} alt="" className="mb-2 max-w-full rounded" />
         )}
         <div className="font-medium text-text-primary">{announcement.title}</div>

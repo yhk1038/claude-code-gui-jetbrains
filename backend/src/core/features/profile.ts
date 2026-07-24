@@ -128,14 +128,20 @@ export async function getDismissedAnnouncementIds(): Promise<string[]> {
   return profile.dismissedAnnouncementIds;
 }
 
+/** dismissedAnnouncementIds의 상한. 초과 시 가장 오래된 항목부터 버려 무한 증가를 막는다. */
+const MAX_DISMISSED_ANNOUNCEMENT_IDS = 500;
+
 /**
  * 공지 id를 dismissedAnnouncementIds에 추가한다(이미 있으면 무시, 중복 추가 안 함).
+ * 목록이 상한을 넘으면 가장 오래된 항목부터 제거(FIFO)한다.
  * 갱신된(또는 기존과 동일한) 전체 목록을 반환한다.
  */
 export async function setDismissedAnnouncement(id: string): Promise<string[]> {
   const profile = await ensureProfile();
   if (!profile.dismissedAnnouncementIds.includes(id)) {
-    profile.dismissedAnnouncementIds = [...profile.dismissedAnnouncementIds, id];
+    profile.dismissedAnnouncementIds = [...profile.dismissedAnnouncementIds, id].slice(
+      -MAX_DISMISSED_ANNOUNCEMENT_IDS,
+    );
     await writeProfile(profile);
   }
   return profile.dismissedAnnouncementIds;

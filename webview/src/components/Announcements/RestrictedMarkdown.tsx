@@ -1,14 +1,5 @@
 import type { ReactNode } from 'react';
-
-/** URL schemes considered safe to render as a clickable link. Anything else
- * (e.g. `javascript:`) is dropped to plain text — a crafted announcement body
- * must never be able to smuggle a script-executing href. */
-const SAFE_URL_SCHEMES = ['http://', 'https://', 'mailto:'];
-
-function isSafeUrl(url: string): boolean {
-  const lower = url.trim().toLowerCase();
-  return SAFE_URL_SCHEMES.some((scheme) => lower.startsWith(scheme));
-}
+import { isSafeLinkUrl } from './urlSafety';
 
 // Matches **bold** or [label](url) tokens; everything else is left as plain text.
 // The url group tolerates one level of nested parens (e.g. `javascript:alert(1)`,
@@ -39,7 +30,7 @@ export function renderInline(text: string): ReactNode[] {
     } else {
       const label = match[2];
       const url = match[3];
-      if (isSafeUrl(url)) {
+      if (isSafeLinkUrl(url)) {
         nodes.push(
           <a
             key={`a${key++}`}

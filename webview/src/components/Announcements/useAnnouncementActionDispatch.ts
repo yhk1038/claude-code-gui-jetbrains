@@ -3,6 +3,7 @@ import { getAdapter } from '@/adapters';
 import { useRouter } from '@/router';
 import { AnnouncementActionType, type Announcement, type AnnouncementAction } from '@/shared';
 import { ANNOUNCEMENT_COMMAND_HANDLERS, isAllowedCommand, isAllowedRoute } from './announcementActionWhitelist';
+import { isSafeLinkUrl } from './urlSafety';
 
 export type AnnouncementActionDispatch = (
   announcement: Announcement,
@@ -29,6 +30,12 @@ export function useAnnouncementActionDispatch(): AnnouncementActionDispatch {
       switch (action.type) {
         case AnnouncementActionType.OPEN_URL: {
           if (!action.url) return;
+          // Same scheme allow-list as restricted-markdown links: a server-sent
+          // `javascript:`/`file:`/`data:` URL must never reach the opener.
+          if (!isSafeLinkUrl(action.url)) {
+            console.warn('[AnnouncementAction] Blocked OPEN_URL with unsafe scheme:', action.url);
+            return;
+          }
           void getAdapter().openUrl(action.url);
           return;
         }
