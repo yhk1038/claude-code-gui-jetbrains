@@ -24,6 +24,12 @@ export const isProd = () => process.env.NODE_ENV === 'production';
 export const isJetBrainsMode = process.env.JETBRAINS_MODE === 'true';
 export const ccgClientInfo = process.env.CCG_CLIENT_INFO ?? '';
 
+// ── 공지(Server-Driven Announcements) 배포 엔드포인트 ────────
+// 공지 목록을 내려주는 원격 엔드포인트 base URL. 텔레메트리와 달리 빌드 타임 박제
+// 대상이 아니다(비밀이 아닌 설정값이라 런타임 주입으로 충분). 미설정이면
+// features/announcements.ts가 fetch 자체를 생략하고 빈 목록을 반환한다(graceful).
+export const announcementsUrl = process.env.CCG_ANNOUNCE_URL?.trim() || undefined;
+
 // ── 서버 설정 ──────────────────────────────────────────
 const DEFAULT_PORT = 19836;
 export const serverPort = parseInt(process.env.PORT ?? String(DEFAULT_PORT), 10);

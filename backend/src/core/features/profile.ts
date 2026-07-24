@@ -29,13 +29,21 @@ export interface ProfileData {
   /** 설치 단위 가명 식별자. 동의 여부와 무관하게 항상 존재한다. */
   uuid: string;
   telemetryConsent: TelemetryConsent;
+  /** 사용자가 닫은(dismiss) 공지(Announcement) id 목록. 서버 공지의 `id` 필드와 매칭된다. */
+  dismissedAnnouncementIds: string[];
 }
 
 function createDefaultProfile(): ProfileData {
   return {
     uuid: randomUUID(),
     telemetryConsent: { status: ConsentStatus.PENDING, decidedAt: null },
+    dismissedAnnouncementIds: [],
   };
+}
+
+/** 문자열이 아닌 값을 걸러내 보정한다. 배열이 아니면 빈 배열로 취급한다. */
+export function normalizeDismissedAnnouncementIds(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : [];
 }
 
 /** 저장된 status가 알 수 없는 값이면 PENDING으로 보정한다. */
@@ -65,6 +73,10 @@ export async function ensureProfile(): Promise<ProfileData> {
     const raw = await readFile(PROFILE_FILE, 'utf-8');
     const parsed = JSON.parse(raw) as Partial<ProfileData>;
 
+    const dismissedAnnouncementIds = normalizeDismissedAnnouncementIds(
+      parsed.dismissedAnnouncementIds,
+    );
+
     const profile: ProfileData = {
       uuid:
         typeof parsed.uuid === 'string' && parsed.uuid.length > 0 ? parsed.uuid : randomUUID(),
@@ -72,13 +84,16 @@ export async function ensureProfile(): Promise<ProfileData> {
         status: normalizeStatus(parsed.telemetryConsent?.status),
         decidedAt: parsed.telemetryConsent?.decidedAt ?? null,
       },
+      dismissedAnnouncementIds,
     };
 
     // 누락/손상 필드를 보정했으면 파일을 다시 써서 정규화한다.
     const needsRewrite =
       parsed.uuid !== profile.uuid ||
       parsed.telemetryConsent?.status !== profile.telemetryConsent.status ||
-      parsed.telemetryConsent?.decidedAt !== profile.telemetryConsent.decidedAt;
+      parsed.telemetryConsent?.decidedAt !== profile.telemetryConsent.decidedAt ||
+      !Array.isArray(parsed.dismissedAnnouncementIds) ||
+      parsed.dismissedAnnouncementIds.length !== dismissedAnnouncementIds.length;
     if (needsRewrite) {
       await writeProfile(profile);
     }
@@ -105,4 +120,23 @@ export async function setTelemetryConsent(accepted: boolean): Promise<ProfileDat
   };
   await writeProfile(profile);
   return profile;
+}
+
+/** 현재까지 닫은(dismiss) 공지 id 목록을 읽는다. */
+export async function getDismissedAnnouncementIds(): Promise<string[]> {
+  const profile = await ensureProfile();
+  return profile.dismissedAnnouncementIds;
+}
+
+/**
+ * 공지 id를 dismissedAnnouncementIds에 추가한다(이미 있으면 무시, 중복 추가 안 함).
+ * 갱신된(또는 기존과 동일한) 전체 목록을 반환한다.
+ */
+export async function setDismissedAnnouncement(id: string): Promise<string[]> {
+  const profile = await ensureProfile();
+  if (!profile.dismissedAnnouncementIds.includes(id)) {
+    profile.dismissedAnnouncementIds = [...profile.dismissedAnnouncementIds, id];
+    await writeProfile(profile);
+  }
+  return profile.dismissedAnnouncementIds;
 }

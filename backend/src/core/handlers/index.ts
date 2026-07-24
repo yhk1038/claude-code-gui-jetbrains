@@ -19,6 +19,8 @@ import { getClaudeConfigDirHandler } from './getClaudeConfigDir';
 import { saveClaudeConfigDirHandler } from './saveClaudeConfigDir';
 import { getTelemetryConsentHandler } from './getTelemetryConsent';
 import { setTelemetryConsentHandler } from './setTelemetryConsent';
+import { getAnnouncementsHandler } from './getAnnouncements';
+import { dismissAnnouncementHandler } from './dismissAnnouncement';
 import { getSponsorUrlHandler } from './getSponsorUrl';
 import { verifyLicenseHandler } from './verifyLicense';
 import { getSponsorStatusHandler } from './getSponsorStatus';
@@ -161,6 +163,12 @@ export async function handleMessage(
       break;
     case MessageType.SET_TELEMETRY_CONSENT:
       await setTelemetryConsentHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.GET_ANNOUNCEMENTS:
+      await getAnnouncementsHandler(connectionId, message, connections, bridge);
+      break;
+    case MessageType.DISMISS_ANNOUNCEMENT:
+      await dismissAnnouncementHandler(connectionId, message, connections, bridge);
       break;
     case MessageType.GET_SPONSOR_URL:
       await getSponsorUrlHandler(connectionId, message, connections, bridge);

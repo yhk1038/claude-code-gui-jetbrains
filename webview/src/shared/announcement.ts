@@ -98,3 +98,10 @@ export interface AnnouncementsResponse {
   schemaVersion: number;
   announcements: Announcement[];
 }
+
+/** Result payload of the GET_ANNOUNCEMENTS handler: the (validated) delivery response plus the ids the user already dismissed (from profile.json). */
+export interface GetAnnouncementsResult {
+  schemaVersion: number;
+  announcements: Announcement[];
+  dismissedIds: string[];
+}
