@@ -5,7 +5,13 @@
  */
 
 import { compareVersions } from './compareVersions';
-import { AnnouncementFrequency, type Announcement, type AnnouncementPlacement } from './schema';
+import {
+  AnnouncementActionType,
+  AnnouncementFrequency,
+  type Announcement,
+  type AnnouncementAction,
+  type AnnouncementPlacement,
+} from './schema';
 
 /** Runtime inputs needed to decide whether an announcement is currently eligible. */
 export interface AnnouncementEligibilityContext {
@@ -100,6 +106,13 @@ export function isEligible(announcement: Announcement, ctx: AnnouncementEligibil
   if (target.showUntil && ctx.now > new Date(target.showUntil)) return false;
   if (!satisfiesVersionRange(ctx.pluginVersion, target.pluginVersion)) return false;
 
+  // Forward-compat fallback: the backend only checks `target.frequency` is a
+  // string (see backend/src/core/features/announcements.ts), so a newer server
+  // may send a frequency value this client doesn't yet recognize. Explicitly
+  // fall back to the same "respect permanent dismissedIds" behavior as
+  // UNTIL_DISMISSED for anything other than the literal ALWAYS — an unknown
+  // frequency degrades safely (never crashes, never silently becomes "show
+  // forever" or "never show").
   if (target.frequency !== AnnouncementFrequency.ALWAYS && ctx.dismissedIds.includes(announcement.id)) {
     return false;
   }
@@ -123,4 +136,29 @@ export function selectForPlacement(
   return announcements
     .filter((announcement) => announcement.placements.includes(placement) && isEligible(announcement, ctx))
     .sort((a, b) => b.priority - a.priority);
+}
+
+/** The full set of `AnnouncementActionType` member values this client build knows. */
+const KNOWN_ACTION_TYPES = new Set<string>(Object.values(AnnouncementActionType));
+
+/**
+ * Returns only the `announcement.actions` entries whose `type` is one of this
+ * client's known `AnnouncementActionType` members.
+ *
+ * WHY: the backend deliberately does NOT drop an announcement (or an action
+ * within it) just because `action.type` is a string it doesn't recognize
+ * (forward-compat — see backend/src/core/features/announcements.ts) — the
+ * decision of "do I know how to handle this" belongs to the renderer, not the
+ * relay layer. Without this filter, an unknown action type would still render
+ * a button (via `AnnouncementAction.label`), but activating it would hit the
+ * dispatcher's `default: return` no-op — a dead button. Filtering here at
+ * render time means the renderer never shows a button it can't act on.
+ *
+ * Pure/non-mutating: returns a new array, never edits `announcement` or its
+ * action objects — this is a rendering-time selection, not a data edit
+ * (원본 데이터 보존 원칙 permits filtering an array; it forbids editing the
+ * entries themselves).
+ */
+export function knownActions(announcement: Announcement): AnnouncementAction[] {
+  return announcement.actions.filter((action) => KNOWN_ACTION_TYPES.has(action.type));
 }

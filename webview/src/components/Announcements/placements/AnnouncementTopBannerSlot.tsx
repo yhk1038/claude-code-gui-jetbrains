@@ -1,5 +1,6 @@
 import { useAnnouncements } from '@/hooks/useAnnouncements';
 import { AnnouncementPlacement } from '@/shared';
+import { knownActions } from '@/vendor/announcement-core/eligibility';
 import { InputBanner } from '@/pages/ChatPage/InputBanner';
 import { resolveAnnouncementIcon } from '../AnnouncementCard';
 import { RestrictedMarkdown } from '../RestrictedMarkdown';
@@ -26,7 +27,7 @@ export function AnnouncementTopBannerSlot() {
   if (!announcement) return null;
 
   const Icon = resolveAnnouncementIcon(announcement.icon);
-  const actions = announcement.actions;
+  const actions = knownActions(announcement);
 
   return (
     <div className="w-full bg-surface-base px-4 py-1.5">

@@ -3,9 +3,6 @@ import { readMergedClaudeSettings } from './claude-settings';
 import { getPluginVersion } from '../handlers/getVersion';
 import { getAnnouncementsEnabled } from './profile';
 import {
-  AnnouncementActionType,
-  AnnouncementFrequency,
-  AnnouncementPlacement,
   type Announcement,
   type AnnouncementAction,
   type AnnouncementTarget,
@@ -57,25 +54,42 @@ function resolveLocale(uiLanguage: unknown): string {
     : DEFAULT_LOCALE;
 }
 
-function isEnumValue<T extends string>(enumObj: Record<string, T>, value: unknown): value is T {
-  return typeof value === 'string' && (Object.values(enumObj) as string[]).includes(value);
-}
-
+/**
+ * Validates only the structural shape of an action (id/label are strings,
+ * type is a string, optional url/route/command are strings when present).
+ * Deliberately does NOT check `type` against the known
+ * `AnnouncementActionType` members — a newer server may add a new action type
+ * as a backward-compatible extension, and this relay layer must not drop the
+ * whole announcement just because it doesn't recognize one action's type
+ * (원본 데이터 보존 + forward-compat). The decision of "do I know how to render/run
+ * this action" belongs to the webview (see `knownActions` in
+ * `@ccg/announcement-core`'s `eligibility.ts`, vendored at
+ * `webview/src/vendor/announcement-core`), not this backend relay.
+ */
 function isValidAction(value: unknown): value is AnnouncementAction {
   if (!value || typeof value !== 'object') return false;
   const action = value as Record<string, unknown>;
   if (typeof action.id !== 'string' || typeof action.label !== 'string') return false;
-  if (!isEnumValue(AnnouncementActionType, action.type)) return false;
+  if (typeof action.type !== 'string') return false;
   if (action.url !== undefined && typeof action.url !== 'string') return false;
   if (action.route !== undefined && typeof action.route !== 'string') return false;
   if (action.command !== undefined && typeof action.command !== 'string') return false;
   return true;
 }
 
+/**
+ * Validates only the structural shape of a target (frequency is a string,
+ * optional pluginVersion/showFrom/showUntil are strings when present).
+ * Deliberately does NOT check `frequency` against the known
+ * `AnnouncementFrequency` members, for the same forward-compat reason as
+ * `isValidAction`'s `type` — the shared `isEligible` (in
+ * `@ccg/announcement-core`) already falls back gracefully (treats any
+ * non-ALWAYS value like UNTIL_DISMISSED) for a frequency it doesn't recognize.
+ */
 function isValidTarget(value: unknown): value is AnnouncementTarget {
   if (!value || typeof value !== 'object') return false;
   const target = value as Record<string, unknown>;
-  if (!isEnumValue(AnnouncementFrequency, target.frequency)) return false;
+  if (typeof target.frequency !== 'string') return false;
   if (target.pluginVersion !== undefined && typeof target.pluginVersion !== 'string') return false;
   if (target.showFrom !== undefined && typeof target.showFrom !== 'string') return false;
   if (target.showUntil !== undefined && typeof target.showUntil !== 'string') return false;
@@ -83,17 +97,27 @@ function isValidTarget(value: unknown): value is AnnouncementTarget {
 }
 
 /**
- * Validates that `value` matches the `Announcement` shape (required fields present,
- * correct primitive types, enum members are known). Passing items are returned
- * as-is (same object reference) — per the "원본 데이터 보존" principle we never
- * rebuild/rename fields, only filter out invalid entries.
+ * Validates that `value` matches the `Announcement` shape (required fields
+ * present, correct primitive types). Passing items are returned as-is (same
+ * object reference) — per the "원본 데이터 보존" principle we never rebuild/rename
+ * fields, only filter out structurally invalid entries.
+ *
+ * Individual enum members (`placements` entries, action `type`, target
+ * `frequency`) are intentionally NOT checked against this client build's known
+ * values — only that they are well-typed strings. This lets the server ship a
+ * backward-compatible extension (e.g. a new placement or action type) without
+ * this backend dropping the whole announcement for older, not-yet-updated
+ * clients; unknown enum values are relayed through untouched and it's up to
+ * the webview renderer to decide what it can actually show (see
+ * `AnnouncementPlacement`'s natural no-op via `selectForPlacement`'s
+ * `.includes(placement)`, and `knownActions` for action buttons).
  */
 function isValidAnnouncement(value: unknown): value is Announcement {
   if (!value || typeof value !== 'object') return false;
   const item = value as Record<string, unknown>;
   if (typeof item.id !== 'string') return false;
   if (!Array.isArray(item.placements) || item.placements.length === 0) return false;
-  if (!item.placements.every((p) => isEnumValue(AnnouncementPlacement, p))) return false;
+  if (!item.placements.every((p) => typeof p === 'string')) return false;
   if (typeof item.priority !== 'number') return false;
   if (typeof item.icon !== 'string') return false;
   if (item.imageUrl !== undefined && typeof item.imageUrl !== 'string') return false;

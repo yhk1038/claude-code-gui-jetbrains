@@ -3,6 +3,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/i18n';
 import { IconName, ICON_COMPONENTS } from '@/router';
 import { type Announcement } from '@/shared';
+import { knownActions } from '@/vendor/announcement-core/eligibility';
 import { isKnownAnnouncementIcon } from '@/vendor/announcement-core/icons';
 import { RestrictedMarkdown } from './RestrictedMarkdown';
 import { useAnnouncementActionDispatch } from './useAnnouncementActionDispatch';
@@ -43,7 +44,13 @@ export function AnnouncementCard(props: Props) {
   const { t } = useTranslation('common');
   const dispatch = useAnnouncementActionDispatch();
   const Icon = resolveAnnouncementIcon(announcement.icon);
-  const actions = announcement.actions;
+  // Only renders actions this client build knows how to handle — a
+  // forward-compatible server extension may include an action `type` this
+  // build doesn't recognize yet (the backend relays it through untouched, see
+  // `backend/src/core/features/announcements.ts`); rendering a button for it
+  // would be dead (the dispatcher's `default` case is a no-op for unknown
+  // types), so it's filtered out here instead.
+  const actions = knownActions(announcement);
 
   return (
     <div className="flex gap-3 rounded-lg border border-border-subtle bg-surface-raised p-3 text-[0.8461rem]">

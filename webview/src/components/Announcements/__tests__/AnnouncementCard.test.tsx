@@ -94,6 +94,15 @@ describe('AnnouncementCard', () => {
     expect(mockDispatch).toHaveBeenCalledWith(announcement, action, onDismiss);
   });
 
+  it('forward-compat: 알 수 없는(unknown) action type 버튼은 렌더되지 않는다', () => {
+    const known = { id: 'known', label: 'Open docs', type: AnnouncementActionType.OPEN_URL, url: 'https://example.com' };
+    const unknown = { id: 'unknown', label: 'Do something new', type: 'SELF_DESTRUCT' as AnnouncementActionType };
+    const announcement = makeAnnouncement({ actions: [known, unknown] });
+    render(<AnnouncementCard announcement={announcement} onDismiss={vi.fn()} />);
+    expect(screen.getByRole('button', { name: 'Open docs' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Do something new' })).not.toBeInTheDocument();
+  });
+
   it('본문에 script 태그를 넣어도 실행되지 않고 텍스트로만 표시된다', () => {
     const { container } = render(
       <AnnouncementCard announcement={makeAnnouncement({ body: '<script>window.__xss2 = true</script>' })} onDismiss={vi.fn()} />,

@@ -59,29 +59,57 @@ describe('validateResponse', () => {
     expect(result.announcements[0]).toBe(entry);
   });
 
-  it('filters out entries with an unknown placement enum member', () => {
-    const bad = rawAnnouncement({ placements: ['SIDEBAR'] });
+  it('forward-compat: keeps an entry with an unknown placement enum member (as-is, not dropped)', () => {
+    const withUnknownPlacement = rawAnnouncement({ id: 'a1', placements: ['SIDEBAR', AnnouncementPlacement.MODAL] });
     const good = rawAnnouncement({ id: 'a2' });
-    const result = validateResponse({ schemaVersion: 1, announcements: [bad, good] });
-    expect(result.announcements.map((a) => a.id)).toEqual(['a2']);
+    const result = validateResponse({ schemaVersion: 1, announcements: [withUnknownPlacement, good] });
+    expect(result.announcements.map((a) => a.id)).toEqual(['a1', 'a2']);
+    // The unknown placement value is relayed through untouched — filtering it
+    // out is the webview's job (selectForPlacement only matches known placements).
+    expect(result.announcements[0].placements).toEqual(['SIDEBAR', AnnouncementPlacement.MODAL]);
   });
 
   it('filters out entries missing a required field or with a wrong primitive type', () => {
     const noTitle = rawAnnouncement({ id: 'no-title', title: undefined });
     const numericBody = rawAnnouncement({ id: 'num-body', body: 123 });
     const emptyPlacements = rawAnnouncement({ id: 'empty', placements: [] });
+    const nonStringPlacement = rawAnnouncement({ id: 'bad-placement-type', placements: [42] });
     const result = validateResponse({
       schemaVersion: 1,
-      announcements: [noTitle, numericBody, emptyPlacements],
+      announcements: [noTitle, numericBody, emptyPlacements, nonStringPlacement],
     });
     expect(result.announcements).toEqual([]);
   });
 
-  it('filters out entries whose action has an unknown action type', () => {
-    const bad = rawAnnouncement({
+  it('forward-compat: keeps an entry whose action has an unknown (but well-typed) action type', () => {
+    const withUnknownAction = rawAnnouncement({
+      id: 'a1',
       actions: [{ id: 'x', label: 'X', type: 'SELF_DESTRUCT' }],
     });
-    const result = validateResponse({ schemaVersion: 1, announcements: [bad] });
+    const result = validateResponse({ schemaVersion: 1, announcements: [withUnknownAction] });
+    expect(result.announcements.map((a) => a.id)).toEqual(['a1']);
+    // Relayed through untouched (same reference) — same 원본 데이터 보존 guarantee as
+    // any other passing entry.
+    expect(result.announcements[0]).toBe(withUnknownAction);
+  });
+
+  it('still rejects an action that is structurally invalid (not just an unknown type)', () => {
+    const missingLabel = rawAnnouncement({ actions: [{ id: 'x', type: 'SELF_DESTRUCT' }] });
+    const nonStringType = rawAnnouncement({ actions: [{ id: 'x', label: 'X', type: 42 }] });
+    const result = validateResponse({ schemaVersion: 1, announcements: [missingLabel, nonStringType] });
+    expect(result.announcements).toEqual([]);
+  });
+
+  it('forward-compat: keeps an entry whose target.frequency is an unrecognized (but well-typed) string', () => {
+    const withUnknownFrequency = rawAnnouncement({ id: 'a1', target: { frequency: 'SOME_NEW_FREQUENCY' } });
+    const result = validateResponse({ schemaVersion: 1, announcements: [withUnknownFrequency] });
+    expect(result.announcements.map((a) => a.id)).toEqual(['a1']);
+  });
+
+  it('still rejects a target whose frequency is missing or not a string', () => {
+    const missingFrequency = rawAnnouncement({ target: {} });
+    const numericFrequency = rawAnnouncement({ target: { frequency: 1 } });
+    const result = validateResponse({ schemaVersion: 1, announcements: [missingFrequency, numericFrequency] });
     expect(result.announcements).toEqual([]);
   });
 });
