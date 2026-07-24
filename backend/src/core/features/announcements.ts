@@ -24,8 +24,10 @@ import {
 const SCHEMA_VERSION = 1;
 
 /** In-memory cache TTL — avoids re-fetching on every GET_ANNOUNCEMENTS call
- * (e.g. repeated tab opens) within a short window. */
-const CACHE_TTL_MS = 5 * 60 * 1000;
+ * (e.g. repeated tab opens) within a short window. Kept short (60s) so an admin
+ * publishing/editing/unpublishing a notice surfaces to clients within about a
+ * minute rather than being masked by a long cache. */
+const CACHE_TTL_MS = 60 * 1000;
 
 // Mirrors webview/src/i18n/languageMap.ts's LANGUAGE_TO_LOCALE map. The backend
 // and webview are separate pnpm workspaces (no cross-package imports), so this
