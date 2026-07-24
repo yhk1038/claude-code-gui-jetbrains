@@ -2,6 +2,7 @@ import type { WebSocket } from 'ws';
 import type { ChildProcess } from 'child_process';
 import type { IPCMessage, NativeDropEntry } from '../core/types';
 import { ClientEnv, MessageType } from '../shared';
+import { disableIdleShutdown } from '../config/environment';
 
 const SESSION_CLEANUP_GRACE_MS = 30_000;
 const IDLE_SHUTDOWN_GRACE_MS = 60_000;
@@ -519,6 +520,9 @@ export class ConnectionManager {
 
   private scheduleIdleShutdown(): void {
     if (this.idleShutdownTimer !== null) return;
+    // Dev/testing escape hatch: a standalone `pnpm dev` backend has no respawner,
+    // so idle shutdown would kill it whenever the browser disconnects briefly.
+    if (disableIdleShutdown) return;
 
     console.error(
       '[node-backend]',

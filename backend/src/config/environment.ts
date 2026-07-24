@@ -30,6 +30,13 @@ export const ccgClientInfo = process.env.CCG_CLIENT_INFO ?? '';
 // features/announcements.ts가 fetch 자체를 생략하고 빈 목록을 반환한다(graceful).
 export const announcementsUrl = process.env.CCG_ANNOUNCE_URL?.trim() || undefined;
 
+// ── 개발/실측용: idle shutdown 비활성화 ─────────────────
+// standalone(`pnpm dev`)으로 직접 띄운 백엔드는 클라이언트가 잠깐 끊기면 idle
+// shutdown으로 종료되는데, launcher(JetBrains/ccg)와 달리 respawn 주체가 없어
+// 그대로 죽어버린다. 브라우저로 반복 실측하는 동안 백엔드를 계속 살려두기 위한
+// 개발 전용 스위치. 배포 경로에는 영향 없다(설정하지 않으면 기존 동작 유지).
+export const disableIdleShutdown = process.env.CCG_DISABLE_IDLE_SHUTDOWN === 'true';
+
 // ── 서버 설정 ──────────────────────────────────────────
 const DEFAULT_PORT = 19836;
 export const serverPort = parseInt(process.env.PORT ?? String(DEFAULT_PORT), 10);
