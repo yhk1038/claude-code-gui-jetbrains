@@ -15,7 +15,7 @@ You'll find the control in **Settings → Appearance → Theme**, right below
 
 ## What you see
 
-- A **Line Spacing** number field. Enter a value between **1.0** and **3.0**
+- A **Line Spacing** number field. Enter a value between **0.5** and **10**
   (in 0.1 steps). The default is **1.6** — the same spacing the chat used
   before — so nothing changes until you decide to adjust it.
 - The change applies **live** to the message text as you type it, so you can
@@ -24,8 +24,9 @@ You'll find the control in **Settings → Appearance → Theme**, right below
   (User settings) or **per project** (Project settings). Leaving the project
   field empty falls back to your global value.
 
-The setting affects the **body text of chat messages** — paragraphs and list
-items. Code blocks keep their own fixed spacing so code stays aligned.
+The setting affects the **body text of chat messages** — paragraphs, lists,
+headings, quotes and tables. Code blocks and inline code keep their own fixed
+spacing so code stays aligned.
 
 ## How it works
 
@@ -34,6 +35,6 @@ items. Code blocks keep their own fixed spacing so code stays aligned.
   message styles read. When the value is unset, the styles fall back to the
   previous `1.6`, so existing installs render exactly as before.
 - The setting is stored alongside the other app settings (font size, theme, …)
-  and validated on the backend to stay within the 1.0–3.0 range.
+  and validated on the backend to stay within the 0.5–10 range.
 
 This is a settings + webview change; updating the plugin is enough to get it.

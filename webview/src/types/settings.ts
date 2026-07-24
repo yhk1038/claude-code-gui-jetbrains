@@ -6,8 +6,8 @@ import { AUTO_SCROLL_THRESHOLD_DEFAULT } from '@/utils/autoScroll';
  * renders exactly as before. Kept in sync with the backend validator range.
  */
 export const LINE_HEIGHT_DEFAULT = 1.6;
-export const LINE_HEIGHT_MIN = 1.0;
-export const LINE_HEIGHT_MAX = 3.0;
+export const LINE_HEIGHT_MIN = 0.5;
+export const LINE_HEIGHT_MAX = 10;
 export const LINE_HEIGHT_STEP = 0.1;
 
 /**
