@@ -131,6 +131,12 @@
       "sendUsageStatistics": {
         "label": "傳送使用統計資料",
         "description": "傳送不會直接識別您身分的使用統計資料,協助我們改善產品。絕不會傳送原始碼或個人資料。您可以隨時關閉這項功能。"
+      },
+      "receiveAnnouncements": {
+        "label": "接收公告",
+        "description": "接收有關新功能、使用技巧和重要更新的應用程式內公告。",
+        "confirmTitle": "關閉公告？",
+        "confirmMessage": "關閉後，您將無法收到包括緊急修補程式和必要更新在內的重要訊息。仍要關閉嗎？"
       }
     }
   },

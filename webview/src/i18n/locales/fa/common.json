@@ -6,6 +6,9 @@
   "contextChip": {
     "removeContext": "حذف زمینه"
   },
+  "announcementCard": {
+    "close": "بستن"
+  },
   "errorBoundary": {
     "somethingWentWrong": "مشکلی پیش آمد.",
     "retry": "تلاش مجدد"

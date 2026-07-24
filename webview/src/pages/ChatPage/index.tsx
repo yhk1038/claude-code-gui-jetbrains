@@ -13,6 +13,7 @@ import { AuthErrorBanner } from './AuthErrorBanner';
 import { BrowserPermissionBanner } from './BrowserPermissionBanner';
 import { BackgroundTasksPanel } from './BackgroundTasksPanel';
 import { McpModal } from '@/components/McpModal';
+import { AnnouncementTopBannerSlot, AnnouncementModalSlot } from '@/components/Announcements/placements';
 import { OPEN_MCP_MODAL_EVENT } from '@/commandPalette/sections/customize/items';
 import { useMcpServers, MCP_SERVERS_QUERY_KEY } from '@/hooks/useMcpServers';
 import { useQueryClient } from '@tanstack/react-query';
@@ -308,6 +309,7 @@ export function ChatPage() {
         <ConnectionLostBanner />
         <AuthErrorBanner />
         <BrowserPermissionBanner />
+        <AnnouncementTopBannerSlot />
       </BannerArea>
 
       {/* Messages Area */}
@@ -360,6 +362,7 @@ export function ChatPage() {
 
       <BackgroundTasksPanel />
       {mcpModalOpen && <McpModal onClose={() => setMcpModalOpen(false)} />}
+      <AnnouncementModalSlot />
     </div>
   );
 }

@@ -6,6 +6,9 @@
   "contextChip": {
     "removeContext": "إزالة السياق"
   },
+  "announcementCard": {
+    "close": "إغلاق"
+  },
   "errorBoundary": {
     "somethingWentWrong": "حدث خطأ ما.",
     "retry": "إعادة المحاولة"

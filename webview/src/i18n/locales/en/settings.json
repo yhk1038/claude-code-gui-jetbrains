@@ -131,6 +131,12 @@
       "sendUsageStatistics": {
         "label": "Send usage statistics",
         "description": "Sends usage statistics that do not directly identify you, to help improve the product. Source code and personal data are never sent. You can turn this off anytime."
+      },
+      "receiveAnnouncements": {
+        "label": "Receive announcements",
+        "description": "Get in-app announcements about new features, tips, and important updates.",
+        "confirmTitle": "Turn off announcements?",
+        "confirmMessage": "Turning this off means you won't receive important messages either, including urgent patches and required updates. Turn it off anyway?"
       }
     }
   },

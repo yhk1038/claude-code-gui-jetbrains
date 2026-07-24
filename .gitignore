@@ -88,3 +88,4 @@ scripts/*
 !scripts/build.sh
 !scripts/zombies.sh
 !scripts/all-build-run-ide.sh
+!scripts/sync-announcement-core.sh

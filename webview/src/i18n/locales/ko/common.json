@@ -6,6 +6,9 @@
   "contextChip": {
     "removeContext": "컨텍스트 제거"
   },
+  "announcementCard": {
+    "close": "닫기"
+  },
   "errorBoundary": {
     "somethingWentWrong": "문제가 발생했습니다.",
     "retry": "재시도"

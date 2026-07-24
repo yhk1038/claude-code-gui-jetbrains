@@ -39,6 +39,7 @@ import { insertNewlineAtCursor } from './RichInput/insertNewlineAtCursor';
 import { TelemetryConsentBanner } from '../TelemetryConsentBanner';
 import { InputBanner } from '../InputBanner';
 import { FableNoticeBanner } from '../FableNoticeBanner';
+import { AnnouncementInputBannerSlot } from '@/components/Announcements/placements';
 import { useTelemetryConsent, ConsentStatus, ConsentSource } from '@/hooks/useTelemetryConsent';
 import { useFableNotice } from '@/hooks/useFableNotice';
 import { useVersionInfo } from '@/hooks/useVersionInfo';
@@ -582,6 +583,8 @@ export function ChatInput() {
           onClose={dismissAutoFallback}
         />
       )}
+      {/* SDUI 공지(INPUT_BANNER): 서버가 내려주는 공지가 있을 때만 표시 */}
+      <AnnouncementInputBannerSlot />
       {/* 메인 인풋 컨테이너 — drag/drop은 window 레벨 리스너가 패널 전체에서 처리한다. */}
       <div
         className={`

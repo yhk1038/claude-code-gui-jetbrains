@@ -6,6 +6,9 @@
   "contextChip": {
     "removeContext": "コンテキストを削除"
   },
+  "announcementCard": {
+    "close": "閉じる"
+  },
   "errorBoundary": {
     "somethingWentWrong": "問題が発生しました。",
     "retry": "再試行"

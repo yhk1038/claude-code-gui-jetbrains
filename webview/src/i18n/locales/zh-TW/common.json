@@ -6,6 +6,9 @@
   "contextChip": {
     "removeContext": "移除上下文"
   },
+  "announcementCard": {
+    "close": "關閉"
+  },
   "errorBoundary": {
     "somethingWentWrong": "發生錯誤了。",
     "retry": "重試"

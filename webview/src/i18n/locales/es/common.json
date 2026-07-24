@@ -6,6 +6,9 @@
   "contextChip": {
     "removeContext": "Quitar contexto"
   },
+  "announcementCard": {
+    "close": "Cerrar"
+  },
   "errorBoundary": {
     "somethingWentWrong": "Algo salió mal.",
     "retry": "Reintentar"

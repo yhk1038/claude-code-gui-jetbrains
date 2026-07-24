@@ -72,7 +72,9 @@ export class BrowserAdapter implements IdeAdapter {
   }
 
   async openUrl(url: string): Promise<void> {
-    window.open(url, '_blank');
+    // 'noopener,noreferrer' severs the opened tab's window.opener reference
+    // (reverse-tabnabbing protection) for any externally-sourced URL.
+    window.open(url, '_blank', 'noopener,noreferrer');
     console.log('[BrowserAdapter] Opened URL in new tab:', url);
   }
 
