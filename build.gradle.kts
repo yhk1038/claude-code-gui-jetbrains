@@ -146,6 +146,12 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
+            <h3>0.25.3 - [URGENT] Critical security patch. Update now if under v0.25.2 (CVE public Aug 6)</h3>
+            <ul>
+                <li>Security: a critical vulnerability (CVE assigned) will be publicly disclosed on Aug 6. On any version below v0.25.2, update to the latest immediately.</li>
+                <li>In-app announcements so important notices can surface right in the plugin (#219)</li>
+                <li>More reliable Enter-to-newline across keyboard layouts and IME input (#215, #216)</li>
+            </ul>
             <h3>0.25.2 - Clickable file references in chat</h3>
             <ul>
                 <li>File references in chat messages — like src/app.ts:42 — are now clickable and jump straight to that line in your IDE (#210 by @wast-bast, requested in #183 by @kingfen-wu)</li>
