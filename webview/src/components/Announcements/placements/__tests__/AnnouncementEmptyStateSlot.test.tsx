@@ -26,7 +26,7 @@ function makeAnnouncement(overrides: Partial<Announcement> = {}): Announcement {
     body: 'Empty state body',
     dismissible: true,
     actions: [],
-    target: { frequency: AnnouncementFrequency.ALWAYS },
+    target: { frequency: AnnouncementFrequency.UNTIL_DISMISSED },
     ...overrides,
   };
 }

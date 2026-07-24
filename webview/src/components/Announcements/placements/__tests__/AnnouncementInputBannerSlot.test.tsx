@@ -26,7 +26,7 @@ function makeAnnouncement(overrides: Partial<Announcement> = {}): Announcement {
     body: 'Input banner body',
     dismissible: true,
     actions: [],
-    target: { frequency: AnnouncementFrequency.ALWAYS },
+    target: { frequency: AnnouncementFrequency.UNTIL_DISMISSED },
     ...overrides,
   };
 }

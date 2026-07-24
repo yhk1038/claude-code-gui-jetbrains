@@ -1,5 +1,5 @@
 import { useAnnouncements } from '@/hooks/useAnnouncements';
-import { AnnouncementPlacement } from '@/shared';
+import { AnnouncementFrequency, AnnouncementPlacement } from '@/shared';
 import { InputBanner } from '@/pages/ChatPage/InputBanner';
 import { resolveAnnouncementIcon } from '../AnnouncementCard';
 import { RestrictedMarkdown } from '../RestrictedMarkdown';
@@ -57,7 +57,11 @@ export function AnnouncementTopBannerSlot() {
             </>
           ) : undefined
         }
-        onClose={announcement.dismissible ? () => dismiss(announcement.id) : undefined}
+        onClose={
+          announcement.dismissible && announcement.target.frequency !== AnnouncementFrequency.ALWAYS
+            ? () => dismiss(announcement.id)
+            : undefined
+        }
       />
     </div>
   );

@@ -2,7 +2,7 @@ import type { ComponentType, SVGProps } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/i18n';
 import { IconName, ICON_COMPONENTS } from '@/router';
-import type { Announcement } from '@/shared';
+import { AnnouncementFrequency, type Announcement } from '@/shared';
 import { RestrictedMarkdown } from './RestrictedMarkdown';
 import { useAnnouncementActionDispatch } from './useAnnouncementActionDispatch';
 import { isSafeImageUrl } from './urlSafety';
@@ -63,12 +63,12 @@ export function AnnouncementCard(props: Props) {
           </div>
         )}
       </div>
-      {announcement.dismissible && (
+      {announcement.dismissible && announcement.target.frequency !== AnnouncementFrequency.ALWAYS && (
         <button
           type="button"
           onClick={() => onDismiss(announcement.id)}
           aria-label={t('announcementCard.close')}
-          className="flex-shrink-0 rounded p-0.5 text-text-tertiary hover:bg-state-info-bg transition-colors"
+          className="flex-shrink-0 self-start rounded p-0.5 text-text-tertiary hover:bg-state-info-bg transition-colors"
         >
           <XMarkIcon className="h-4 w-4" />
         </button>

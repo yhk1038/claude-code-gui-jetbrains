@@ -19,7 +19,7 @@ function makeAnnouncement(overrides: Partial<Announcement> = {}): Announcement {
     body: 'Announcement **body**',
     dismissible: true,
     actions: [],
-    target: { frequency: AnnouncementFrequency.ALWAYS },
+    target: { frequency: AnnouncementFrequency.UNTIL_DISMISSED },
     ...overrides,
   };
 }
@@ -52,6 +52,19 @@ describe('AnnouncementCard', () => {
 
   it('dismissible=false일 때 닫기(X) 버튼이 없다', () => {
     render(<AnnouncementCard announcement={makeAnnouncement({ dismissible: false })} onDismiss={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: 'Close' })).not.toBeInTheDocument();
+  });
+
+  it('frequency가 ALWAYS면 dismissible이어도 닫기(X) 버튼이 없다 (닫아도 다시 뜨므로 숨김)', () => {
+    render(
+      <AnnouncementCard
+        announcement={makeAnnouncement({
+          dismissible: true,
+          target: { frequency: AnnouncementFrequency.ALWAYS },
+        })}
+        onDismiss={vi.fn()}
+      />,
+    );
     expect(screen.queryByRole('button', { name: 'Close' })).not.toBeInTheDocument();
   });
 
