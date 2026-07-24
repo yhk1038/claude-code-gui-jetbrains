@@ -42,6 +42,46 @@ export enum AnnouncementActionType {
   RUN_COMMAND = 'RUN_COMMAND',
 }
 
+/** Kind of media attached to an announcement or one of its steps. */
+export enum AnnouncementMediaType {
+  /** A static image (png/jpg/webp/svg). */
+  IMAGE = 'IMAGE',
+  /** An animated GIF. */
+  GIF = 'GIF',
+  /** A video clip (e.g. mp4/webm). */
+  VIDEO = 'VIDEO',
+}
+
+/**
+ * A piece of media (image/gif/video) attached to an announcement or one of its
+ * steps. `url` must be https to be trusted — the renderer additionally validates
+ * it against an `isSafeImageUrl`-style whitelist (see `urlSafety.ts`) before
+ * display. `alt` is accessibility text.
+ */
+export interface AnnouncementMedia {
+  type: AnnouncementMediaType;
+  url: string;
+  /** Accessibility alt text. */
+  alt?: string;
+}
+
+/**
+ * One step of a multi-step (series/carousel) announcement, as DELIVERED to the
+ * client. Only `media` is authored on the step's structure; the per-locale
+ * `title`/`body` text is authored in the announcement's translations and is
+ * merged into each step by the delivery endpoint at request time (mirroring how
+ * an action's per-locale `label` is merged from `translations[locale].actionLabels`).
+ * See `Announcement.steps`.
+ */
+export interface AnnouncementStep {
+  /** Optional media (image/gif/video) shown for this step. */
+  media?: AnnouncementMedia;
+  /** Step title (localized) — merged in from translations at delivery time. */
+  title?: string;
+  /** Step body: restricted markdown (localized) — merged in from translations at delivery time. */
+  body: string;
+}
+
 /** How often an announcement should be (re-)shown to the user. */
 export enum AnnouncementFrequency {
   /** Show once, then never again after the first dismissal/view. */
@@ -93,9 +133,18 @@ export interface Announcement {
   icon: string;
   /** Optional illustration/image URL. */
   imageUrl?: string;
+  /** Optional media (image/gif/video) for a single (non-series) announcement. */
+  media?: AnnouncementMedia;
   title: string;
   /** Restricted markdown (bold/link/list only) — rendered by the announcement renderer. */
   body: string;
+  /**
+   * When present and non-empty, this announcement is a multi-step series
+   * (a carousel with Back/Next and a "2/4" progress indicator); each step
+   * carries its own optional media plus localized title/body. When absent, the
+   * announcement renders with the classic single `title`/`body` above.
+   */
+  steps?: AnnouncementStep[];
   /** Whether the user can dismiss this announcement without taking an action. */
   dismissible: boolean;
   actions: AnnouncementAction[];

@@ -5,6 +5,8 @@ import { getAnnouncementsEnabled } from './profile';
 import {
   type Announcement,
   type AnnouncementAction,
+  type AnnouncementMedia,
+  type AnnouncementStep,
   type AnnouncementTarget,
   type AnnouncementsResponse,
 } from '../../shared';
@@ -97,6 +99,39 @@ function isValidTarget(value: unknown): value is AnnouncementTarget {
 }
 
 /**
+ * Validates only the structural shape of a media object (type/url are strings,
+ * optional alt is a string when present). Like `isValidAction`, this deliberately
+ * does NOT check `type` against the known `AnnouncementMediaType` members — a
+ * newer server may add a media kind as a backward-compatible extension, and this
+ * relay layer must not drop the whole announcement over an unrecognized media
+ * type (원본 데이터 보존 + forward-compat). A well-typed string passes; the webview
+ * renderer decides what it can actually display.
+ */
+function isValidMedia(value: unknown): value is AnnouncementMedia {
+  if (!value || typeof value !== 'object') return false;
+  const media = value as Record<string, unknown>;
+  if (typeof media.type !== 'string') return false;
+  if (typeof media.url !== 'string') return false;
+  if (media.alt !== undefined && typeof media.alt !== 'string') return false;
+  return true;
+}
+
+/**
+ * Validates only the structural shape of a delivered step: optional `media` is a
+ * valid media object, optional `title` is a string, and `body` — when present —
+ * is a string. `body` is not hard-required here so a forward-compatible server
+ * shape isn't dropped; the merge/render decision belongs to the webview.
+ */
+function isValidStep(value: unknown): value is AnnouncementStep {
+  if (!value || typeof value !== 'object') return false;
+  const step = value as Record<string, unknown>;
+  if (step.media !== undefined && !isValidMedia(step.media)) return false;
+  if (step.title !== undefined && typeof step.title !== 'string') return false;
+  if (step.body !== undefined && typeof step.body !== 'string') return false;
+  return true;
+}
+
+/**
  * Validates that `value` matches the `Announcement` shape (required fields
  * present, correct primitive types). Passing items are returned as-is (same
  * object reference) — per the "원본 데이터 보존" principle we never rebuild/rename
@@ -121,8 +156,10 @@ function isValidAnnouncement(value: unknown): value is Announcement {
   if (typeof item.priority !== 'number') return false;
   if (typeof item.icon !== 'string') return false;
   if (item.imageUrl !== undefined && typeof item.imageUrl !== 'string') return false;
+  if (item.media !== undefined && !isValidMedia(item.media)) return false;
   if (typeof item.title !== 'string') return false;
   if (typeof item.body !== 'string') return false;
+  if (item.steps !== undefined && (!Array.isArray(item.steps) || !item.steps.every(isValidStep))) return false;
   if (typeof item.dismissible !== 'boolean') return false;
   if (!Array.isArray(item.actions) || !item.actions.every(isValidAction)) return false;
   if (!isValidTarget(item.target)) return false;
