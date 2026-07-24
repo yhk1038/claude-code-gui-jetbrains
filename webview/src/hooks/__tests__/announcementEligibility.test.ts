@@ -1,6 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { isEligible, satisfiesVersionRange, selectForPlacement } from '../announcementEligibility';
-import { AnnouncementFrequency, AnnouncementPlacement, type Announcement } from '@/shared';
+import {
+  isEligible,
+  satisfiesVersionRange,
+  selectForPlacement,
+  visibleAnnouncementActions,
+} from '../announcementEligibility';
+import {
+  AnnouncementActionType,
+  AnnouncementFrequency,
+  AnnouncementPlacement,
+  type Announcement,
+} from '@/shared';
 
 const NOW = new Date('2026-07-24T00:00:00.000Z');
 
@@ -161,5 +171,28 @@ describe('selectForPlacement', () => {
     const result = selectForPlacement(list, AnnouncementPlacement.TOP_BANNER, ctx);
     expect(result[0]).toBe(a);
     expect(list[0]).toBe(a);
+  });
+});
+
+describe('visibleAnnouncementActions', () => {
+  const dismissAction = { id: 'later', label: 'Later', type: AnnouncementActionType.DISMISS };
+  const navAction = { id: 'go', label: 'Go', type: AnnouncementActionType.NAVIGATE, route: '/x' };
+
+  it('keeps every action for a non-ALWAYS notice', () => {
+    const a = makeAnnouncement({
+      actions: [dismissAction, navAction],
+      target: { frequency: AnnouncementFrequency.UNTIL_DISMISSED },
+    });
+    expect(visibleAnnouncementActions(a)).toHaveLength(2);
+  });
+
+  it('drops DISMISS-type actions for an ALWAYS notice (it can never be dismissed)', () => {
+    const a = makeAnnouncement({
+      actions: [dismissAction, navAction],
+      target: { frequency: AnnouncementFrequency.ALWAYS },
+    });
+    const result = visibleAnnouncementActions(a);
+    expect(result).toHaveLength(1);
+    expect(result[0].type).toBe(AnnouncementActionType.NAVIGATE);
   });
 });

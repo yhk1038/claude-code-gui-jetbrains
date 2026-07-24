@@ -1,4 +1,5 @@
 import { useAnnouncements } from '@/hooks/useAnnouncements';
+import { visibleAnnouncementActions } from '@/hooks/announcementEligibility';
 import { AnnouncementFrequency, AnnouncementPlacement } from '@/shared';
 import { InputBanner } from '@/pages/ChatPage/InputBanner';
 import { resolveAnnouncementIcon } from '../AnnouncementCard';
@@ -26,6 +27,7 @@ export function AnnouncementTopBannerSlot() {
   if (!announcement) return null;
 
   const Icon = resolveAnnouncementIcon(announcement.icon);
+  const actions = visibleAnnouncementActions(announcement);
 
   return (
     <div className="w-full bg-surface-base px-4 py-1.5">
@@ -42,9 +44,9 @@ export function AnnouncementTopBannerSlot() {
           </div>
         }
         actions={
-          announcement.actions.length > 0 ? (
+          actions.length > 0 ? (
             <>
-              {announcement.actions.map((action) => (
+              {actions.map((action) => (
                 <button
                   key={action.id}
                   type="button"

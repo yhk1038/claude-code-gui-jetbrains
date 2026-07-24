@@ -6,6 +6,7 @@ import { AnnouncementFrequency, type Announcement } from '@/shared';
 import { RestrictedMarkdown } from './RestrictedMarkdown';
 import { useAnnouncementActionDispatch } from './useAnnouncementActionDispatch';
 import { isSafeImageUrl } from './urlSafety';
+import { visibleAnnouncementActions } from '@/hooks/announcementEligibility';
 
 /**
  * Maps `announcement.icon` (an open-ended server string) to a bundled Heroicon
@@ -36,6 +37,7 @@ export function AnnouncementCard(props: Props) {
   const { t } = useTranslation('common');
   const dispatch = useAnnouncementActionDispatch();
   const Icon = resolveAnnouncementIcon(announcement.icon);
+  const actions = visibleAnnouncementActions(announcement);
 
   return (
     <div className="flex gap-3 rounded-lg border border-border-subtle bg-surface-raised p-3 text-[0.8461rem]">
@@ -48,9 +50,9 @@ export function AnnouncementCard(props: Props) {
         <div className="mt-1 text-text-secondary">
           <RestrictedMarkdown body={announcement.body} />
         </div>
-        {announcement.actions.length > 0 && (
+        {actions.length > 0 && (
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            {announcement.actions.map((action) => (
+            {actions.map((action) => (
               <button
                 key={action.id}
                 type="button"

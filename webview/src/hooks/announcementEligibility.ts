@@ -1,5 +1,21 @@
 import { compareVersions } from '../utils/compareVersions';
-import { AnnouncementFrequency, type Announcement, type AnnouncementPlacement } from '@/shared';
+import {
+  AnnouncementActionType,
+  AnnouncementFrequency,
+  type Announcement,
+  type AnnouncementAction,
+  type AnnouncementPlacement,
+} from '@/shared';
+
+/**
+ * Actions to actually render for an announcement. An ALWAYS-frequency notice
+ * can never be dismissed (its X is hidden too), so a DISMISS-type action would
+ * be a dead button — filter it out. All other action types are kept.
+ */
+export function visibleAnnouncementActions(announcement: Announcement): AnnouncementAction[] {
+  if (announcement.target.frequency !== AnnouncementFrequency.ALWAYS) return announcement.actions;
+  return announcement.actions.filter((action) => action.type !== AnnouncementActionType.DISMISS);
+}
 
 /** Runtime inputs needed to decide whether an announcement is currently eligible. */
 export interface AnnouncementEligibilityContext {
