@@ -136,6 +136,21 @@ const cache = new Map<string, CacheEntry>();
 export async function fetchAnnouncements(workingDir?: string): Promise<AnnouncementsResponse> {
   if (!announcementsUrl) return EMPTY_RESPONSE;
 
+  // Enforce https on the delivery endpoint: a plain-http URL would let a MITM
+  // rewrite announcement content. Reject (graceful empty) rather than fetch over
+  // an untrusted channel. Malformed URLs are rejected here too.
+  let baseUrl: URL;
+  try {
+    baseUrl = new URL(announcementsUrl);
+  } catch {
+    console.error('[node-backend]', 'Invalid CCG_ANNOUNCE_URL, ignoring:', announcementsUrl);
+    return EMPTY_RESPONSE;
+  }
+  if (baseUrl.protocol !== 'https:') {
+    console.error('[node-backend]', 'CCG_ANNOUNCE_URL must use https, ignoring:', baseUrl.protocol);
+    return EMPTY_RESPONSE;
+  }
+
   const { settings } = await readMergedClaudeSettings(workingDir);
   const locale = resolveLocale(settings.uiLanguage);
   const pluginVersion = getPluginVersion();
@@ -146,7 +161,7 @@ export async function fetchAnnouncements(workingDir?: string): Promise<Announcem
   if (cached && cached.expiresAt > now) return cached.response;
 
   try {
-    const url = new URL(announcementsUrl);
+    const url = new URL(baseUrl.toString());
     url.searchParams.set('locale', locale);
     url.searchParams.set('pluginVersion', pluginVersion);
 

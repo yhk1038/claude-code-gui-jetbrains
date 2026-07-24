@@ -107,7 +107,7 @@ export function RestrictedMarkdown(props: Props) {
       {blocks.map((block, index) => {
         if (block.type === 'list') {
           return (
-            <ul key={index} className="ml-4 list-disc space-y-0.5">
+            <ul key={index} className="ms-4 list-disc space-y-0.5">
               {block.items.map((item, itemIndex) => (
                 <li key={itemIndex}>{renderInline(item)}</li>
               ))}
