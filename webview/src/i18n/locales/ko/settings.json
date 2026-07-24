@@ -41,7 +41,7 @@
       "label": "RTL(Right-to-left) 켜기"
     },
     "useCtrlEnterToSend": {
-      "label": "Ctrl+Enter로 전송",
+      "label": "{{modifier}}+Enter로 전송",
       "description": "켜면 Enter 대신 Ctrl/Cmd+Enter로 프롬프트를 전송합니다. 이렇게 하면 Enter로 줄바꿈을 넣을 수 있습니다."
     },
     "focusInputOnEditorContext": {

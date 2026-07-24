@@ -13,6 +13,8 @@ import {
 } from 'react';
 import { setCaretOffset } from '@/utils/domSelection';
 import { splitIntoSegments } from './segments';
+import { useIMEComposition, type IMEComposition } from './useIMEComposition';
+import { insertNewlineAtCursor } from './insertNewlineAtCursor';
 
 interface Props {
   value: string;
@@ -31,6 +33,14 @@ interface Props {
    * is never chipped. Defaults to an empty list (plain text, no chips).
    */
   highlightTokens?: readonly string[];
+  /**
+   * IME composition state, optionally owned by the parent (ChatInput) so its
+   * keydown handler and this editor agree on a single source of truth. Under
+   * JCEF the native `isComposing` flag is unreliable; this ref-only hook is
+   * authoritative. When omitted, RichInput manages its own instance so it stays
+   * usable standalone.
+   */
+  ime?: IMEComposition;
 }
 
 /**
@@ -80,11 +90,17 @@ export const RichInput = forwardRef<HTMLDivElement, Props>((props: Props, ref) =
     className,
     ariaLabel,
     highlightTokens = [],
+    ime: imeProp,
   } = props;
 
   const elRef = useRef<HTMLDivElement>(null);
   const mirrorRef = useRef<HTMLDivElement>(null);
-  const isComposingRef = useRef(false);
+  // Own an IME instance so RichInput works standalone; when the parent supplies
+  // one (ChatInput), use it so keydown and this editor share a single truth.
+  const internalIme = useIMEComposition();
+  const ime = imeProp ?? internalIme;
+  // IME truth lives in the (possibly parent-owned) hook; alias for local reads.
+  const isComposingRef = ime.isComposingRef;
 
   // Live display text that drives the mirror. Unlike `value` (the controlled
   // prop, which is NOT updated mid-IME-composition), this tracks the editable
@@ -142,14 +158,35 @@ export const RichInput = forwardRef<HTMLDivElement, Props>((props: Props, ref) =
       // reporting to the parent until compositionend to avoid emitting partial
       // glyphs. The mirror still updates above so the user sees live feedback.
       if (isComposingRef.current) return;
+      // A committed input cancels the IME safety fallback (see useIMEComposition).
+      ime.notifyInput();
       onChange(text);
     },
-    [onChange],
+    [onChange, ime, isComposingRef],
+  );
+
+  // beforeinput safety net (issue #215): under JCEF a non-English-layout Enter
+  // can slip past keydown, so the composer never receives our explicit-newline
+  // handling. `insertParagraph` (the paragraph-break intent) is layout-
+  // independent — catch it here, convert it to a single `\n`, and keep `value`
+  // the single source of truth. Skipped while composing so an IME commit stands.
+  const handleBeforeInput = useCallback(
+    (e: FormEvent<HTMLDivElement>) => {
+      const native = e.nativeEvent as InputEvent;
+      if (native.inputType !== 'insertParagraph') return;
+      if (isComposingRef.current) return;
+      e.preventDefault();
+      insertNewlineAtCursor();
+      const text = elRef.current?.textContent ?? '';
+      setDisplayText(text);
+      onChange(text);
+    },
+    [onChange, isComposingRef],
   );
 
   const handleCompositionStart = useCallback(() => {
-    isComposingRef.current = true;
-  }, []);
+    ime.handleCompositionStart();
+  }, [ime]);
 
   const handleCompositionUpdate = useCallback(
     (e: ReactCompositionEvent<HTMLDivElement>) => {
@@ -162,12 +199,12 @@ export const RichInput = forwardRef<HTMLDivElement, Props>((props: Props, ref) =
 
   const handleCompositionEnd = useCallback(
     (e: ReactCompositionEvent<HTMLDivElement>) => {
-      isComposingRef.current = false;
+      ime.handleCompositionEnd();
       const text = e.currentTarget.textContent ?? '';
       setDisplayText(text);
       onChange(text);
     },
-    [onChange],
+    [onChange, ime],
   );
 
   // Keep the mirror's scroll position locked to the editable div so long /
@@ -236,6 +273,7 @@ export const RichInput = forwardRef<HTMLDivElement, Props>((props: Props, ref) =
           .filter(Boolean)
           .join(' ')}
         onInput={handleInput}
+        onBeforeInput={handleBeforeInput}
         onKeyDown={onKeyDown}
         onPaste={onPaste}
         onFocus={onFocus}

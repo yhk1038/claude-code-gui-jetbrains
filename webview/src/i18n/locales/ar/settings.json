@@ -41,7 +41,7 @@
       "label": "تفعيل الاتجاه من اليمين إلى اليسار (RTL)"
     },
     "useCtrlEnterToSend": {
-      "label": "استخدام Ctrl+Enter للإرسال",
+      "label": "استخدام {{modifier}}+Enter للإرسال",
       "description": "عند التفعيل، استخدم Ctrl/Cmd+Enter لإرسال الطلبات بدلًا من Enter فقط. يتيح هذا استخدام Enter لإنشاء أسطر جديدة."
     },
     "focusInputOnEditorContext": {

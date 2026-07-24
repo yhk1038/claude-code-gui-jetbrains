@@ -41,7 +41,7 @@
       "label": "Включить RTL(Right-to-left)"
     },
     "useCtrlEnterToSend": {
-      "label": "Отправлять по Ctrl+Enter",
+      "label": "Отправлять по {{modifier}}+Enter",
       "description": "Если включено, для отправки запроса используется Ctrl/Cmd+Enter вместо просто Enter. Это позволяет создавать новые строки клавишей Enter."
     },
     "focusInputOnEditorContext": {

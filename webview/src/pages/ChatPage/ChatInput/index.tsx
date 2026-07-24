@@ -34,6 +34,8 @@ import { isMobile } from '@/config/environment';
 import { shouldSubmitOnEnter } from './shouldSubmitOnEnter';
 import { basename } from './basename';
 import { RichInput } from './RichInput';
+import { useIMEComposition } from './RichInput/useIMEComposition';
+import { insertNewlineAtCursor } from './RichInput/insertNewlineAtCursor';
 import { TelemetryConsentBanner } from '../TelemetryConsentBanner';
 import { InputBanner } from '../InputBanner';
 import { FableNoticeBanner } from '../FableNoticeBanner';
@@ -237,6 +239,10 @@ export function ChatInput() {
 
   const modeConfig = INPUT_MODES[mode];
 
+  // IME composition truth (ref-only) shared between this keydown handler and the
+  // RichInput editor. Under JCEF the native `isComposing` flag is unreliable.
+  const ime = useIMEComposition();
+
   const palette = useCommandPalette({ onChange, textareaRef });
 
   const mention = useMention({
@@ -397,8 +403,19 @@ export function ChatInput() {
     initHistory(userTexts);
   }, [currentSessionId, initHistory]);
 
+  const handleRichChange = useCallback((newValue: string) => {
+    onChange(newValue);
+    palette.detectSlashCommand(newValue);
+    const caret = textareaRef.current ? getCaretOffset(textareaRef.current) : newValue.length;
+    mention.detectMention(newValue, caret);
+  }, [onChange, palette, mention, textareaRef]);
+
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key.startsWith('Arrow')) console.log('[KeyDebug:textarea-keydown]', e.key, { altKey: e.altKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, defaultPrevented: e.defaultPrevented });
+
+    // Feed the IME truth: keyCode 229 means the IME is still processing this
+    // keystroke, so mark composition active before any Enter decision runs.
+    ime.noteKeyDown(e.nativeEvent.keyCode);
 
     // JCEF workaround: Cmd+Arrow 처리 후 발생하는 순수 Arrow 유령 이벤트 무시
     const isArrowKey = e.key.startsWith('Arrow');
@@ -448,14 +465,21 @@ export function ChatInput() {
 
     // Enter: submit or newline depending on useCtrlEnterToSend setting.
     // IME composition and mobile guards always apply to the submit path.
-    if (e.key === 'Enter') {
+    // Enter is double-detected (key OR keyCode 13) because non-English layouts
+    // under JCEF can surface it with a non-"Enter" key string (issue #215).
+    const isEnterKey = e.key === 'Enter' || e.nativeEvent.keyCode === 13;
+    if (isEnterKey) {
+      // Combine our composition truth with the native flag: either being set
+      // means "in composition", since JCEF's native flag alone is unreliable.
+      const isIMEComposing = ime.isComposing() || e.nativeEvent.isComposing;
       const willSubmit = shouldSubmitOnEnter(
         {
           key: e.key,
+          keyCode: e.nativeEvent.keyCode,
           shiftKey: e.shiftKey,
           ctrlKey: e.ctrlKey,
           metaKey: e.metaKey,
-          isComposing: e.nativeEvent.isComposing,
+          isComposing: isIMEComposing,
           isMobile: isMobile(),
         },
         claudeSettings.useCtrlEnterToSend ?? false,
@@ -468,8 +492,19 @@ export function ChatInput() {
           clearAttachments();
           setPathTokens([]);
         }
+        return;
       }
-      // When willSubmit is false: do not prevent default — let the textarea handle it natively
+      // Not a submit. Insert a newline explicitly (issue #215): under JCEF a
+      // plain Enter in a non-English layout is otherwise swallowed as an IME
+      // commit and no line break appears. While composing we do NOT touch it —
+      // the composition confirmation owns that keystroke.
+      if (!isIMEComposing) {
+        e.preventDefault();
+        insertNewlineAtCursor();
+        const text = e.currentTarget.textContent ?? '';
+        handleRichChange(text);
+      }
+      return;
     } else if (e.key === 'ArrowUp' && !palette.showSlashCommands) {
       console.log('[KeyDebug:history-up-triggered]');
       // 복수행: 커서가 첫 번째 줄에 있을 때만 히스토리 탐색
@@ -491,14 +526,7 @@ export function ChatInput() {
       e.preventDefault();
       onChange(historyValue);
     }
-  }, [disabled, value, attachments.length, onSubmit, pushToHistory, navigateUp, navigateDown, onChange, palette, mention, cycleMode, clearAttachments, mode, claudeSettings.useCtrlEnterToSend]);
-
-  const handleRichChange = useCallback((newValue: string) => {
-    onChange(newValue);
-    palette.detectSlashCommand(newValue);
-    const caret = textareaRef.current ? getCaretOffset(textareaRef.current) : newValue.length;
-    mention.detectMention(newValue, caret);
-  }, [onChange, palette, mention, textareaRef]);
+  }, [disabled, value, attachments.length, onSubmit, pushToHistory, navigateUp, navigateDown, onChange, palette, mention, cycleMode, clearAttachments, mode, claudeSettings.useCtrlEnterToSend, ime, handleRichChange]);
 
   // Wrap the attachment paste handler so that, when the clipboard carries no
   // image, we insert the plain-text payload ourselves. contentEditable would
@@ -605,6 +633,7 @@ export function ChatInput() {
         <div className="pt-2.5 pb-1.5">
           <RichInput
             ref={textareaRef}
+            ime={ime}
             value={value}
             onChange={handleRichChange}
             onKeyDown={handleKeyDown}

@@ -41,7 +41,7 @@
       "label": "RTL(Right-to-left) aktivieren"
     },
     "useCtrlEnterToSend": {
-      "label": "Mit Strg+Enter senden",
+      "label": "Mit {{modifier}}+Enter senden",
       "description": "Wenn aktiviert, wird Strg/Cmd+Enter statt nur Enter verwendet, um Prompts zu senden. So kann mit Enter ein Zeilenumbruch eingefügt werden."
     },
     "focusInputOnEditorContext": {
