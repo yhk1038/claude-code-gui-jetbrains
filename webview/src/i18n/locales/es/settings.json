@@ -92,6 +92,11 @@
         "label": "Tamaño de fuente",
         "description": "Tamaño de fuente base para la interfaz",
         "notSetPlaceholder": "Sin definir"
+      },
+      "lineSpacing": {
+        "label": "Interlineado",
+        "description": "Altura de línea del texto de los mensajes del chat",
+        "notSetPlaceholder": "Sin definir"
       }
     },
     "scrolling": {

@@ -92,6 +92,11 @@
         "label": "Taille de police",
         "description": "Taille de police de base pour l'interface",
         "notSetPlaceholder": "Non défini"
+      },
+      "lineSpacing": {
+        "label": "Interligne",
+        "description": "Hauteur de ligne du texte des messages",
+        "notSetPlaceholder": "Non défini"
       }
     },
     "scrolling": {

@@ -92,6 +92,11 @@
         "label": "Размер шрифта",
         "description": "Базовый размер шрифта интерфейса",
         "notSetPlaceholder": "Не задано"
+      },
+      "lineSpacing": {
+        "label": "Межстрочный интервал",
+        "description": "Высота строки текста сообщений чата",
+        "notSetPlaceholder": "Не задано"
       }
     },
     "scrolling": {

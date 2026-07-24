@@ -1,6 +1,16 @@
 import { AUTO_SCROLL_THRESHOLD_DEFAULT } from '@/utils/autoScroll';
 
 /**
+ * Chat message line-height (unitless multiplier). Matches the CSS default in
+ * streaming.css (`.streaming-message` etc.) so turning the setting off/absent
+ * renders exactly as before. Kept in sync with the backend validator range.
+ */
+export const LINE_HEIGHT_DEFAULT = 1.6;
+export const LINE_HEIGHT_MIN = 0.5;
+export const LINE_HEIGHT_MAX = 10;
+export const LINE_HEIGHT_STEP = 0.1;
+
+/**
  * 설정 키 정의 - Kotlin SettingsManager와 동기화 (settings.js 파일 기반)
  */
 export enum SettingKey {
@@ -11,6 +21,7 @@ export enum SettingKey {
   // Appearance
   THEME = 'theme',
   FONT_SIZE = 'fontSize',
+  LINE_HEIGHT = 'lineHeight',
   AUTO_SCROLL_THRESHOLD = 'autoScrollThreshold',
 
   // Advanced
@@ -94,6 +105,7 @@ export interface SettingsState {
   [SettingKey.NODE_PATH]: string | null;
   [SettingKey.THEME]: ThemeMode;
   [SettingKey.FONT_SIZE]: number;
+  [SettingKey.LINE_HEIGHT]: number;
   [SettingKey.AUTO_SCROLL_THRESHOLD]: number;
   [SettingKey.DEBUG_MODE]: boolean;
   [SettingKey.LOG_LEVEL]: LogLevel;
@@ -112,6 +124,7 @@ export const DEFAULT_SETTINGS: SettingsState = {
   [SettingKey.NODE_PATH]: null,
   [SettingKey.THEME]: ThemeMode.SYSTEM,
   [SettingKey.FONT_SIZE]: 13,
+  [SettingKey.LINE_HEIGHT]: LINE_HEIGHT_DEFAULT,
   [SettingKey.AUTO_SCROLL_THRESHOLD]: AUTO_SCROLL_THRESHOLD_DEFAULT,
   [SettingKey.DEBUG_MODE]: false,
   [SettingKey.LOG_LEVEL]: LogLevel.INFO,

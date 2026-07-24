@@ -6,7 +6,7 @@
   position: relative;
   font-family: var(--ide-font-ui);
   color: var(--ide-fg);
-  line-height: 1.6;
+  line-height: var(--chat-line-height, 1.6);
 }
 
 .markdown-content {
@@ -130,10 +130,21 @@
   padding: 0.5em 0 0.25em;
 }
 
-/* Paragraph */
+/* Paragraph spacing (visual gap between paragraphs) */
 [data-streamdown="paragraph"] {
-  line-height: 1.6;
   padding: 0.5em 0;
+}
+
+/* Body text line spacing.
+   Streamdown 2.x renders paragraphs as a bare <p> with no data-streamdown
+   attribute, and the container's line-height is NOT inherited past
+   Streamdown's wrapper — so line spacing must be applied directly to the
+   text-bearing elements rather than relying on `.streaming-message`.
+   Lists have their own rule below; code blocks and inline code keep their
+   fixed spacing and are intentionally excluded. `:where()` keeps the
+   specificity at 0 so element-specific rules still win. */
+.markdown-content :where(p, h1, h2, h3, h4, h5, h6, blockquote, td, th) {
+  line-height: var(--chat-line-height, 1.6);
 }
 
 /* Strong */
@@ -269,7 +280,7 @@
 [data-streamdown="list-item"] {
   margin: 0;
   padding: 0 0 0.25em;
-  line-height: 1.6;
+  line-height: var(--chat-line-height, 1.6);
 }
 
 [data-streamdown="list-item"] > p {

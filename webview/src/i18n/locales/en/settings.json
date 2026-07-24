@@ -92,6 +92,11 @@
         "label": "Font Size",
         "description": "Base font size for the interface",
         "notSetPlaceholder": "Not set"
+      },
+      "lineSpacing": {
+        "label": "Line Spacing",
+        "description": "Line height for chat message text",
+        "notSetPlaceholder": "Not set"
       }
     },
     "scrolling": {

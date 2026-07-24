@@ -79,6 +79,23 @@ describe('settings', () => {
       expect(result.status).toBe('ok');
     });
 
+    it('should reject lineHeight out of range', async () => {
+      const tooSmall = await saveSettingToFile('lineHeight', 0.4);
+      expect(tooSmall.status).toBe('error');
+      expect(tooSmall.error).toContain('lineHeight must be a number between 0.5 and 10');
+
+      const tooLarge = await saveSettingToFile('lineHeight', 10.1);
+      expect(tooLarge.status).toBe('error');
+    });
+
+    it('should accept fractional lineHeight', async () => {
+      const result = await saveSettingToFile('lineHeight', 1.8);
+      expect(result.status).toBe('ok');
+
+      const wide = await saveSettingToFile('lineHeight', 8);
+      expect(wide.status).toBe('ok');
+    });
+
     it('should reject non-boolean debugMode', async () => {
       const result = await saveSettingToFile('debugMode', 'true');
       expect(result.status).toBe('error');
@@ -214,6 +231,7 @@ describe('settings', () => {
         nodePath: null,
         theme: 'system',
         fontSize: 13,
+        lineHeight: 1.6,
         autoScrollThreshold: 80,
         debugMode: false,
         logLevel: 'info',
@@ -287,6 +305,7 @@ export default {
         nodePath: null,
         theme: 'system',
         fontSize: 13,
+        lineHeight: 1.6,
         autoScrollThreshold: 80,
         debugMode: false,
         logLevel: 'info',

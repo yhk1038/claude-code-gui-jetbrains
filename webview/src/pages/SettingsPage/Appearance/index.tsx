@@ -1,7 +1,14 @@
 import { SettingSection, SettingRow } from '../common';
 import { Select, type SelectOption } from '@/components/Select';
 import { useSettings } from '@/contexts/SettingsContext';
-import { SettingKey, ThemeMode } from '@/types/settings';
+import {
+  SettingKey,
+  ThemeMode,
+  LINE_HEIGHT_DEFAULT,
+  LINE_HEIGHT_MIN,
+  LINE_HEIGHT_MAX,
+  LINE_HEIGHT_STEP,
+} from '@/types/settings';
 import { isJetBrains } from '@/config/environment';
 import { useTranslation } from '@/i18n';
 import {
@@ -23,6 +30,9 @@ export function AppearanceSettings() {
 
   const rawFontSize = scopeSettings[SettingKey.FONT_SIZE] as number | undefined;
   const isFontSizeNotSet = rawFontSize === undefined && scope === 'project';
+
+  const rawLineHeight = scopeSettings[SettingKey.LINE_HEIGHT] as number | undefined;
+  const isLineHeightNotSet = rawLineHeight === undefined && scope === 'project';
 
   const rawAutoScrollThreshold = scopeSettings[SettingKey.AUTO_SCROLL_THRESHOLD] as number | undefined;
   const isAutoScrollThresholdNotSet = rawAutoScrollThreshold === undefined && scope === 'project';
@@ -91,6 +101,35 @@ export function AppearanceSettings() {
             }}
             className={`w-20 bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm ${
               isFontSizeNotSet ? 'text-text-tertiary italic' : 'text-text-primary'
+            }`}
+          />
+        </SettingRow>
+
+        <SettingRow
+          label={t('appearance.theme.lineSpacing.label')}
+          description={t('appearance.theme.lineSpacing.description')}
+        >
+          <input
+            type="number"
+            min={LINE_HEIGHT_MIN}
+            max={LINE_HEIGHT_MAX}
+            step={LINE_HEIGHT_STEP}
+            value={isLineHeightNotSet ? '' : (rawLineHeight ?? LINE_HEIGHT_DEFAULT)}
+            placeholder={isLineHeightNotSet ? t('appearance.theme.lineSpacing.notSetPlaceholder') : undefined}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === '') {
+                if (scope === 'project') {
+                  resetToGlobal(SettingKey.LINE_HEIGHT);
+                }
+                return;
+              }
+              const parsed = parseFloat(value);
+              if (!Number.isFinite(parsed)) return;
+              updateSetting(SettingKey.LINE_HEIGHT, parsed);
+            }}
+            className={`w-20 bg-surface-overlay border border-border-default rounded-lg px-3 py-1.5 text-sm ${
+              isLineHeightNotSet ? 'text-text-tertiary italic' : 'text-text-primary'
             }`}
           />
         </SettingRow>

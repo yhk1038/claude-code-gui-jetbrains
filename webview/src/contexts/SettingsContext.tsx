@@ -90,6 +90,16 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     }
   }, [settings]);
 
+  // Apply chat message line spacing as a CSS variable consumed by streaming.css
+  // (`.streaming-message`, streamdown paragraphs/list-items). The `--chat-line-height`
+  // fallback in CSS keeps the previous look when the value is unset/invalid.
+  useEffect(() => {
+    const lineHeight = settings[SettingKey.LINE_HEIGHT];
+    if (typeof lineHeight === 'number' && Number.isFinite(lineHeight)) {
+      document.documentElement.style.setProperty('--chat-line-height', String(lineHeight));
+    }
+  }, [settings]);
+
   // Apply theme to <html> element. Toggles `.dark` class based on theme setting.
   // - LIGHT: explicit light, no `.dark` class
   // - DARK: explicit dark, `.dark` class on

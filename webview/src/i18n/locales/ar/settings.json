@@ -92,6 +92,11 @@
         "label": "حجم الخط",
         "description": "حجم الخط الأساسي للواجهة",
         "notSetPlaceholder": "غير معيّن"
+      },
+      "lineSpacing": {
+        "label": "تباعد الأسطر",
+        "description": "ارتفاع سطر نص رسائل المحادثة",
+        "notSetPlaceholder": "غير معيّن"
       }
     },
     "scrolling": {
