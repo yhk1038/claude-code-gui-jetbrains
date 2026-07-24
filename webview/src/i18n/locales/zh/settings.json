@@ -27,6 +27,16 @@
     "projectDisabledTooltip": "打开一个项目以使用项目设置"
   },
   "general": {
+    "openFilesWith": {
+      "label": "Open files with",
+      "description": "Which program opens a file reference clicked in chat.",
+      "jetbrainsDescription": "Files open in your connected IDE.",
+      "jetbrainsFallback": "Connected IDE",
+      "systemDefault": "System default",
+      "custom": "Custom…",
+      "customPlaceholder": "App name or path",
+      "detecting": "Detecting…"
+    },
     "language": {
       "label": "语言",
       "description": "Claude 回复时使用的首选语言",

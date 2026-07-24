@@ -16,6 +16,7 @@ const DEFAULT_SETTINGS: Record<string, unknown> = {
   debugMode: false,
   logLevel: 'info',
   terminalApp: null,
+  openFilesWith: null,
   hostMode: 'editor-tab',
   openSettingsAs: 'overlay',
   chatPagination: true,
@@ -32,6 +33,7 @@ const COMMENT_MAP: Record<string, string> = {
   debugMode: '디버그 모드 활성화',
   logLevel: '로그 레벨: "debug" | "info" | "warn" | "error"',
   terminalApp: '터미널 프로그램 (null이면 OS 기본 터미널)',
+  openFilesWith: '파일을 열 프로그램 (null이면 OS 기본)',
   hostMode: '채팅을 띄우는 자리: "editor-tab" | "tool-window"',
   openSettingsAs: '설정 화면을 여는 방식: "overlay" | "new-tab"',
   chatPagination: '채팅 기록을 페이지 단위로 로드(스크롤 시 이전 메시지 추가). false면 전체를 한 번에 로드',
@@ -143,6 +145,11 @@ function validateSetting(key: string, value: unknown): string | null {
     case 'terminalApp':
       if (value !== null && typeof value !== 'string') {
         return 'terminalApp must be a string or null';
+      }
+      break;
+    case 'openFilesWith':
+      if (value !== null && typeof value !== 'string') {
+        return 'openFilesWith must be a string or null';
       }
       break;
     case 'hostMode':
