@@ -132,4 +132,24 @@ describe('fetchAnnouncements', () => {
     const result = await fetchAnnouncements();
     expect(result.announcements).toEqual([]);
   });
+
+  it('serves a cached response within TTL — repeated calls fetch only once', async () => {
+    // Unique locale (ja) → its own cache key, isolated from the tests above.
+    vi.mocked(readMergedClaudeSettings).mockResolvedValue({
+      settings: { uiLanguage: 'japanese' },
+      overrides: [],
+    });
+    const fetchSpy = vi.fn((_url: string, _init?: RequestInit) =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        json: async () => ({ schemaVersion: 1, announcements: [] }),
+      }),
+    );
+    vi.stubGlobal('fetch', fetchSpy);
+
+    await fetchAnnouncements();
+    await fetchAnnouncements();
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
 });
