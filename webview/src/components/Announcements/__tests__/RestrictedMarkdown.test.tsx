@@ -1,19 +1,29 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { RestrictedMarkdown, parseRestrictedMarkdownBlocks } from '../RestrictedMarkdown';
+import { parseRestrictedMarkdown } from '@/vendor/announcement-core/markdown';
+import { RestrictedMarkdown } from '../RestrictedMarkdown';
 
-describe('parseRestrictedMarkdownBlocks', () => {
-  it('빈 줄로 구분된 일반 텍스트를 문단으로 분리한다', () => {
-    const blocks = parseRestrictedMarkdownBlocks('first line\n\nsecond line');
+describe('parseRestrictedMarkdown (vendored)', () => {
+  it('빈 줄로 구분된 일반 텍스트를 문단(토큰)으로 분리한다', () => {
+    const blocks = parseRestrictedMarkdown('first line\n\nsecond line');
     expect(blocks).toEqual([
-      { type: 'paragraph', text: 'first line' },
-      { type: 'paragraph', text: 'second line' },
+      { type: 'paragraph', tokens: [{ type: 'text', text: 'first line' }] },
+      { type: 'paragraph', tokens: [{ type: 'text', text: 'second line' }] },
     ]);
   });
 
-  it('연속된 "- " 줄을 하나의 리스트 블록으로 묶는다', () => {
-    const blocks = parseRestrictedMarkdownBlocks('- one\n- two\n- three');
-    expect(blocks).toEqual([{ type: 'list', items: ['one', 'two', 'three'] }]);
+  it('연속된 "- " 줄을 하나의 리스트 블록(토큰 배열)으로 묶는다', () => {
+    const blocks = parseRestrictedMarkdown('- one\n- two\n- three');
+    expect(blocks).toEqual([
+      {
+        type: 'list',
+        items: [
+          [{ type: 'text', text: 'one' }],
+          [{ type: 'text', text: 'two' }],
+          [{ type: 'text', text: 'three' }],
+        ],
+      },
+    ]);
   });
 });
 

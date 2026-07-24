@@ -3,19 +3,22 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/i18n';
 import { IconName, ICON_COMPONENTS } from '@/router';
 import { type Announcement } from '@/shared';
+import { isKnownAnnouncementIcon } from '@/vendor/announcement-core/icons';
 import { RestrictedMarkdown } from './RestrictedMarkdown';
 import { useAnnouncementActionDispatch } from './useAnnouncementActionDispatch';
 import { isSafeImageUrl } from './urlSafety';
 
 /**
  * Maps `announcement.icon` (an open-ended server string) to a bundled Heroicon
- * component. Never trusts the server string as a component/SVG reference
- * directly — an unregistered name falls back to a default icon, preventing
- * remote SVG/markup injection through this field.
+ * component. The name whitelist is owned by the shared `@ccg/announcement-core`
+ * package (`ANNOUNCEMENT_ICON_NAMES`, vendored) — its names are spelling-
+ * identical to the plugin's `IconName` enum values, so a whitelisted string
+ * indexes `ICON_COMPONENTS` directly. Never trusts the server string as a
+ * component/SVG reference: an unrecognized name falls back to a default icon,
+ * preventing remote SVG/markup injection through this field.
  */
 export function resolveAnnouncementIcon(icon: string): ComponentType<SVGProps<SVGSVGElement>> {
-  const isKnown = (Object.values(IconName) as string[]).includes(icon);
-  return isKnown ? ICON_COMPONENTS[icon as IconName] : ICON_COMPONENTS[IconName.INFORMATION_CIRCLE];
+  return isKnownAnnouncementIcon(icon) ? ICON_COMPONENTS[icon as IconName] : ICON_COMPONENTS[IconName.INFORMATION_CIRCLE];
 }
 
 interface Props {

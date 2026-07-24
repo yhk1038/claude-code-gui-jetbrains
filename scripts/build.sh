@@ -143,6 +143,12 @@ Plugin (Gradle):
   verify-plugin  gradlew verifyPlugin (runs JetBrains Plugin Verifier across
                    the pluginVerification.ides matrix in build.gradle.kts)
 
+Vendored sources:
+  sync-announcement-core
+                 Copy www/packages/announcement-core/src (source of truth) into
+                   webview/src/vendor/announcement-core (idempotent; wipes + recopies).
+                   Run after changing the www announcement-core package.
+
 Combined:
   full-build     be-build + wv-build + gradlew build
   dist           be-build + wv-build + gradlew buildPlugin
@@ -222,6 +228,11 @@ case "${1:-}" in
     tar -czf "$out" -C "$stage" .
     rm -rf "$stage"
     echo "Created: $out"
+    ;;
+
+  # --- Vendored sources ---
+  sync-announcement-core)
+    bash "$ROOT/scripts/sync-announcement-core.sh"
     ;;
 
   # --- Plugin (Gradle) ---

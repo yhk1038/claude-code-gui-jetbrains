@@ -1,5 +1,5 @@
 export { AnnouncementCard, resolveAnnouncementIcon } from './AnnouncementCard';
-export { RestrictedMarkdown, renderInline, parseRestrictedMarkdownBlocks } from './RestrictedMarkdown';
+export { RestrictedMarkdown } from './RestrictedMarkdown';
 export {
   isAllowedRoute,
   isAllowedCommand,

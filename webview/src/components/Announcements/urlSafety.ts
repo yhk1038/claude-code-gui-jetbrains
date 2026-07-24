@@ -1,31 +1,11 @@
 /**
- * URL scheme allow-lists for server-driven announcement content. A malicious /
- * compromised delivery server must never be able to smuggle a script-executing
- * or mixed-content URL into an href, window.open, or <img src>.
+ * URL scheme allow-lists for announcement content — webview side.
+ *
+ * `isSafeLinkUrl` / `isSafeImageUrl` are owned by the shared
+ * `@ccg/announcement-core` package (source of truth:
+ * `www/packages/announcement-core`), vendored at
+ * `webview/src/vendor/announcement-core`. This file re-exports them so existing
+ * `./urlSafety` imports keep working while the plugin and the www admin apply
+ * the exact same scheme allow-lists.
  */
-
-/** Schemes safe to render as a clickable link or hand to an external opener. */
-const SAFE_LINK_SCHEMES = ['http://', 'https://', 'mailto:'];
-
-/**
- * Whether `url` is safe to use as a clickable link or external-open target
- * (OPEN_URL action, restricted-markdown link). Anything else — `javascript:`,
- * `data:`, `file:`, … — is rejected.
- */
-export function isSafeLinkUrl(url: string): boolean {
-  const lower = url.trim().toLowerCase();
-  return SAFE_LINK_SCHEMES.some((scheme) => lower.startsWith(scheme));
-}
-
-/** Image sources are stricter than links: only https and inline data:image. */
-const SAFE_IMAGE_SCHEMES = ['https://', 'data:image/'];
-
-/**
- * Whether `url` is safe to use as an `<img src>`. Blocks plain http
- * (mixed-content / IP-leak beacon), `data:text/html`, and every scripting
- * scheme — only https images and inline data:image payloads pass.
- */
-export function isSafeImageUrl(url: string): boolean {
-  const lower = url.trim().toLowerCase();
-  return SAFE_IMAGE_SCHEMES.some((scheme) => lower.startsWith(scheme));
-}
+export * from '@/vendor/announcement-core/urlSafety';
