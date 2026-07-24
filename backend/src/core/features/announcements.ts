@@ -151,7 +151,11 @@ export async function fetchAnnouncements(workingDir?: string): Promise<Announcem
     console.error('[node-backend]', 'Invalid CCG_ANNOUNCE_URL, ignoring:', announcementsUrl);
     return EMPTY_RESPONSE;
   }
-  if (baseUrl.protocol !== 'https:') {
+  // https is required in general (a plain-http endpoint would let a MITM rewrite
+  // content), but http://localhost is allowed for local development/testing since
+  // loopback traffic can't be intercepted on the network.
+  const isLoopback = ['localhost', '127.0.0.1', '[::1]'].includes(baseUrl.hostname);
+  if (baseUrl.protocol !== 'https:' && !(baseUrl.protocol === 'http:' && isLoopback)) {
     console.error('[node-backend]', 'CCG_ANNOUNCE_URL must use https, ignoring:', baseUrl.protocol);
     return EMPTY_RESPONSE;
   }
