@@ -148,6 +148,13 @@ Vendored sources:
                  Copy www/packages/announcement-core/src (source of truth) into
                    webview/src/vendor/announcement-core (idempotent; wipes + recopies).
                    Run after changing the www announcement-core package.
+  sync-announcement-ui
+                 Copy www/packages/announcement-ui/src (source of truth) into
+                   webview/src/vendor/announcement-ui (idempotent; wipes + recopies).
+                   Rewrites @ccg/announcement-core -> @/vendor/announcement-core.
+                   Run after changing the www announcement-ui package.
+  sync-announcements
+                 Run both sync-announcement-core and sync-announcement-ui.
 
 Combined:
   full-build     be-build + wv-build + gradlew build
@@ -233,6 +240,13 @@ case "${1:-}" in
   # --- Vendored sources ---
   sync-announcement-core)
     bash "$ROOT/scripts/sync-announcement-core.sh"
+    ;;
+  sync-announcement-ui)
+    bash "$ROOT/scripts/sync-announcement-ui.sh"
+    ;;
+  sync-announcements)
+    bash "$ROOT/scripts/sync-announcement-core.sh"
+    bash "$ROOT/scripts/sync-announcement-ui.sh"
     ;;
 
   # --- Plugin (Gradle) ---

@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { useAnnouncements } from '@/hooks/useAnnouncements';
 import { AnnouncementPlacement } from '@/shared';
+import { AnnouncementView } from '@/vendor/announcement-ui';
 import { Portal } from '../../Portal';
-import { AnnouncementCard } from '../AnnouncementCard';
+import { useAnnouncementActionDispatch } from '../useAnnouncementActionDispatch';
 
 /**
  * MODAL 플레이스먼트 공지 슬롯.
@@ -12,9 +13,14 @@ import { AnnouncementCard } from '../AnnouncementCard';
  * 때만 배경 클릭/Escape로 닫힌다 — false면 `ConfirmDialog`의 강제 확인
  * 다이얼로그처럼 액션 버튼으로만 닫을 수 있다(카드 자체의 X 버튼도
  * dismissible에 따라 이미 숨겨진다).
+ *
+ * Portal/backdrop/Escape 골격은 유지하고, 내용만 www admin과 공유하는 vendored
+ * `AnnouncementView variant="card"`로 렌더한다. `announcement-scope`는
+ * `--ann-*` CSS 변수를 플러그인 테마에 매핑한다.
  */
 export function AnnouncementModalSlot() {
   const { announcements, dismiss } = useAnnouncements(AnnouncementPlacement.MODAL);
+  const dispatch = useAnnouncementActionDispatch();
   const announcement = announcements[0];
 
   useEffect(() => {
@@ -44,8 +50,13 @@ export function AnnouncementModalSlot() {
         className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-overlay-scrim"
         onClick={handleBackdropClick}
       >
-        <div role="dialog" aria-modal="true" className="w-full max-w-md">
-          <AnnouncementCard announcement={announcement} onDismiss={dismiss} />
+        <div role="dialog" aria-modal="true" className="announcement-scope w-full max-w-md">
+          <AnnouncementView
+            announcement={announcement}
+            variant="card"
+            onAction={(action) => dispatch(announcement, action, dismiss)}
+            onDismiss={() => dismiss(announcement)}
+          />
         </div>
       </div>
     </Portal>

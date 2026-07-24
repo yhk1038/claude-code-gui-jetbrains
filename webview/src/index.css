@@ -15,6 +15,28 @@
 }
 
 /* ============================================
+   Announcement theme scope (--ann-* variables)
+   The shared, vendored `AnnouncementView` (webview/src/vendor/announcement-ui)
+   is styled entirely through `--ann-*` CSS variables so the exact same markup
+   themes independently per consumer (plugin webview vs. www admin). Here we map
+   each `--ann-*` name to the plugin's own theme tokens, so an announcement
+   renders pixel-identical to the former `AnnouncementCard` and automatically
+   follows the plugin's light/dark themes (the mapped tokens already switch
+   between `:root` and `.dark`, so a single scope block covers both).
+
+   Any element that mounts an `AnnouncementView` must carry `announcement-scope`.
+   ============================================ */
+.announcement-scope {
+  --ann-surface: rgb(var(--surface-raised-rgb));
+  --ann-fg: rgb(var(--text-primary-rgb));
+  --ann-fg-muted: rgb(var(--text-secondary-rgb));
+  --ann-fg-subtle: rgb(var(--text-tertiary-rgb));
+  --ann-border: rgb(var(--border-subtle-rgb));
+  --ann-accent: rgb(var(--accent-primary-rgb));
+  --ann-hover: var(--state-info-bg);
+}
+
+/* ============================================
    contentEditable placeholder (RichInput)
    Shown only while the editable element is empty. Mirrors the textarea's
    placeholder using the disabled-text token. pointer-events:none keeps the

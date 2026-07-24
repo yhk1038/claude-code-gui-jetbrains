@@ -9,9 +9,9 @@ vi.mock('@/hooks/useAnnouncements', () => ({
   useAnnouncements: (placement: AnnouncementPlacement) => mockUseAnnouncements(placement),
 }));
 
-// AnnouncementCard(내부에서 사용)의 useAnnouncementActionDispatch가 useRouter/
-// useNavigate를 호출하는데, 이 슬롯 테스트에는 <Router> 컨텍스트가 없어
-// AnnouncementCard.test.tsx와 동일하게 액션 디스패치 자체를 목킹한다.
+// 슬롯이 호출하는 useAnnouncementActionDispatch가 useRouter/useNavigate를
+// 호출하는데, 이 슬롯 테스트에는 <Router> 컨텍스트가 없어 액션 디스패치 자체를
+// 목킹한다.
 vi.mock('@/components/Announcements/useAnnouncementActionDispatch', () => ({
   useAnnouncementActionDispatch: () => vi.fn(),
 }));

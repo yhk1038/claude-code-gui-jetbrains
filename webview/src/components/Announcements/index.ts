@@ -1,5 +1,3 @@
-export { AnnouncementCard, resolveAnnouncementIcon } from './AnnouncementCard';
-export { RestrictedMarkdown } from './RestrictedMarkdown';
 export {
   isAllowedRoute,
   isAllowedCommand,
