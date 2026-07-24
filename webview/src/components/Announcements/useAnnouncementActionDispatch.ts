@@ -8,7 +8,7 @@ import { isSafeLinkUrl } from './urlSafety';
 export type AnnouncementActionDispatch = (
   announcement: Announcement,
   action: AnnouncementAction,
-  onDismiss: (id: string) => void,
+  onDismiss: (announcement: Announcement) => void,
 ) => void;
 
 /**
@@ -26,7 +26,7 @@ export function useAnnouncementActionDispatch(): AnnouncementActionDispatch {
   const { navigate } = useRouter();
 
   return useCallback(
-    (announcement: Announcement, action: AnnouncementAction, onDismiss: (id: string) => void) => {
+    (announcement: Announcement, action: AnnouncementAction, onDismiss: (announcement: Announcement) => void) => {
       switch (action.type) {
         case AnnouncementActionType.OPEN_URL: {
           if (!action.url) return;
@@ -40,7 +40,7 @@ export function useAnnouncementActionDispatch(): AnnouncementActionDispatch {
           return;
         }
         case AnnouncementActionType.DISMISS: {
-          onDismiss(announcement.id);
+          onDismiss(announcement);
           return;
         }
         case AnnouncementActionType.NAVIGATE: {

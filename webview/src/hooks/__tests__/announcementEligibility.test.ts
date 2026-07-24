@@ -1,16 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import {
-  isEligible,
-  satisfiesVersionRange,
-  selectForPlacement,
-  visibleAnnouncementActions,
-} from '../announcementEligibility';
-import {
-  AnnouncementActionType,
-  AnnouncementFrequency,
-  AnnouncementPlacement,
-  type Announcement,
-} from '@/shared';
+import { isEligible, satisfiesVersionRange, selectForPlacement } from '../announcementEligibility';
+import { AnnouncementFrequency, AnnouncementPlacement, type Announcement } from '@/shared';
 
 const NOW = new Date('2026-07-24T00:00:00.000Z');
 
@@ -69,7 +59,12 @@ describe('satisfiesVersionRange', () => {
 });
 
 describe('isEligible', () => {
-  const ctx = { now: NOW, pluginVersion: '0.25.0', dismissedIds: [] as string[] };
+  const ctx = {
+    now: NOW,
+    pluginVersion: '0.25.0',
+    dismissedIds: [] as string[],
+    locallyDismissedIds: [] as string[],
+  };
 
   it('passes when showFrom/showUntil are unset', () => {
     expect(isEligible(makeAnnouncement(), ctx)).toBe(true);
@@ -131,14 +126,35 @@ describe('isEligible', () => {
     expect(isEligible(a, { ...ctx, dismissedIds: ['ud-1'] })).toBe(false);
   });
 
-  it('frequency ALWAYS: stays eligible even when dismissed', () => {
+  it('frequency ALWAYS: ignores the permanent dismissedIds record (stays eligible)', () => {
     const a = makeAnnouncement({ id: 'always-1', target: { frequency: AnnouncementFrequency.ALWAYS } });
     expect(isEligible(a, { ...ctx, dismissedIds: ['always-1'] })).toBe(true);
+  });
+
+  it('local dismissal: a non-ALWAYS announcement is excluded when locally dismissed', () => {
+    const a = makeAnnouncement({ id: 'ud-2', target: { frequency: AnnouncementFrequency.UNTIL_DISMISSED } });
+    expect(isEligible(a, { ...ctx, locallyDismissedIds: ['ud-2'] })).toBe(false);
+  });
+
+  it('frequency ALWAYS: respects the volatile local dismissal (excluded in the current view)', () => {
+    const a = makeAnnouncement({ id: 'always-2', target: { frequency: AnnouncementFrequency.ALWAYS } });
+    // Ignores the permanent record but is still hidden by the current-view local dismissal.
+    expect(isEligible(a, { ...ctx, dismissedIds: ['always-2'], locallyDismissedIds: ['always-2'] })).toBe(false);
+  });
+
+  it('frequency ALWAYS: eligible again once the local dismissal resets (e.g. remount)', () => {
+    const a = makeAnnouncement({ id: 'always-3', target: { frequency: AnnouncementFrequency.ALWAYS } });
+    expect(isEligible(a, { ...ctx, dismissedIds: ['always-3'], locallyDismissedIds: [] })).toBe(true);
   });
 });
 
 describe('selectForPlacement', () => {
-  const ctx = { now: NOW, pluginVersion: '0.25.0', dismissedIds: [] as string[] };
+  const ctx = {
+    now: NOW,
+    pluginVersion: '0.25.0',
+    dismissedIds: [] as string[],
+    locallyDismissedIds: [] as string[],
+  };
 
   it('filters out announcements not targeting the placement', () => {
     const inBanner = makeAnnouncement({ id: 'banner', placements: [AnnouncementPlacement.TOP_BANNER] });
@@ -157,6 +173,16 @@ describe('selectForPlacement', () => {
     expect(result.map((a) => a.id)).toEqual(['eligible']);
   });
 
+  it('filters out locally-dismissed announcements (including ALWAYS)', () => {
+    const eligible = makeAnnouncement({ id: 'eligible' });
+    const locallyHidden = makeAnnouncement({ id: 'hidden', target: { frequency: AnnouncementFrequency.ALWAYS } });
+    const result = selectForPlacement([eligible, locallyHidden], AnnouncementPlacement.TOP_BANNER, {
+      ...ctx,
+      locallyDismissedIds: ['hidden'],
+    });
+    expect(result.map((a) => a.id)).toEqual(['eligible']);
+  });
+
   it('sorts eligible announcements by priority descending', () => {
     const low = makeAnnouncement({ id: 'low', priority: 1 });
     const high = makeAnnouncement({ id: 'high', priority: 10 });
@@ -171,28 +197,5 @@ describe('selectForPlacement', () => {
     const result = selectForPlacement(list, AnnouncementPlacement.TOP_BANNER, ctx);
     expect(result[0]).toBe(a);
     expect(list[0]).toBe(a);
-  });
-});
-
-describe('visibleAnnouncementActions', () => {
-  const dismissAction = { id: 'later', label: 'Later', type: AnnouncementActionType.DISMISS };
-  const navAction = { id: 'go', label: 'Go', type: AnnouncementActionType.NAVIGATE, route: '/x' };
-
-  it('keeps every action for a non-ALWAYS notice', () => {
-    const a = makeAnnouncement({
-      actions: [dismissAction, navAction],
-      target: { frequency: AnnouncementFrequency.UNTIL_DISMISSED },
-    });
-    expect(visibleAnnouncementActions(a)).toHaveLength(2);
-  });
-
-  it('drops DISMISS-type actions for an ALWAYS notice (it can never be dismissed)', () => {
-    const a = makeAnnouncement({
-      actions: [dismissAction, navAction],
-      target: { frequency: AnnouncementFrequency.ALWAYS },
-    });
-    const result = visibleAnnouncementActions(a);
-    expect(result).toHaveLength(1);
-    expect(result[0].type).toBe(AnnouncementActionType.NAVIGATE);
   });
 });

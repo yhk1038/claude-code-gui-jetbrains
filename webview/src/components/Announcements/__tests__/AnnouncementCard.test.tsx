@@ -55,7 +55,7 @@ describe('AnnouncementCard', () => {
     expect(screen.queryByRole('button', { name: 'Close' })).not.toBeInTheDocument();
   });
 
-  it('frequency가 ALWAYS면 dismissible이어도 닫기(X) 버튼이 없다 (닫아도 다시 뜨므로 숨김)', () => {
+  it('frequency가 ALWAYS여도 dismissible이면 닫기(X) 버튼이 존재한다 (모든 frequency가 닫기 가능)', () => {
     render(
       <AnnouncementCard
         announcement={makeAnnouncement({
@@ -65,14 +65,24 @@ describe('AnnouncementCard', () => {
         onDismiss={vi.fn()}
       />,
     );
-    expect(screen.queryByRole('button', { name: 'Close' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
   });
 
-  it('닫기(X) 클릭 시 onDismiss(id)가 호출된다', () => {
+  it('닫기(X) 클릭 시 onDismiss(announcement)가 호출된다', () => {
     const onDismiss = vi.fn();
-    render(<AnnouncementCard announcement={makeAnnouncement({ id: 'close-me' })} onDismiss={onDismiss} />);
+    const announcement = makeAnnouncement({ id: 'close-me' });
+    render(<AnnouncementCard announcement={announcement} onDismiss={onDismiss} />);
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(onDismiss).toHaveBeenCalledWith('close-me');
+    expect(onDismiss).toHaveBeenCalledWith(announcement);
+  });
+
+  it('ALWAYS 공지의 DISMISS 액션도 렌더되고 클릭 시 dispatch로 이어진다', () => {
+    const onDismiss = vi.fn();
+    const action = { id: 'later', label: 'Later', type: AnnouncementActionType.DISMISS };
+    const announcement = makeAnnouncement({ actions: [action], target: { frequency: AnnouncementFrequency.ALWAYS } });
+    render(<AnnouncementCard announcement={announcement} onDismiss={onDismiss} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Later' }));
+    expect(mockDispatch).toHaveBeenCalledWith(announcement, action, onDismiss);
   });
 
   it('액션 버튼 클릭 시 dispatch가 announcement/action/onDismiss와 함께 호출된다', () => {

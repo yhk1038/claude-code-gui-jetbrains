@@ -2,11 +2,10 @@ import type { ComponentType, SVGProps } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/i18n';
 import { IconName, ICON_COMPONENTS } from '@/router';
-import { AnnouncementFrequency, type Announcement } from '@/shared';
+import { type Announcement } from '@/shared';
 import { RestrictedMarkdown } from './RestrictedMarkdown';
 import { useAnnouncementActionDispatch } from './useAnnouncementActionDispatch';
 import { isSafeImageUrl } from './urlSafety';
-import { visibleAnnouncementActions } from '@/hooks/announcementEligibility';
 
 /**
  * Maps `announcement.icon` (an open-ended server string) to a bundled Heroicon
@@ -21,8 +20,12 @@ export function resolveAnnouncementIcon(icon: string): ComponentType<SVGProps<SV
 
 interface Props {
   announcement: Announcement;
-  /** Called for the card's own X close button and for a `DISMISS`-typed action. */
-  onDismiss: (id: string) => void;
+  /**
+   * Called for the card's own X close button and for a `DISMISS`-typed action.
+   * Receives the whole announcement so the handler can branch on frequency
+   * (ALWAYS = local-only hide vs. others = also persisted).
+   */
+  onDismiss: (announcement: Announcement) => void;
 }
 
 /**
@@ -37,7 +40,7 @@ export function AnnouncementCard(props: Props) {
   const { t } = useTranslation('common');
   const dispatch = useAnnouncementActionDispatch();
   const Icon = resolveAnnouncementIcon(announcement.icon);
-  const actions = visibleAnnouncementActions(announcement);
+  const actions = announcement.actions;
 
   return (
     <div className="flex gap-3 rounded-lg border border-border-subtle bg-surface-raised p-3 text-[0.8461rem]">
@@ -65,10 +68,10 @@ export function AnnouncementCard(props: Props) {
           </div>
         )}
       </div>
-      {announcement.dismissible && announcement.target.frequency !== AnnouncementFrequency.ALWAYS && (
+      {announcement.dismissible && (
         <button
           type="button"
-          onClick={() => onDismiss(announcement.id)}
+          onClick={() => onDismiss(announcement)}
           aria-label={t('announcementCard.close')}
           className="flex-shrink-0 self-start rounded p-0.5 text-text-tertiary hover:bg-state-info-bg transition-colors"
         >

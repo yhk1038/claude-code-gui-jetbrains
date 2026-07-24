@@ -1,6 +1,5 @@
 import { useAnnouncements } from '@/hooks/useAnnouncements';
-import { visibleAnnouncementActions } from '@/hooks/announcementEligibility';
-import { AnnouncementFrequency, AnnouncementPlacement } from '@/shared';
+import { AnnouncementPlacement } from '@/shared';
 import { InputBanner } from '@/pages/ChatPage/InputBanner';
 import { resolveAnnouncementIcon } from '../AnnouncementCard';
 import { RestrictedMarkdown } from '../RestrictedMarkdown';
@@ -27,7 +26,7 @@ export function AnnouncementTopBannerSlot() {
   if (!announcement) return null;
 
   const Icon = resolveAnnouncementIcon(announcement.icon);
-  const actions = visibleAnnouncementActions(announcement);
+  const actions = announcement.actions;
 
   return (
     <div className="w-full bg-surface-base px-4 py-1.5">
@@ -59,11 +58,7 @@ export function AnnouncementTopBannerSlot() {
             </>
           ) : undefined
         }
-        onClose={
-          announcement.dismissible && announcement.target.frequency !== AnnouncementFrequency.ALWAYS
-            ? () => dismiss(announcement.id)
-            : undefined
-        }
+        onClose={announcement.dismissible ? () => dismiss(announcement) : undefined}
       />
     </div>
   );

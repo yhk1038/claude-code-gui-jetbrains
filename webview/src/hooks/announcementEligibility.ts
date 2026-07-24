@@ -1,27 +1,23 @@
 import { compareVersions } from '../utils/compareVersions';
-import {
-  AnnouncementActionType,
-  AnnouncementFrequency,
-  type Announcement,
-  type AnnouncementAction,
-  type AnnouncementPlacement,
-} from '@/shared';
-
-/**
- * Actions to actually render for an announcement. An ALWAYS-frequency notice
- * can never be dismissed (its X is hidden too), so a DISMISS-type action would
- * be a dead button — filter it out. All other action types are kept.
- */
-export function visibleAnnouncementActions(announcement: Announcement): AnnouncementAction[] {
-  if (announcement.target.frequency !== AnnouncementFrequency.ALWAYS) return announcement.actions;
-  return announcement.actions.filter((action) => action.type !== AnnouncementActionType.DISMISS);
-}
+import { AnnouncementFrequency, type Announcement, type AnnouncementPlacement } from '@/shared';
 
 /** Runtime inputs needed to decide whether an announcement is currently eligible. */
 export interface AnnouncementEligibilityContext {
   now: Date;
   pluginVersion: string;
+  /**
+   * Permanently-recorded dismissals (from profile.json). Used for ONCE (recorded
+   * the moment it's shown) and UNTIL_DISMISSED (recorded when the user closes it).
+   * ALWAYS-frequency announcements ignore this list.
+   */
   dismissedIds: string[];
+  /**
+   * Volatile, per-view-instance dismissals held only in the `useAnnouncements`
+   * hook state. Every frequency (including ALWAYS) respects this — it hides an
+   * announcement in the current view without persisting. When the slot remounts
+   * (a new query instance), this resets and an ALWAYS announcement shows again.
+   */
+  locallyDismissedIds: string[];
 }
 
 type RangeOperator = '>=' | '<=' | '>' | '<' | '=';
@@ -85,7 +81,11 @@ export function satisfiesVersionRange(version: string, range: string | undefined
  * Whether `announcement` is currently eligible to render, given `ctx`:
  * - date window: `showFrom` ≤ now ≤ `showUntil` (either bound optional)
  * - pluginVersion: current version must satisfy `target.pluginVersion` range (optional)
- * - frequency: `ONCE`/`UNTIL_DISMISSED` are excluded once dismissed; `ALWAYS` ignores dismissal
+ * - permanent dismissal: `ONCE`/`UNTIL_DISMISSED` are excluded once in `dismissedIds`;
+ *   `ALWAYS` ignores `dismissedIds` (never persisted)
+ * - local dismissal: any frequency (including `ALWAYS`) is excluded while in
+ *   `locallyDismissedIds` — this is how a closed ALWAYS announcement stays hidden
+ *   for the current view yet reappears after a remount
  */
 export function isEligible(announcement: Announcement, ctx: AnnouncementEligibilityContext): boolean {
   const { target } = announcement;
@@ -97,6 +97,8 @@ export function isEligible(announcement: Announcement, ctx: AnnouncementEligibil
   if (target.frequency !== AnnouncementFrequency.ALWAYS && ctx.dismissedIds.includes(announcement.id)) {
     return false;
   }
+
+  if (ctx.locallyDismissedIds.includes(announcement.id)) return false;
 
   return true;
 }

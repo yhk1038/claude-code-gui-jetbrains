@@ -50,11 +50,20 @@ describe('AnnouncementEmptyStateSlot', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('닫기(X) 클릭 시 dismiss(id)가 호출된다', () => {
-    mockUseAnnouncements.mockReturnValue({ announcements: [makeAnnouncement({ id: 'close-me' })], dismiss: mockDismiss });
+  it('닫기(X) 클릭 시 dismiss(announcement)가 호출된다', () => {
+    const announcement = makeAnnouncement({ id: 'close-me' });
+    mockUseAnnouncements.mockReturnValue({ announcements: [announcement], dismiss: mockDismiss });
     render(<AnnouncementEmptyStateSlot />);
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(mockDismiss).toHaveBeenCalledWith('close-me');
+    expect(mockDismiss).toHaveBeenCalledWith(announcement);
+  });
+
+  it('frequency가 ALWAYS여도 dismissible이면 닫기(X)가 존재한다', () => {
+    const announcement = makeAnnouncement({ id: 'always-1', target: { frequency: AnnouncementFrequency.ALWAYS } });
+    mockUseAnnouncements.mockReturnValue({ announcements: [announcement], dismiss: mockDismiss });
+    render(<AnnouncementEmptyStateSlot />);
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(mockDismiss).toHaveBeenCalledWith(announcement);
   });
 
   it('dismiss 후 목록이 비면(useAnnouncements 재조회 반영) 카드가 사라진다', () => {

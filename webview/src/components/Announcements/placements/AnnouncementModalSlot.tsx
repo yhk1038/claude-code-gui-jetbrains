@@ -22,7 +22,7 @@ export function AnnouncementModalSlot() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        dismiss(announcement.id);
+        dismiss(announcement);
       }
     };
     window.addEventListener('keydown', handleKeyDown, true);
@@ -33,7 +33,7 @@ export function AnnouncementModalSlot() {
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget && announcement.dismissible) {
-      dismiss(announcement.id);
+      dismiss(announcement);
     }
   };
 

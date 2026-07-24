@@ -51,24 +51,20 @@ describe('AnnouncementModalSlot', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('dismissible=true일 때 배경 클릭 시 dismiss(id)가 호출된다', () => {
-    mockUseAnnouncements.mockReturnValue({
-      announcements: [makeAnnouncement({ id: 'close-me', dismissible: true })],
-      dismiss: mockDismiss,
-    });
+  it('dismissible=true일 때 배경 클릭 시 dismiss(announcement)가 호출된다 (ALWAYS라도 로컬 숨김)', () => {
+    const announcement = makeAnnouncement({ id: 'close-me', dismissible: true });
+    mockUseAnnouncements.mockReturnValue({ announcements: [announcement], dismiss: mockDismiss });
     render(<AnnouncementModalSlot />);
     fireEvent.click(screen.getByTestId('announcement-modal-backdrop'));
-    expect(mockDismiss).toHaveBeenCalledWith('close-me');
+    expect(mockDismiss).toHaveBeenCalledWith(announcement);
   });
 
-  it('dismissible=true일 때 Escape 키 입력 시 dismiss(id)가 호출된다', () => {
-    mockUseAnnouncements.mockReturnValue({
-      announcements: [makeAnnouncement({ id: 'close-me', dismissible: true })],
-      dismiss: mockDismiss,
-    });
+  it('dismissible=true일 때 Escape 키 입력 시 dismiss(announcement)가 호출된다', () => {
+    const announcement = makeAnnouncement({ id: 'close-me', dismissible: true });
+    mockUseAnnouncements.mockReturnValue({ announcements: [announcement], dismiss: mockDismiss });
     render(<AnnouncementModalSlot />);
     fireEvent.keyDown(window, { key: 'Escape' });
-    expect(mockDismiss).toHaveBeenCalledWith('close-me');
+    expect(mockDismiss).toHaveBeenCalledWith(announcement);
   });
 
   it('dismissible=false면 배경 클릭/Escape로 닫히지 않는다', () => {
