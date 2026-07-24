@@ -13,6 +13,7 @@ import { shouldSubmitOnEnter } from '../ChatInput/shouldSubmitOnEnter';
 
 const makeEvent = (overrides: Partial<{
   key: string;
+  keyCode: number;
   shiftKey: boolean;
   ctrlKey: boolean;
   metaKey: boolean;
@@ -20,6 +21,7 @@ const makeEvent = (overrides: Partial<{
   isMobile: boolean;
 }> = {}) => ({
   key: 'Enter',
+  keyCode: 13,
   shiftKey: false,
   ctrlKey: false,
   metaKey: false,
@@ -44,6 +46,14 @@ describe('shouldSubmitOnEnter — useCtrlEnterToSend: false (default mode)', () 
 
   it('IME composing → submit NOT called', () => {
     expect(shouldSubmitOnEnter(makeEvent({ isComposing: true }), false)).toBe(false);
+  });
+
+  it('Enter right after a composition ends (isComposing false) → submit called', () => {
+    // Regression guard: typing a CJK glyph then pressing Enter must submit on the
+    // FIRST Enter. The composition is already finished (isComposing=false), so no
+    // recent-composition suppression should swallow this Enter as a newline.
+    // (A prior `isRecentlyComposing` guard caused a spurious first-Enter newline.)
+    expect(shouldSubmitOnEnter(makeEvent({ isComposing: false }), false)).toBe(true);
   });
 
   it('mobile environment → submit NOT called', () => {
@@ -83,7 +93,20 @@ describe('shouldSubmitOnEnter — useCtrlEnterToSend: true', () => {
 
 describe('shouldSubmitOnEnter — non-Enter key', () => {
   it('non-Enter key always returns false regardless of mode', () => {
-    expect(shouldSubmitOnEnter(makeEvent({ key: 'a' }), false)).toBe(false);
-    expect(shouldSubmitOnEnter(makeEvent({ key: 'a' }), true)).toBe(false);
+    // key !== 'Enter' AND keyCode !== 13
+    expect(shouldSubmitOnEnter(makeEvent({ key: 'a', keyCode: 65 }), false)).toBe(false);
+    expect(shouldSubmitOnEnter(makeEvent({ key: 'a', keyCode: 65 }), true)).toBe(false);
+  });
+});
+
+describe('shouldSubmitOnEnter — isEnterKey double detection (keyCode 13)', () => {
+  it('keyCode 13 with non-Enter key string still counts as Enter (non-English layout)', () => {
+    // Non-English layouts under JCEF may surface Enter with a stale/non-"Enter"
+    // key string but keyCode 13. Submit path must still recognize it.
+    expect(shouldSubmitOnEnter(makeEvent({ key: 'Process', keyCode: 13 }), false)).toBe(true);
+  });
+
+  it('key "Enter" with keyCode 0 still counts as Enter', () => {
+    expect(shouldSubmitOnEnter(makeEvent({ key: 'Enter', keyCode: 0 }), false)).toBe(true);
   });
 });
