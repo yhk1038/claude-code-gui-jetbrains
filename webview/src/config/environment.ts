@@ -44,6 +44,17 @@ export function isMobile(): boolean {
   return /android|iphone|ipad|ipod/.test(userAgent);
 }
 
+/**
+ * True when the client OS is macOS. Used to label the send-modifier as Cmd (⌘)
+ * instead of Ctrl. Browser-only (no SSR): reads `navigator.platform`, falling
+ * back to the user-agent string on engines that leave `platform` empty.
+ */
+export function isMac(): boolean {
+  const platform = navigator.platform ?? '';
+  if (platform) return platform.toUpperCase().includes('MAC');
+  return /mac/i.test(navigator.userAgent);
+}
+
 // ── IDE 테마 ─────────────────────────────────────────
 // JetBrains JCEF 환경에서만 의미 있음. Kotlin이 페이지 로드 시점에 LAF 값을
 // window.__IDE_THEME__ 에 주입하고, LAF가 바뀌면 'ide-theme-changed' 이벤트를 dispatch한다.

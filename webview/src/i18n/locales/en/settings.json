@@ -41,7 +41,7 @@
       "label": "Enable RTL(Right-to-left)"
     },
     "useCtrlEnterToSend": {
-      "label": "Use Ctrl Enter To Send",
+      "label": "Use {{modifier}}+Enter To Send",
       "description": "When enabled, use Ctrl/Cmd+Enter to send prompts instead of just Enter. This allows Enter to create new lines."
     },
     "focusInputOnEditorContext": {

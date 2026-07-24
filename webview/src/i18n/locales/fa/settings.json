@@ -41,7 +41,7 @@
       "label": "فعال‌سازی RTL (راست‌به‌چپ)"
     },
     "useCtrlEnterToSend": {
-      "label": "استفاده از Ctrl+Enter برای ارسال",
+      "label": "استفاده از {{modifier}}+Enter برای ارسال",
       "description": "وقتی فعال باشد، برای ارسال دستورها به‌جای Enter از Ctrl/Cmd+Enter استفاده کنید. این کار به Enter اجازه می‌دهد خط جدید ایجاد کند."
     },
     "focusInputOnEditorContext": {

@@ -12,6 +12,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { SettingKey, UiDirection } from '@/types/settings';
 import { useTranslation } from '@/i18n';
 import { isRtlLanguage } from '@/i18n/languageMap';
+import { isMac } from '@/config/environment';
 
 const NOT_SET_VALUE = '__NOT_SET__';
 
@@ -49,6 +50,9 @@ export function GeneralSettings() {
   const currentUiLanguage = isUiNotSet ? NOT_SET_VALUE : ((rawUiLanguage as string) ?? 'english');
 
   const useCtrlEnterToSend = (scopeSettings.useCtrlEnterToSend as boolean | undefined) ?? false;
+  // Label the send-modifier per platform: macOS uses Cmd (⌘), everything else Ctrl.
+  // The handler accepts both (ctrlKey || metaKey); only the label needs to differ.
+  const sendModifier = isMac() ? 'Cmd' : 'Ctrl';
   const focusInputOnEditorContext = (scopeSettings.focusInputOnEditorContext as boolean | undefined) ?? true;
   const respectGitignoreForContext = (scopeSettings.respectGitignoreForContext as boolean | undefined) ?? false;
 
@@ -116,13 +120,13 @@ export function GeneralSettings() {
         <UiDirectionRow />
 
         <SettingRow
-          label={t('general.useCtrlEnterToSend.label')}
+          label={t('general.useCtrlEnterToSend.label', { modifier: sendModifier })}
           description={t('general.useCtrlEnterToSend.description')}
         >
           <ToggleSwitch
             checked={useCtrlEnterToSend}
             onChange={(checked) => updateSetting('useCtrlEnterToSend', checked)}
-            ariaLabel={t('general.useCtrlEnterToSend.label')}
+            ariaLabel={t('general.useCtrlEnterToSend.label', { modifier: sendModifier })}
           />
         </SettingRow>
 
