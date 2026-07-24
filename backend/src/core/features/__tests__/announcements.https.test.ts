@@ -5,6 +5,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 vi.mock('../../../config/environment', () => ({ announcementsUrl: 'http://insecure.example/api' }));
 vi.mock('../claude-settings', () => ({ readMergedClaudeSettings: vi.fn() }));
 vi.mock('../../handlers/getVersion', () => ({ getPluginVersion: vi.fn(() => '9.9.9') }));
+vi.mock('../profile', () => ({ getAnnouncementsEnabled: vi.fn(() => Promise.resolve(true)) }));
 
 import { fetchAnnouncements } from '../announcements';
 

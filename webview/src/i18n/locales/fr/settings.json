@@ -131,6 +131,12 @@
       "sendUsageStatistics": {
         "label": "Envoyer les statistiques d'utilisation",
         "description": "Envoie des statistiques d'utilisation qui ne vous identifient pas directement, afin d'aider à améliorer le produit. Le code source et les données personnelles ne sont jamais envoyés. Vous pouvez désactiver cette option à tout moment."
+      },
+      "receiveAnnouncements": {
+        "label": "Recevoir les annonces",
+        "description": "Recevez des annonces dans l'application concernant les nouvelles fonctionnalités, les astuces et les mises à jour importantes.",
+        "confirmTitle": "Désactiver les annonces ?",
+        "confirmMessage": "Si vous désactivez cette option, vous ne recevrez plus non plus les messages importants, y compris les correctifs urgents et les mises à jour requises. Désactiver quand même ?"
       }
     }
   },

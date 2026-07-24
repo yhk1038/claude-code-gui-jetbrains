@@ -131,6 +131,12 @@
       "sendUsageStatistics": {
         "label": "Nutzungsstatistiken senden",
         "description": "Sendet Nutzungsstatistiken, die dich nicht direkt identifizieren, um das Produkt zu verbessern. Quellcode und persönliche Daten werden niemals gesendet. Du kannst dies jederzeit deaktivieren."
+      },
+      "receiveAnnouncements": {
+        "label": "Ankündigungen erhalten",
+        "description": "Erhalten Sie In-App-Ankündigungen zu neuen Funktionen, Tipps und wichtigen Updates.",
+        "confirmTitle": "Ankündigungen deaktivieren?",
+        "confirmMessage": "Wenn Sie dies deaktivieren, erhalten Sie auch keine wichtigen Nachrichten mehr, einschließlich dringender Patches und erforderlicher Updates. Trotzdem deaktivieren?"
       }
     }
   },

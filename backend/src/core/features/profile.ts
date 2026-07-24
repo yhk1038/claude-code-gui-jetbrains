@@ -31,6 +31,8 @@ export interface ProfileData {
   telemetryConsent: TelemetryConsent;
   /** 사용자가 닫은(dismiss) 공지(Announcement) id 목록. 서버 공지의 `id` 필드와 매칭된다. */
   dismissedAnnouncementIds: string[];
+  /** 공지(Announcement) 수신 여부. 기본값 true. false면 백엔드는 원격 fetch 자체를 하지 않는다. */
+  announcementsEnabled: boolean;
 }
 
 function createDefaultProfile(): ProfileData {
@@ -38,6 +40,7 @@ function createDefaultProfile(): ProfileData {
     uuid: randomUUID(),
     telemetryConsent: { status: ConsentStatus.PENDING, decidedAt: null },
     dismissedAnnouncementIds: [],
+    announcementsEnabled: true,
   };
 }
 
@@ -51,6 +54,11 @@ function normalizeStatus(status: ConsentStatus | undefined): ConsentStatus {
   return status === ConsentStatus.ACCEPTED || status === ConsentStatus.DENIED
     ? status
     : ConsentStatus.PENDING;
+}
+
+/** 저장된 값이 boolean이 아니면(누락/손상) 기본값 true로 보정한다. */
+function normalizeAnnouncementsEnabled(value: unknown): boolean {
+  return typeof value === 'boolean' ? value : true;
 }
 
 async function writeProfile(profile: ProfileData): Promise<void> {
@@ -76,6 +84,7 @@ export async function ensureProfile(): Promise<ProfileData> {
     const dismissedAnnouncementIds = normalizeDismissedAnnouncementIds(
       parsed.dismissedAnnouncementIds,
     );
+    const announcementsEnabled = normalizeAnnouncementsEnabled(parsed.announcementsEnabled);
 
     const profile: ProfileData = {
       uuid:
@@ -85,6 +94,7 @@ export async function ensureProfile(): Promise<ProfileData> {
         decidedAt: parsed.telemetryConsent?.decidedAt ?? null,
       },
       dismissedAnnouncementIds,
+      announcementsEnabled,
     };
 
     // 누락/손상 필드를 보정했으면 파일을 다시 써서 정규화한다.
@@ -93,7 +103,8 @@ export async function ensureProfile(): Promise<ProfileData> {
       parsed.telemetryConsent?.status !== profile.telemetryConsent.status ||
       parsed.telemetryConsent?.decidedAt !== profile.telemetryConsent.decidedAt ||
       !Array.isArray(parsed.dismissedAnnouncementIds) ||
-      parsed.dismissedAnnouncementIds.length !== dismissedAnnouncementIds.length;
+      parsed.dismissedAnnouncementIds.length !== dismissedAnnouncementIds.length ||
+      typeof parsed.announcementsEnabled !== 'boolean';
     if (needsRewrite) {
       await writeProfile(profile);
     }
@@ -145,4 +156,18 @@ export async function setDismissedAnnouncement(id: string): Promise<string[]> {
     await writeProfile(profile);
   }
   return profile.dismissedAnnouncementIds;
+}
+
+/** 현재 공지(Announcement) 수신 설정을 읽는다(기본값 true). */
+export async function getAnnouncementsEnabled(): Promise<boolean> {
+  const profile = await ensureProfile();
+  return profile.announcementsEnabled;
+}
+
+/** 공지 수신 on/off를 기록한다. */
+export async function setAnnouncementsEnabled(enabled: boolean): Promise<ProfileData> {
+  const profile = await ensureProfile();
+  profile.announcementsEnabled = enabled;
+  await writeProfile(profile);
+  return profile;
 }

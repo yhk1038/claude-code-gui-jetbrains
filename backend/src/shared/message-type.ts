@@ -81,6 +81,10 @@ export enum MessageType {
   GET_ANNOUNCEMENTS = 'GET_ANNOUNCEMENTS',
   /** Persist a `{ id }` dismissal to profile.json and return the updated dismissedIds. inbound webview→backend */
   DISMISS_ANNOUNCEMENT = 'DISMISS_ANNOUNCEMENT',
+  /** Read whether the user has announcement delivery enabled (profile.json `announcementsEnabled`, default true). inbound webview→backend */
+  GET_ANNOUNCEMENTS_ENABLED = 'GET_ANNOUNCEMENTS_ENABLED',
+  /** Persist the announcements on/off toggle; when turned off, the backend stops fetching announcements entirely (no network request). inbound webview→backend */
+  SET_ANNOUNCEMENTS_ENABLED = 'SET_ANNOUNCEMENTS_ENABLED',
 
   // -- Sponsor / license --
   /** Build the sponsorship (pricing) URL with the install id + account context prefilled, for the webview to open in the external browser. The install id stays backend-side (never exposed to the webview). inbound webview→backend */

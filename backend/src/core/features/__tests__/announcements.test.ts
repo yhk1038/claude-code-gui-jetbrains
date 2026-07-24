@@ -11,6 +11,7 @@ import {
 vi.mock('../../../config/environment', () => ({ announcementsUrl: 'https://ann.example/api' }));
 vi.mock('../claude-settings', () => ({ readMergedClaudeSettings: vi.fn() }));
 vi.mock('../../handlers/getVersion', () => ({ getPluginVersion: vi.fn(() => '9.9.9') }));
+vi.mock('../profile', () => ({ getAnnouncementsEnabled: vi.fn(() => Promise.resolve(true)) }));
 
 import { validateResponse, fetchAnnouncements } from '../announcements';
 import { readMergedClaudeSettings } from '../claude-settings';

@@ -131,6 +131,12 @@
       "sendUsageStatistics": {
         "label": "Enviar estatísticas de uso",
         "description": "Envia estatísticas de uso que não identificam você diretamente, para ajudar a melhorar o produto. Código-fonte e dados pessoais nunca são enviados. Você pode desativar isso a qualquer momento."
+      },
+      "receiveAnnouncements": {
+        "label": "Receber anúncios",
+        "description": "Receba anúncios no aplicativo sobre novos recursos, dicas e atualizações importantes.",
+        "confirmTitle": "Desativar anúncios?",
+        "confirmMessage": "Se você desativar, também não receberá mensagens importantes, incluindo patches urgentes e atualizações obrigatórias. Desativar mesmo assim?"
       }
     }
   },

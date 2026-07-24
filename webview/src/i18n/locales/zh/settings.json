@@ -131,6 +131,12 @@
       "sendUsageStatistics": {
         "label": "发送使用统计信息",
         "description": "发送不会直接识别您身份的使用统计信息,以帮助改进产品。绝不会发送源代码或个人数据。您可以随时关闭此选项。"
+      },
+      "receiveAnnouncements": {
+        "label": "接收公告",
+        "description": "接收有关新功能、使用技巧和重要更新的应用内公告。",
+        "confirmTitle": "关闭公告？",
+        "confirmMessage": "关闭后，您将无法收到包括紧急补丁和必要更新在内的重要消息。仍要关闭吗？"
       }
     }
   },

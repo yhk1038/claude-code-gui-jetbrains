@@ -1,6 +1,7 @@
 import { announcementsUrl } from '../../config/environment';
 import { readMergedClaudeSettings } from './claude-settings';
 import { getPluginVersion } from '../handlers/getVersion';
+import { getAnnouncementsEnabled } from './profile';
 import {
   AnnouncementActionType,
   AnnouncementFrequency,
@@ -129,11 +130,15 @@ const cache = new Map<string, CacheEntry>();
 /**
  * Fetches the current locale's announcement list from the remote delivery endpoint
  * (`CCG_ANNOUNCE_URL`), short-TTL cached per locale+pluginVersion. Returns an empty
- * list (never throws) when the URL is unset, the request fails, or the response
+ * list (never throws) when the user turned announcements off (profile.json
+ * `announcementsEnabled`), the URL is unset, the request fails, or the response
  * doesn't validate. The request carries ONLY `locale` and `pluginVersion` — no
  * install id / uuid / any other PII (this is content delivery, not telemetry).
  */
 export async function fetchAnnouncements(workingDir?: string): Promise<AnnouncementsResponse> {
+  // 마켓 "비활성 시 전송 금지" 준수: 사용자가 공지 수신을 껐으면 원격 fetch 자체를 하지
+  // 않는다(URL 미설정 체크와 같은 위치의 early-return).
+  if (!(await getAnnouncementsEnabled())) return EMPTY_RESPONSE;
   if (!announcementsUrl) return EMPTY_RESPONSE;
 
   // Enforce https on the delivery endpoint: a plain-http URL would let a MITM
