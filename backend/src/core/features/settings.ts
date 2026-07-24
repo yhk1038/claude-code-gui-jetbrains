@@ -12,6 +12,7 @@ const DEFAULT_SETTINGS: Record<string, unknown> = {
   nodePath: null,
   theme: 'system',
   fontSize: 13,
+  lineHeight: 1.6,
   autoScrollThreshold: 80,
   debugMode: false,
   logLevel: 'info',
@@ -28,6 +29,7 @@ const COMMENT_MAP: Record<string, string> = {
   nodePath: 'Node.js 실행 파일 경로 (null이면 자동 감지, 변경 시 재시작 필요)',
   theme: '테마: "system" | "light" | "dark"',
   fontSize: '글꼴 크기 (8~32)',
+  lineHeight: '채팅 메시지 줄 간격(line-height 배수, 1.0~3.0)',
   autoScrollThreshold: '자동 스크롤 임계점(px). 메시지 끝에서 이 거리 안에 있을 때만 스트림을 따라 내려간다',
   debugMode: '디버그 모드 활성화',
   logLevel: '로그 레벨: "debug" | "info" | "warn" | "error"',
@@ -110,6 +112,13 @@ function validateSetting(key: string, value: unknown): string | null {
       const n = Number(value);
       if (!Number.isInteger(n) || n < 8 || n > 32) {
         return 'fontSize must be an integer between 8 and 32';
+      }
+      break;
+    }
+    case 'lineHeight': {
+      const n = Number(value);
+      if (!Number.isFinite(n) || n < 1 || n > 3) {
+        return 'lineHeight must be a number between 1 and 3';
       }
       break;
     }

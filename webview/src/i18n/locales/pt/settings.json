@@ -92,6 +92,11 @@
         "label": "Tamanho da Fonte",
         "description": "Tamanho de fonte base da interface",
         "notSetPlaceholder": "Não definido"
+      },
+      "lineSpacing": {
+        "label": "Espaçamento entre linhas",
+        "description": "Altura da linha do texto das mensagens de chat",
+        "notSetPlaceholder": "Não definido"
       }
     },
     "scrolling": {

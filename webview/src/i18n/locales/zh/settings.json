@@ -92,6 +92,11 @@
         "label": "字体大小",
         "description": "界面的基础字体大小",
         "notSetPlaceholder": "未设置"
+      },
+      "lineSpacing": {
+        "label": "行间距",
+        "description": "聊天消息文本的行高",
+        "notSetPlaceholder": "未设置"
       }
     },
     "scrolling": {

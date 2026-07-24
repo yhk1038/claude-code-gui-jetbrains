@@ -92,6 +92,11 @@
         "label": "글꼴 크기",
         "description": "인터페이스의 기본 글꼴 크기",
         "notSetPlaceholder": "설정 안 함"
+      },
+      "lineSpacing": {
+        "label": "줄 간격",
+        "description": "채팅 메시지 텍스트의 줄 간격",
+        "notSetPlaceholder": "설정 안 함"
       }
     },
     "scrolling": {

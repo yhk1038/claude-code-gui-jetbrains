@@ -92,6 +92,11 @@
         "label": "フォントサイズ",
         "description": "インターフェースの基本フォントサイズ",
         "notSetPlaceholder": "未設定"
+      },
+      "lineSpacing": {
+        "label": "行間",
+        "description": "チャットメッセージ本文の行の高さ",
+        "notSetPlaceholder": "未設定"
       }
     },
     "scrolling": {

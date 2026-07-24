@@ -92,6 +92,11 @@
         "label": "Schriftgröße",
         "description": "Basis-Schriftgröße für die Oberfläche",
         "notSetPlaceholder": "Nicht festgelegt"
+      },
+      "lineSpacing": {
+        "label": "Zeilenabstand",
+        "description": "Zeilenhöhe für den Text von Chat-Nachrichten",
+        "notSetPlaceholder": "Nicht festgelegt"
       }
     },
     "scrolling": {
