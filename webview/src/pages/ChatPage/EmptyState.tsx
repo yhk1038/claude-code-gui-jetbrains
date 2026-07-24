@@ -4,6 +4,7 @@ import clawdSvg from '../../assets/clawd.svg';
 import claudeCodeLogo from '../../assets/claude-code-logo.svg';
 import { APP_NAME } from '@/config/app';
 import { useTranslation } from '@/i18n';
+import { AnnouncementEmptyStateSlot } from '@/components/Announcements/placements';
 
 export const EmptyState = () => {
   const { t } = useTranslation('chat');
@@ -60,6 +61,7 @@ export const EmptyState = () => {
       <div className="flex-1 flex flex-col items-center justify-center gap-5 pt-14">
         <img src={clawdSvg} alt="Clawd" width={46} />
         <p className="text-text-secondary text-[1rem] text-center max-w-[18rem] leading-[1.7]">{hint}</p>
+        <AnnouncementEmptyStateSlot />
       </div>
     </div>
   );
