@@ -477,5 +477,10 @@
     "scheduledToast": "Automatische Fortsetzung geplant",
     "canceledToast": "Automatische Fortsetzung abgebrochen",
     "scheduled": "Automatische Fortsetzung geplant"
+  },
+  "reviewDiff": {
+    "loading": "Änderung wird geladen…",
+    "apply": "Anwenden",
+    "reject": "Ablehnen"
   }
 }
